@@ -97,22 +97,6 @@ build_ut_core()
 	popd
 }
 
-build_yaml_cpp()
-{
-	declare -r YAML_CPP_BUILD_DIR=${BUILD_DIR}/yaml-cpp
-
-	if [ ! -d "yaml-cpp" ]; then
-		git clone https://github.com/jbeder/yaml-cpp.git
-	fi
-
-	cmake \
-		-DYAML_BUILD_SHARED_LIBS=ON \
-		-DCMAKE_INSTALL_PREFIX=$BUILD_INSTALL_PREFIX \
-		-B $YAML_CPP_BUILD_DIR \
-		yaml-cpp
-	make -j`nproc` -C ${YAML_CPP_BUILD_DIR} install
-}
-
 install_test()
 {
 	declare -r INSTALL_PATH=${BUILD_DIR}/bin
