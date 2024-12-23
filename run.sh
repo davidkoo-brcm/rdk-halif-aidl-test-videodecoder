@@ -16,14 +16,14 @@ servicemanager_pid=$!
 # Need to wait some time for the service to be ready
 sleep 2
 
-echo "Eexecute [VideoDecoderService]"
-${RUN_DIR}/VideoDecoderService &
+echo "Eexecute [EmulateVideoDecoderService]"
+${RUN_DIR}/EmulateVideoDecoderService &
 VideoDecoderService_pid=$!
 # Need to wait some time for the service to be ready
 sleep 2
 
-echo "Eexecute [L1_videodecoder]"
-${RUN_DIR}/L1_videodecoder -p profiles/hfp-videodecoder.yaml
+echo "Eexecute [hal_test]"
+${RUN_DIR}/hal_test -p profiles/hfp-videodecoder.yaml
 
 # cleanup
 kill -9 $servicemanager_pid $VideoDecoderService_pid

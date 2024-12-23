@@ -1,10 +1,9 @@
 #!/bin/bash
 
 # Define the directory where the repository will be cloned
-declare -r UT_CORE_VER="4.1.0"
 declare -r TOP=`dirname $(realpath $0)`
-declare -r UT_DIR="${TOP}/ut"
-declare -r BUILD_DIR="${UT_DIR}/build"
+declare -r UT_CORE_DIR="${TOP}/ut/ut-core"
+declare -r BUILD_DIR="${TOP}/build"
 declare -r BUILD_INSTALL_PREFIX=${BUILD_DIR}/usr
 
 DEF_LINUX_BINDER="`realpath ${TOP}/../../`/linux_binder_idl"
@@ -14,10 +13,6 @@ AIDL_BIN=${AIDL_BIN:-${DEF_LINUX_BINDER}/out/aidl}
 # contains bin/servicemanager, lib/libbinder etc
 LINUX_BINDER_OUT_DIR=${LINUX_BINDER_OUT_DIR:-${DEF_LINUX_BINDER}/local}
 
-# Used in build videodecoder_hal
-export HAL_DIR=${UT_DIR}
-
-mkdir -p $UT_DIR
 mkdir -p $BUILD_DIR
 
 if [ ! -x $AIDL_BIN ]; then
@@ -47,7 +42,7 @@ generate_videodecoder_hal() {
     declare -r HAL_BUILD_DIR=${BUILD_DIR}/videodecoder_aidl
     declare -r VIDEODECODER_VERSION=current
     declare -r AIDL_GEN_DIR="${BUILD_DIR}/videodecoder_gen/$VIDEODECODER_VERSION"
-    declare -r RDK_HAL_DIR=${UT_DIR}/rdk-halif-aidl
+    declare -r RDK_HAL_DIR=${TOP}/rdk-halif-aidl
 
     # Clone the repository if not already present
     if [ ! -d "$RDK_HAL_DIR" ]; then
@@ -64,28 +59,30 @@ generate_videodecoder_hal() {
 
 }
 
-build_videodecoder_service()
+build_vcomponent()
 {
-    # Invoke Makefile to build the mock_service target
     make -j`nproc` \
-		-C $UT_DIR \
-		-f ${UT_DIR}/Makefile.mock_service
+		-C ${TOP}/vcomponent
 }
 
 build_ut_core()
 {
-	if [ ! -d ${UT_DIR}/ut-core ]; then
-		git clone https://github.com/rdkcentral/ut-core.git ${UT_DIR}/ut-core
+	if [ ! -d ${UT_CORE_DIR} ]; then
+		git clone https://github.com/rdkcentral/ut-core.git ${UT_CORE_DIR}
 		if [ $? -ne 0 ]; then
 			echo "Failed to clone the repository. Exiting."
 			exit 1
 		fi
 	fi
 
-	pushd ${UT_DIR}/ut-core
+	pushd ${UT_CORE_DIR}
 
-	git fetch -q origin $UT_CORE_VER
-	git checkout $UT_CORE_VER
+	git fetch -q -t origin
+	# get the latest version of ut-core
+	if [ -z "$UT_CORE_VERSION" ]; then
+		UT_CORE_VERSION=`git tag | sort -Vr | head -n1`
+	fi
+	git checkout $UT_CORE_VERSION
 
 	./build.sh TARGET=linux VARIANT=CPP
 	if [ $? -ne 0 ]; then
@@ -109,8 +106,8 @@ install_test()
 
 install_linux_binder
 generate_videodecoder_hal
-build_videodecoder_service
+build_vcomponent
 build_ut_core
 # Building test module using ut-core framework
-make -j`nproc` -C ${UT_DIR}
+make -j`nproc` -C ${TOP}
 install_test

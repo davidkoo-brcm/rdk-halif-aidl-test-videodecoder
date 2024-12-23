@@ -1,7 +1,7 @@
 TARGET ?= linux
 VARIANT := CPP
 
-TARGET_EXEC := L1_videodecoder
+TARGET_EXEC := hal_test
 
 ROOT_DIR := $(CURDIR)
 SRC_DIRS := $(ROOT_DIR)/src
@@ -20,6 +20,7 @@ XLDFLAGS += -lvideodecoderaidl
 # required for std::optional
 CXXFLAGS := -std=c++17
 
+UT_CORE_DIR := $(CURDIR)/ut/ut-core
 
 export BIN_DIR
 export LIB_DIR
@@ -35,7 +36,7 @@ export CXXFLAGS
 all: $(TARGET_EXEC)
 
 $(TARGET_EXEC):
-	make -C ut-core -j $(shell nproc) TARGET=$(TARGET) VARIANT=$(VARIANT)
+	make -C $(UT_CORE_DIR) -j $(shell nproc) TARGET=$(TARGET) VARIANT=$(VARIANT)
 
 clean:
-	make -C ut-core -j TARGET=$(TARGET) VARIANT=$(VARIANT) clean
+	make -C $(UT_CORE_DIR) -j TARGET=$(TARGET) VARIANT=$(VARIANT) clean
