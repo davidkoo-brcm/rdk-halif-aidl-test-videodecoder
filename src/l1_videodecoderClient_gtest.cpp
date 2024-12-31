@@ -41,7 +41,6 @@
 #include <optional>
 #include <algorithm>
 #include <unordered_set>
-#include "yaml_utils.h"
 
 #include "com/rdk/hal/videodecoder/IVideoDecoderManager.h"
 #include "com/rdk/hal/videodecoder/BnVideoDecoderControllerListener.h"
@@ -458,6 +457,7 @@ protected:
     void SetUp() override
     {
         //prerequisite - checking state
+	UTCore::SetUp();
         ::com::rdk::hal::State state;
         ::android::binder::Status status = _videoDecoder->getState(&state);
         ASSERT_TRUE(status.isOk());
@@ -479,6 +479,7 @@ protected:
     }
     void TearDown() override
     {
+	UTCore::TearDown();
         ::com::rdk::hal::State state;
         Status status = _videoDecoder->getState(&state);
         ASSERT_TRUE(status.isOk());
@@ -533,11 +534,16 @@ class L1VideoDecoderEventRegisterTest : public UTCore
 protected:
     void SetUp() override
     {
-        bool _aidl_return;
+	UTCore::SetUp();
+	bool _aidl_return;
         listener = new VideoDecoderEventListener();
         ::android::binder::Status status = _videoDecoder->registerEventListener(listener, &_aidl_return);
         ASSERT_TRUE(status.isOk());
         ASSERT_TRUE(_aidl_return);
+    }
+    void TearDown() override
+    {
+    	UTCore::TearDown();
     }
     android::sp<com::rdk::hal::videodecoder::IVideoDecoderEventListener> listener;
 };
@@ -2651,10 +2657,69 @@ TEST_F(L1VideoDecoderStartTest, test_l1_videodecoder_negative_4_parseCodecSpecif
     ASSERT_FALSE(_aidl_return);
 }
 
+std::vector<std::string> splitPath(const std::string& path, char delimiter) {
+	std::vector<std::string> segments;
+    	size_t start = 0;
+    	size_t end = path.find(delimiter);
+
+    	while (end != std::string::npos) {
+        	segments.push_back(path.substr(start, end - start));
+        	start = end + 1;
+        	end = path.find(delimiter, start);
+    	}
+
+    	segments.push_back(path.substr(start));
+    	return segments;
+}
+
+
+int createComponentMap( ut_kvp_instance_t * p_instance, std::map<std::string, int> &l_compMap){
+	
+        char result_kvp[UT_KVP_MAX_ELEMENT_SIZE];
+        std::string key;
+        int total_componentes = ut_kvp_getListCount(p_instance ,"components");
+        if(total_componentes == 0){
+        	std::cerr << "components node not found or not a list." << std::endl;
+                return -1;
+        }
+        for(int i = 0; i < total_componentes;i++){
+        	key.clear();
+                key = "components/"+ std::to_string(i) + "/name";
+                if(0 == ut_kvp_getStringField(p_instance, key.c_str(), result_kvp, UT_KVP_MAX_ELEMENT_SIZE)){
+                	l_compMap.insert({std::string(result_kvp),i});
+                }
+        }
+	return 0;        
+}
+
+int updatedPath(std::string &path, const std::map<std::string, int> &l_compMap){
+
+   	std::vector<std::string> segments = splitPath(path, '.');
+    	// Check if we have enough segments to perform the update
+    	if (segments.size() < 2) {
+        	std::cerr << "Error: Path has insufficient segments for update." << std::endl;
+        	return -1;
+    	}
+    	// Check if the componentMap contains the second segment
+    	auto it = l_compMap.find(segments[1]);
+    	if (it == l_compMap.end()) {
+        	std::cerr << "Error: Component " << segments[1] << " not found in component map." << std::endl;
+        	return -1;
+   	}
+
+	std::string rtn;
+        segments[1] = std::to_string(l_compMap.at(segments[1]));
+        rtn += segments[0];
+        for(int j = 1;j< segments.size();j++){
+                rtn += "/"+ segments[j];
+        }
+	path.clear();
+	path = rtn;	
+        return 0;
+}
+
 int main(int argc, char **argv) 
 {
-    std::string yaml_file;
-    int opt;
     int result1,result2;
     int number_of_videodecoders;
     int number_of_supportedOperationalModes;
@@ -2663,86 +2728,82 @@ int main(int argc, char **argv)
     decoder temporary;
     _CodecCapabilities temporary_codeccapability;
     ::com::rdk::hal::videodecoder::DynamicRange temporary_dynamicrange;
+    std::map<std::string , int> componentMap;
 
 
     std::string videodecoderpath = "components.IVideoDecoderManager.IVideoDecoder";
     std::string supportedOperationalModeslistpath = "components.IVideoDecoderManager.supportedOperationalModes";
 
     UT_init(argc, argv);
-    if(getService() == -1)
-    {
-        return -1;
-    }
 
-    optind = 1;
+    ut_kvp_instance_t *config = ut_kvp_profile_getInstance();
+    if(config != nullptr){
 
-    while ((opt = getopt(argc, argv, "p:")) != -1) 
-    {
-        switch (opt) 
-        {
-            case 'p':
-                yaml_file = optarg;
-                break;
-            default:
-                std::cerr << "Usage: " << argv[0] << " -p <yaml_file>" << std::endl;
-                return 1;
-        }
-    }
-
-    if (!yaml_file.empty()) 
-    {
-        try 
-        {
-            YAML::Node config = YAML::LoadFile(yaml_file.c_str());
-            number_of_videodecoders = get_list_Count_from_profile(config, videodecoderpath);
+	    if(-1 == createComponentMap(config, componentMap)){
+	    	return -1;
+	    }
+    	    if(-1 == updatedPath(videodecoderpath, componentMap)){
+        	std::cerr << "Error: yaml not have videodecoder config\n";
+		return -1;
+	    }
+    	    updatedPath(supportedOperationalModeslistpath, componentMap);
+	    
+	    if(getService() == -1)
+    	    {
+        	return -1;
+    	    }
+	   
+            number_of_videodecoders = ut_kvp_getListCount(config, videodecoderpath.c_str());
             if(number_of_videodecoders <= 0)
             {
                 std::cout<< " No videodecoders find in the profile" <<std::endl;
                 return -1;
             }
             std::cout <<"videodecoders : " <<number_of_videodecoders <<std::endl;
-            number_of_supportedOperationalModes = get_list_Count_from_profile(config, supportedOperationalModeslistpath);
-            for(int p=0; p<number_of_supportedOperationalModes; ++p)
+            number_of_supportedOperationalModes = ut_kvp_getListCount(config, supportedOperationalModeslistpath.c_str());
+	    for(int p=0; p<number_of_supportedOperationalModes; ++p)
             {
+            	char result_kvp[UT_KVP_MAX_ELEMENT_SIZE];
                 std::string supportedOperationalModespath = supportedOperationalModeslistpath+"."+std::to_string(p);
-                std::string operationalmode = get_string_value_from_profile(config, supportedOperationalModespath);
+                std::string operationalmode = (0 == ut_kvp_getStringField(config, supportedOperationalModespath.c_str(), result_kvp, UT_KVP_MAX_ELEMENT_SIZE)) ? std::string(result_kvp) : "";
                 supportedOperationalModes.push_back(StringTooperationalmode(operationalmode));
             }
 
             for(int i=0; i<number_of_videodecoders; ++i)
             {
-                std::string videodecoderidpath = videodecoderpath+"."+std::to_string(i) + ".id";
-                std::string supportedcodecpath = videodecoderpath+"."+std::to_string(i) + ".supportedCodecs";
-                std::string supportedDynamicRangespath = videodecoderpath+"."+std::to_string(i) + ".supportedDynamicRanges";
-                std::string supportsSecurepath = videodecoderpath+"."+std::to_string(i) + ".supportsSecure";
+                std::string videodecoderidpath = videodecoderpath+"/"+std::to_string(i) + "/id";
+                std::string supportedcodecpath = videodecoderpath+"/"+std::to_string(i) + "/supportedCodecs";
+                std::string supportedDynamicRangespath = videodecoderpath+"/"+std::to_string(i) + "/supportedDynamicRanges";
+                std::string supportsSecurepath = videodecoderpath+"/"+std::to_string(i) + "/supportsSecure";
 
-                temporary.id = get_integer_value_from_profile(config,videodecoderidpath);
-                temporary.supportsSecure = get_boolean_value_from_profile(config, supportsSecurepath);
+                temporary.id = ut_kvp_getUInt32Field(config,videodecoderidpath.c_str());
+                temporary.supportsSecure = ut_kvp_getBoolField(config, supportsSecurepath.c_str());
 
 
-                supportedcodec_count = get_list_Count_from_profile(config, supportedcodecpath);
-                supportedDynamicRanges_count = get_list_Count_from_profile(config, supportedDynamicRangespath);
+                supportedcodec_count = ut_kvp_getListCount(config, supportedcodecpath.c_str());
+                supportedDynamicRanges_count = ut_kvp_getListCount(config, supportedDynamicRangespath.c_str());
 
                 for(int k=0; k<supportedDynamicRanges_count; ++k)
                 {
+            	    char result_kvp[UT_KVP_MAX_ELEMENT_SIZE];
                     std::string supportedDynamicRanges_path = supportedDynamicRangespath+"."+std::to_string(k);
-                    std::string supportedDynamicRange = get_string_value_from_profile(config, supportedDynamicRanges_path);
+                    std::string supportedDynamicRange = (0 == ut_kvp_getStringField(config, supportedDynamicRanges_path.c_str(), result_kvp, UT_KVP_MAX_ELEMENT_SIZE)) ? std::string(result_kvp): "";
                     com::rdk::hal::videodecoder::DynamicRange dynamicrange = StringToDynamicrange(supportedDynamicRange);
                     temporary.supportedDynamicRanges.push_back(dynamicrange);
                 }
 
                 for(int j=0; j<supportedcodec_count; ++j)
                 {
-                    std::string codecpath = supportedcodecpath+"."+std::to_string(j)+".codec";
-                    std::string maxFrameRatepath = supportedcodecpath+"."+std::to_string(j)+".maxFrameRate";
-                    std::string maxFrameWidthpath = supportedcodecpath+"."+std::to_string(j)+".maxFrameWidth";
-                    std::string maxFrameHeightpath = supportedcodecpath+"."+std::to_string(j)+".maxFrameHeight";
-
-                    std::string _codec = get_string_value_from_profile(config, codecpath);
+                    std::string codecpath = supportedcodecpath+"/"+std::to_string(j)+"/codec";
+                    std::string maxFrameRatepath = supportedcodecpath+"/"+std::to_string(j)+"/maxFrameRate";
+                    std::string maxFrameWidthpath = supportedcodecpath+"/"+std::to_string(j)+"/maxFrameWidth";
+                    std::string maxFrameHeightpath = supportedcodecpath+"/"+std::to_string(j)+"/maxFrameHeight";
+            	    char result_kvp[UT_KVP_MAX_ELEMENT_SIZE];
+                    std::string _codec = (0 == ut_kvp_getStringField(config, codecpath.c_str(), result_kvp, UT_KVP_MAX_ELEMENT_SIZE)) ? std::string(result_kvp): "";
                     temporary_codeccapability.codec = StringTocodec(_codec);
-                    temporary_codeccapability.maxFrameRate = get_integer_value_from_profile(config, maxFrameRatepath);
-                    temporary_codeccapability.maxFrameWidth = get_integer_value_from_profile(config, maxFrameWidthpath);
-                    temporary_codeccapability.maxFrameHeight = get_integer_value_from_profile(config, maxFrameHeightpath);
+                    temporary_codeccapability.maxFrameRate = ut_kvp_getUInt32Field(config, maxFrameRatepath.c_str());
+                    temporary_codeccapability.maxFrameWidth = ut_kvp_getUInt32Field(config, maxFrameWidthpath.c_str());
+                    temporary_codeccapability.maxFrameHeight = ut_kvp_getUInt32Field(config, maxFrameHeightpath.c_str());
 
                     temporary.supportedCodecs.push_back(temporary_codeccapability);                                
                 }
@@ -2750,7 +2811,7 @@ int main(int argc, char **argv)
                 temporary.supportedDynamicRanges.clear();
                 temporary.supportedCodecs.clear();
             }
-            for(const auto& _decoder: decoders)
+	    for(const auto& _decoder: decoders)
             {
                 g_videodecoderId.value = _decoder.id;
                 Status status = service->getVideoDecoder(g_videodecoderId, &_videoDecoder);
@@ -2760,27 +2821,6 @@ int main(int argc, char **argv)
             ::testing::GTEST_FLAG(filter) = "L1VideoDecoderManagerTest.*";
             result2 = UT_run_tests();
             return (result1 || result2);
-        }
-        catch (const YAML::BadFile& e) 
-        {
-            std::cerr << "Error: Could not open YAML file. " << e.what() << std::endl;
-            return -1;
-        } 
-        catch (const YAML::BadConversion& e) 
-        {
-            std::cerr << "Error: Bad type conversion in YAML. " << e.what() << std::endl;
-            return -1;
-        }
-        catch (const std::runtime_error& e) 
-        {
-            std::cerr << "Runtime Error: " << e.what() << std::endl;
-            return -1;
-        } 
-        catch (const std::exception& e) 
-        {
-            std::cerr << "Error: " << e.what() << std::endl;
-            return -1;
-        }
     }
     else
     {
