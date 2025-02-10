@@ -1,4 +1,6 @@
-# L1 Testing Suite For HAL Video Decoder
+# NOTE: This release is intended for internal development and has not undergone testing or compilation
+
+## L1 Testing Suite For HAL Video Decoder
 
 ## Build Steps
 
