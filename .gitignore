@@ -2,4 +2,6 @@
 *.o
 build
 rdk-halif-aidl
-ut/
+ut
+ut-core
+hal
