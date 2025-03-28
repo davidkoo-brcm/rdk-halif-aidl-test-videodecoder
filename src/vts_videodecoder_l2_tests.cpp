@@ -290,7 +290,7 @@ UT_ADD_TEST(VideoDecoderBaseTest, TestGetAndSetProperties) {
         
         for(int j = 0; j < codecCount; ++j){
             char codecName[UT_KVP_MAX_ELEMENT_SIZE];
-            std::string codecpath_key = "IVideoDecoderManager.IVideoDecoder." + std::to_string(i) + ".supportedCodecs." + std::to_string(0);
+            std::string codecpath_key = "IVideoDecoderManager.IVideoDecoder." + std::to_string(i) + ".supportedCodecs." + std::to_string(j);
             UT_KVP_PROFILE_GET_STRING(codecpath_key.c_str(), codecName);
             Codec codec = Codec::MPEG;
             if (codecName == "H264") codec = Codec::H264;
@@ -380,7 +380,7 @@ UT_ADD_TEST(VideoDecoderControllerBaseTest, TestGetAndSetProperties_multipleInst
 
 
 /**
-* @brief Test the retrieval of supported video decoders
+* @brief Test the state transitions of video decoders
 *
 * This test verifies the ability to open, transition states, and close video decoders using the provided codec and secure mode settings. It ensures that the decoder transitions through the expected states and returns the correct status.
 *
@@ -404,7 +404,7 @@ UT_ADD_TEST(VideoDecoderBaseTest, TestDecoderStateTransitions) {
         
         for(int j = 0; j < codecCount; ++j){
             char codecName[UT_KVP_MAX_ELEMENT_SIZE];
-            std::string codecpath_key = "IVideoDecoderManager.IVideoDecoder." + std::to_string(i) + ".supportedCodecs." + std::to_string(0);
+            std::string codecpath_key = "IVideoDecoderManager.IVideoDecoder." + std::to_string(i) + ".supportedCodecs." + std::to_string(j);
             UT_KVP_PROFILE_GET_STRING(codecpath_key.c_str(), codecName);
             
             Codec codec = Codec::MPEG;
@@ -435,11 +435,66 @@ UT_ADD_TEST(VideoDecoderBaseTest, TestDecoderStateTransitions) {
             UT_ASSERT_TRUE(status.isOk());
             UT_ASSERT_EQUAL(currentState, State::READY);
 
+            // Start decoder
+            UT_LOG_INFO("Calling start()");
+            status = controller->start();
+            UT_LOG_INFO("Result start(), status:[isOK:%s, exception:%s]", UT_Control_GetMapString(bool_mapTable, status.isOk()), UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
+            UT_ASSERT_TRUE(status.isOk());
+
+            // Verify state transition to STARTING
+            UT_ASSERT_TRUE(listener->waitForState(State::READY, State::STARTING, MAX_TRANSITORY_STATE_WAIT_MS));
+
+            // Verify state transition to STARTED
+            UT_ASSERT_TRUE(listener->waitForState(State::STARTING, State::STARTED, MAX_FINAL_STATE_WAIT_MS));
+            
+            UT_LOG_INFO("Calling getState(OUT:currentState[])");
+            statestatus = decoder->getState(&currentState);
+            UT_LOG_INFO("Result getState(OUT:currentState:[%s]), statestatus:[isOK:%s, exception:%s]", currentState, UT_Control_GetMapString(bool_mapTable, statestatus.isOk()), UT_Control_GetMapString(statusException_mapTable, statestatus.exceptionCode()));
+            UT_ASSERT_TRUE(status.isOk());
+            UT_ASSERT_EQUAL(currentState, State::STARTED);
+
+            // Flush decoder
+            UT_LOG_INFO("Calling flush(IN:reset[%d])", false);
+            status = controller->flush(false);
+            UT_LOG_INFO("Result flush(), status:[isOK:%s, exception:%s]",UT_Control_GetMapString(bool_mapTable, status.isOk()), UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
+            UT_ASSERT_TRUE(status.isOk());
+
+            // Verify state transition to FLUSHING
+            UT_ASSERT_TRUE(listener->waitForState(State::STARTED, State::FLUSHING, MAX_TRANSITORY_STATE_WAIT_MS));
+
+            // Verify state transition to STARTED
+            UT_ASSERT_TRUE(listener->waitForState(State::FLUSHING, State::STARTED, MAX_FINAL_STATE_WAIT_MS));
+            
+            UT_LOG_INFO("Calling getState(OUT:currentState[])");
+            statestatus = decoder->getState(&currentState);
+            UT_LOG_INFO("Result getState(OUT:currentState:[%s]), statestatus:[isOK:%s, exception:%s]", currentState, UT_Control_GetMapString(bool_mapTable, statestatus.isOk()), UT_Control_GetMapString(statusException_mapTable, statestatus.exceptionCode()));
+            UT_ASSERT_TRUE(status.isOk());
+            UT_ASSERT_EQUAL(currentState, State::STARTED);
+
+            // Stop decoder
+            UT_LOG_INFO("Calling stop()");
+            status = controller->stop();
+            UT_LOG_INFO("Result stop(), status:[isOK:%s, exception:%s]", UT_Control_GetMapString(bool_mapTable, status.isOk()), UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
+            UT_ASSERT_TRUE(status.isOk());
+
+            // Verify state transition to STOPPING
+            UT_ASSERT_TRUE(listener->waitForState(State::STARTED, State::STOPPING, MAX_TRANSITORY_STATE_WAIT_MS));
+
+            // Verify state transition to READY
+            UT_ASSERT_TRUE(listener->waitForState(State::STOPPING, State::READY, MAX_FINAL_STATE_WAIT_MS));
+            
+            UT_LOG_INFO("Calling getState(OUT:currentState[])");
+            statestatus = decoder->getState(&currentState);
+            UT_LOG_INFO("Result getState(OUT:currentState:[%s]), statestatus:[isOK:%s, exception:%s]", currentState, UT_Control_GetMapString(bool_mapTable, statestatus.isOk()), UT_Control_GetMapString(statusException_mapTable, statestatus.exceptionCode()));
+            UT_ASSERT_TRUE(status.isOk());
+            UT_ASSERT_EQUAL(currentState, State::READY);
+
             // Close the decoder
             bool result = false;
             UT_LOG_INFO("Calling close(IN:controller:[0x%X], OUT:result)", controller.get());
-            UT_ASSERT_TRUE(decoder->close(controller, &result).isOk());
+            status = decoder->close(controller, &result);
             UT_LOG_INFO("Result close(IN:controller:[0x%X], OUT:result:[%d]), status:[isOK:%s, exception:%s]", controller.get(), result, UT_Control_GetMapString(bool_mapTable, status.isOk()), UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
+            UT_ASSERT_TRUE(status.isOk());
             UT_ASSERT_TRUE(result);
 
             // Verify state transition to CLOSING
@@ -454,6 +509,155 @@ UT_ADD_TEST(VideoDecoderBaseTest, TestDecoderStateTransitions) {
             UT_ASSERT_TRUE(status.isOk());
             UT_ASSERT_EQUAL(currentState, State::CLOSED);
         }
+    }
+}
+
+/**
+* @brief Test the state transitions of multiple instances of video decoders
+*
+* This test verifies the ability to open, transition states, and close video decoders using the provided codec and secure mode settings. It ensures that the decoder transitions through the expected states and returns the correct status.
+*
+* **Test Group ID:** 02@n
+* **Test Case ID:** 004@n
+*
+* **Test Procedure:**
+* Refer to UT specification documentation [VideoDecoder_High-Level_TestSpec.md](../../docs/pages/VideoDecoder_High-Level_TestSpec.md)
+*/
+UT_ADD_TEST(VideoDecoderBaseTest, TestDecoderStateTransitions_multipleInstance) {
+    ::com::rdk::hal::State currentState;
+
+    for (size_t i = 0; i < decoderIds.size(); ++i) {
+        sp<IVideoDecoder> decoder = decoders[i];
+        sp<MyVideoDecoderEventListener> listener = decoderEventListeners[i];
+    
+        std::string supported_secure_path_key =  "IVideoDecoderManager.IVideoDecoder." + std::to_string(i) + ".supportsSecure";
+        bool secure = UT_KVP_PROFILE_GET_BOOL(supported_secure_path_key.c_str());
+        
+        int codecCount = 0;
+        std::string supported_codec_count_key = "IVideoDecoderManager.IVideoDecoder." + std::to_string(i) + ".supportedCodecs";
+        codecCount = UT_KVP_PROFILE_GET_LIST_COUNT(supported_codec_count_key.c_str());
+        
+        for(int j = 0; j < codecCount; ++j){
+            char codecName[UT_KVP_MAX_ELEMENT_SIZE];
+            std::string codecpath_key = "IVideoDecoderManager.IVideoDecoder." + std::to_string(i) + ".supportedCodecs." + std::to_string(j);
+            UT_KVP_PROFILE_GET_STRING(codecpath_key.c_str(), codecName);
+            
+            Codec codec = Codec::MPEG;
+            if (codecName == "H264") codec = Codec::H264;
+            else if (codecName == "H265") codec = Codec::H265;
+            else if (codecName == "VP9") codec = Codec::VP9;
+            else if (codecName == "AV1") codec = Codec::AV1;
+
+            sp<IVideoDecoderController> controller;
+            sp<MyVideoDecoderControllerListener> controllerListener = new MyVideoDecoderControllerListener();
+
+            UT_LOG_INFO("Calling open(IN:codec[%d], IN:secure[%s], IN:controllerListener[0x%X], OUT:controller[])", codec, UT_Control_GetMapString(bool_mapTable, secure), controllerListener.get());
+            Status status = decoder->open(codec, secure, controllerListener, &controller);
+            UT_LOG_INFO("Result open(IN:codec[%d], IN:secure[%s], IN:controllerListener[0x%X], OUT:controller[0x%X]), status:[isOK:%s, exception:%s]", codec, UT_Control_GetMapString(bool_mapTable, secure), controllerListener, controller.get(), UT_Control_GetMapString(bool_mapTable, status.isOk()), UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
+            UT_ASSERT_TRUE(status.isOk());
+            UT_ASSERT_TRUE(controller != nullptr);
+            if (controller != nullptr){
+                controllers.push_back(controller);
+            }
+
+            // Verify state transition to OPENING
+            UT_ASSERT_TRUE(listener->waitForState(State::CLOSED, State::OPENING, MAX_TRANSITORY_STATE_WAIT_MS));
+
+            // Verify state transition to READY
+            UT_ASSERT_TRUE(listener->waitForState(State::OPENING, State::READY, MAX_FINAL_STATE_WAIT_MS));
+            
+            UT_LOG_INFO("Calling getState(OUT:currentState[])");
+            Status statestatus = decoder->getState(&currentState);
+            UT_LOG_INFO("Result getState(OUT:currentState:[%s]), statestatus:[isOK:%s, exception:%s]", currentState, UT_Control_GetMapString(bool_mapTable, statestatus.isOk()), UT_Control_GetMapString(statusException_mapTable, statestatus.exceptionCode()));
+            UT_ASSERT_TRUE(status.isOk());
+            UT_ASSERT_EQUAL(currentState, State::READY);
+        }
+    }
+
+    for (size_t i = 0; i < decoderIds.size(); ++i) {
+        sp<IVideoDecoder> decoder = decoders[i];
+        sp<MyVideoDecoderEventListener> listener = decoderEventListeners[i];
+        sp<IVideoDecoderController> controller = controllers[i];
+
+        // Start decoder
+        UT_LOG_INFO("Calling start()");
+        Status status = controller->start();
+        UT_LOG_INFO("Result start(), status:[isOK:%s, exception:%s]", UT_Control_GetMapString(bool_mapTable, status.isOk()), UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
+        UT_ASSERT_TRUE(status.isOk());
+
+        // Verify state transition to STARTING
+        UT_ASSERT_TRUE(listener->waitForState(State::READY, State::STARTING, MAX_TRANSITORY_STATE_WAIT_MS));
+
+        // Verify state transition to STARTED
+        UT_ASSERT_TRUE(listener->waitForState(State::STARTING, State::STARTED, MAX_FINAL_STATE_WAIT_MS));
+        
+        UT_LOG_INFO("Calling getState(OUT:currentState[])");
+        Status statestatus = decoder->getState(&currentState);
+        UT_LOG_INFO("Result getState(OUT:currentState:[%s]), statestatus:[isOK:%s, exception:%s]", currentState, UT_Control_GetMapString(bool_mapTable, statestatus.isOk()), UT_Control_GetMapString(statusException_mapTable, statestatus.exceptionCode()));
+        UT_ASSERT_TRUE(status.isOk());
+        UT_ASSERT_EQUAL(currentState, State::STARTED);
+
+        // Flush decoder
+        UT_LOG_INFO("Calling flush(IN:reset[%d])", false);
+        status = controller->flush(false);
+        UT_LOG_INFO("Result flush(), status:[isOK:%s, exception:%s]",UT_Control_GetMapString(bool_mapTable, status.isOk()), UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
+        UT_ASSERT_TRUE(status.isOk());
+
+        // Verify state transition to FLUSHING
+        UT_ASSERT_TRUE(listener->waitForState(State::STARTED, State::FLUSHING, MAX_TRANSITORY_STATE_WAIT_MS));
+
+        // Verify state transition to STARTED
+        UT_ASSERT_TRUE(listener->waitForState(State::FLUSHING, State::STARTED, MAX_FINAL_STATE_WAIT_MS));
+        
+        UT_LOG_INFO("Calling getState(OUT:currentState[])");
+        statestatus = decoder->getState(&currentState);
+        UT_LOG_INFO("Result getState(OUT:currentState:[%s]), statestatus:[isOK:%s, exception:%s]", currentState, UT_Control_GetMapString(bool_mapTable, statestatus.isOk()), UT_Control_GetMapString(statusException_mapTable, statestatus.exceptionCode()));
+        UT_ASSERT_TRUE(status.isOk());
+        UT_ASSERT_EQUAL(currentState, State::STARTED);
+
+        // Stop decoder
+        UT_LOG_INFO("Calling stop()");
+        status = controller->stop();
+        UT_LOG_INFO("Result stop(), status:[isOK:%s, exception:%s]", UT_Control_GetMapString(bool_mapTable, status.isOk()), UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
+        UT_ASSERT_TRUE(status.isOk());
+
+        // Verify state transition to STOPPING
+        UT_ASSERT_TRUE(listener->waitForState(State::STARTED, State::STOPPING, MAX_TRANSITORY_STATE_WAIT_MS));
+
+        // Verify state transition to READY
+        UT_ASSERT_TRUE(listener->waitForState(State::STOPPING, State::READY, MAX_FINAL_STATE_WAIT_MS));
+        
+        UT_LOG_INFO("Calling getState(OUT:currentState[])");
+        statestatus = decoder->getState(&currentState);
+        UT_LOG_INFO("Result getState(OUT:currentState:[%s]), statestatus:[isOK:%s, exception:%s]", currentState, UT_Control_GetMapString(bool_mapTable, statestatus.isOk()), UT_Control_GetMapString(statusException_mapTable, statestatus.exceptionCode()));
+        UT_ASSERT_TRUE(status.isOk());
+        UT_ASSERT_EQUAL(currentState, State::READY);
+    }
+
+    for (size_t i = 0; i < decoderIds.size(); ++i) {
+        sp<IVideoDecoder> decoder = decoders[i];
+        sp<MyVideoDecoderEventListener> listener = decoderEventListeners[i];
+        sp<IVideoDecoderController> controller = controllers[i];
+
+        // Close the decoder
+        bool result = false;
+        UT_LOG_INFO("Calling close(IN:controller:[0x%X], OUT:result)", controller.get());
+        Status status = decoder->close(controller, &result);
+        UT_LOG_INFO("Result close(IN:controller:[0x%X], OUT:result:[%d]), status:[isOK:%s, exception:%s]", controller.get(), result, UT_Control_GetMapString(bool_mapTable, status.isOk()), UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
+        UT_ASSERT_TRUE(status.isOk());
+        UT_ASSERT_TRUE(result);
+
+        // Verify state transition to CLOSING
+        UT_ASSERT_TRUE(listener->waitForState(State::READY, State::CLOSING, MAX_TRANSITORY_STATE_WAIT_MS));
+
+        // Verify state transition to CLOSED
+        UT_ASSERT_TRUE(listener->waitForState(State::CLOSING, State::CLOSED, MAX_FINAL_STATE_WAIT_MS));
+        
+        UT_LOG_INFO("Calling getState(OUT:currentState[])");
+        Status statestatus = decoder->getState(&currentState);
+        UT_LOG_INFO("Result getState(OUT:currentState:[%s]), statestatus:[isOK:%s, exception:%s]", currentState, UT_Control_GetMapString(bool_mapTable, statestatus.isOk()), UT_Control_GetMapString(statusException_mapTable, statestatus.exceptionCode()));
+        UT_ASSERT_TRUE(status.isOk());
+        UT_ASSERT_EQUAL(currentState, State::CLOSED);
     }
 }
 
