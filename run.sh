@@ -23,7 +23,7 @@ VideoDecoderService_pid=$!
 sleep 2
 
 echo "Eexecute [hal_test]"
-${RUN_DIR}/hal_test -p profiles/hfp-videodecoder.yaml
+${RUN_DIR}/vts_videoDecoder -p profiles/hfp-videodecoder.yaml
 
 # cleanup
 kill -9 $servicemanager_pid $VideoDecoderService_pid

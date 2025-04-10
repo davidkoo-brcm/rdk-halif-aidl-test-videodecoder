@@ -32,11 +32,15 @@
 #include <string>
 #include <utils/StrongPointer.h>
 #include <vector>
+#include <mutex>
+#include <condition_variable>
 
 namespace com {
     namespace rdk {
         namespace hal {
             namespace videodecoder {
+
+#define NUM_VIDEO_DECODER 2
 
                 class VideoDecoderManager :public android::BinderService<VideoDecoderManager>,
                                            public BnVideoDecoderManager {
@@ -53,8 +57,11 @@ namespace com {
 
                 class VideoDecoder :public android::BinderService<VideoDecoder>,
                                     public BnVideoDecoder {
+                private:
+                    IVideoDecoder::Id id;
+                    bool event_listener;
                 public:
-                    VideoDecoder();
+                    VideoDecoder(IVideoDecoder::Id id);
                     virtual ~VideoDecoder();
 
                     android::binder::Status getCapabilities( videodecoder::Capabilities* _aidl_return ) override;
@@ -69,8 +76,10 @@ namespace com {
 
                 class VideoDecoderController :public android::BinderService<VideoDecoderController>,
                                               public BnVideoDecoderController {
+                private:
+                    IVideoDecoder::Id id;
                 public:
-                    VideoDecoderController();
+                    VideoDecoderController(IVideoDecoder::Id id);
                     virtual ~VideoDecoderController();
 
                     android::binder::Status start(  ) override;
@@ -79,7 +88,7 @@ namespace com {
                     android::binder::Status flush( bool reset ) override;
                     android::binder::Status signalDiscontinuity(  ) override;
                     android::binder::Status signalEOS(  ) override;
-                    android::binder::Status parseCodecSpecificData( rdk::hal::videodecoder::CSDVideoFormat csdVideoFormat, const std::vector<uint8_t>& codecData, bool* _aidl_return ) override;
+                    android::binder::Status parseCodecSpecificData( rdk::hal::videodecoder::CSDVideoFormat csdVideoFormat, int8_t codecData, bool* _aidl_return ) override;
                     android::binder::Status setProperty( videodecoder::Property property, const PropertyValue& propertyValue, bool* _aidl_return ) override;
                 };
             }
