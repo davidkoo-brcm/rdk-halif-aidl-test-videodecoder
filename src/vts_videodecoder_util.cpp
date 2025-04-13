@@ -67,7 +67,7 @@
 #include "vts_videodecoder.h"
 
 
- extern sp<IVideoDecoderManager> gVideoDecoderManager;
+extern sp<IVideoDecoderManager> gVideoDecoderManager;
 
 UT_status_t getVideoDecoderService() {
     gVideoDecoderManager = android::interface_cast<IVideoDecoderManager>(
@@ -77,6 +77,48 @@ UT_status_t getVideoDecoderService() {
        return UT_STATUS_FAILURE;
    }
    return UT_STATUS_OK;
+}
+
+Codec stringToCodec(const std::string& codecStr) {
+    static const std::unordered_map<std::string, Codec> codecMap = {
+        {"MPEG", Codec::MPEG},
+        {"H264", Codec::H264},
+        {"H265", Codec::H265},
+        {"VP9",  Codec::VP9},
+        {"AV1",  Codec::AV1}
+    };
+
+    auto it = codecMap.find(codecStr);
+    if (it != codecMap.end()) {
+        return it->second;
+    } else {
+        throw std::invalid_argument("Unknown codec: " + codecStr);
+    }
+}
+
+DynamicRange stringToDynamicRange(const std::string& rangeStr) {
+    static const std::unordered_map<std::string, DynamicRange> dynamicRangeMap = {
+        {"UNKNOWN", DynamicRange::UNKNOWN}, {"SDR", DynamicRange::SDR},
+        {"HLG", DynamicRange::HLG}, {"HDR10", DynamicRange::HDR10},
+        {"HDR10PLUS", DynamicRange::HDR10PLUS}, {"DOLBY_VISION", DynamicRange::DOLBY_VISION}
+    };
+    auto it = dynamicRangeMap.find(rangeStr);
+    return (it != dynamicRangeMap.end()) ? it->second : DynamicRange::UNKNOWN;
+}
+
+OperationalMode stringToOperationalMode(const std::string& modeStr) {
+    static const std::unordered_map<std::string, OperationalMode> modeMap = {
+        {"TUNNELLED", OperationalMode::TUNNELLED},
+        {"NON_TUNNELLED", OperationalMode::NON_TUNNELLED},
+        {"GRAPHICS_TEXTURE", OperationalMode::GRAPHICS_TEXTURE}
+    };
+
+    auto it = modeMap.find(modeStr);
+    if (it != modeMap.end()) {
+        return it->second;  // Return the integer value instead of enum
+    } else {
+        return OperationalMode::TUNNELLED;  // Return TUNNELLED for unknown/default modes
+    }
 }
 
 bool vts_videodecoder_helper_validatePropertyValue(int decoder_id,const std::optional<PropertyValue>& propertyValue, const Property property) {

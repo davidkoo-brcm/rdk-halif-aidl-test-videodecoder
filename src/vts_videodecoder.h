@@ -88,6 +88,7 @@
 #include "com/rdk/hal/videodecoder/CodecCapabilities.h"
 #include "com/rdk/hal/videodecoder/OperationalMode.h"
 
+
 using namespace com::rdk::hal;
 using namespace com::rdk::hal::videodecoder;
 
@@ -221,11 +222,11 @@ const static ut_control_keyStringMapping_t bool_mapTable[] =
  * @param[in] decoder The IVideoDecoder instance.
  * @param[out] capabilities Pointer to the Capabilities struct to be filled.
  */
-#define VIDEODECODER_GETCAPABILITIES(decoder, capabilities) \
+#define VIDEODECODER_GETCAPABILITIES(videoDecoder, capabilities) \
     do { \
         Status status; \
         UT_LOG_INFO("Calling getCapabilities(OUT:capabilities[])"); \
-        status = (decoder)->getCapabilities((capabilities)); \
+        status = (videoDecoder)->getCapabilities((capabilities)); \
         UT_LOG_INFO("Result getCapabilities(OUT:capabilities[supportedCodecs:%zu]), status:[isOK:%s, exception:%s]", \
                     (capabilities)->supportedCodecs.size(), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
@@ -238,12 +239,12 @@ const static ut_control_keyStringMapping_t bool_mapTable[] =
     do { \
         Status status; \
         State state; \
-        UT_LOG_INFO("Calling getProperty(IN:property[%s], OUT:propertyValue[]", videodecoder::toString(property).c_str()); \
+        UT_LOG_INFO("Calling getProperty(IN:property[%s], OUT:propertyValue[]", videoDecoder::toString(property).c_str()); \
         status = (videoDecoder)->getProperty(property, &propertyValue); \
         switch (propertyValue->value.value().getTag()) \
         { \
             case PropertyValue::Value::Tag::intValue: \
-                UT_LOG_INFO("Result getProperty(IN:property[%s], OUT:propertyValue[%d]), status:[isOK:%s, exception:%s]", videodecoder::toString(property).c_str(), \
+                UT_LOG_INFO("Result getProperty(IN:property[%s], OUT:propertyValue[%d]), status:[isOK:%s, exception:%s]", videoDecoder::toString(property).c_str(), \
                 propertyValue->value->get<PropertyValue::Value::Tag::intValue>(), \
                 UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                 UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
@@ -257,9 +258,9 @@ const static ut_control_keyStringMapping_t bool_mapTable[] =
     do { \
         Status status; \
         State state; \
-        UT_LOG_INFO("Calling getProperty(IN:property[%s], OUT:propertyValue[]", videodecoder::toString(property).c_str()); \
+        UT_LOG_INFO("Calling getProperty(IN:property[%s], OUT:propertyValue[]", videoDecoder::toString(property).c_str()); \
         status = (videoDecoder)->getProperty(property, &propertyValue); \
-        UT_LOG_INFO("Result getProperty(IN:property[%s], OUT:propertyValue[]), status:[isOK:%s, exception:%s]", videodecoder::toString(property).c_str(), \
+        UT_LOG_INFO("Result getProperty(IN:property[%s], OUT:propertyValue[]), status:[isOK:%s, exception:%s]", videoDecoder::toString(property).c_str(), \
                 UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                 UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
         UT_ASSERT_FALSE(status.isOk()); \
@@ -272,11 +273,11 @@ const static ut_control_keyStringMapping_t bool_mapTable[] =
  * @param[in] property The property to query.
  * @param[out] aidl_return The optional PropertyValue result.
  */
-#define VIDEODECODER_GETPROPERTY(decoder, property, aidl_return) \
+#define VIDEODECODER_GETPROPERTY(videoDecoder, property, aidl_return) \
 do { \
     Status status; \
     UT_LOG_INFO("Calling getProperty(IN:property:[%d], OUT:_aidl_return[]) ", static_cast<int32_t>(property)); \
-    status = (decoder)->getProperty((property), &(aidl_return)); \
+    status = (videoDecoder)->getProperty((property), &(aidl_return)); \
     UT_LOG_INFO("Result getProperty(IN:property:[%d], OUT:_aidl_return[0x%X]), status:[isOK:%s, exception:%s]", \
                 static_cast<int32_t>(property), (aidl_return).has_value(), \
                 UT_Control_GetMapString(bool_mapTable, status.isOk()), \
@@ -289,15 +290,15 @@ do { \
 
 /**
  * @brief Calls getPropertyMulti and verifies the result.
- * @param[in] decoder The IVideoDecoder instance.
+ * @param[in] videoDecoder The IVideoDecoder instance.
  * @param[in,out] propertyKVList The list of PropertyKVPair to query and populate.
  * @param[out] aidl_return The boolean result of the operation.
  */
-#define VIDEODECODER_GETPROPERTYMULTI(decoder, propertyKVList, aidl_return) \
+#define VIDEODECODER_GETPROPERTYMULTI(videoDecoder, propertyKVList, aidl_return) \
     do { \
         Status status; \
         UT_LOG_INFO("Calling getPropertyMulti(IN:propertyKVList.size:[%zu], OUT:_aidl_return)", (propertyKVList).size()); \
-        status = (decoder)->getPropertyMulti(&(propertyKVList), &(aidl_return)); \
+        status = (videoDecoder)->getPropertyMulti(&(propertyKVList), &(aidl_return)); \
         UT_LOG_INFO("Result getPropertyMulti(OUT:_aidl_return:[%s]), status:[isOK:%s, exception:%s]", \
                     UT_Control_GetMapString(bool_mapTable, (aidl_return)), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
@@ -321,15 +322,15 @@ do { \
 
     /**
  * @brief Calls getPropertyMulti for a negative test and verifies failure.
- * @param[in] decoder The IVideoDecoder instance.
+ * @param[in] videoDecoder The IVideoDecoder instance.
  * @param[in,out] propertyKVList The list of PropertyKVPair to query (invalid or empty).
  * @param[out] aidl_return The boolean result, expected to be false.
  */
-#define VIDEODECODER_GETPROPERTYMULTI_FAILURE(decoder, propertyKVList, aidl_return) \
+#define VIDEODECODER_GETPROPERTYMULTI_FAILURE(videoDecoder, propertyKVList, aidl_return) \
 do { \
     Status status; \
     UT_LOG_INFO("Calling getPropertyMulti(IN:propertyKVList.size:[%zu], OUT:_aidl_return)", (propertyKVList).size()); \
-    status = (decoder)->getPropertyMulti(&(propertyKVList), &(aidl_return)); \
+    status = (videoDecoder)->getPropertyMulti(&(propertyKVList), &(aidl_return)); \
     UT_LOG_INFO("Result getPropertyMulti(OUT:_aidl_return:[%s]), status:[isOK:%s, exception:%s]", \
                 UT_Control_GetMapString(bool_mapTable, (aidl_return)), \
                 UT_Control_GetMapString(bool_mapTable, status.isOk()), \
@@ -338,20 +339,61 @@ do { \
 } while (0)
 
 /**
+ * @brief Calls getState and verifies the result.
+ * @param[in] videoDecoder The IVideoDecoder instance (not IVideoDecoderController).
+ * @param[out] state The returned State enum value.
+ */
+#define VIDEODECODER_GETSTATE(videoDecoder, state) \
+    do { \
+        Status status; \
+        UT_LOG_INFO("Calling getState(OUT:_aidl_return:[state])"); \
+        status = (videoDecoder)->getState(&state); \
+        UT_LOG_INFO("Result getState(OUT:_aidl_return:[state:%d]), status:[isOK:%s, exception:%s]", \
+                    static_cast<int32_t>(state), \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+        UT_ASSERT_TRUE(status.isOk()) << "getState binder call failed"; \
+        UT_ASSERT_TRUE((state) == State::UNKNOWN || \
+                       (state) == State::CLOSED || \
+                       (state) == State::OPENING || \
+                       (state) == State::READY || \
+                       (state) == State::STARTING || \
+                       (state) == State::STARTED || \
+                       (state) == State::FLUSHING || \
+                       (state) == State::STOPPING || \
+                       (state) == State::CLOSING) \
+            << "Invalid state returned: " << static_cast<int32_t>(state); \
+    } while (0)
+
+#define VIDEODECODER_CHECK_STATE(videoDecoder, expected_state) \
+    do { \
+        State currentState; \
+        Status status = (videoDecoder)->getState(&currentState); \
+        UT_LOG_INFO("Calling getState(OUT:_aidl_return:[state]) for decoder"); \
+        UT_LOG_INFO("Result getState(OUT:_aidl_return:[state:%d]), status:[isOK:%s, exception:%s]", \
+                    static_cast<int32_t>(currentState), \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+        UT_ASSERT_TRUE(status.isOk()) << "getState binder call failed"; \
+        UT_ASSERT_EQUAL(currentState, expected_state) << "Expected state " << static_cast<int32_t>(expected_state) \
+                                                  << ", got " << static_cast<int32_t>(currentState); \
+    } while (0)
+
+/**
  * @brief Opens the video decoder and verifies success.
- * @param[in] decoder The IVideoDecoder instance.
+ * @param[in] videoDecoder The IVideoDecoder instance.
  * @param[in] codec The Codec enum value to open.
  * @param[in] secure Whether to open in secure mode.
  * @param[in] listener The controller listener.
  * @param[out] controller The returned IVideoDecoderController.
  * @param[in] stateCheck Whether to validate the state after opening.
  */
-#define VIDEODECODER_OPEN_SUCCESS(decoder, codec, secure, listener, controller, stateCheck) \
+#define VIDEODECODER_OPEN_SUCCESS(videoDecoder, codec, secure, listener, controller, stateCheck) \
     do { \
         Status status; \
         UT_LOG_INFO("Calling open(IN:codec:[%d], IN:secure:[%s], IN:listener:[0x%p], OUT:controller[])", \
                     static_cast<int32_t>(codec), UT_Control_GetMapString(bool_mapTable, (secure)), (listener).get()); \
-        status = (decoder)->open((codec), (secure), (listener), &(controller)); \
+        status = (videoDecoder)->open((codec), (secure), (listener), &(controller)); \
         UT_LOG_INFO("Result open(IN:codec:[%d], IN:secure:[%s], IN:listener:[0x%p], OUT:controller:[0x%X]), status:[isOK:%s, exception:%s]", \
                     static_cast<int32_t>(codec), UT_Control_GetMapString(bool_mapTable, (secure)), (listener).get(), (controller).get(), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
@@ -361,28 +403,28 @@ do { \
         UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE) << "open returned an exception"; \
         if (stateCheck) { \
             State lastState; \
-            VIDEODECODER_WAIT_FOR_STATE(decoder, State::READY, lastState); \
+            VIDEODECODER_WAIT_FOR_STATE(videoDecoder, State::READY, lastState); \
             UT_ASSERT_EQUAL(lastState, State::READY) << "Decoder did not reach READY state after open"; \
         } \
     } while (0)
 
 /**
  * @brief Tests opening the video decoder with expected failure.
- * @param[in] decoder The IVideoDecoder instance.
+ * @param[in] videoDecoder The IVideoDecoder instance.
  * @param[in] codec The Codec enum value to test.
  * @param[in] secure The secure mode to test.
  * @param[in] listener The controller listener (or nullptr).
  * @param[out] controller The returned IVideoDecoderController.
  * @param[in] exception The expected exception code (or EX_NONE for unsupported cases).
  */
-#define VIDEODECODER_OPEN_FAILURE(decoder, codec, secure, listener, controller, exception) \
+#define VIDEODECODER_OPEN_FAILURE(videoDecoder, codec, secure, listener, controller, exception) \
     do { \
         Status status; \
         sp<IVideoDecoderControllerListener> tempListener = (listener); \
         void* listenerPtr = tempListener ? tempListener.get() : nullptr; \
         UT_LOG_INFO("Calling open(IN:codec:[%d], IN:secure:[%s], IN:listener:[0x%p], OUT:controller[])", \
                     static_cast<int32_t>(codec), UT_Control_GetMapString(bool_mapTable, (secure)), listenerPtr); \
-        status = (decoder)->open((codec), (secure), (listener), &(controller)); \
+        status = (videoDecoder)->open((codec), (secure), (listener), &(controller)); \
         UT_LOG_INFO("Result open(IN:codec:[%d], IN:secure:[%s], IN:listener:[0x%p], OUT:controller:[0x%X]), status:[isOK:%s, exception:%s]", \
                     static_cast<int32_t>(codec), UT_Control_GetMapString(bool_mapTable, (secure)), listenerPtr, (controller).get(), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
@@ -398,17 +440,17 @@ do { \
 
 /**
  * @brief Waits for the video decoder to reach a target state.
- * @param[in] decoder The IVideoDecoder instance.
+ * @param[in] videoDecoder The IVideoDecoder instance.
  * @param[in] targetState The expected state to wait for.
  * @param[out] lastState The final state observed.
  */
-#define VIDEODECODER_WAIT_FOR_STATE(decoder, targetState, lastState) \
+#define VIDEODECODER_WAIT_FOR_STATE(videoDecoder, targetState, lastState) \
     do { \
         const int maxRetries = 10; \
         const int delayMs = 100; \
         int retries = 0; \
         do { \
-            VIDEODECODER_GETSTATE(decoder, lastState); \
+            VIDEODECODER_GETSTATE(videoDecoder, lastState); \
             if (lastState == (targetState)) break; \
             usleep(delayMs * 1000); \
         } while (++retries < maxRetries); \
@@ -422,18 +464,18 @@ do { \
 
 /**
  * @brief Closes the video decoder and verifies success.
- * @param[in] decoder The IVideoDecoder instance.
+ * @param[in] videoDecoder The IVideoDecoder instance.
  * @param[in] controller The IVideoDecoderController instance.
  * @param[in] stateCheck Whether to validate the state after closing.
  */
-#define VIDEODECODER_CLOSE_SUCCESS(decoder, controller, stateCheck) \
+#define VIDEODECODER_CLOSE_SUCCESS(videoDecoder, controller, stateCheck) \
     do { \
         Status status; \
         bool aidl_return; \
         sp<IVideoDecoderController> tempController = (controller); \
         void* controllerPtr = tempController ? tempController.get() : nullptr; \
         UT_LOG_INFO("Calling close(IN:videoDecoderController:[0x%p], OUT:_aidl_return[])", controllerPtr); \
-        status = (decoder)->close((controller), &aidl_return); \
+        status = (videoDecoder)->close((controller), &aidl_return); \
         UT_LOG_INFO("Result close(IN:videoDecoderController:[0x%p], OUT:_aidl_return:[%s]), status:[isOK:%s, exception:%s]", \
                     controllerPtr, UT_Control_GetMapString(bool_mapTable, aidl_return), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
@@ -443,25 +485,25 @@ do { \
         UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE) << "close returned an exception"; \
         if (stateCheck) { \
             State lastState; \
-            VIDEODECODER_WAIT_FOR_STATE(decoder, State::CLOSED, lastState); \
+            VIDEODECODER_WAIT_FOR_STATE(videoDecoder, State::CLOSED, lastState); \
             UT_ASSERT_EQUAL(lastState, State::CLOSED) << "Decoder did not reach CLOSED state after close"; \
         } \
     } while (0)
 
 /**
  * @brief Tests closing the video decoder with expected failure.
- * @param[in] decoder The IVideoDecoder instance.
+ * @param[in] videoDecoder The IVideoDecoder instance.
  * @param[in] controller The IVideoDecoderController instance (or nullptr).
  * @param[in] exception The expected exception code (or EX_NONE for false return).
  */
-#define VIDEODECODER_CLOSE_FAILURE(decoder, controller, exception) \
+#define VIDEODECODER_CLOSE_FAILURE(videoDecoder, controller, exception) \
     do { \
         Status status; \
         bool aidl_return; \
         sp<IVideoDecoderController> tempController = (controller); \
         void* controllerPtr = tempController ? tempController.get() : nullptr; \
         UT_LOG_INFO("Calling close(IN:videoDecoderController:[0x%p], OUT:_aidl_return[])", controllerPtr); \
-        status = (decoder)->close((controller), &aidl_return); \
+        status = (videoDecoder)->close((controller), &aidl_return); \
         UT_LOG_INFO("Result close(IN:videoDecoderController:[0x%p], OUT:_aidl_return:[%s]), status:[isOK:%s, exception:%s]", \
                     controllerPtr, UT_Control_GetMapString(bool_mapTable, aidl_return), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
@@ -477,18 +519,18 @@ do { \
 
 /**
  * @brief Calls open and verifies a valid controller is returned.
- * @param[in] decoder The IVideoDecoder instance.
+ * @param[in] videoDecoder The IVideoDecoder instance.
  * @param[in] codec The codec to use.
  * @param[in] secure The secure mode flag.
  * @param[in] listener The controller listener.
  * @param[out] controller The returned IVideoDecoderController.
  */
-#define VIDEODECODER_OPEN(decoder, codec, secure, listener, controller) \
+#define VIDEODECODER_OPEN(videoDecoder, codec, secure, listener, controller) \
     do { \
         Status status; \
         UT_LOG_INFO("Calling open(IN:codec:[%d], IN:secure:[%d], IN:videoDecoderControllerListener:[0x%X], OUT:controller[])", \
                     static_cast<int32_t>(codec), (secure), (listener).get()); \
-        status = (decoder)->open((codec), (secure), (listener), &(controller)); \
+        status = (videoDecoder)->open((codec), (secure), (listener), &(controller)); \
         UT_LOG_INFO("Result open(IN:codec:[%d], IN:secure:[%d], IN:videoDecoderControllerListener:[0x%X], OUT:controller[0x%X]), status:[isOK:%s, exception:%s]", \
                     static_cast<int32_t>(codec), (secure), (listener).get(), (controller).get(), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
@@ -499,17 +541,17 @@ do { \
 
 /**
  * @brief Registers an event listener with the video decoder and verifies success.
- * @param[in] decoder The IVideoDecoder instance.
+ * @param[in] videoDecoder The IVideoDecoder instance.
  * @param[in] listener The IVideoDecoderEventListener to register.
  */
-#define VIDEODECODER_REGISTER_EVENT_SUCCESS(decoder, listener) \
+#define VIDEODECODER_REGISTER_EVENT_SUCCESS(videoDecoder, listener) \
     do { \
         Status status; \
         bool aidl_return; \
         sp<IVideoDecoderEventListener> tempListener = (listener); \
         void* listenerPtr = tempListener ? tempListener.get() : nullptr; \
         UT_LOG_INFO("Calling registerEventListener(IN:videoDecoderEventListener:[0x%p], OUT:_aidl_return[])", listenerPtr); \
-        status = (decoder)->registerEventListener((listener), &aidl_return); \
+        status = (videoDecoder)->registerEventListener((listener), &aidl_return); \
         UT_LOG_INFO("Result registerEventListener(IN:videoDecoderEventListener:[0x%p], OUT:_aidl_return:[%s]), status:[isOK:%s, exception:%s]", \
                     listenerPtr, UT_Control_GetMapString(bool_mapTable, aidl_return), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
@@ -521,17 +563,17 @@ do { \
 
 /**
  * @brief Unregisters an event listener from the video decoder and verifies success.
- * @param[in] decoder The IVideoDecoder instance.
+ * @param[in] videoDecoder The IVideoDecoder instance.
  * @param[in] listener The IVideoDecoderEventListener to unregister.
  */
-#define VIDEODECODER_UNREGISTER_EVENT_SUCCESS(decoder, listener) \
+#define VIDEODECODER_UNREGISTER_EVENT_SUCCESS(videoDecoder, listener) \
     do { \
         Status status; \
         bool aidl_return; \
         sp<IVideoDecoderEventListener> tempListener = (listener); \
         void* listenerPtr = tempListener ? tempListener.get() : nullptr; \
         UT_LOG_INFO("Calling unregisterEventListener(IN:videoDecoderEventListener:[0x%p], OUT:_aidl_return[])", listenerPtr); \
-        status = (decoder)->unregisterEventListener((listener), &aidl_return); \
+        status = (videoDecoder)->unregisterEventListener((listener), &aidl_return); \
         UT_LOG_INFO("Result unregisterEventListener(IN:videoDecoderEventListener:[0x%p], OUT:_aidl_return:[%s]), status:[isOK:%s, exception:%s]", \
                     listenerPtr, UT_Control_GetMapString(bool_mapTable, aidl_return), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
@@ -543,18 +585,18 @@ do { \
 
 /**
  * @brief Tests registering an event listener with expected failure.
- * @param[in] decoder The IVideoDecoder instance.
+ * @param[in] videoDecoder The IVideoDecoder instance.
  * @param[in] listener The IVideoDecoderEventListener (or nullptr).
  * @param[in] exception The expected exception code (or EX_NONE for false return).
  */
-#define VIDEODECODER_REGISTER_EVENT_FAILURE(decoder, listener, exception) \
+#define VIDEODECODER_REGISTER_EVENT_FAILURE(videoDecoder, listener, exception) \
     do { \
         Status status; \
         bool aidl_return; \
         sp<IVideoDecoderEventListener> tempListener = (listener); \
         void* listenerPtr = tempListener ? tempListener.get() : nullptr; \
         UT_LOG_INFO("Calling registerEventListener(IN:videoDecoderEventListener:[0x%p], OUT:_aidl_return[])", listenerPtr); \
-        status = (decoder)->registerEventListener((listener), &aidl_return); \
+        status = (videoDecoder)->registerEventListener((listener), &aidl_return); \
         UT_LOG_INFO("Result registerEventListener(IN:videoDecoderEventListener:[0x%p], OUT:_aidl_return:[%s]), status:[isOK:%s, exception:%s]", \
                     listenerPtr, UT_Control_GetMapString(bool_mapTable, aidl_return), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
@@ -568,12 +610,12 @@ do { \
         } \
     } while (0)
 
-#define VIDEODECODER_UNREGISTER_EVENT_FAILURE(decoder, eventListener, exception) \
+#define VIDEODECODER_UNREGISTER_EVENT_FAILURE(videoDecoder, eventListener, exception) \
     do { \
         Status status; \
         bool _aidl_return; \
         UT_LOG_INFO("Calling unregisterEventListener(IN:eventListener[0x%p], OUT:_aidl_return[])", (eventListener) ? (eventListener).get() : nullptr); \
-        status = (decoder)->unregisterEventListener((eventListener), &_aidl_return); \
+        status = (videoDecoder)->unregisterEventListener((eventListener), &_aidl_return); \
         UT_LOG_INFO("Result unregisterEventListener(IN:eventListener[0x%p], OUT:_aidl_return[%s]), status:[isOK:%s, exception:%s]", \
                     (eventListener) ? (eventListener).get() : nullptr, UT_Control_GetMapString(bool_mapTable, _aidl_return), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
@@ -633,62 +675,200 @@ do { \
         UT_ASSERT_EQUAL(status.exceptionCode(), (exception)) << "Unexpected exception code"; \
     } while (0)
 
-
 /**
- * @brief Calls getState and verifies the result.
- * @param[in] decoder The IVideoDecoder instance.
- * @param[out] state The returned State enum value.
+ * @brief Calls setProperty on an IVideoDecoder instance to set an integer property value.
+ * @param[in] videoDecoder The IVideoDecoder instance (not IVideoDecoderController).
+ * @param[in] property The Property enum key (must be read-write, e.g., OPERATIONAL_MODE).
+ * @param[in] value The integer value to set.
+ * @param[in] value_desc String description of the value for logging.
  */
-#define VIDEODECODER_GETSTATE(decoder, state) \
+#define VIDEODECODER_SET_PROPERTY(videoDecoder, property, value, value_desc) \
     do { \
-        Status status; \
-        UT_LOG_INFO("Calling getState(OUT:_aidl_return:[state])"); \
-        status = (decoder)->getState(&state); \
-        UT_LOG_INFO("Result getState(OUT:_aidl_return:[state:%d]), status:[isOK:%s, exception:%s]", \
-                    static_cast<int32_t>(state), \
-                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
-                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
-        UT_ASSERT_TRUE(status.isOk()) << "getState binder call failed"; \
-        UT_ASSERT_TRUE((state) == State::UNKNOWN || \
-                       (state) == State::CLOSED || \
-                       (state) == State::OPENING || \
-                       (state) == State::READY || \
-                       (state) == State::STARTING || \
-                       (state) == State::STARTED || \
-                       (state) == State::FLUSHING || \
-                       (state) == State::STOPPING || \
-                       (state) == State::CLOSING) \
-            << "Invalid state returned: " << static_cast<int32_t>(state); \
+        PropertyValue propertyValue; \
+        propertyValue.value = PropertyValue::Value::make<PropertyValue::Value::Tag::intValue>(value); \
+        bool result = false; \
+        UT_LOG_INFO("Calling setProperty(IN:property:[%s], IN:propertyValue:[%s])", \
+                    #property, value_desc); \
+        result = (videoDecoder)->setProperty(Property::property, propertyValue); \
+        UT_LOG_INFO("Result setProperty(IN:property:[%s], IN:propertyValue:[%s]), result:[%s]", \
+                    #property, value_desc, \
+                    UT_Control_GetMapString(bool_mapTable, result)); \
+        UT_ASSERT_TRUE(result) << "setProperty returned false for " << #property; \
     } while (0)
 
-class VideoDecoderControllerListener : public BnVideoDecoderControllerListener {
-public:
+#define VIDEODECODER_SIGNAL_DISCONTINUITY_SUCCESS(videoDecoderController) \
+    do { \
+        UT_LOG_INFO("Calling signalDiscontinuity()"); \
+        Status status = (videoDecoderController)->signalDiscontinuity(); \
+        UT_LOG_INFO("Result signalDiscontinuity(), status:[isOK:%s, exception:%s]", \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+        UT_ASSERT_TRUE(status.isOk()) << "signalDiscontinuity binder call failed"; \
+        UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE) << "signalDiscontinuity returned an exception"; \
+    } while (0)
 
-    VideoDecoderControllerListener() {};
-    virtual ~VideoDecoderControllerListener() = default;
+#define VIDEODECODER_SETPROPERTY_LIST_SUCCESS(controller, propertyList, value, value_desc) \
+    do { \
+        for (const auto& prop : propertyList) { \
+            VIDEODECODER_CONTROLLER_SET_PROPERTY(controller, prop, value, value_desc); \
+        } \
+    } while (0)
 
-    Status onFrameOutput(int64_t nsPresentationTime, int64_t frameBufferHandle, const ::std::optional<FrameMetadata>& metadata) override
-    {
-        return Status::ok();
-    }
-    Status onUserDataOutput(int64_t nsPresentationTime, const ::std::vector<uint8_t>& userData) override
-    {
-        return Status::ok();
-    }
-};
+/**
+ * @brief Tests that flush fails with the expected exception in an invalid state.
+ * @param[in] videoDecoderController The IVideoDecoderController instance.
+ * @param[in] reset The reset flag for flush.
+ * @param[in] expectedException The expected binder exception (e.g., EX_ILLEGAL_STATE).
+ */
+#define VIDEODECODER_FLUSH_FAILURE(videoDecoderController, reset, expectedException) \
+    do { \
+        Status status; \
+        UT_LOG_INFO("Calling flush(IN:reset:[%s])", (reset) ? "true" : "false"); \
+        status = (videoDecoderController)->flush(reset); \
+        UT_LOG_INFO("Result flush(IN:reset:[%s]), status:[isOK:%s, exception:%s]", \
+                    (reset) ? "true" : "false", \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+        UT_ASSERT_FALSE(status.isOk()) << "flush succeeded unexpectedly"; \
+        UT_ASSERT_EQUAL(status.exceptionCode(), (expectedException)) << "Unexpected exception for flush"; \
+    } while (0)
 
-class VideoDecoderEventListener : public BnVideoDecoderEventListener {
-public:
-    VideoDecoderEventListener() {};
-    virtual ~VideoDecoderEventListener() = default;
+/**
+ * @brief Tests that signalDiscontinuity succeeds in the STARTED state.
+ * @param[in] videoDecoder The IVideoDecoder instance (for state checking).
+ * @param[in] videoDecoderController The IVideoDecoderController instance.
+ * @param[in] expectSuccess Expect the call to succeed (true for positive test).
+ */
+#define VIDEODECODER_SIGNAL_DISCONTINUITY_SUCCESS(videoDecoder, videoDecoderController, expectSuccess) \
+    do { \
+        Status status; \
+        UT_LOG_INFO("Calling signalDiscontinuity()"); \
+        status = (videoDecoderController)->signalDiscontinuity(); \
+        UT_LOG_INFO("Result signalDiscontinuity(), status:[isOK:%s, exception:%s]", \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+        UT_ASSERT_TRUE(status.isOk() == (expectSuccess)) << "signalDiscontinuity " \
+            << ((expectSuccess) ? "failed unexpectedly" : "succeeded unexpectedly"); \
+    } while (0)
 
-    Status onDecodeError(ErrorCode errorCode, int32_t vendorErrorCode) override {
-        return Status::ok();
-    }
-    Status onStateChanged(State oldState, State newState) override {
-        return Status::ok();
-    }
-};
+/**
+ * @brief Tests that signalDiscontinuity fails with the expected exception in an invalid state.
+ * @param[in] videoDecoderController The IVideoDecoderController instance.
+ * @param[in] expectedException The expected binder exception (e.g., EX_ILLEGAL_STATE).
+ */
+#define VIDEODECODER_SIGNAL_DISCONTINUITY_FAILURE(videoDecoderController, expectedException) \
+    do { \
+        Status status; \
+        UT_LOG_INFO("Calling signalDiscontinuity()"); \
+        status = (videoDecoderController)->signalDiscontinuity(); \
+        UT_LOG_INFO("Result signalDiscontinuity(), status:[isOK:%s, exception:%s]", \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+        UT_ASSERT_FALSE(status.isOk()) << "signalDiscontinuity succeeded unexpectedly"; \
+        UT_ASSERT_EQUAL(status.exceptionCode(), (expectedException)) << "Unexpected exception for signalDiscontinuity"; \
+    } while (0)
+
+/**
+ * @brief Tests that signalEOS succeeds in the STARTED state.
+ * @param[in] videoDecoder The IVideoDecoder instance (for state checking).
+ * @param[in] videoDecoderController The IVideoDecoderController instance.
+ * @param[in] expectSuccess Expect the call to succeed (true for positive test).
+ */
+#define VIDEODECODER_SIGNAL_EOS_SUCCESS(videoDecoder, videoDecoderController, expectSuccess) \
+    do { \
+        Status status; \
+        UT_LOG_INFO("Calling signalEOS()"); \
+        status = (videoDecoderController)->signalEOS(); \
+        UT_LOG_INFO("Result signalEOS(), status:[isOK:%s, exception:%s]", \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+        UT_ASSERT_TRUE(status.isOk() == (expectSuccess)) << "signalEOS " \
+            << ((expectSuccess) ? "failed unexpectedly" : "succeeded unexpectedly"); \
+    } while (0)
+
+/**
+ * @brief Tests that signalEOS fails with the expected exception in an invalid state.
+ * @param[in] videoDecoderController The IVideoDecoderController instance.
+ * @param[in] expectedException The expected binder exception (e.g., EX_ILLEGAL_STATE).
+ */
+#define VIDEODECODER_SIGNAL_EOS_FAILURE(videoDecoderController, expectedException) \
+    do { \
+        Status status; \
+        UT_LOG_INFO("Calling signalEOS()"); \
+        status = (videoDecoderController)->signalEOS(); \
+        UT_LOG_INFO("Result signalEOS(), status:[isOK:%s, exception:%s]", \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+        UT_ASSERT_FALSE(status.isOk()) << "signalEOS succeeded unexpectedly"; \
+        UT_ASSERT_EQUAL(status.exceptionCode(), (expectedException)) << "Unexpected exception for signalEOS"; \
+    } while (0)
+
+/**
+ * @brief Tests that parseCodecSpecificData succeeds in STARTED with valid data.
+ * @param[in] videoDecoder The IVideoDecoder instance (for state checking).
+ * @param[in] videoDecoderController The IVideoDecoderController instance.
+ * @param[in] csdVideoFormat The codec-specific data format.
+ * @param[in] codecData The codec data byte array.
+ * @param[in] expectSuccess Expect the call to succeed (true for positive test).
+ */
+
+#define VIDEODECODER_PARSE_CSD_SUCCESS(videoDecoder, videoDecoderController, csdVideoFormat, codecData, expectSuccess) \
+    do { \
+        bool result = false; \
+        UT_LOG_INFO("Calling parseCodecSpecificData(IN:csdVideoFormat:[%d], IN:codecData:size:[%zu])", \
+                    static_cast<int32_t>(csdVideoFormat), codecData.size()); \
+        Status status = (videoDecoderController)->parseCodecSpecificData(csdVideoFormat, codecData, &result); \
+        UT_LOG_INFO("Result parseCodecSpecificData(), status:[isOK:%s, exception:%s], result:[%s]", \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()), \
+                    UT_Control_GetMapString(bool_mapTable, result)); \
+        UT_ASSERT_TRUE(status.isOk() == (expectSuccess)) << "parseCodecSpecificData status " \
+            << ((expectSuccess) ? "failed unexpectedly" : "succeeded unexpectedly"); \
+        if (expectSuccess) { \
+            UT_ASSERT_TRUE(result) << "parseCodecSpecificData returned false"; \
+        } \
+    } while (0)
+
+/**
+ * @brief Tests that parseCodecSpecificData fails with EX_ILLEGAL_STATE in an invalid state.
+ * @param[in] videoDecoderController The IVideoDecoderController instance.
+ * @param[in] csdVideoFormat The codec-specific data format.
+ * @param[in] codecData The codec data byte array.
+ * @param[in] expectedException The expected binder exception (e.g., EX_ILLEGAL_STATE).
+ */
+#define VIDEODECODER_PARSE_CSD_STATE_FAILURE(videoDecoderController, csdVideoFormat, codecData, expectedException) \
+    do { \
+        bool result = false; \
+        UT_LOG_INFO("Calling parseCodecSpecificData(IN:csdVideoFormat:[%d], IN:codecData:size:[%zu])", \
+                    static_cast<int32_t>(csdVideoFormat), codecData.size()); \
+        Status status = (videoDecoderController)->parseCodecSpecificData(csdVideoFormat, codecData, &result); \
+        UT_LOG_INFO("Result parseCodecSpecificData(), status:[isOK:%s, exception:%s], result:[%s]", \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()), \
+                    UT_Control_GetMapString(bool_mapTable, result)); \
+        UT_ASSERT_FALSE(status.isOk()) << "parseCodecSpecificData succeeded unexpectedly"; \
+        UT_ASSERT_EQUAL(status.exceptionCode(), (expectedException)) << "Unexpected exception for parseCodecSpecificData"; \
+    } while (0)
+
+/**
+ * @brief Tests that parseCodecSpecificData fails with false return for invalid data.
+ * @param[in] videoDecoderController The IVideoDecoderController instance.
+ * @param[in] csdVideoFormat The codec-specific data format.
+ * @param[in] codecData The invalid codec data byte array.
+ */
+#define VIDEODECODER_PARSE_CSD_DATA_FAILURE(videoDecoderController, csdVideoFormat, codecData) \
+    do { \
+        bool result = false; \
+        UT_LOG_INFO("Calling parseCodecSpecificData(IN:csdVideoFormat:[%d], IN:codecData:size:[%zu])", \
+                    static_cast<int32_t>(csdVideoFormat), codecData.size()); \
+        Status status = (videoDecoderController)->parseCodecSpecificData(csdVideoFormat, codecData, &result); \
+        UT_LOG_INFO("Result parseCodecSpecificData(), status:[isOK:%s, exception:%s], result:[%s]", \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()), \
+                    UT_Control_GetMapString(bool_mapTable, result)); \
+        UT_ASSERT_TRUE(status.isOk()) << "parseCodecSpecificData threw unexpected exception"; \
+        UT_ASSERT_FALSE(result) << "parseCodecSpecificData succeeded with invalid data"; \
+    } while (0)
 
 /**
  * @brief Test fixture for Level 1 Video Decoder HALIF tests.
@@ -767,6 +947,35 @@ class VTS_L2_VideoDecoder : public UTCore {
             UTCore::TearDown();  // Call base class teardown (if it exists)
         }
     };
+
+class VideoDecoderControllerListener : public BnVideoDecoderControllerListener {
+    public:
+
+        VideoDecoderControllerListener() {};
+        virtual ~VideoDecoderControllerListener() = default;
+
+        Status onFrameOutput(int64_t nsPresentationTime, int64_t frameBufferHandle, const ::std::optional<FrameMetadata>& metadata) override
+        {
+            return Status::ok();
+        }
+        Status onUserDataOutput(int64_t nsPresentationTime, const ::std::vector<uint8_t>& userData) override
+        {
+            return Status::ok();
+        }
+    };
+
+class VideoDecoderEventListener : public BnVideoDecoderEventListener {
+    public:
+    VideoDecoderEventListener() {};
+    virtual ~VideoDecoderEventListener() = default;
+
+    Status onDecodeError(ErrorCode errorCode, int32_t vendorErrorCode) override {
+        return Status::ok();
+    }
+    Status onStateChanged(::com::rdk::hal::State oldState, ::com::rdk::hal::State newState) override {
+        return Status::ok();
+    }
+};
 
 #if 0
 class MyVideoDecoderEventListener : public BnVideoDecoderEventListener {
@@ -900,7 +1109,7 @@ protected:
             else if (codecName == "AV1") codec = Codec::AV1;
 
 
-            android::binder::Status status = decoders[i]->open(codec, secure, listener, &controller);
+            Status status = decoders[i]->open(codec, secure, listener, &controller);
             if (status.isOk() && controller != nullptr) {
                 controllers.push_back(controller);
                 openedDecoders.push_back(decoders[i]);
