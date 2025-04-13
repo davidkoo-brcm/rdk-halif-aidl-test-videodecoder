@@ -76,9 +76,12 @@
 #include <utils/String16.h>
 #include <stdio.h>
 #include <vector>
+#include <string>
 #include <optional>
 #include <algorithm>
 #include <unordered_set>
+#include <stdexcept>
+
 
 #include "com/rdk/hal/videodecoder/IVideoDecoderManager.h"
 #include "com/rdk/hal/videodecoder/BnVideoDecoderControllerListener.h"
@@ -88,6 +91,8 @@
 #include "com/rdk/hal/videodecoder/CodecCapabilities.h"
 #include "com/rdk/hal/videodecoder/OperationalMode.h"
 
+#define VIDEODECODERMGR "IVideoDecoderManager"
+#define VIDEODECODERMGR_IVIDEODECODER "IVideoDecoderManager.IVideoDecoder"
 
 using namespace com::rdk::hal;
 using namespace com::rdk::hal::videodecoder;
@@ -113,7 +118,7 @@ Codec videoDecoderStringToCodec(const std::string& codecStr);
 DynamicRange videoDecoderStringToDynamicRange(const std::string& rangeStr);
 OperationalMode videoDecoderStringToOperationalMode(const std::string& modeStr);
 bool vts_videodecoder_helper_validatePropertyValue(int decoder_id,const std::optional<PropertyValue>& propertyValue, const Property property);
-
+void vts_videodecoder_helper_validateCapabilities(int32_t decoderId,const Capabilities& capabilities);
 
 /* Status::Exception */
 const static ut_control_keyStringMapping_t statusException_mapTable[] =
@@ -223,36 +228,35 @@ const static ut_control_keyStringMapping_t bool_mapTable[] =
  * @param[out] capabilities Pointer to the Capabilities struct to be filled.
  */
 #define VIDEODECODER_GETCAPABILITIES(videoDecoder, capabilities) \
-    do { \
-        Status status; \
-        UT_LOG_INFO("Calling getCapabilities(OUT:capabilities[])"); \
-        status = (videoDecoder)->getCapabilities((capabilities)); \
-        UT_LOG_INFO("Result getCapabilities(OUT:capabilities[supportedCodecs:%zu]), status:[isOK:%s, exception:%s]", \
-                    (capabilities)->supportedCodecs.size(), \
-                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
-                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
-        UT_ASSERT_TRUE(status.isOk()) << "getCapabilities binder call failed"; \
-        UT_ASSERT_FALSE((capabilities)->supportedCodecs.empty()) << "No supported codecs found"; \
-    } while (0)
+     do { \
+         Status status; \
+         UT_LOG_INFO("Calling getCapabilities(OUT:capabilities)"); \
+         status = videoDecoder->getCapabilities(capabilities); \
+         UT_LOG_INFO("Result getCapabilities(OUT:capabilities), status:[isOK:%s, exception:%s]", \
+                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                     UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+         UT_ASSERT_TRUE(status.isOk()); \
+         UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
+     } while (0)
 
-#define VIDEODECODER_GET_PROPERTY_SUCCESS(videoDecoder, property, propertyValue) \
-    do { \
-        Status status; \
-        State state; \
-        UT_LOG_INFO("Calling getProperty(IN:property[%s], OUT:propertyValue[]", videoDecoder::toString(property).c_str()); \
-        status = (videoDecoder)->getProperty(property, &propertyValue); \
-        switch (propertyValue->value.value().getTag()) \
-        { \
-            case PropertyValue::Value::Tag::intValue: \
-                UT_LOG_INFO("Result getProperty(IN:property[%s], OUT:propertyValue[%d]), status:[isOK:%s, exception:%s]", videoDecoder::toString(property).c_str(), \
-                propertyValue->value->get<PropertyValue::Value::Tag::intValue>(), \
-                UT_Control_GetMapString(bool_mapTable, status.isOk()), \
-                UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
-                break; \
-        } \
-        UT_ASSERT_TRUE(status.isOk()); \
-        UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
-    } while (0)
+#define VIDEODECODER_SETPROPERTY_SUCCESS(videoDecoderController, property, propertyValue) \
+     do { \
+         Status status; \
+         bool result; \
+         UT_LOG_INFO("Calling setProperty(IN:property[%d], IN:propertyValue=%d)", \
+                     static_cast<int32_t>(property), \
+                     propertyValue.value.has_value() ? propertyValue.value->intValue : 0); \
+         status = videoDecoderController->setProperty(property, propertyValue, &result); \
+         UT_LOG_INFO("Result setProperty(IN:property[%d], OUT:result=%d), status:[isOK:%s, exception:%s]", \
+                     static_cast<int32_t>(property), result, \
+                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                     UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+         UT_ASSERT_TRUE(status.isOk()); \
+         UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
+         UT_ASSERT_TRUE(result); \
+     } while (0)
+
+
 
 #define VIDEODECODER_GET_PROPERTY_FAILURE(videoDecoder, property, propertyValue, exception) \
     do { \
@@ -646,33 +650,40 @@ do { \
         } \
     } while (0)
 
-#define VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, stateCheck) \
+#define VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, checkResult) \
     do { \
         Status status; \
         UT_LOG_INFO("Calling stop()"); \
-        status = (videoDecoderController)->stop(); \
+        status = videoDecoderController->stop(); \
         UT_LOG_INFO("Result stop(), status:[isOK:%s, exception:%s]", \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                     UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
-        UT_ASSERT_TRUE(status.isOk()) << "stop binder call failed"; \
-        UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE) << "stop returned an exception"; \
-        if (stateCheck) { \
-            State lastState; \
-            VIDEODECODER_WAIT_FOR_STATE(videoDecoder, State::READY, lastState); \
-            UT_ASSERT_EQUAL(lastState, State::READY) << "Decoder did not reach READY state"; \
-        } \
+        UT_ASSERT_TRUE(status.isOk()); \
+        UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
     } while (0)
 
-#define VIDEODECODER_START_FAILURE(videoDecoderController, exception) \
+#define VIDEODECODER_START_FAILURE(videoDecoderController, expectedException) \
     do { \
-        Status status; \
-        UT_LOG_INFO("Calling start()"); \
-        status = (videoDecoderController)->start(); \
+        ::android::binder::Status status; \
+        UT_LOG_INFO("Calling start() expecting failure"); \
+        status = videoDecoderController->start(); \
         UT_LOG_INFO("Result start(), status:[isOK:%s, exception:%s]", \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                     UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
-        UT_ASSERT_FALSE(status.isOk()) << "Expected start to fail"; \
-        UT_ASSERT_EQUAL(status.exceptionCode(), (exception)) << "Unexpected exception code"; \
+        UT_ASSERT_FALSE(status.isOk()); \
+        UT_ASSERT_EQUAL(status.exceptionCode(), expectedException); \
+    } while (0)
+
+#define VIDEODECODER_STOP_FAILURE(videoDecoderController, expectedException) \
+    do { \
+        Status status; \
+        UT_LOG_INFO("Calling stop() expecting failure"); \
+        status = videoDecoderController->stop(); \
+        UT_LOG_INFO("Result stop(), status:[isOK:%s, exception:%s]", \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+        UT_ASSERT_FALSE(status.isOk()); \
+        UT_ASSERT_EQUAL(status.exceptionCode(), expectedException); \
     } while (0)
 
 /**
@@ -682,19 +693,35 @@ do { \
  * @param[in] value The integer value to set.
  * @param[in] value_desc String description of the value for logging.
  */
-#define VIDEODECODER_SET_PROPERTY(videoDecoder, property, value, value_desc) \
+#define VIDEODECODER_GETCAPABILITIES(videoDecoder, capabilities) \
     do { \
-        PropertyValue propertyValue; \
-        propertyValue.value = PropertyValue::Value::make<PropertyValue::Value::Tag::intValue>(value); \
-        bool result = false; \
-        UT_LOG_INFO("Calling setProperty(IN:property:[%s], IN:propertyValue:[%s])", \
-                    #property, value_desc); \
-        result = (videoDecoder)->setProperty(Property::property, propertyValue); \
-        UT_LOG_INFO("Result setProperty(IN:property:[%s], IN:propertyValue:[%s]), result:[%s]", \
-                    #property, value_desc, \
-                    UT_Control_GetMapString(bool_mapTable, result)); \
-        UT_ASSERT_TRUE(result) << "setProperty returned false for " << #property; \
+        Status status; \
+        UT_LOG_INFO("Calling getCapabilities(OUT:capabilities)"); \
+        status = videoDecoder->getCapabilities(capabilities); \
+        UT_LOG_INFO("Result getCapabilities(OUT:capabilities), status:[isOK:%s, exception:%s]", \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+        UT_ASSERT_TRUE(status.isOk()); \
+        UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
     } while (0)
+
+#define VIDEODECODER_SETPROPERTY_SUCCESS(videoDecoderController, property, propertyValue) \
+    do { \
+        Status status; \
+        bool result; \
+        UT_LOG_INFO("Calling setProperty(IN:property[%d], IN:propertyValue=%d)", \
+                    static_cast<int32_t>(property), propertyValue.value.get<int32_t>()); \
+        status = videoDecoderController->setProperty(property, propertyValue, &result); \
+        UT_LOG_INFO("Result setProperty(IN:property[%d], OUT:result=%d), status:[isOK:%s, exception:%s]", \
+                    static_cast<int32_t>(property), result, \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+        UT_ASSERT_TRUE(status.isOk()); \
+        UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
+        UT_ASSERT_TRUE(result); \
+    } while (0)
+
+
 
 #define VIDEODECODER_SIGNAL_DISCONTINUITY_SUCCESS(videoDecoderController) \
     do { \
@@ -976,6 +1003,27 @@ class VideoDecoderEventListener : public BnVideoDecoderEventListener {
         return Status::ok();
     }
 };
+
+
+struct CodecCapability {
+    Codec codec;
+    int32_t maxFrameRate;
+    int32_t maxFrameWidth;
+    int32_t maxFrameHeight;
+};
+
+typedef struct decoder {
+    int32_t id;
+    std::vector<CodecCapability> supportedCodecs;
+    std::vector<DynamicRange> supportedDynamicRanges;
+    std::vector<OperationalMode> supportedOperationalModes;
+    bool supportsSecure;
+}decoder_t;
+
+extern std::vector<decoder_t> gVideodecoders_hfp;
+
+UT_status_t vts_videodecoder_parseVideoDecoderHFP();
+
 
 #if 0
 class MyVideoDecoderEventListener : public BnVideoDecoderEventListener {

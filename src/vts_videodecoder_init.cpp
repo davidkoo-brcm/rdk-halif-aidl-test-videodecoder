@@ -72,7 +72,6 @@ sp<IVideoDecoderManager> gVideoDecoderManager;
  std::vector<sp<IVideoDecoder>>            decoders;
  std::vector<sp<IVideoDecoderController>>  controllers;
 
-
 UT_status_t VTS_VideoDecoder_init()
 {
 
@@ -80,11 +79,11 @@ UT_status_t VTS_VideoDecoder_init()
     {
         return UT_STATUS_FAILURE;
     }
-    /*if(parseVideoDecoderHFP() != UT_STATUS_OK)
+    if(vts_videodecoder_parseVideoDecoderHFP() != UT_STATUS_OK)
     {
         UT_LOG_ERROR("Failed to process the HFP file");
         return UT_STATUS_FAILURE;
-    }*/
+    }
 
     return UT_STATUS_OK;
 }

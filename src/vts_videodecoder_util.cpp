@@ -67,7 +67,9 @@
 #include "vts_videodecoder.h"
 
 
+
 extern sp<IVideoDecoderManager> gVideoDecoderManager;
+std::vector<decoder_t> gVideodecoders_hfp;
 
 UT_status_t getVideoDecoderService() {
     gVideoDecoderManager = android::interface_cast<IVideoDecoderManager>(
@@ -81,13 +83,9 @@ UT_status_t getVideoDecoderService() {
 
 Codec stringToCodec(const std::string& codecStr) {
     static const std::unordered_map<std::string, Codec> codecMap = {
-        {"MPEG", Codec::MPEG},
-        {"H264", Codec::H264},
-        {"H265", Codec::H265},
-        {"VP9",  Codec::VP9},
-        {"AV1",  Codec::AV1}
+        {"MPEG", Codec::MPEG}, {"H264", Codec::H264}, {"H265", Codec::H265},
+        {"VP9", Codec::VP9}, {"AV1", Codec::AV1}
     };
-
     auto it = codecMap.find(codecStr);
     if (it != codecMap.end()) {
         return it->second;
@@ -174,6 +172,201 @@ bool vts_videodecoder_helper_validatePropertyValue(int decoder_id,const std::opt
             return std::holds_alternative<int32_t>(val) && std::get<int32_t>(val) >= -1;  // -1 for not implemented
         default:
             return true;  // Default to true for unhandled properties (future-proofing)
+    }
+}
+
+
+UT_status_t vts_videodecoder_parseVideoDecoderHFP()
+{
+    std::string videodecoderpath = VIDEODECODERMGR_IVIDEODECODER; // e.g., "IVideoDecoderManager.IVideoDecoder"
+    std::string opmodepath = std::string(VIDEODECODERMGR) + ".supportedOperationalModes";
+    int32_t number_of_videodecoders;
+    int32_t supportedcodec_count;
+    int32_t supporteddr_count;
+    int32_t supportedopmode_count;
+    decoder temporary;
+
+    UT_LOG_INFO("Parsing HFP from: %s", videodecoderpath.c_str());
+
+    // Get number of video decoders
+    number_of_videodecoders = UT_KVP_PROFILE_GET_LIST_COUNT(videodecoderpath.c_str());
+    UT_LOG_INFO("Number of video decoders: %d", number_of_videodecoders);
+    if (number_of_videodecoders <= 0)
+    {
+        UT_LOG_ERROR("No videodecoders found in the HFP");
+        return UT_STATUS_FAILURE;
+    }
+
+    // Parse supportedOperationalModes
+    supportedopmode_count = UT_KVP_PROFILE_GET_LIST_COUNT(opmodepath.c_str());
+    UT_LOG_INFO("Operational modes count: %d", supportedopmode_count);
+    for (int32_t j = 0; j < supportedopmode_count; ++j)
+    {
+        char result_kvp[UT_KVP_MAX_ELEMENT_SIZE] = {0};
+        std::string modepath = opmodepath + "." + std::to_string(j);
+        UT_KVP_PROFILE_GET_STRING(modepath.c_str(), result_kvp);
+        std::string modeStr = std::string(result_kvp);
+        UT_LOG_INFO("Reading opmode path: %s, value: %s", modepath.c_str(), modeStr.c_str());
+        if (!modeStr.empty()) {
+            temporary.supportedOperationalModes.push_back(stringToOperationalMode(modeStr));
+        } else {
+            UT_LOG_WARNING("Empty opmode at path: %s", modepath.c_str());
+        }
+    }
+
+    for (int32_t i = 0; i < number_of_videodecoders; ++i)
+    {
+        std::string videodecoderidpath = videodecoderpath + "." + std::to_string(i) + ".id";
+        std::string supportedcodecpath = videodecoderpath + "." + std::to_string(i) + ".supportedCodecs";
+        std::string supporteddrpath = videodecoderpath + "." + std::to_string(i) + ".supportedDynamicRanges";
+        std::string supportsSecurepath = videodecoderpath + "." + std::to_string(i) + ".supportsSecure";
+
+        // Read id and supportsSecure
+        temporary.id = UT_KVP_PROFILE_GET_UINT32(videodecoderidpath.c_str());
+        temporary.supportsSecure = UT_KVP_PROFILE_GET_BOOL(supportsSecurepath.c_str());
+        UT_LOG_INFO("Decoder %d: id=%d, supportsSecure=%d", i, temporary.id, temporary.supportsSecure);
+
+        // Debug codec keys
+        supportedcodec_count = UT_KVP_PROFILE_GET_LIST_COUNT(supportedcodecpath.c_str());
+        UT_LOG_INFO("Decoder %d: codec count=%d", i, supportedcodec_count);
+        for (int32_t j = 0; j < supportedcodec_count; ++j)
+        {
+            char result_kvp[UT_KVP_MAX_ELEMENT_SIZE] = {0};
+            std::string codecpath = supportedcodecpath + "." + std::to_string(j);
+            // Try codec as string
+            UT_KVP_PROFILE_GET_STRING(codecpath.c_str(), result_kvp);
+            std::string codecStr = std::string(result_kvp);
+            UT_LOG_INFO("Reading codec path: %s, value: %s", codecpath.c_str(), codecStr.c_str());
+
+            // Try codec subfield (e.g., .codec)
+            if (codecStr.empty()) {
+                std::string codecnamepath = codecpath + ".codec";
+                UT_KVP_PROFILE_GET_STRING(codecnamepath.c_str(), result_kvp);
+                codecStr = std::string(result_kvp);
+                UT_LOG_INFO("Trying codec subpath: %s, value: %s", codecnamepath.c_str(), codecStr.c_str());
+            }
+
+            if (codecStr.empty()) {
+                UT_LOG_WARNING("Empty codec string at path: %s, skipping", codecpath.c_str());
+                continue;
+            }
+
+            CodecCapability cap;
+            try {
+                cap.codec = stringToCodec(codecStr);
+            } catch (const std::invalid_argument& e) {
+                UT_LOG_ERROR("Failed to parse codec at path %s: %s, skipping",
+                             codecpath.c_str(), e.what());
+                continue;
+            }
+
+            // Read codec attributes
+            std::string frameratepath = codecpath + ".maxFrameRate";
+            std::string widthpath = codecpath + ".maxFrameWidth";
+            std::string heightpath = codecpath + ".maxFrameHeight";
+
+            cap.maxFrameRate = UT_KVP_PROFILE_GET_UINT32(frameratepath.c_str());
+            cap.maxFrameWidth = UT_KVP_PROFILE_GET_UINT32(widthpath.c_str());
+            cap.maxFrameHeight = UT_KVP_PROFILE_GET_UINT32(heightpath.c_str());
+            UT_LOG_INFO("Codec %s: rate=%d, width=%d, height=%d",
+                        codecStr.c_str(), cap.maxFrameRate, cap.maxFrameWidth, cap.maxFrameHeight);
+
+            temporary.supportedCodecs.push_back(cap);
+        }
+
+        // Read supportedDynamicRanges
+        supporteddr_count = UT_KVP_PROFILE_GET_LIST_COUNT(supporteddrpath.c_str());
+        UT_LOG_INFO("Decoder %d: dynamic range count=%d", i, supporteddr_count);
+        for (int32_t j = 0; j < supporteddr_count; ++j)
+        {
+            char result_kvp[UT_KVP_MAX_ELEMENT_SIZE] = {0};
+            std::string drpath = supporteddrpath + "." + std::to_string(j);
+            UT_KVP_PROFILE_GET_STRING(drpath.c_str(), result_kvp);
+            std::string drStr = std::string(result_kvp);
+            UT_LOG_INFO("Reading dynamic range path: %s, value: %s", drpath.c_str(), drStr.c_str());
+            if (!drStr.empty()) {
+                temporary.supportedDynamicRanges.push_back(stringToDynamicRange(drStr));
+            } else {
+                UT_LOG_WARNING("Empty dynamic range at path: %s", drpath.c_str());
+            }
+        }
+
+        // Log before storing
+        UT_LOG_INFO("Decoder %d: %zu codecs, %zu dynamic ranges, %zu opmodes",
+                    temporary.id, temporary.supportedCodecs.size(), temporary.supportedDynamicRanges.size(),
+                    temporary.supportedOperationalModes.size());
+
+        // Store decoder
+        gVideodecoders_hfp.push_back(temporary);
+        temporary.supportedCodecs.clear();
+        temporary.supportedDynamicRanges.clear();
+    }
+
+    if (gVideodecoders_hfp.empty()) {
+        UT_LOG_ERROR("No valid decoders parsed from HFP");
+        return UT_STATUS_FAILURE;
+    }
+
+    UT_LOG_INFO("Parsed %zu decoders", gVideodecoders_hfp.size());
+    return UT_STATUS_OK;
+}
+
+void vts_videodecoder_helper_validateCapabilities(
+    int32_t decoderId,
+    const Capabilities& capabilities)
+{
+    UT_LOG_INFO("Validating capabilities for decoder ID: %d", decoderId);
+
+    // Basic validation: non-empty codecs and dynamic ranges
+    UT_ASSERT_TRUE(!capabilities.supportedCodecs.empty());
+    UT_LOG_INFO("Capabilities has %zu codecs", capabilities.supportedCodecs.size());
+
+    // Validate supportedCodecs
+    for (const auto& codecCap : capabilities.supportedCodecs)
+    {
+        UT_ASSERT_TRUE(codecCap.maxFrameRate > 0);
+        UT_ASSERT_TRUE(codecCap.maxFrameWidth > 0);
+        UT_ASSERT_TRUE(codecCap.maxFrameHeight > 0);
+        UT_LOG_INFO("Codec %d: rate=%d, width=%d, height=%d",
+                    static_cast<int32_t>(codecCap.codec),
+                    codecCap.maxFrameRate,
+                    codecCap.maxFrameWidth,
+                    codecCap.maxFrameHeight);
+    }
+
+    // Validate supportedDynamicRanges
+    UT_ASSERT_TRUE(!capabilities.supportedDynamicRanges.empty());
+    UT_LOG_INFO("Capabilities has %zu dynamic ranges", capabilities.supportedDynamicRanges.size());
+
+    // Optional: Validate against gVideodecoders_hfp (if populated)
+    for (const auto& hfpDecoder : gVideodecoders_hfp)
+    {
+        if (hfpDecoder.id == decoderId)
+        {
+            UT_LOG_INFO("Found HFP entry for decoder ID: %d", decoderId);
+            UT_ASSERT_EQUAL(capabilities.supportsSecure, hfpDecoder.supportsSecure);
+            UT_ASSERT_EQUAL(capabilities.supportedCodecs.size(), hfpDecoder.supportedCodecs.size());
+            UT_ASSERT_EQUAL(capabilities.supportedDynamicRanges.size(), hfpDecoder.supportedDynamicRanges.size());
+
+            // Validate codecs
+            for (size_t i = 0; i < capabilities.supportedCodecs.size(); ++i)
+            {
+                const auto& cap = capabilities.supportedCodecs[i];
+                const auto& hfpCap = hfpDecoder.supportedCodecs[i];
+                UT_ASSERT_EQUAL(static_cast<int32_t>(cap.codec), static_cast<int32_t>(hfpCap.codec));
+                UT_ASSERT_EQUAL(cap.maxFrameRate, hfpCap.maxFrameRate);
+                UT_ASSERT_EQUAL(cap.maxFrameWidth, hfpCap.maxFrameWidth);
+                UT_ASSERT_EQUAL(cap.maxFrameHeight, hfpCap.maxFrameHeight);
+            }
+
+            // Validate dynamic ranges
+            for (size_t i = 0; i < capabilities.supportedDynamicRanges.size(); ++i)
+            {
+                UT_ASSERT_EQUAL(static_cast<int32_t>(capabilities.supportedDynamicRanges[i]),
+                                static_cast<int32_t>(hfpDecoder.supportedDynamicRanges[i]));
+            }
+            break;
+        }
     }
 }
 
