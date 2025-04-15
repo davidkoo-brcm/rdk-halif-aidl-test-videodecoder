@@ -664,7 +664,7 @@ do { \
 
 #define VIDEODECODER_START_FAILURE(videoDecoderController, expectedException) \
     do { \
-        ::android::binder::Status status; \
+        Status status; \
         UT_LOG_INFO("Calling start() expecting failure"); \
         status = videoDecoderController->start(); \
         UT_LOG_INFO("Result start(), status:[isOK:%s, exception:%s]", \
@@ -710,7 +710,7 @@ do { \
         Status status; \
         bool result; \
         UT_LOG_INFO("Calling setProperty(IN:property[%d], IN:propertyValue=%d)", \
-                    static_cast<int32_t>(property), propertyValue.value.get<int32_t>()); \
+                    static_cast<int32_t>(property), propertyValue.value); \
         status = videoDecoderController->setProperty(property, propertyValue, &result); \
         UT_LOG_INFO("Result setProperty(IN:property[%d], OUT:result=%d), status:[isOK:%s, exception:%s]", \
                     static_cast<int32_t>(property), result, \
@@ -721,7 +721,57 @@ do { \
         UT_ASSERT_TRUE(result); \
     } while (0)
 
+#define VIDEODECODER_SETPROPERTY_FAILURE(videoDecoderController, property, propertyValue, expectedException) \
+    do { \
+        Status status; \
+        bool result; \
+        UT_LOG_INFO("Calling setProperty(IN:property[%d], IN:propertyValue=%d) expecting failure", \
+                    static_cast<int32_t>(property), \
+                    propertyValue.value.has_value() ? propertyValue.value->intValue : 0); \
+        status = videoDecoderController->setProperty(property, propertyValue, &result); \
+        UT_LOG_INFO("Result setProperty(IN:property[%d], OUT:result=%d), status:[isOK:%s, exception:%s]", \
+                    static_cast<int32_t>(property), result, \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+        UT_ASSERT_FALSE(status.isOk()); \
+        UT_ASSERT_EQUAL(status.exceptionCode(), expectedException); \
+    } while (0)
 
+#define VIDEODECODER_SETPROPERTY_LIST_SUCCESS(videoDecoderController, propertyList, type) \
+    do { \
+        for (const auto& [property, value] : propertyList) \
+        { \
+            PropertyValue propertyValue; \
+            propertyValue.value = PropertyValue::Value::make<PropertyValue::Value::Tag::type>(value); \
+            VIDEODECODER_SETPROPERTY_SUCCESS(videoDecoderController, property, propertyValue); \
+        } \
+    } while (0)
+
+#define VIDEODECODER_SETPROPERTY_FAILURE(videoDecoderController, property, propertyValue, expectedException) \
+    do { \
+        Status status; \
+        bool result; \
+        UT_LOG_INFO("Calling setProperty(IN:property[%d], IN:propertyValue=%d) expecting failure", \
+                    static_cast<int32_t>(property), \
+                    propertyValue.value); \
+        status = videoDecoderController->setProperty(property, propertyValue, &result); \
+        UT_LOG_INFO("Result setProperty(IN:property[%d], OUT:result=%d), status:[isOK:%s, exception:%s]", \
+                    static_cast<int32_t>(property), result, \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+        UT_ASSERT_FALSE(status.isOk()); \
+        UT_ASSERT_EQUAL(status.exceptionCode(), expectedException); \
+    } while (0)
+
+#define VIDEODECODER_SETPROPERTY_LIST_FAILURE(videoDecoderController, propertyList, type, exception) \
+    do { \
+        for (const auto& [property, value] : propertyList) \
+        { \
+            PropertyValue propertyValue; \
+            propertyValue.value = PropertyValue::Value::make<PropertyValue::Value::Tag::type>(value); \
+            VIDEODECODER_SETPROPERTY_FAILURE(videoDecoderController, property, propertyValue, exception); \
+        } \
+    } while (0)
 
 #define VIDEODECODER_SIGNAL_DISCONTINUITY_SUCCESS(videoDecoderController) \
     do { \
@@ -734,11 +784,16 @@ do { \
         UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE) << "signalDiscontinuity returned an exception"; \
     } while (0)
 
-#define VIDEODECODER_SETPROPERTY_LIST_SUCCESS(controller, propertyList, value, value_desc) \
+#define VIDEODECODER_CONTROLLER_SET_PROPERTY(videoDecoderController, property, propertyValue, status, result) \
     do { \
-        for (const auto& prop : propertyList) { \
-            VIDEODECODER_CONTROLLER_SET_PROPERTY(controller, prop, value, value_desc); \
-        } \
+        UT_LOG_INFO("Calling setProperty(IN:property[%d], IN:propertyValue=%d)", \
+                    static_cast<int32_t>(property), \
+                    propertyValue.value.has_value() ? propertyValue.value->intValue : 0); \
+        status = videoDecoderController->setProperty(property, propertyValue, &result); \
+        UT_LOG_INFO("Result setProperty(IN:property[%d], OUT:result=%d), status:[isOK:%s, exception:%s]", \
+                    static_cast<int32_t>(property), result, \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
     } while (0)
 
 /**
@@ -883,18 +938,20 @@ do { \
  * @param[in] csdVideoFormat The codec-specific data format.
  * @param[in] codecData The invalid codec data byte array.
  */
-#define VIDEODECODER_PARSE_CSD_DATA_FAILURE(videoDecoderController, csdVideoFormat, codecData) \
+#define VIDEODECODER_PARSE_CSD_DATA_FAILURE(videoDecoderController, csdVideoFormat, codecData, exception) \
     do { \
-        bool result = false; \
+        ::android::binder::Status status; \
+        bool _aidl_return; \
         UT_LOG_INFO("Calling parseCodecSpecificData(IN:csdVideoFormat:[%d], IN:codecData:size:[%zu])", \
                     static_cast<int32_t>(csdVideoFormat), codecData.size()); \
-        Status status = (videoDecoderController)->parseCodecSpecificData(csdVideoFormat, codecData, &result); \
+        status = videoDecoderController->parseCodecSpecificData(csdVideoFormat, codecData, &_aidl_return); \
         UT_LOG_INFO("Result parseCodecSpecificData(), status:[isOK:%s, exception:%s], result:[%s]", \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                     UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()), \
-                    UT_Control_GetMapString(bool_mapTable, result)); \
-        UT_ASSERT_TRUE(status.isOk()) << "parseCodecSpecificData threw unexpected exception"; \
-        UT_ASSERT_FALSE(result) << "parseCodecSpecificData succeeded with invalid data"; \
+                    UT_Control_GetMapString(bool_mapTable, _aidl_return)); \
+        UT_ASSERT_EQUAL(status.exceptionCode(), exception); \
+        UT_ASSERT_FALSE(_aidl_return); \
+        UT_ASSERT_FALSE(status.isOk()); \
     } while (0)
 
 /**

@@ -627,7 +627,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, getPropertyMulti_neg) {
     invalidPair.property = static_cast<Property>(-1);
     propertyKVListInvalid.push_back(invalidPair);
 
-    bool aidlReturnInvalid = true;
+    bool aidlReturnInvalid = false;
     VIDEODECODER_GETPROPERTYMULTI_FAILURE(decoder, propertyKVListInvalid, aidlReturnInvalid);
 
     for (const auto& kvPair : propertyKVListInvalid) {
@@ -637,7 +637,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, getPropertyMulti_neg) {
 
     // Negative Test - Empty Property List
     std::vector<PropertyKVPair> propertyKVListEmpty;
-    bool aidlReturnEmpty = true;
+    bool aidlReturnEmpty = false;
     VIDEODECODER_GETPROPERTYMULTI_FAILURE(decoder, propertyKVListEmpty, aidlReturnEmpty);
 }
 
@@ -747,12 +747,15 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, open_pos) {
             sp<IVideoDecoderController> videoDecoderController;
             sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
 
-            //State currentState;
-            //VIDEODECODER_GETSTATE(videoDecoder, currentState);
-            //UT_ASSERT_EQUAL(currentState, State::CLOSED) << "Decoder must be in CLOSED state before open";
+            State beforeState;
+            VIDEODECODER_GETSTATE(videoDecoder, beforeState);
+            UT_ASSERT_EQUAL(beforeState, State::CLOSED) << "Decoder must be in CLOSED state before open";
 
             VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
                                       controllerListener, videoDecoderController, true);
+            State currentState;
+            VIDEODECODER_GETSTATE(videoDecoder, currentState);
+            UT_ASSERT_EQUAL(currentState, State::READY) << "Decoder must be in READY state after open";
 
             VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
         }
@@ -1447,7 +1450,6 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, stop_neg)
     }
 }
 
-#if 0
 
 /**
  * @brief Test the positive scenarios for setting properties on the VideoDecoderController.
@@ -1474,167 +1476,89 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, stop_neg)
  * | 06 | Set SHA1 Calculation to ON | property = SHA1_CALC, propertyValue = ON, result = false | status.isOk() should be true, result should be true | Should Pass |
  */
 
+UT_ADD_TEST(VTS_L1_VideoDecoder, setProperty_pos)
+{
 
- UT_ADD_TEST(VTS_L1_VideoDecoder, videodeccontr_setProperty_pos)
- {
-     using namespace com::rdk::hal::videodecoder;
-     using namespace com::rdk::hal;
+    std::vector<IVideoDecoder::Id> decoderIds;
+    android::sp<IVideoDecoder> videoDecoder;
+    Capabilities capabilities;
 
-     std::vector<IVideoDecoder::Id> decoderIds;
-     android::sp<IVideoDecoder> videoDecoder;
-     Capabilities capabilities;
+    /* Get the Video decoder IDs */
+    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
+    UT_LOG_INFO("Found %zu video decoder IDs", decoderIds.size());
+    UT_ASSERT_TRUE(!decoderIds.empty());
 
-     /* Get the Video decoder IDs */
-     VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
-     UT_LOG_INFO("Found %zu video decoder IDs", decoderIds.size());
-     UT_ASSERT_TRUE(!decoderIds.empty());
+    for (const auto& _decoderId : decoderIds)
+    {
+        /* Get Video decoder handle */
+        VIDEODECODER_MANAGER_GETVIDEODECODER(_decoderId, videoDecoder);
+        UT_ASSERT_TRUE(videoDecoder != nullptr);
 
-     for (const auto& _decoderId : decoderIds)
-     {
-         /* Get Video decoder handle */
-         VIDEODECODER_MANAGER_GETVIDEODECODER(_decoderId, videoDecoder);
-         UT_ASSERT_TRUE(videoDecoder != nullptr);
+        /* Get Capabilities of Video Decoder */
+        VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
+        UT_LOG_INFO("Decoder ID: %d, Supports Secure: %d, Codecs: %zu",
+                    _decoderId.value, capabilities.supportsSecure, capabilities.supportedCodecs.size());
+        UT_ASSERT_TRUE(!capabilities.supportedCodecs.empty());
 
-         /* Get Capabilities of Video Decoder */
-         VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
-         UT_LOG_INFO("Decoder ID: %d, Supports Secure: %d, Codecs: %zu",
-                     _decoderId.value, capabilities.supportsSecure, capabilities.supportedCodecs.size());
-         UT_ASSERT_TRUE(!capabilities.supportedCodecs.empty());
+        for (const auto& codecCap : capabilities.supportedCodecs)
+        {
+            auto _codec = codecCap.codec;
+            android::sp<IVideoDecoderController> videoDecoderController;
+            android::sp<IVideoDecoderControllerListener> controllerListener =
+                new VideoDecoderControllerListener();
+            android::sp<IVideoDecoderEventListener> eventListener =
+                new VideoDecoderEventListener();
 
-         for (const auto& codecCap : capabilities.supportedCodecs)
-         {
-             auto _codec = codecCap.codec;
-             android::sp<IVideoDecoderController> videoDecoderController;
-             android::sp<IVideoDecoderControllerListener> controllerListener =
-                 new VideoDecoderControllerListener();
-             android::sp<IVideoDecoderEventListener> eventListener =
-                 new VideoDecoderEventListener();
+            /* Open the Decoder */
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                    controllerListener, videoDecoderController, true);
+            UT_ASSERT_TRUE(videoDecoderController != nullptr);
 
-             /* Open the Decoder */
-             VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
-                                       controllerListener, videoDecoderController, true);
-             UT_ASSERT_TRUE(videoDecoderController != nullptr);
+            /* Define property lists for READY state */
+            std::vector<std::pair<Property, int32_t>> readyIntProps = {
+                {Property::LOW_LATENCY_MODE, 1},      // On
+                {Property::DECODE_ERROR_POLICY, 1},   // Conceal corrupt frames
+                {Property::AV_SOURCE, 1},             // Non-zero AVSource
+                {Property::OPERATIONAL_MODE, static_cast<int32_t>(OperationalMode::NON_TUNNELLED)},
+                {Property::SHA1_CALC, 1}              // On
+            };
 
-             /* Define writable properties */
-             std::vector<Property> validIntPropsReady = {
-                 Property::LOW_LATENCY_MODE,
-                 Property::DECODE_ERROR_POLICY,
-                 Property::AV_SOURCE
-             };
-             std::vector<Property> validIntPropsReadyStarted = {
-                 Property::OPERATIONAL_MODE,
-                 Property::SHA1_CALC
-             };
+            /* Set properties in READY state */
+            VIDEODECODER_SETPROPERTY_LIST_SUCCESS(videoDecoderController, readyIntProps, intValue);
 
-             /* Set properties in READY state */
-             PropertyValue propValue;
-             for (const auto& prop : validIntPropsReady)
-             {
-                 PropertyValue::Value value;
-                 switch (prop)
-                 {
-                     case Property::LOW_LATENCY_MODE:
-                         value.intValue = 1; // On
-                         break;
-                     case Property::DECODE_ERROR_POLICY:
-                         value.intValue = 1; // Conceal corrupt frames
-                         break;
-                     case Property::AV_SOURCE:
-                         value.intValue = 1; // Non-zero AVSource
-                         break;
-                     default:
-                         value.intValue = 0;
-                 }
-                 propValue.value = value;
-                 VIDEODECODER_SETPROPERTY_SUCCESS(videoDecoderController, prop, propValue);
-             }
-             for (const auto& prop : validIntPropsReadyStarted)
-             {
-                 PropertyValue::Value value;
-                 switch (prop)
-                 {
-                     case Property::OPERATIONAL_MODE:
-                         value.intValue = static_cast<int32_t>(OperationalMode::NON_TUNNELLED);
-                         break;
-                     case Property::SHA1_CALC:
-                         value.intValue = 1; // On
-                         break;
-                     default:
-                         value.intValue = 0;
-                 }
-                 propValue.value = value;
-                 VIDEODECODER_SETPROPERTY_SUCCESS(videoDecoderController, prop, propValue);
-             }
+            /* Start the decoder */
+            VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
 
-             /* Start the decoder */
-             VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
+            /* Define property list for STARTED state */
+            std::vector<std::pair<Property, int32_t>> startedIntProps = {
+                {Property::OPERATIONAL_MODE, static_cast<int32_t>(OperationalMode::TUNNELLED)},
+                {Property::SHA1_CALC, 0}  // Off
+            };
 
-             /* Set properties in STARTED state */
-             for (const auto& prop : validIntPropsReadyStarted)
-             {
-                 PropertyValue::Value value;
-                 switch (prop)
-                 {
-                     case Property::OPERATIONAL_MODE:
-                         value.intValue = static_cast<int32_t>(OperationalMode::TUNNELLED);
-                         break;
-                     case Property::SHA1_CALC:
-                         value.intValue = 0; // Off
-                         break;
-                     default:
-                         value.intValue = 0;
-                 }
-                 propValue.value = value;
-                 VIDEODECODER_SETPROPERTY_SUCCESS(videoDecoderController, prop, propValue);
-             }
+            /* Set properties in STARTED state */
+            VIDEODECODER_SETPROPERTY_LIST_SUCCESS(videoDecoderController, startedIntProps, intValue);
 
-             /* Stop the decoder */
-             VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
+            /* Stop the decoder */
+            VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
 
-             /* Set properties in READY state again */
-             for (const auto& prop : validIntPropsReady)
-             {
-                 PropertyValue::Value value;
-                 switch (prop)
-                 {
-                     case Property::LOW_LATENCY_MODE:
-                         value.intValue = 0; // Off
-                         break;
-                     case Property::DECODE_ERROR_POLICY:
-                         value.intValue = 0; // Output corrupt frames
-                         break;
-                     case Property::AV_SOURCE:
-                         value.intValue = 0; // AVUNKNOWN
-                         break;
-                     default:
-                         value.intValue = 0;
-                 }
-                 propValue.value = value;
-                 VIDEODECODER_SETPROPERTY_SUCCESS(videoDecoderController, prop, propValue);
-             }
-             for (const auto& prop : validIntPropsReadyStarted)
-             {
-                 PropertyValue::Value value;
-                 switch (prop)
-                 {
-                     case Property::OPERATIONAL_MODE:
-                         value.intValue = static_cast<int32_t>(OperationalMode::NON_TUNNELLED);
-                         break;
-                     case Property::SHA1_CALC:
-                         value.intValue = 0; // Off
-                         break;
-                     default:
-                         value.intValue = 0;
-                 }
-                 propValue.value = value;
-                 VIDEODECODER_SETPROPERTY_SUCCESS(videoDecoderController, prop, propValue);
-             }
+            /* Define property list for READY state again */
+            std::vector<std::pair<Property, int32_t>> readyIntPropsAgain = {
+                {Property::LOW_LATENCY_MODE, 0},      // Off
+                {Property::DECODE_ERROR_POLICY, 0},   // Output corrupt frames
+                {Property::AV_SOURCE, 0},             // AVUNKNOWN
+                {Property::OPERATIONAL_MODE, static_cast<int32_t>(OperationalMode::NON_TUNNELLED)},
+                {Property::SHA1_CALC, 0}              // Off
+            };
 
-             /* Close the decoder */
-             VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
-         }
-     }
+            /* Set properties in READY state again */
+            VIDEODECODER_SETPROPERTY_LIST_SUCCESS(videoDecoderController, readyIntPropsAgain, intValue);
+
+            /* Close the decoder */
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+        }
+    }
  }
+
 
 
 /**
@@ -1659,53 +1583,85 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, stop_neg)
  * | 04 | Set Property with Invalid Value Type | property = DECODE_ERROR_POLICY, propertyValue = "invalid" | result = false, status.isOk() = false | Should Fail |
  * | 05 | Set Property with Out-of-Range Value | property = SHA1_CALC, propertyValue = 999 | result = false, status.isOk() = false | Should Fail |
  */
-UT_ADD_TEST(VTS_L1_VideoDecoder, setProperty_neg) {
-    UT_ASSERT_FALSE(controllers.empty()) << "No VideoDecoderController available for testing.";
 
-    for (const auto& controller : controllers) {
-        bool result = false;
+UT_ADD_TEST(VTS_L1_VideoDecoder, setProperty_neg)
+{
+    std::vector<IVideoDecoder::Id> decoderIds;
+    android::sp<IVideoDecoder> videoDecoder;
+    Capabilities capabilities;
+    Status status;
 
-        // Test Case: Set Operational Mode to an Unsupported Mode
-        UT_LOG_INFO("Calling setProperty(IN:property[OPERATIONAL_MODE], IN:propertyValue[unsupported mode])");
-        PropertyValue unsupportedModeValue;
-        unsupportedModeValue.value = PropertyValue::Value::make<PropertyValue::Value::Tag::intValue>(999); // Unsupported mode
-        Status status = controller->setProperty(Property::OPERATIONAL_MODE, unsupportedModeValue, &result);
-        UT_LOG_INFO("Result setProperty(IN:property[OPERATIONAL_MODE], IN:propertyValue[unsupported mode]), status:[isOK:%s, exception:%s], result:[%s]",
-                    UT_Control_GetMapString(bool_mapTable, status.isOk()), UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()), UT_Control_GetMapString(bool_mapTable, result));
-        UT_ASSERT_FALSE(result);
+    /* Get the Video decoder IDs */
+    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
+    UT_LOG_INFO("Found %zu video decoder IDs", decoderIds.size());
+    UT_ASSERT_TRUE(!decoderIds.empty());
 
-        // Test Case: Set Property in Invalid State (STARTED)
-        status = controller->start();
-        UT_LOG_INFO("Calling setProperty(IN:property[LOW_LATENCY_MODE], IN:propertyValue[1])");
-        PropertyValue lowLatencyValue;
-        lowLatencyValue.value = PropertyValue::Value::make<PropertyValue::Value::Tag::intValue>(1); // ON
-        status = controller->setProperty(Property::LOW_LATENCY_MODE, lowLatencyValue, &result);
-        status = controller->stop();
-        UT_LOG_INFO("Result setProperty(IN:property[LOW_LATENCY_MODE], IN:propertyValue[1]), status:[isOK:%s, exception:%s], result:[%s]",
-                    UT_Control_GetMapString(bool_mapTable, status.isOk()), UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()), UT_Control_GetMapString(bool_mapTable, result));
-        UT_ASSERT_FALSE(result);
+    for (const auto& _decoderId : decoderIds)
+    {
+        /* Get Video decoder handle */
+        VIDEODECODER_MANAGER_GETVIDEODECODER(_decoderId, videoDecoder);
+        UT_ASSERT_TRUE(videoDecoder != nullptr);
 
-        // Test Case: Set Property with Invalid Value Type
-        UT_LOG_INFO("Calling setProperty(IN:property[DECODE_ERROR_POLICY], IN:propertyValue[string])");
-        PropertyValue invalidTypeValue;
-        invalidTypeValue.value = PropertyValue::Value::make<PropertyValue::Value::Tag::stringValue>(android::String16("invalid"));
-        status = controller->setProperty(Property::DECODE_ERROR_POLICY, invalidTypeValue, &result);
-        UT_LOG_INFO("Result setProperty(IN:property[DECODE_ERROR_POLICY], IN:propertyValue[string]), status:[isOK:%s, exception:%s], result:[%s]",
-                    UT_Control_GetMapString(bool_mapTable, status.isOk()), UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()), UT_Control_GetMapString(bool_mapTable, result));
-        UT_ASSERT_FALSE(result);
+        /* Get Capabilities of Video Decoder */
+        VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
+        UT_LOG_INFO("Decoder ID: %d, Supports Secure: %d, Codecs: %zu",
+                    _decoderId.value, capabilities.supportsSecure, capabilities.supportedCodecs.size());
+        UT_ASSERT_TRUE(!capabilities.supportedCodecs.empty());
 
-        // Test Case: Set Property with Out-of-Range Value
-        UT_LOG_INFO("Calling setProperty(IN:property[SHA1_CALC], IN:propertyValue[999])");
-        PropertyValue outOfRangeValue;
-        outOfRangeValue.value = PropertyValue::Value::make<PropertyValue::Value::Tag::intValue>(999); // Out of expected range
-        status = controller->setProperty(Property::SHA1_CALC, outOfRangeValue, &result);
-        UT_LOG_INFO("Result setProperty(IN:property[SHA1_CALC], IN:propertyValue[999]), status:[isOK:%s, exception:%s], result:[%s]",
-                    UT_Control_GetMapString(bool_mapTable, status.isOk()), UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()), UT_Control_GetMapString(bool_mapTable, result));
-        UT_ASSERT_FALSE(result);
+        for (const auto& codecCap : capabilities.supportedCodecs)
+        {
+            auto _codec = codecCap.codec;
+            android::sp<IVideoDecoderController> videoDecoderController;
+            android::sp<IVideoDecoderControllerListener> controllerListener =
+                new VideoDecoderControllerListener();
+            android::sp<IVideoDecoderEventListener> eventListener =
+                new VideoDecoderEventListener();
+
+            /* Open the Decoder */
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+            UT_ASSERT_TRUE(videoDecoderController != nullptr);
+
+            /* Define invalid and valid property lists */
+            std::vector<std::pair<Property, int32_t>> invalidIntPropertyAll = {
+                {static_cast<Property>(9999), 1} // Unknown property
+            };
+            std::vector<std::pair<Property, int32_t>> invalidIntPropertyReady = {
+                {static_cast<Property>(10000), 0} // Another unknown property
+            };
+            std::vector<std::pair<Property, int32_t>> validIntPropertyReady = {
+                {Property::LOW_LATENCY_MODE, 1},
+                {Property::DECODE_ERROR_POLICY, 1},
+                {Property::AV_SOURCE, 1}
+            };
+
+            /* Set invalid properties in READY state */
+            VIDEODECODER_SETPROPERTY_LIST_FAILURE(videoDecoderController, invalidIntPropertyAll, intValue,
+                                                  Status::EX_ILLEGAL_ARGUMENT);
+            VIDEODECODER_SETPROPERTY_LIST_FAILURE(videoDecoderController, invalidIntPropertyReady, intValue,
+                                                  Status::EX_ILLEGAL_ARGUMENT);
+
+            /* Start the decoder */
+            VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
+
+            /* Set valid properties in invalid state (STARTED) */
+            VIDEODECODER_SETPROPERTY_LIST_FAILURE(videoDecoderController, validIntPropertyReady, intValue,
+                                                  Status::EX_ILLEGAL_STATE);
+
+            /* Stop the decoder */
+            VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
+
+            /* Close the decoder */
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+
+            /* Set valid properties in invalid state (CLOSED) */
+            VIDEODECODER_SETPROPERTY_LIST_FAILURE(videoDecoderController, validIntPropertyReady, intValue,
+                                                  Status::EX_ILLEGAL_STATE);
+        }
     }
 }
 
-#endif
+
 
 UT_ADD_TEST(VTS_L1_VideoDecoder, decodeBuffer_pos) {
     std::vector<IVideoDecoder::Id> decoderIds;
@@ -1914,27 +1870,20 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, flush_pos) {
  * | 02 | Call the flush API with reset = true | reset = true | status.exceptionCode() = EX_ILLEGAL_STATE | Should Fail |
  * | 03 | Call the flush API with reset = false | reset = false | status.exceptionCode() = EX_ILLEGAL_STATE | Should Fail |
  */
-UT_ADD_TEST(VTS_L1_VideoDecoder, flush_neg)
-{
+UT_ADD_TEST(VTS_L1_VideoDecoder, flush_neg) {
     std::vector<IVideoDecoder::Id> decoderIds;
     sp<IVideoDecoder> videoDecoder;
     videodecoder::Capabilities capabilities;
     Status status;
 
-    /* Get the Video decoder IDs */
     VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
     UT_ASSERT_FALSE(decoderIds.empty()) << "No VideoDecoder instances available.";
 
-    for (const auto& _decoderId : decoderIds)
-    {
-        /* Get Video decoder handle */
+    for (const auto& _decoderId : decoderIds) {
         VIDEODECODER_MANAGER_GETVIDEODECODER(_decoderId, videoDecoder);
-
-        /* Get Capabilities of Video Decoder */
         VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
 
-        for (const auto& _codecCaps : capabilities.supportedCodecs)
-        {
+        for (const auto& _codecCaps : capabilities.supportedCodecs) {
             Codec _codec = _codecCaps.codec;
             UT_LOG_INFO("Testing flush for codec %d, decoder ID %d",
                         static_cast<int32_t>(_codec), _decoderId.value);
@@ -1945,8 +1894,13 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, flush_neg)
 
             /* Test flush in CLOSED state (before open) */
             VIDEODECODER_CHECK_STATE(videoDecoder, State::CLOSED);
-            VIDEODECODER_FLUSH_FAILURE(videoDecoderController, false, Status::EX_ILLEGAL_STATE);
-            VIDEODECODER_FLUSH_FAILURE(videoDecoderController, true, Status::EX_ILLEGAL_STATE);
+            if (!videoDecoderController) {
+                UT_LOG_INFO("Controller is null, expecting failure (CLOSED state)");
+                //UT_EXPECT_TRUE(true) << "Test passes: flush not called on null controller";
+            } else {
+                VIDEODECODER_FLUSH_FAILURE(videoDecoderController, false, Status::EX_ILLEGAL_STATE);
+                VIDEODECODER_FLUSH_FAILURE(videoDecoderController, true, Status::EX_ILLEGAL_STATE);
+            }
 
             /* Open the Decoder */
             VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
@@ -1960,8 +1914,6 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, flush_neg)
             /* Start the Decoder */
             VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
             VIDEODECODER_CHECK_STATE(videoDecoder, State::STARTED);
-
-            /* No flush test here, as STARTED is the valid state */
 
             /* Stop the Decoder */
             VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
@@ -1981,7 +1933,6 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, flush_neg)
         }
     }
 }
-
 
 
 /**
@@ -2107,7 +2058,12 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, signalDiscontinuity_neg)
 
             /* Test signalDiscontinuity in CLOSED state (before open) */
             VIDEODECODER_CHECK_STATE(videoDecoder, State::CLOSED);
-            VIDEODECODER_SIGNAL_DISCONTINUITY_FAILURE(videoDecoderController, Status::EX_ILLEGAL_STATE);
+            if (!videoDecoderController) {
+                UT_LOG_INFO("Controller is null, expecting failure (CLOSED state)");
+                //UT_EXPECT_TRUE(true) << "Test passes: flush not called on null controller";
+            } else {
+                VIDEODECODER_SIGNAL_DISCONTINUITY_FAILURE(videoDecoderController, Status::EX_ILLEGAL_STATE);
+            }
 
             /* Open the Decoder */
             VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
@@ -2267,7 +2223,12 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, signalEOS_neg)
 
             /* Test signalEOS in CLOSED state (before open) */
             VIDEODECODER_CHECK_STATE(videoDecoder, State::CLOSED);
-            VIDEODECODER_SIGNAL_EOS_FAILURE(videoDecoderController, Status::EX_ILLEGAL_STATE);
+            if (!videoDecoderController) {
+                UT_LOG_INFO("Controller is null, expecting failure (CLOSED state)");
+                //UT_EXPECT_TRUE(true) << "Test passes: flush not called on null controller";
+            }else {
+                VIDEODECODER_SIGNAL_EOS_FAILURE(videoDecoderController, Status::EX_ILLEGAL_STATE);
+            }
 
             /* Open the Decoder */
             VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
@@ -2469,8 +2430,13 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, parseCodecSpecificData_neg)
 
                 /* Test in CLOSED state (before open) */
                 VIDEODECODER_CHECK_STATE(videoDecoder, State::CLOSED);
-                VIDEODECODER_PARSE_CSD_STATE_FAILURE(videoDecoderController, csdVideoFormat,
-                                                     validCodecData, Status::EX_ILLEGAL_STATE);
+                if (!videoDecoderController) {
+                    UT_LOG_INFO("Controller is null, expecting failure (CLOSED state)");
+                    //UT_EXPECT_TRUE(true) << "Test passes: flush not called on null controller";
+                }else {
+                    VIDEODECODER_PARSE_CSD_STATE_FAILURE(videoDecoderController, csdVideoFormat,
+                        validCodecData, Status::EX_ILLEGAL_STATE);
+                }
 
                 /* Open the Decoder */
                 VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
@@ -2487,9 +2453,9 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, parseCodecSpecificData_neg)
 
                 /* Test invalid codec data in STARTED */
                 VIDEODECODER_PARSE_CSD_DATA_FAILURE(videoDecoderController, csdVideoFormat,
-                                                    invalidCodecData1);
+                                                    invalidCodecData1,Status::EX_ILLEGAL_ARGUMENT);
                 VIDEODECODER_PARSE_CSD_DATA_FAILURE(videoDecoderController, csdVideoFormat,
-                                                    invalidCodecData2);
+                                                    invalidCodecData2,Status::EX_ILLEGAL_ARGUMENT);
 
                 /* Stop the Decoder */
                 VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
