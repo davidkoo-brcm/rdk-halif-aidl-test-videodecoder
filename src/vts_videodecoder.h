@@ -123,26 +123,26 @@ void vts_videodecoder_helper_validateCapabilities(int32_t decoderId,const Capabi
 /* Status::Exception */
 const static ut_control_keyStringMapping_t statusException_mapTable[] =
 {
-    {"EX_NONE",                  (int32_t) Status::EX_NONE},
-    {"EX_SECURITY",              (int32_t) Status::EX_SECURITY},
-    {"EX_BAD_PARCELABLE",        (int32_t) Status::EX_BAD_PARCELABLE},
-    {"EX_ILLEGAL_ARGUMENT",      (int32_t) Status::EX_ILLEGAL_ARGUMENT},
-    {"EX_NULL_POINTER",          (int32_t) Status::EX_NULL_POINTER},
-    {"EX_ILLEGAL_STATE",         (int32_t) Status::EX_ILLEGAL_STATE},
-    {"EX_NETWORK_MAIN_THREAD",   (int32_t) Status::EX_NETWORK_MAIN_THREAD},
-    {"EX_UNSUPPORTED_OPERATION", (int32_t) Status::EX_UNSUPPORTED_OPERATION},
-    {"EX_SERVICE_SPECIFIC",      (int32_t) Status::EX_SERVICE_SPECIFIC},
-    {"EX_PARCELABLE",            (int32_t) Status::EX_PARCELABLE},
-    {"EX_HAS_REPLY_HEADER",      (int32_t) Status::EX_HAS_REPLY_HEADER},
-    {"EX_TRANSACTION_FAILED",    (int32_t) Status::EX_TRANSACTION_FAILED},
+    {(char*)"EX_NONE",                  (int32_t) Status::EX_NONE},
+    {(char*)"EX_SECURITY",              (int32_t) Status::EX_SECURITY},
+    {(char*)"EX_BAD_PARCELABLE",        (int32_t) Status::EX_BAD_PARCELABLE},
+    {(char*)"EX_ILLEGAL_ARGUMENT",      (int32_t) Status::EX_ILLEGAL_ARGUMENT},
+    {(char*)"EX_NULL_POINTER",          (int32_t) Status::EX_NULL_POINTER},
+    {(char*)"EX_ILLEGAL_STATE",         (int32_t) Status::EX_ILLEGAL_STATE},
+    {(char*)"EX_NETWORK_MAIN_THREAD",   (int32_t) Status::EX_NETWORK_MAIN_THREAD},
+    {(char*)"EX_UNSUPPORTED_OPERATION", (int32_t) Status::EX_UNSUPPORTED_OPERATION},
+    {(char*)"EX_SERVICE_SPECIFIC",      (int32_t) Status::EX_SERVICE_SPECIFIC},
+    {(char*)"EX_PARCELABLE",            (int32_t) Status::EX_PARCELABLE},
+    {(char*)"EX_HAS_REPLY_HEADER",      (int32_t) Status::EX_HAS_REPLY_HEADER},
+    {(char*)"EX_TRANSACTION_FAILED",    (int32_t) Status::EX_TRANSACTION_FAILED},
     {NULL, -1}
 };
 
 /* bool */
 const static ut_control_keyStringMapping_t bool_mapTable[] =
 {
-    {"false", (int32_t) false},
-    {"true",  (int32_t) true},
+    {(char*)"false", (int32_t) false},
+    {(char*)"true",  (int32_t) true},
     {NULL, -1}
 };
 
@@ -238,25 +238,6 @@ const static ut_control_keyStringMapping_t bool_mapTable[] =
          UT_ASSERT_TRUE(status.isOk()); \
          UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
      } while (0)
-
-#define VIDEODECODER_SETPROPERTY_SUCCESS(videoDecoderController, property, propertyValue) \
-     do { \
-         Status status; \
-         bool result; \
-         UT_LOG_INFO("Calling setProperty(IN:property[%d], IN:propertyValue=%d)", \
-                     static_cast<int32_t>(property), \
-                     propertyValue.value.has_value() ? propertyValue.value->intValue : 0); \
-         status = videoDecoderController->setProperty(property, propertyValue, &result); \
-         UT_LOG_INFO("Result setProperty(IN:property[%d], OUT:result=%d), status:[isOK:%s, exception:%s]", \
-                     static_cast<int32_t>(property), result, \
-                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
-                     UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
-         UT_ASSERT_TRUE(status.isOk()); \
-         UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
-         UT_ASSERT_TRUE(result); \
-     } while (0)
-
-
 
 #define VIDEODECODER_GET_PROPERTY_FAILURE(videoDecoder, property, propertyValue, exception) \
     do { \
@@ -727,7 +708,7 @@ do { \
         bool result; \
         UT_LOG_INFO("Calling setProperty(IN:property[%d], IN:propertyValue=%d) expecting failure", \
                     static_cast<int32_t>(property), \
-                    propertyValue.value.has_value() ? propertyValue.value->intValue : 0); \
+                    propertyValue.value); \
         status = videoDecoderController->setProperty(property, propertyValue, &result); \
         UT_LOG_INFO("Result setProperty(IN:property[%d], OUT:result=%d), status:[isOK:%s, exception:%s]", \
                     static_cast<int32_t>(property), result, \
@@ -747,22 +728,6 @@ do { \
         } \
     } while (0)
 
-#define VIDEODECODER_SETPROPERTY_FAILURE(videoDecoderController, property, propertyValue, expectedException) \
-    do { \
-        Status status; \
-        bool result; \
-        UT_LOG_INFO("Calling setProperty(IN:property[%d], IN:propertyValue=%d) expecting failure", \
-                    static_cast<int32_t>(property), \
-                    propertyValue.value); \
-        status = videoDecoderController->setProperty(property, propertyValue, &result); \
-        UT_LOG_INFO("Result setProperty(IN:property[%d], OUT:result=%d), status:[isOK:%s, exception:%s]", \
-                    static_cast<int32_t>(property), result, \
-                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
-                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
-        UT_ASSERT_FALSE(status.isOk()); \
-        UT_ASSERT_EQUAL(status.exceptionCode(), expectedException); \
-    } while (0)
-
 #define VIDEODECODER_SETPROPERTY_LIST_FAILURE(videoDecoderController, propertyList, type, exception) \
     do { \
         for (const auto& [property, value] : propertyList) \
@@ -771,17 +736,6 @@ do { \
             propertyValue.value = PropertyValue::Value::make<PropertyValue::Value::Tag::type>(value); \
             VIDEODECODER_SETPROPERTY_FAILURE(videoDecoderController, property, propertyValue, exception); \
         } \
-    } while (0)
-
-#define VIDEODECODER_SIGNAL_DISCONTINUITY_SUCCESS(videoDecoderController) \
-    do { \
-        UT_LOG_INFO("Calling signalDiscontinuity()"); \
-        Status status = (videoDecoderController)->signalDiscontinuity(); \
-        UT_LOG_INFO("Result signalDiscontinuity(), status:[isOK:%s, exception:%s]", \
-                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
-                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
-        UT_ASSERT_TRUE(status.isOk()) << "signalDiscontinuity binder call failed"; \
-        UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE) << "signalDiscontinuity returned an exception"; \
     } while (0)
 
 #define VIDEODECODER_CONTROLLER_SET_PROPERTY(videoDecoderController, property, propertyValue, status, result) \

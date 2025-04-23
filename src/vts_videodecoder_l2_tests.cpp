@@ -94,9 +94,9 @@ UT_ADD_TEST(VTS_L2_VideoDecoder, TestGetAndSetProperties) {
             char codecName[UT_KVP_MAX_ELEMENT_SIZE];
             std::string codecpath_key = "IVideoDecoderManager.IVideoDecoder." + std::to_string(i) + ".supportedCodecs." + std::to_string(j);
             UT_KVP_PROFILE_GET_STRING(codecpath_key.c_str(), codecName);
-            Codec codec = Codec::MPEG;
-            if (codecName == "H264") codec = Codec::H264;
-            else if (codecName == "H265") codec = Codec::H265;
+            Codec codec = Codec::MPEG2_VIDEO;
+            if (codecName == "H264") codec = Codec::H264_AVC;
+            else if (codecName == "H265") codec = Codec::H265_HEVC;
             else if (codecName == "VP9") codec = Codec::VP9;
             else if (codecName == "AV1") codec = Codec::AV1;
 
@@ -209,9 +209,9 @@ UT_ADD_TEST(VTS_L2_VideoDecoder, TestDecoderStateTransitions) {
             std::string codecpath_key = "IVideoDecoderManager.IVideoDecoder." + std::to_string(i) + ".supportedCodecs." + std::to_string(j);
             UT_KVP_PROFILE_GET_STRING(codecpath_key.c_str(), codecName);
 
-            Codec codec = Codec::MPEG;
-            if (codecName == "H264") codec = Codec::H264;
-            else if (codecName == "H265") codec = Codec::H265;
+            Codec codec = Codec::MPEG2_VIDEO;
+            if (codecName == "H264") codec = Codec::H264_AVC;
+            else if (codecName == "H265") codec = Codec::H265_HEVC;
             else if (codecName == "VP9") codec = Codec::VP9;
             else if (codecName == "AV1") codec = Codec::AV1;
 
@@ -324,9 +324,9 @@ UT_ADD_TEST(VTS_L2_VideoDecoder, TestDecoderStateTransitions_multipleInstance) {
             std::string codecpath_key = "IVideoDecoderManager.IVideoDecoder." + std::to_string(i) + ".supportedCodecs." + std::to_string(j);
             UT_KVP_PROFILE_GET_STRING(codecpath_key.c_str(), codecName);
 
-            Codec codec = Codec::MPEG;
-            if (codecName == "H264") codec = Codec::H264;
-            else if (codecName == "H265") codec = Codec::H265;
+            Codec codec = Codec::MPEG2_VIDEO;
+            if (codecName == "H264") codec = Codec::H264_AVC;
+            else if (codecName == "H265") codec = Codec::H265_HEVC;
             else if (codecName == "VP9") codec = Codec::VP9;
             else if (codecName == "AV1") codec = Codec::AV1;
 

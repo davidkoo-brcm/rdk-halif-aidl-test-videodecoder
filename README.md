@@ -1,74 +1,71 @@
-# NOTE: This release is intended for internal development and has not undergone testing or compilation
-
-## L1 Testing Suite For HAL Video Decoder
+# Testing Suite For Video Decoder HAL
 
 ## Build Steps
 
 ### 1. Build linux binder
 
-For detail build instruction, please refer to https://github.com/rdk-e/linux_binder_idl/tree/main
+The test suite depends on the Linux binder with `AIDL` support. Follow these steps to build it:
+
+For detail build instruction, please refer to [Linux Binder](https://github.com/rdk-e/linux_binder_idl/tree/main)
 
 Here outline the simplest steps are
 
 ```bash
 git clone -b develop 'ssh://git@github.com/rdk-e/linux_binder_idl.git'
 
-cde linux_binder_idl
+cd linux_binder_idl
 
 ./build-linux-binder-aidl.sh 64
 ```
 
 ### 2. Build this test
 
-Using the following directory structure:
+Clone and build the test suite:
 
-```
-├── linux_binder_idl
-└── rdk-halif-binder-test-videodecoder
-    ├── build.sh
-    ├── Makefile
-    ├── profiles
-    │   └── hfp-videodecoder.yaml
-    ├── README.md
-    ├── run.sh
-    ├── src
-    │   └── l1_videodecoderClient_gtest.cpp
-    └── vcomponent
-        ├── Makefile
-        └── src
-            ├── VideoDecoder.cpp
-            ├── VideoDecoder.h
-            └── VideoDecoderService.cpp
+```bash
+git clone git@github.com:rdkcentral/rdk-halif-binder-test-videodecoder.git
 ```
 
 ```bash
 cd rdk-halif-binder-test-videodecoder
-
-bash ./build.sh
 ```
 
 Addition environment variables can be used:
-* `AIDL_BIN`
-	* Path of the aidl compiler
-* `LINUX_BINDER_OUT_DIR`
-	* Path of output that is installed after building linux_binder_idl, example contains
-	  bin/servicemanager, lib/libbinder etc
-* `UT_CORE_VERSION`
-	* Specific version of `ut-core` to be used. Default using the latest tagged version (not necessary same as branch head).
+
+- AIDL_BIN: Path to the `AIDL` compiler (e.g., /path/to/linux_binder_idl/out/aidl).
+
+- LINUX_BINDER_OUT_DIR: Path to the Linux binder output directory (e.g., /path/to/linux_binder_idl/local).
+
+- UT_CORE_VERSION: Specific version of the UT-Core framework (e.g., 4.6.0). Defaults to the latest tagged version.
 
 Example:
+
 ```bash
-UT_CORE_VERSION=4.3.0 AIDL_BIN=../linux_binder_idl/out/aidl LINUX_BINDER_OUT_DIR=../linux_binder_idl/local/ bash ./build.sh
+export UT_CORE_VERSION=4.6.0
+export AIDL_BIN=/path/linux_binder_idl/out/aidl
+export LINUX_BINDER_OUT_DIR=/path//linux_binder_idl/local/
 ```
 
-There are test binaries and libraries, and binaries and libraries necessary for this test is located in `build/bin`
+Run the build script:
 
-Example directory structure:
-
+```bash
+./build.sh
 ```
+
+The build.sh script:
+
+- Clones the rdk-halif-aidl repository and UT-Core framework.
+
+- Compiles the test suite.
+
+- Generates binaries in the build/bin directory.
+
+Example directory structure :
+
+```bash
 build/bin/
+├── aidl
 ├── EmulateVideoDecoderService
-├── hal_test
 ├── lib
 ├── libbase.so
 ├── libbinder.so
@@ -81,19 +78,42 @@ build/bin/
 ├── profiles
 │   └── hfp-videodecoder.yaml
 ├── run.sh
-└── servicemanager
+├── servicemanager
+└── vts_videoDecoder
 ```
 
-# Run test
+## Run test
+
+- Package the Binaries:
 
 ```bash
 cd build
+tar -zcf videodecoder_vts.tar.gz bin
+```
 
-tar -zcf videodecoder_l1.tar.gz bin
+- Transfer to Target Device:
 
-# scp videodecoder_l1.tar.gz into taraget device and extract it
+Copy the tarball to the target device (e.g., using scp):
+
+```bash
+scp videodecoder_vts.tar.gz root@target-device:/home/root/
+
+```
+
+- Extract on Target Device:
+
+Log into the target device and extract the tarball:
+
+```bash
+ssh root@target-device
+cd /home/root
+tar -zxf videodecoder_vts.tar.gz
 cd bin
+```
 
-# Require root to access binder device
-sudo bash ./run.sh
+- Run the Test:
+Execute the run.sh script as root:
+
+```bash
+sudo ./run.sh -p profiles/hfp-videodecoder.yaml
 ```
