@@ -54,11 +54,11 @@ Run the build script:
 
 The build.sh script:
 
-- Clones the rdk-halif-aidl repository and UT-Core framework.
+- Clones the `rdk-halif-aidl` repository and UT-Core framework.
 
 - Compiles the test suite.
 
-- Generates binaries in the build/bin directory.
+- Generates binaries in the `build/bin` directory.
 
 Example directory structure :
 
