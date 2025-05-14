@@ -693,8 +693,8 @@ do { \
         UT_LOG_INFO("Calling setProperty(IN:property[%d], IN:propertyValue=%d)", \
                     static_cast<int32_t>(property), propertyValue.value); \
         status = videoDecoderController->setProperty(property, propertyValue, &result); \
-        UT_LOG_INFO("Result setProperty(IN:property[%d], OUT:result=%d), status:[isOK:%s, exception:%s]", \
-                    static_cast<int32_t>(property), result, \
+        UT_LOG_INFO("Result setProperty(IN:property[%d], OUT:result=%s), status:[isOK:%s, exception:%s]", \
+                    static_cast<int32_t>(property), UT_Control_GetMapString(bool_mapTable, result), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                     UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
         UT_ASSERT_TRUE(status.isOk()); \
@@ -768,6 +768,25 @@ do { \
         UT_ASSERT_FALSE(status.isOk()) << "flush succeeded unexpectedly"; \
         UT_ASSERT_EQUAL(status.exceptionCode(), (expectedException)) << "Unexpected exception for flush"; \
     } while (0)
+/**
+ * @brief Tests that flush fails with the expected exception in an invalid state.
+ * @param[in] videoDecoderController The IVideoDecoderController instance.
+ * @param[in] reset The reset flag for flush.
+ * @param[in] expectedException The expected binder exception (e.g., EX_ILLEGAL_STATE).
+ */
+#define VIDEODECODER_FLUSH_SUCCESS(videoDecoderController, reset) \
+    do { \
+        Status status; \
+        UT_LOG_INFO("Calling flush(IN:reset:[%s])", (reset) ? "true" : "false"); \
+        status = (videoDecoderController)->flush(reset); \
+        UT_LOG_INFO("Result flush(IN:reset:[%s]), status:[isOK:%s, exception:%s]", \
+                    (reset) ? "true" : "false", \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+        UT_ASSERT_TRUE(status.isOk()); \
+        UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE);  \
+    } while (0)
+
 
 /**
  * @brief Tests that signalDiscontinuity succeeds in the STARTED state.
