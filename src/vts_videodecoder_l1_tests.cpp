@@ -89,9 +89,9 @@ static const int32_t intValueAVSourceUnknown = 0;
 
 Codec videoDecoderStringToCodec(const std::string& codecStr) {
     static const std::unordered_map<std::string, Codec> codecMap = {
-        {"MPEG", Codec::MPEG2_VIDEO},
-        {"H264", Codec::H264_AVC},
-        {"H265", Codec::H265_HEVC},
+        {"MPEG", Codec::MPEG},
+        {"H264", Codec::H264},
+        {"H265", Codec::H265},
         {"VP9",  Codec::VP9},
         {"AV1",  Codec::AV1}
     };
@@ -803,7 +803,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, open_neg) {
 
         // Select a valid codec
         Codec validCodec = capabilities.supportedCodecs.empty() ?
-            Codec::H264_AVC : capabilities.supportedCodecs.front().codec;
+            Codec::H264 : capabilities.supportedCodecs.front().codec;
 
         // Test 1: Unsupported codec (below range)
         Codec invalidCodecLow = static_cast<Codec>(0);
@@ -929,7 +929,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, close_neg) {
 
         // Test 2: Close when in CLOSED state (invalid state)
         Codec validCodec = capabilities.supportedCodecs.empty() ?
-            Codec::H264_AVC : capabilities.supportedCodecs.front().codec;
+            Codec::H264 : capabilities.supportedCodecs.front().codec;
         VIDEODECODER_OPEN_SUCCESS(videoDecoder, validCodec, capabilities.supportsSecure,
                                   controllerListener, videoDecoderController, true);
         VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController,  true);
@@ -2294,10 +2294,10 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, parseCodecSpecificData_pos)
 
     // Valid codec-specific data per codec
     std::map<Codec, std::pair<CSDVideoFormat, std::vector<uint8_t>>> codecDataMap = {
-        {Codec::H264_AVC, {CSDVideoFormat::AVC_DECODER_CONFIGURATION_RECORD,
+        {Codec::H264, {CSDVideoFormat::AVC_DECODER_CONFIGURATION_RECORD,
                        {0x01, 0x4D, 0x40, 0x1E, 0xFF, 0xE1, 0x00, 0x04, 0x67, 0x4D, 0x40, 0x1E,
                         0x01, 0x00, 0x04, 0x68, 0xEE, 0x3C, 0x80}}}, // H.264 SPS/PPS
-        {Codec::H265_HEVC, {CSDVideoFormat::HEVC_DECODER_CONFIGURATION_RECORD,
+        {Codec::H265, {CSDVideoFormat::HEVC_DECODER_CONFIGURATION_RECORD,
                        {0x01, 0x01, 0x60, 0x00, 0x00, 0x00, 0x90, 0x00, 0x00, 0x00, 0x00, 0x00,
                         0xF0, 0x00, 0xFC, 0xFD}}}, // H.265 VPS/SPS/PPS
         {Codec::AV1, {CSDVideoFormat::AV1_DECODER_CONFIGURATION_RECORD,
@@ -2389,10 +2389,10 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, parseCodecSpecificData_neg)
 
     // Valid and invalid codec-specific data per codec
     std::map<Codec, std::pair<CSDVideoFormat, std::vector<uint8_t>>> validCodecDataMap = {
-        {Codec::H264_AVC, {CSDVideoFormat::AVC_DECODER_CONFIGURATION_RECORD,
+        {Codec::H264, {CSDVideoFormat::AVC_DECODER_CONFIGURATION_RECORD,
                        {0x01, 0x4D, 0x40, 0x1E, 0xFF, 0xE1, 0x00, 0x04, 0x67, 0x4D, 0x40, 0x1E,
                         0x01, 0x00, 0x04, 0x68, 0xEE, 0x3C, 0x80}}}, // H.264
-        {Codec::H265_HEVC, {CSDVideoFormat::HEVC_DECODER_CONFIGURATION_RECORD,
+        {Codec::H265, {CSDVideoFormat::HEVC_DECODER_CONFIGURATION_RECORD,
                        {0x01, 0x01, 0x60, 0x00, 0x00, 0x00, 0x90, 0x00, 0x00, 0x00, 0x00, 0x00,
                         0xF0, 0x00, 0xFC, 0xFD}}}, // H.265
         {Codec::AV1, {CSDVideoFormat::AV1_DECODER_CONFIGURATION_RECORD,
