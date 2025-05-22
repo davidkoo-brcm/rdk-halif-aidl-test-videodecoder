@@ -84,7 +84,7 @@ VideoDecoder::VideoDecoder(IVideoDecoder::Id id) {
     this->mInputQueueDepth = 96000;
     this->mOutputFramePoolSize = 5;
     this->mSupportedCodecs = {
-        Codec::MPEG2_VIDEO, Codec::H264_AVC, Codec::H265_HEVC, Codec::VP9, Codec::AV1
+        Codec::MPEG, Codec::H264, Codec::H265, Codec::VP9, Codec::AV1
     };
     this->setState(State::CLOSED);
     printf("VideoDecoder service initialized for ID: %d\n", id.value);
@@ -107,19 +107,19 @@ State VideoDecoder::getState() {
 android::binder::Status VideoDecoder::getCapabilities(videodecoder::Capabilities* _aidl_return) {
     Capabilities capabilities;
     CodecCapabilities mpeg;
-    mpeg.codec = Codec::MPEG2_VIDEO;
+    mpeg.codec = Codec::MPEG;
     mpeg.maxFrameRate = 60;
     mpeg.maxFrameWidth = 1920;
     mpeg.maxFrameHeight = 1080;
 
     CodecCapabilities h264;
-    h264.codec = Codec::H264_AVC;
+    h264.codec = Codec::H264;
     h264.maxFrameRate = 60;
     h264.maxFrameWidth = 1920;
     h264.maxFrameHeight = 1080;
 
     CodecCapabilities h265;
-    h265.codec = Codec::H265_HEVC;
+    h265.codec = Codec::H265;
     h265.maxFrameRate = 60;
 
     CodecCapabilities vp9;
@@ -259,7 +259,7 @@ android::binder::Status VideoDecoder::open(videodecoder::Codec codec, bool secur
         *_aidl_return = nullptr;
         return android::binder::Status::fromExceptionCode(android::binder::Status::EX_ILLEGAL_ARGUMENT);
     }
-    if (codec == Codec::MPEG2_VIDEO && !secure) { // Fail for MPEG with secure:false
+    if (codec == Codec::MPEG && !secure) { // Fail for MPEG with secure:false
         LOG(ERROR) << "open: MPEG codec not supported with secure:false";
         *_aidl_return = nullptr;
         return android::binder::Status::fromExceptionCode(android::binder::Status::EX_ILLEGAL_ARGUMENT);

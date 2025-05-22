@@ -83,7 +83,7 @@ UT_status_t getVideoDecoderService() {
 
 Codec stringToCodec(const std::string& codecStr) {
     static const std::unordered_map<std::string, Codec> codecMap = {
-        {"MPEG", Codec::MPEG2_VIDEO}, {"H264", Codec::H264_AVC}, {"H265", Codec::H265_HEVC},
+        {"MPEG", Codec::MPEG}, {"H264", Codec::H264}, {"H265", Codec::H265},
         {"VP9", Codec::VP9}, {"AV1", Codec::AV1}
     };
     auto it = codecMap.find(codecStr);
