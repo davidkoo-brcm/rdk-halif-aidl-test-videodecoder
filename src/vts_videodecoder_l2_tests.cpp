@@ -196,7 +196,7 @@ class VTS_L2_VideoDecoder : public UTCore {
 * **Test Case ID:** 001@n
 *
 * **Test Procedure:**
-* Refer to UT specification documentation [VideoDecoder_High-Level_TestSpec.md](../../docs/pages/VideoDecoder_High-Level_TestSpec.md)
+* Refer to UT specification documentation [VideoDecoder_L2_Low-level_TestSpecification.md](../../docs/pages/VideoDecoder_L2_Low-level_TestSpecification.md)
 */
 UT_ADD_TEST(VTS_L2_VideoDecoder, TestGetAndSetProperties) {
     // Fetch decoder IDs from the manager
@@ -250,7 +250,7 @@ UT_ADD_TEST(VTS_L2_VideoDecoder, TestGetAndSetProperties) {
 * **Test Case ID:** 002@n
 *
 * **Test Procedure:**
-* Refer to UT specification documentation [VideoDecoder_High-Level_TestSpec.md](../../docs/pages/VideoDecoder_High-Level_TestSpec.md)
+* Refer to UT specification documentation [VideoDecoder_L2_Low-level_TestSpecification.md](../../docs/pages/VideoDecoder_L2_Low-level_TestSpecification.md)
 */
 UT_ADD_TEST(VTS_L2_VideoDecoder, TestGetAndSetProperties_multipleInstance) {
     std::vector<sp<IVideoDecoderController>> videoDecoderControllersList;
@@ -311,7 +311,7 @@ UT_ADD_TEST(VTS_L2_VideoDecoder, TestGetAndSetProperties_multipleInstance) {
 * **Test Case ID:** 003@n
 *
 * **Test Procedure:**
-* Refer to UT specification documentation [VideoDecoder_High-Level_TestSpec.md](../../docs/pages/VideoDecoder_High-Level_TestSpec.md)
+* Refer to UT specification documentation [VideoDecoder_L2_Low-level_TestSpecification.md](../../docs/pages/VideoDecoder_L2_Low-level_TestSpecification.md)
 */
 UT_ADD_TEST(VTS_L2_VideoDecoder, TestDecoderStateTransitions) {
     for(const auto& [videoDecoder, controlListener, eventListener, capabilities] : mVideoDecoderList)
@@ -353,7 +353,7 @@ UT_ADD_TEST(VTS_L2_VideoDecoder, TestDecoderStateTransitions) {
 * **Test Case ID:** 004@n
 *
 * **Test Procedure:**
-* Refer to UT specification documentation [VideoDecoder_High-Level_TestSpec.md](../../docs/pages/VideoDecoder_High-Level_TestSpec.md)
+* Refer to UT specification documentation [VideoDecoder_L2_Low-level_TestSpecification.md](../../docs/pages/VideoDecoder_L2_Low-level_TestSpecification.md)
 */
 UT_ADD_TEST(VTS_L2_VideoDecoder, TestDecoderStateTransitions_multipleInstance) {
     std::vector<sp<IVideoDecoderController>> videoDecoderControllersList;
