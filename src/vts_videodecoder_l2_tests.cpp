@@ -67,6 +67,125 @@
  #include "vts_videodecoder.h"
 
 
+struct PropertyTestCase {
+    ::com::rdk::hal::videodecoder::Property property;
+    int32_t testValue;
+    const char* propertyName;
+};
+std::vector<PropertyTestCase> testCases_readyState = {
+    {::com::rdk::hal::videodecoder::Property::OPERATIONAL_MODE, static_cast<int32_t>(OperationalMode::NON_TUNNELLED), "OPERATIONAL_MODE"},
+    {::com::rdk::hal::videodecoder::Property::OPERATIONAL_MODE, static_cast<int32_t>(OperationalMode::TUNNELLED), "OPERATIONAL_MODE"},
+    {::com::rdk::hal::videodecoder::Property::OPERATIONAL_MODE, static_cast<int32_t>(OperationalMode::GRAPHICS_TEXTURE), "OPERATIONAL_MODE"},
+    {::com::rdk::hal::videodecoder::Property::AV_SOURCE, static_cast<int32_t>(AVSource::AUTO), "AV_SOURCE"},
+    {::com::rdk::hal::videodecoder::Property::AV_SOURCE, static_cast<int32_t>(AVSource::IP), "AV_SOURCE"},
+    {::com::rdk::hal::videodecoder::Property::AV_SOURCE, static_cast<int32_t>(AVSource::TUNER), "AV_SOURCE"},
+    {::com::rdk::hal::videodecoder::Property::AV_SOURCE, static_cast<int32_t>(AVSource::SYSTEM), "AV_SOURCE"},
+    {::com::rdk::hal::videodecoder::Property::AV_SOURCE, static_cast<int32_t>(AVSource::HDMI_1), "AV_SOURCE"},
+    {::com::rdk::hal::videodecoder::Property::AV_SOURCE, static_cast<int32_t>(AVSource::HDMI_2), "AV_SOURCE"},
+    {::com::rdk::hal::videodecoder::Property::AV_SOURCE, static_cast<int32_t>(AVSource::HDMI_3), "AV_SOURCE"},
+    {::com::rdk::hal::videodecoder::Property::AV_SOURCE, static_cast<int32_t>(AVSource::HDMI_4), "AV_SOURCE"},
+    {::com::rdk::hal::videodecoder::Property::AV_SOURCE, static_cast<int32_t>(AVSource::HDMI_5), "AV_SOURCE"},
+    {::com::rdk::hal::videodecoder::Property::AV_SOURCE, static_cast<int32_t>(AVSource::COMPOSITE_1), "AV_SOURCE"},
+    {::com::rdk::hal::videodecoder::Property::AV_SOURCE, static_cast<int32_t>(AVSource::COMPOSITE_2), "AV_SOURCE"},
+    {::com::rdk::hal::videodecoder::Property::AV_SOURCE, static_cast<int32_t>(AVSource::COMPOSITE_3), "AV_SOURCE"},
+    {::com::rdk::hal::videodecoder::Property::AV_SOURCE, static_cast<int32_t>(AVSource::COMPOSITE_4), "AV_SOURCE"},
+    {::com::rdk::hal::videodecoder::Property::AV_SOURCE, static_cast<int32_t>(AVSource::COMPOSITE_5), "AV_SOURCE"},
+    {::com::rdk::hal::videodecoder::Property::LOW_LATENCY_MODE , 1, "LOW_LATENCY_MODE"},
+    {::com::rdk::hal::videodecoder::Property::LOW_LATENCY_MODE, 0, "LOW_LATENCY_MODE"},
+    {::com::rdk::hal::videodecoder::Property::DECODE_ERROR_POLICY  , 1, "DECODE_ERROR_POLICY"},
+    {::com::rdk::hal::videodecoder::Property::DECODE_ERROR_POLICY , 0, "DECODE_ERROR_POLICY"},
+    {::com::rdk::hal::videodecoder::Property::SHA1_CALC   , 1, "SHA1_CALC"},
+    {::com::rdk::hal::videodecoder::Property::SHA1_CALC  , 0, "SHA1_CALC"},
+};
+std::vector<PropertyTestCase> testCases_startedState = {
+    {::com::rdk::hal::videodecoder::Property::OPERATIONAL_MODE, static_cast<int32_t>(OperationalMode::NON_TUNNELLED), "OPERATIONAL_MODE"},
+    {::com::rdk::hal::videodecoder::Property::OPERATIONAL_MODE, static_cast<int32_t>(OperationalMode::TUNNELLED), "OPERATIONAL_MODE"},
+    {::com::rdk::hal::videodecoder::Property::OPERATIONAL_MODE, static_cast<int32_t>(OperationalMode::GRAPHICS_TEXTURE), "OPERATIONAL_MODE"},
+    {::com::rdk::hal::videodecoder::Property::SHA1_CALC   , 1, "SHA1_CALC"},
+    {::com::rdk::hal::videodecoder::Property::SHA1_CALC  , 0, "SHA1_CALC"},
+};
+
+class VTS_L2_VideoDecoder : public UTCore {
+    public:
+        std::vector<std::tuple<sp<IVideoDecoder>, sp<VideoDecoderControllerListener>, sp<VideoDecoderEventListener>,  videodecoder::Capabilities *>> mVideoDecoderList;
+        /**
+         * @brief Default constructor.
+         * Relies on UTCore's default initialization; no additional setup required.
+         */
+        VTS_L2_VideoDecoder() = default;
+
+        /**
+         * @brief Virtual destructor.
+         * Ensures proper cleanup; defaults to UTCore's implementation.
+         */
+        ~VTS_L2_VideoDecoder() override = default;
+
+        /**
+         * @brief Prepares the test environment before each test case.
+         * Calls UTCore::SetUp() to ensure base class initialization.
+         * Add custom setup logic here if needed.
+         */
+        void SetUp() override {
+            UTCore::SetUp();  // Call base class setup (if it exists)
+            std::vector<IVideoDecoder::Id> decoderIds;
+        /* Get the Video Sink IDs */
+            VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
+
+            android::ProcessState::self()->startThreadPool();
+
+            for(const auto& _decoderId: decoderIds)
+            {
+                sp<IVideoDecoder> videoDecoder;
+                videodecoder::Capabilities *capabilities = new videodecoder::Capabilities();
+                sp<VideoDecoderEventListener> eventListener = new VideoDecoderEventListener();
+
+                sp<VideoDecoderControllerListener> controlListener = new VideoDecoderControllerListener();
+
+                /* Get Video Sink handle */
+                VIDEODECODER_MANAGER_GETVIDEODECODER(_decoderId, videoDecoder);
+
+                /* Register events */
+                VIDEODECODER_REGISTER_EVENT_SUCCESS(videoDecoder, eventListener);
+
+                VIDEODECODER_GETCAPABILITIES(videoDecoder,capabilities);
+
+                mVideoDecoderList.push_back({videoDecoder, controlListener, eventListener, capabilities});
+            }
+            // Custom setup code here, e.g., initialize decoder mocks or profiles
+        }
+
+        void checkCompleteStateTransition(sp<IVideoDecoder> decoder, sp<VideoDecoderEventListener> eventListener, State oldState, State intermediateState, State newState)
+        {
+            ::com::rdk::hal::State currentState;
+
+            UT_ASSERT_TRUE(eventListener->checkStateTransistion(oldState, intermediateState));
+
+            eventListener->waitForState(newState, std::chrono::milliseconds(MAX_FINAL_STATE_WAIT_MS));
+
+            VIDEODECODER_GETSTATE(decoder, currentState);
+
+            UT_ASSERT_EQUAL(currentState, newState);
+
+            UT_ASSERT_TRUE(eventListener->checkStateTransistion(intermediateState, newState));
+
+            eventListener->resetStateChanges();
+        }
+        /**
+         * @brief Cleans up the test environment after each test case.
+         * Calls UTCore::TearDown() to ensure base class cleanup.
+         * Add custom cleanup logic here if needed.
+         */
+        void TearDown() override {
+            // Custom cleanup code here, e.g., release resources
+            UTCore::TearDown();  // Call base class teardown (if it exists)
+            for (const auto& [decoder, controlListener, eventListener, capabilities] : mVideoDecoderList)
+            {
+             /* Un-register the events */
+                VIDEODECODER_UNREGISTER_EVENT_SUCCESS(decoder, eventListener);
+            }
+            mVideoDecoderList.clear();
+        }
+    };
 
 /**
 * @brief Test the ability to set and get properties on video decoders
@@ -81,42 +200,44 @@
 */
 UT_ADD_TEST(VTS_L2_VideoDecoder, TestGetAndSetProperties) {
     // Fetch decoder IDs from the manager
-    std::vector<IVideoDecoder::Id> decoderIds;
-    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
-    int i = 0;
-
-    for (const auto& id : decoderIds) {
-        sp<IVideoDecoder> decoder;
-        VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(id, decoder);
-        UT_ASSERT_TRUE(decoder != nullptr) << "Decoder pointer is null for ID " << id.value;
-
-        Capabilities capabilities;
-        VIDEODECODER_GETCAPABILITIES(decoder, &capabilities);
-
-        for (const auto& _codecCaps : capabilities.supportedCodecs) {
+    for(const auto& [videoDecoder, controlListener, eventListener, capabilities] : mVideoDecoderList)
+    {
+        for (const auto& _codecCaps : capabilities->supportedCodecs) {
             Codec _codec = _codecCaps.codec;
 
             sp<IVideoDecoderController> controller;
-            sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
             // Open to READY
-            VIDEODECODER_OPEN_SUCCESS(decoder, _codec, capabilities.supportsSecure,
-                                      controllerListener, controller, false);
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities->supportsSecure,
+                                      controlListener, controller, false);
 
-            // Set and verify read-write properties
-            for (int prop = static_cast<int>(::com::rdk::hal::videodecoder::Property::OPERATIONAL_MODE); prop <= static_cast<int>(::com::rdk::hal::videodecoder::Property::SHA1_CALC); ++prop) {
-                Property property = static_cast<Property>(prop);
+            for (const auto& testCase : testCases_readyState) {
                 PropertyValue setValue;
-                setValue.value = PropertyValue::Value::make<PropertyValue::Value::Tag::intValue>(1);
-                VIDEODECODER_SETPROPERTY_SUCCESS(controller,property,setValue);
+                setValue.value = PropertyValue::Value::make<PropertyValue::Value::Tag::intValue>(testCase.testValue);
 
-                std::optional<PropertyValue> getValue;
-                VIDEODECODER_GETPROPERTY(decoder,property,getValue);
-                UT_ASSERT_EQUAL(getValue->value->getTag(), ::com::rdk::hal::PropertyValue::Value::Tag::intValue);
+                VIDEODECODER_SETPROPERTY_SUCCESS(controller,testCase.property,setValue);
+
+                std::optional<PropertyValue> getPropertyValue;
+                VIDEODECODER_GETPROPERTY(videoDecoder, testCase.property, getPropertyValue);
+                UT_ASSERT_EQUAL(getPropertyValue->value->get<com::rdk::hal::PropertyValue::Value::Tag::intValue>(), testCase.testValue);
             }
+
+            //Check and set and get properties for Started State
+            VIDEODECODER_START_SUCCESS(videoDecoder,controller,true);
+            for (const auto& testCase : testCases_startedState) {
+                PropertyValue setValue;
+                setValue.value = PropertyValue::Value::make<PropertyValue::Value::Tag::intValue>(testCase.testValue);
+
+                VIDEODECODER_SETPROPERTY_SUCCESS(controller,testCase.property,setValue);
+
+                std::optional<PropertyValue> getPropertyValue;
+                VIDEODECODER_GETPROPERTY(videoDecoder, testCase.property, getPropertyValue);
+                UT_ASSERT_EQUAL(getPropertyValue->value->get<com::rdk::hal::PropertyValue::Value::Tag::intValue>(), testCase.testValue);
+            }
+            // Stop decoder
+            VIDEODECODER_STOP_SUCCESS(videodecoder,controller,true);
             // Close the decoder
-            VIDEODECODER_CLOSE_SUCCESS(decoder, controller, true);
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, controller, true);
         }
-        i++;
     }
 }
 
@@ -132,56 +253,52 @@ UT_ADD_TEST(VTS_L2_VideoDecoder, TestGetAndSetProperties) {
 * Refer to UT specification documentation [VideoDecoder_High-Level_TestSpec.md](../../docs/pages/VideoDecoder_High-Level_TestSpec.md)
 */
 UT_ADD_TEST(VTS_L2_VideoDecoder, TestGetAndSetProperties_multipleInstance) {
-    std::vector<sp<IVideoDecoder>>            decoders;
-    std::vector<sp<IVideoDecoderController>>  controllers;
-    std::vector<IVideoDecoder::Id> decoderIds;
-    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
-    int index = 0;
+    std::vector<sp<IVideoDecoderController>> videoDecoderControllersList;
 
-    for (const auto& id : decoderIds) {
-        sp<IVideoDecoder> decoder;
-        VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(id, decoder);
-        UT_ASSERT_TRUE(decoder != nullptr) << "Decoder pointer is null for ID " << id.value;
-
-        Capabilities capabilities;
-        VIDEODECODER_GETCAPABILITIES(decoder, &capabilities);
-
-        for (const auto& _codecCaps : capabilities.supportedCodecs) {
-            Codec _codec = _codecCaps.codec;
-
-            sp<IVideoDecoderController> controller;
-            sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
+    for(const auto& [videoDecoder, controlListener, eventListener, capabilities] : mVideoDecoderList)
+    {
+        Codec _codec = capabilities->supportedCodecs[0].codec;
+        sp<IVideoDecoderController> controller;
             // Open to READY
-            VIDEODECODER_OPEN_SUCCESS(decoder, _codec, capabilities.supportsSecure,
-                                      controllerListener, controller, false);
-            decoders.push_back(decoder);
-            controllers.push_back(controller);
-            break;
-        }
-        index++;
+        VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities->supportsSecure,
+                                      controlListener, controller, false);
+        videoDecoderControllersList.push_back(controller);
+
     }
+    for(size_t i = 0; i < mVideoDecoderList.size(); ++i)
+    {
+        const auto& [videoDecoder,controlListener,eventListener,capabilities] = mVideoDecoderList[i];
+        const auto& controller = videoDecoderControllersList[i];
 
-    for (size_t i = 0; i < decoderIds.size(); ++i) {
-        sp<IVideoDecoder> decoder = decoders[i];
-        sp<IVideoDecoderController> controller = controllers[i];
-
-        for (int prop = static_cast<int>(::com::rdk::hal::videodecoder::Property::OPERATIONAL_MODE); prop <= static_cast<int>(::com::rdk::hal::videodecoder::Property::SHA1_CALC); ++prop) {
-            Property property = static_cast<Property>(prop);
+        for (const auto& testCase : testCases_readyState) {
             PropertyValue setValue;
-            setValue.value = PropertyValue::Value::make<PropertyValue::Value::Tag::intValue>(1);
+            setValue.value = PropertyValue::Value::make<PropertyValue::Value::Tag::intValue>(testCase.testValue);
 
-            VIDEODECODER_SETPROPERTY_SUCCESS(controller,property,setValue);
+            VIDEODECODER_SETPROPERTY_SUCCESS(controller,testCase.property,setValue);
 
-            std::optional<PropertyValue> getValue;
-            VIDEODECODER_GETPROPERTY(decoder,property,getValue);
-            UT_ASSERT_EQUAL(getValue->value->getTag(), ::com::rdk::hal::PropertyValue::Value::Tag::intValue);
+            std::optional<PropertyValue> getPropertyValue;
+            VIDEODECODER_GETPROPERTY(videoDecoder, testCase.property, getPropertyValue);
+            UT_ASSERT_EQUAL(getPropertyValue->value->get<com::rdk::hal::PropertyValue::Value::Tag::intValue>(), testCase.testValue);
         }
+
+        //Check and set and get properties for Started State
+        VIDEODECODER_START_SUCCESS(videoDecoder,controller,true);
+        for (const auto& testCase : testCases_startedState) {
+            PropertyValue setValue;
+            setValue.value = PropertyValue::Value::make<PropertyValue::Value::Tag::intValue>(testCase.testValue);
+
+            VIDEODECODER_SETPROPERTY_SUCCESS(controller,testCase.property,setValue);
+
+            std::optional<PropertyValue> getPropertyValue;
+            VIDEODECODER_GETPROPERTY(videoDecoder, testCase.property, getPropertyValue);
+            UT_ASSERT_EQUAL(getPropertyValue->value->get<com::rdk::hal::PropertyValue::Value::Tag::intValue>(), testCase.testValue);
+        }
+        // Stop decoder
+        VIDEODECODER_STOP_SUCCESS(videodecoder,controller,true);
+        // Close the decoder
+        VIDEODECODER_CLOSE_SUCCESS(videoDecoder, controller, true);
     }
-    for (size_t i = 0; i < decoderIds.size(); ++i) {
-        sp<IVideoDecoder> decoder = decoders[i];
-        sp<IVideoDecoderController> controller = controllers[i];
-        VIDEODECODER_CLOSE_SUCCESS(decoder, controller, true);
-    }
+
 }
 
 
@@ -197,42 +314,31 @@ UT_ADD_TEST(VTS_L2_VideoDecoder, TestGetAndSetProperties_multipleInstance) {
 * Refer to UT specification documentation [VideoDecoder_High-Level_TestSpec.md](../../docs/pages/VideoDecoder_High-Level_TestSpec.md)
 */
 UT_ADD_TEST(VTS_L2_VideoDecoder, TestDecoderStateTransitions) {
-    std::vector<IVideoDecoder::Id> decoderIds;
-    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
-
-    for (const auto& id : decoderIds) {
-        sp<IVideoDecoder> decoder;
-        VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(id, decoder);
-        UT_ASSERT_TRUE(decoder != nullptr) << "Decoder pointer is null for ID " << id.value;
-
-        Capabilities capabilities;
-        VIDEODECODER_GETCAPABILITIES(decoder, &capabilities);
-
-        for (const auto& _codecCaps : capabilities.supportedCodecs) {
+    for(const auto& [videoDecoder, controlListener, eventListener, capabilities] : mVideoDecoderList)
+    {
+        for (const auto& _codecCaps : capabilities->supportedCodecs) {
             Codec _codec = _codecCaps.codec;
 
             sp<IVideoDecoderController> controller;
-            sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
-
             // Open to READY
-            VIDEODECODER_OPEN_SUCCESS(decoder, _codec, capabilities.supportsSecure,
-                                      controllerListener, controller, true);
-            VIDEODECODER_CHECK_STATE(decoder, State::READY);
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities->supportsSecure,
+                                      controlListener, controller, false);
+            checkCompleteStateTransition(videoDecoder,eventListener,State::CLOSED,State::OPENING,State::READY);
 
             // Start to STARTED
-            VIDEODECODER_START_SUCCESS(decoder, controller, true);
-            VIDEODECODER_CHECK_STATE(decoder, State::STARTED);
-            VIDEODECODER_FLUSH_SUCCESS(controller,true);
-            VIDEODECODER_CHECK_STATE(decoder, State::READY);
-            VIDEODECODER_START_SUCCESS(decoder, controller, true);
-            VIDEODECODER_CHECK_STATE(decoder, State::STARTED);
+            VIDEODECODER_START_SUCCESS(videoDecoder, controller, true);
+            checkCompleteStateTransition(videoDecoder,eventListener,State::READY,State::STARTING,State::STARTED);
             VIDEODECODER_FLUSH_SUCCESS(controller,false);
-            VIDEODECODER_CHECK_STATE(decoder, State::STARTED);
+            checkCompleteStateTransition(videoDecoder,eventListener,State::STARTED,State::FLUSHING,State::STARTED);
+            VIDEODECODER_FLUSH_SUCCESS(controller,true);
+            checkCompleteStateTransition(videoDecoder,eventListener,State::STARTED,State::FLUSHING,State::READY);
+            VIDEODECODER_START_SUCCESS(videoDecoder, controller, true);
+            checkCompleteStateTransition(videoDecoder,eventListener,State::READY,State::STARTING,State::STARTED);
             // Cleanup
-            VIDEODECODER_STOP_SUCCESS(decoder, controller, true);
-            VIDEODECODER_CHECK_STATE(decoder, State::READY);
-            VIDEODECODER_CLOSE_SUCCESS(decoder, controller, true);
-            VIDEODECODER_CHECK_STATE(decoder, State::CLOSED);
+            VIDEODECODER_STOP_SUCCESS(videoDecoder, controller, true);
+            checkCompleteStateTransition(videoDecoder,eventListener,State::STARTED,State::STOPPING,State::READY);
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, controller, true);
+            checkCompleteStateTransition(videoDecoder,eventListener,State::READY,State::CLOSING,State::CLOSED);
         }
     }
 }
@@ -250,54 +356,42 @@ UT_ADD_TEST(VTS_L2_VideoDecoder, TestDecoderStateTransitions) {
 * Refer to UT specification documentation [VideoDecoder_High-Level_TestSpec.md](../../docs/pages/VideoDecoder_High-Level_TestSpec.md)
 */
 UT_ADD_TEST(VTS_L2_VideoDecoder, TestDecoderStateTransitions_multipleInstance) {
-    std::vector<sp<IVideoDecoder>>            decoders;
-    std::vector<sp<IVideoDecoderController>>  controllers;
-    std::vector<IVideoDecoder::Id> decoderIds;
-    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
+    std::vector<sp<IVideoDecoderController>> videoDecoderControllersList;
 
-    for (const auto& id : decoderIds) {
-        sp<IVideoDecoder> decoder;
-        VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(id, decoder);
-        UT_ASSERT_TRUE(decoder != nullptr) << "Decoder pointer is null for ID " << id.value;
-
-        Capabilities capabilities;
-        VIDEODECODER_GETCAPABILITIES(decoder, &capabilities);
-
-        for (const auto& _codecCaps : capabilities.supportedCodecs) {
-            Codec _codec = _codecCaps.codec;
-
-            sp<IVideoDecoderController> controller;
-            sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
-
+    for(const auto& [videoDecoder, controlListener, eventListener, capabilities] : mVideoDecoderList)
+    {
+        Codec _codec = capabilities->supportedCodecs[0].codec;
+        sp<IVideoDecoderController> controller;
             // Open to READY
-            VIDEODECODER_OPEN_SUCCESS(decoder, _codec, capabilities.supportsSecure,
-                                      controllerListener, controller, true);
-            decoders.push_back(decoder);
-            controllers.push_back(controller);
-            break;
-        }
+        VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities->supportsSecure,
+                                      controlListener, controller, false);
+        videoDecoderControllersList.push_back(controller);
+
     }
-
-    ::com::rdk::hal::State currentState;
-    for (size_t i = 0; i < decoderIds.size(); ++i) {
-        sp<IVideoDecoder> decoder = decoders[i];
-        sp<IVideoDecoderController> controller = controllers[i];
-
-        // Start to STARTED
-        VIDEODECODER_START_SUCCESS(decoder, controller, true);
-        VIDEODECODER_CHECK_STATE(decoder, State::STARTED);
-        VIDEODECODER_FLUSH_SUCCESS(controller,true);
-        VIDEODECODER_CHECK_STATE(decoder, State::READY);
-        VIDEODECODER_START_SUCCESS(decoder, controller, true);
-        VIDEODECODER_CHECK_STATE(decoder, State::STARTED);
+    for(size_t i = 0; i < mVideoDecoderList.size(); ++i)
+    {
+        const auto& [videoDecoder,controlListener,eventListener,capabilities] = mVideoDecoderList[i];
+        const auto& controller = videoDecoderControllersList[i];
+        VIDEODECODER_START_SUCCESS(videoDecoder, controller, true);
+        checkCompleteStateTransition(videoDecoder,eventListener,State::READY,State::STARTING,State::STARTED);
         VIDEODECODER_FLUSH_SUCCESS(controller,false);
-        VIDEODECODER_CHECK_STATE(decoder, State::STARTED);
+        checkCompleteStateTransition(videoDecoder,eventListener,State::STARTED,State::FLUSHING,State::STARTED);
+        VIDEODECODER_FLUSH_SUCCESS(controller,true);
+        checkCompleteStateTransition(videoDecoder,eventListener,State::STARTED,State::FLUSHING,State::READY);
+        VIDEODECODER_START_SUCCESS(videoDecoder, controller, true);
+        checkCompleteStateTransition(videoDecoder,eventListener,State::READY,State::STARTING,State::STARTED);
         // Cleanup
-        VIDEODECODER_STOP_SUCCESS(decoder, controller, true);
-        VIDEODECODER_CHECK_STATE(decoder, State::READY);
-        VIDEODECODER_CLOSE_SUCCESS(decoder, controller, true);
-        VIDEODECODER_CHECK_STATE(decoder, State::CLOSED);
     }
+    for(size_t i = 0; i < mVideoDecoderList.size(); ++i)
+    {
+        const auto& [videoDecoder,controlListener,eventListener,capabilities] = mVideoDecoderList[i];
+        const auto& controller = videoDecoderControllersList[i];
+        VIDEODECODER_STOP_SUCCESS(videoDecoder, controller, true);
+        checkCompleteStateTransition(videoDecoder,eventListener,State::STARTED,State::STOPPING,State::READY);
+        VIDEODECODER_CLOSE_SUCCESS(videoDecoder, controller, true);
+        checkCompleteStateTransition(videoDecoder,eventListener,State::READY,State::CLOSING,State::CLOSED);
+    }
+
 
 }
 
