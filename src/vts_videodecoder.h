@@ -155,7 +155,7 @@ const static ut_control_keyStringMapping_t bool_mapTable[] =
                                 decoderIds.size(), UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                                 UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
         UT_ASSERT_TRUE(status.isOk()); \
-        UT_ASSERT_FALSE(decoderIds.empty()); \
+        UT_ASSERT_FALSE_FATAL(decoderIds.empty()); \
         UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
     } while (0)
 
@@ -168,7 +168,7 @@ const static ut_control_keyStringMapping_t bool_mapTable[] =
                                 _decoderId.value, videoDecoder.get(), UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                                 UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
         UT_ASSERT_TRUE(status.isOk()); \
-        UT_ASSERT_TRUE(videoDecoder.get() != nullptr); \
+        UT_ASSERT_TRUE_FATAL(videoDecoder.get() != nullptr); \
         UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
     } while (0)
 
@@ -188,7 +188,7 @@ const static ut_control_keyStringMapping_t bool_mapTable[] =
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                     UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
         UT_ASSERT_TRUE(status.isOk()) << "Failed to call getVideoDecoder for ID " << (_decoderId).value; \
-        UT_ASSERT_TRUE((videoDecoder) != nullptr) << "Returned videoDecoder is null for ID " << (_decoderId).value; \
+        UT_ASSERT_TRUE_FATAL((videoDecoder) != nullptr) << "Returned videoDecoder is null for ID " << (_decoderId).value; \
     } while (0)
 
 #define VIDEODECODER_MANAGER_GETVIDEODECODER_FAILURE(_decoderId, videoDecoder) \
@@ -218,7 +218,7 @@ const static ut_control_keyStringMapping_t bool_mapTable[] =
                     modes.size(), UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                     UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
         UT_ASSERT_TRUE(status.isOk()); \
-        UT_ASSERT_FALSE(modes.empty()) << "At least one operational mode must be supported"; \
+        UT_ASSERT_FALSE_FATAL(modes.empty()) << "At least one operational mode must be supported"; \
         UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
     } while (0)
 
@@ -235,7 +235,7 @@ const static ut_control_keyStringMapping_t bool_mapTable[] =
          UT_LOG_INFO("Result getCapabilities(OUT:capabilities), status:[isOK:%s, exception:%s]", \
                      UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                      UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
-         UT_ASSERT_TRUE(status.isOk()); \
+         UT_ASSERT_TRUE_FATAL(status.isOk()); \
          UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
      } while (0)
 
@@ -384,7 +384,7 @@ do { \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                     UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
         UT_ASSERT_TRUE(status.isOk()) << "open binder call failed"; \
-        UT_ASSERT_NOT_EQUAL((controller).get(), nullptr) << "Controller is null; codec or secure mode may not be supported"; \
+        UT_ASSERT_NOT_EQUAL_FATAL((controller).get(), nullptr) << "Controller is null; codec or secure mode may not be supported"; \
         UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE) << "open returned an exception"; \
         if (stateCheck) { \
             State lastState; \
@@ -466,7 +466,7 @@ do { \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                     UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
         UT_ASSERT_TRUE(status.isOk()) << "close binder call failed"; \
-        UT_ASSERT_TRUE(aidl_return) << "close returned false"; \
+        UT_ASSERT_TRUE_FATAL(aidl_return) << "close returned false"; \
         UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE) << "close returned an exception"; \
         if (stateCheck) { \
             State lastState; \
@@ -682,7 +682,7 @@ do { \
         UT_LOG_INFO("Result getCapabilities(OUT:capabilities), status:[isOK:%s, exception:%s]", \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                     UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
-        UT_ASSERT_TRUE(status.isOk()); \
+        UT_ASSERT_TRUE_FATAL(status.isOk()); \
         UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
     } while (0)
 
