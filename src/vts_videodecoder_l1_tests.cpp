@@ -814,15 +814,22 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, open_neg) {
         Codec validCodec = capabilities.supportedCodecs.empty() ?
             Codec::H264 : capabilities.supportedCodecs.front().codec;
 
-        // Test 1: Unsupported codec (below range)
-        Codec invalidCodecLow = static_cast<Codec>(0);
-        VIDEODECODER_OPEN_FAILURE(videoDecoder, invalidCodecLow, capabilities.supportsSecure, controllerListener,
+        bool isCodecFound = false;
+        for ( int codecVal = Codec::AV1; codecVal <= Codec::VP9; codecVal++ ){
+            for (const auto& codecCap : capabilities.supportedCodecs){
+                if(codecCap.codec == codecVal){
+                    isCodecFound = true;
+                    break;
+                }
+            }
+            if(!isCodecFound)
+            {
+                Codec invalidCodec = static_cast<Codec>(codecVal);
+                VIDEODECODER_OPEN_FAILURE(videoDecoder, invalidCodec, capabilities.supportsSecure, controllerListener,
                                   videoDecoderController, Status::EX_ILLEGAL_ARGUMENT);
-
-        // Test 2: Unsupported codec (above range)
-        Codec invalidCodecHigh = static_cast<Codec>(1000); // Arbitrary high value
-        VIDEODECODER_OPEN_FAILURE(videoDecoder, invalidCodecHigh, capabilities.supportsSecure, controllerListener,
-                                  videoDecoderController, Status::EX_ILLEGAL_ARGUMENT);
+            }
+            isCodecFound = false;
+        }
 
         // Test 3: Unsupported secure mode
         bool unsupportedSecure = !capabilities.supportsSecure;
