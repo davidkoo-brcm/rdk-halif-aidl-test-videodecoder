@@ -154,9 +154,9 @@ const static ut_control_keyStringMapping_t bool_mapTable[] =
         UT_LOG_INFO("Result getVideoDecoderIds(OUT:decoderIds:[size: %d]), status:[isOK:%s, exception:%s]", \
                                 decoderIds.size(), UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                                 UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
-        UT_ASSERT_TRUE(status.isOk()); \
+        UT_ASSERT_TRUE_FATAL(status.isOk()); \
         UT_ASSERT_FALSE_FATAL(decoderIds.empty()); \
-        UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
+        UT_ASSERT_EQUAL_FATAL(status.exceptionCode(), Status::EX_NONE); \
     } while (0)
 
 #define VIDEODECODER_MANAGER_GETVIDEODECODER(_decoderId, videoDecoder) \
@@ -167,9 +167,9 @@ const static ut_control_keyStringMapping_t bool_mapTable[] =
         UT_LOG_INFO("Result getVideoDecoder(IN:_decoderId:[%d], OUT:videoDecoder[0x%X]), status:[isOK:%s, exception:%s]", \
                                 _decoderId.value, videoDecoder.get(), UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                                 UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
-        UT_ASSERT_TRUE(status.isOk()); \
+        UT_ASSERT_TRUE_FATAL(status.isOk()); \
         UT_ASSERT_TRUE_FATAL(videoDecoder.get() != nullptr); \
-        UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
+        UT_ASSERT_EQUAL_FATAL(status.exceptionCode(), Status::EX_NONE); \
     } while (0)
 
 /**
@@ -187,7 +187,7 @@ const static ut_control_keyStringMapping_t bool_mapTable[] =
                     (_decoderId).value, (videoDecoder).get(), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                     UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
-        UT_ASSERT_TRUE(status.isOk()) << "Failed to call getVideoDecoder for ID " << (_decoderId).value; \
+        UT_ASSERT_TRUE_FATAL(status.isOk()) << "Failed to call getVideoDecoder for ID " << (_decoderId).value; \
         UT_ASSERT_TRUE_FATAL((videoDecoder) != nullptr) << "Returned videoDecoder is null for ID " << (_decoderId).value; \
     } while (0)
 
@@ -217,9 +217,9 @@ const static ut_control_keyStringMapping_t bool_mapTable[] =
         UT_LOG_INFO("Result getSupportedOperationalModes(OUT:modes:[size: %d]), status:[isOK:%s, exception:%s]", \
                     modes.size(), UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                     UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
-        UT_ASSERT_TRUE(status.isOk()); \
+        UT_ASSERT_TRUE_FATAL(status.isOk()); \
         UT_ASSERT_FALSE_FATAL(modes.empty()) << "At least one operational mode must be supported"; \
-        UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
+        UT_ASSERT_EQUAL_FATAL(status.exceptionCode(), Status::EX_NONE); \
     } while (0)
 
 /**
@@ -236,7 +236,7 @@ const static ut_control_keyStringMapping_t bool_mapTable[] =
                      UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                      UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
          UT_ASSERT_TRUE_FATAL(status.isOk()); \
-         UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
+         UT_ASSERT_EQUAL_FATAL(status.exceptionCode(), Status::EX_NONE); \
      } while (0)
 
 #define VIDEODECODER_GET_PROPERTY_FAILURE(videoDecoder, property, propertyValue, exception) \
@@ -383,9 +383,9 @@ do { \
                     static_cast<int32_t>(codec), UT_Control_GetMapString(bool_mapTable, (secure)), (listener).get(), (controller).get(), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                     UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
-        UT_ASSERT_TRUE(status.isOk()) << "open binder call failed"; \
+        UT_ASSERT_TRUE_FATAL(status.isOk()) << "open binder call failed"; \
         UT_ASSERT_NOT_EQUAL_FATAL((controller).get(), nullptr) << "Controller is null; codec or secure mode may not be supported"; \
-        UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE) << "open returned an exception"; \
+        UT_ASSERT_EQUAL_FATAL(status.exceptionCode(), Status::EX_NONE) << "open returned an exception"; \
         if (stateCheck) { \
             State lastState; \
             VIDEODECODER_WAIT_FOR_STATE(videoDecoder, State::READY, lastState); \
@@ -465,9 +465,9 @@ do { \
                     controllerPtr, UT_Control_GetMapString(bool_mapTable, aidl_return), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                     UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
-        UT_ASSERT_TRUE(status.isOk()) << "close binder call failed"; \
+        UT_ASSERT_TRUE_FATAL(status.isOk()) << "close binder call failed"; \
         UT_ASSERT_TRUE_FATAL(aidl_return) << "close returned false"; \
-        UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE) << "close returned an exception"; \
+        UT_ASSERT_EQUAL_FATAL(status.exceptionCode(), Status::EX_NONE) << "close returned an exception"; \
         if (stateCheck) { \
             State lastState; \
             VIDEODECODER_WAIT_FOR_STATE(videoDecoder, State::CLOSED, lastState); \
@@ -683,7 +683,7 @@ do { \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                     UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
         UT_ASSERT_TRUE_FATAL(status.isOk()); \
-        UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
+        UT_ASSERT_EQUAL_FATAL(status.exceptionCode(), Status::EX_NONE); \
     } while (0)
 
 #define VIDEODECODER_SETPROPERTY_SUCCESS(videoDecoderController, property, propertyValue) \
