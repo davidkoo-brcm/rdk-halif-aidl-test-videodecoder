@@ -797,6 +797,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, open_pos) {
  */
 UT_ADD_TEST(VTS_L1_VideoDecoder, open_neg) {
     std::vector<IVideoDecoder::Id> decoderIds;
+    std::vector<Codec> allCodecs = { Codec::AV1, Codec::H264, Codec::H265,Codec::MPEG, Codec::VP9 };
     sp<IVideoDecoder> videoDecoder;
     Capabilities capabilities;
 
@@ -815,7 +816,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, open_neg) {
             Codec::H264 : capabilities.supportedCodecs.front().codec;
 
         bool isCodecFound = false;
-        for ( int codecVal = Codec::AV1; codecVal <= Codec::VP9; codecVal++ ){
+        for ( const auto& codecVal: allCodecs){
             for (const auto& codecCap : capabilities.supportedCodecs){
                 if(codecCap.codec == codecVal){
                     isCodecFound = true;
@@ -824,8 +825,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, open_neg) {
             }
             if(!isCodecFound)
             {
-                Codec invalidCodec = static_cast<Codec>(codecVal);
-                VIDEODECODER_OPEN_FAILURE(videoDecoder, invalidCodec, capabilities.supportsSecure, controllerListener,
+                VIDEODECODER_OPEN_FAILURE(videoDecoder, codecVal, capabilities.supportsSecure, controllerListener,
                                   videoDecoderController, Status::EX_ILLEGAL_ARGUMENT);
             }
             isCodecFound = false;
