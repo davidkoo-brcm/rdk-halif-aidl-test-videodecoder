@@ -23,6 +23,15 @@ VARIANT := CPP
 
 TARGET_EXEC := vts_videoDecoder
 
+VERSION := $(shell git describe --tags | head -n1 || echo "undefine")
+ifeq ($(VERSION),undefine)
+$(warning No tags found in repository. Using VERSION=unknown)
+endif
+$(info VERSION: $(VERSION))
+CXXFLAGS := -DHALIF_TEST_TAG_VERSION=\"$(VERSION)\"
+$(info CXXFLAGS: $(CXXFLAGS))
+
+
 ROOT_DIR := $(CURDIR)
 SRC_DIRS := $(ROOT_DIR)/src
 SRC_DIRS += $(ROOT_DIR)/test
@@ -40,7 +49,7 @@ XLDFLAGS += -lbinder -lutils
 XLDFLAGS += -lvideodecoderaidl
 
 # required for std::optional
-CXXFLAGS := -std=c++17
+CXXFLAGS += -std=c++17
 
 UT_CORE_DIR := $(CURDIR)/ut/ut-core
 
