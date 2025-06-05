@@ -235,8 +235,8 @@ const static ut_control_keyStringMapping_t bool_mapTable[] =
          UT_LOG_INFO("Result getCapabilities(OUT:capabilities), status:[isOK:%s, exception:%s]", \
                      UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                      UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
-         UT_ASSERT_TRUE_FATAL(status.isOk()); \
-         UT_ASSERT_EQUAL_FATAL(status.exceptionCode(), Status::EX_NONE); \
+         UT_ASSERT_TRUE(status.isOk()); \
+         UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
      } while (0)
 
 #define VIDEODECODER_GET_PROPERTY_FAILURE(videoDecoder, property, propertyValue, exception) \
