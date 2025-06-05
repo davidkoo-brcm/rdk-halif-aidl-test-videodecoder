@@ -295,6 +295,12 @@ UT_ADD_TEST(VTS_L2_VideoDecoder, TestGetAndSetProperties_multipleInstance) {
         }
         // Stop decoder
         VIDEODECODER_STOP_SUCCESS(videodecoder,controller,true);
+    }
+
+    for(size_t i = 0; i < mVideoDecoderList.size(); ++i)
+    {
+        const auto& [videoDecoder,controlListener,eventListener,capabilities] = mVideoDecoderList[i];
+        const auto& controller = videoDecoderControllersList[i];
         // Close the decoder
         VIDEODECODER_CLOSE_SUCCESS(videoDecoder, controller, true);
     }

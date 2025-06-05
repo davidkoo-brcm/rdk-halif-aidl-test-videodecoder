@@ -997,7 +997,7 @@ class VideoDecoderEventListener : public BnVideoDecoderEventListener {
     }
     Status onStateChanged(State oldState,State newState) override
         {
-            UT_LOG("\n=======State Change received: %d, %d=============\n", oldState, newState);
+            UT_LOG("State Change received: %s -> %s", com::rdk::hal::toString(oldState).c_str(), com::rdk::hal::toString(newState).c_str());
             {
                 std::lock_guard<std::mutex> lock(mMutex);
                 mStateChanges.emplace_back(oldState, newState);
