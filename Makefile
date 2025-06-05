@@ -28,7 +28,13 @@ ifeq ($(VERSION),undefine)
 $(warning No tags found in repository. Using VERSION=unknown)
 endif
 $(info VERSION: $(VERSION))
-CXXFLAGS := -DHALIF_TEST_TAG_VERSION=\"$(VERSION)\"
+
+# Read RDK_HALIF_AIDL_VERSION from environment, default to 'main' if not set
+RDK_HALIF_AIDL_VERSION ?= main
+$(info RDK_HALIF_AIDL_VERSION: $(RDK_HALIF_AIDL_VERSION))
+
+# Assign VERSION and RDK_HALIF_AIDL_VERSION to CXXFLAGS
+CXXFLAGS := -DHALIF_TEST_TAG_VERSION=\"$(VERSION)\" -DRDK_HALIF_AIDL_VERSION=\"$(RDK_HALIF_AIDL_VERSION)\"
 $(info CXXFLAGS: $(CXXFLAGS))
 
 
