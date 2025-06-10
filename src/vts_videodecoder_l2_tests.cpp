@@ -328,7 +328,7 @@ UT_ADD_TEST(VTS_L2_VideoDecoder, TestDecoderStateTransitions) {
             sp<IVideoDecoderController> controller;
             // Open to READY
             VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities->supportsSecure,
-                                      controlListener, controller, false);
+                                      controlListener, controller, true);
             checkCompleteStateTransition(videoDecoder,eventListener,State::CLOSED,State::OPENING,State::READY);
 
             // Start to STARTED
