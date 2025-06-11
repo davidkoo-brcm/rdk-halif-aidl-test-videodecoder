@@ -1788,22 +1788,10 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, flush_pos) {
             VIDEODECODER_CHECK_STATE(videoDecoder, State::STARTED);
 
             // Test flush without reset
-            UT_LOG_INFO("Calling flush(IN:reset:[false])");
-            Status status = videoDecoderController->flush(false);
-            UT_LOG_INFO("Result flush(status:[isOK:%s, exception:%s])",
-                        UT_Control_GetMapString(bool_mapTable, status.isOk()),
-                        UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
-            UT_ASSERT_TRUE(status.isOk()) << "flush binder call failed (reset=false)";
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::STARTED);
+            VIDEODECODER_FLUSH_SUCCESS(videoDecoderController,false,true);
 
             // Test flush with reset
-            UT_LOG_INFO("Calling flush(IN:reset:[true])");
-            status = videoDecoderController->flush(true);
-            UT_LOG_INFO("Result flush(status:[isOK:%s, exception:%s])",
-                        UT_Control_GetMapString(bool_mapTable, status.isOk()),
-                        UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
-            UT_ASSERT_TRUE(status.isOk()) << "flush binder call failed (reset=true)";
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::READY);
+            VIDEODECODER_FLUSH_SUCCESS(videoDecoderController,true,true);
 
             // Close
             VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
