@@ -81,6 +81,8 @@
 #include <algorithm>
 #include <unordered_set>
 #include <stdexcept>
+#include <thread>
+#include <chrono>
 
 
 #include "com/rdk/hal/videodecoder/IVideoDecoderManager.h"
@@ -431,20 +433,14 @@ do { \
  */
 #define VIDEODECODER_WAIT_FOR_STATE(videoDecoder, targetState, lastState) \
     do { \
-        const int maxRetries = 10; \
-        const int delayMs = 100; \
-        int retries = 0; \
-        do { \
+        int32_t sleep_time = 0; \
+        do \
+        { \
+            std::this_thread::sleep_for(std::chrono::milliseconds(MAX_TRANSITORY_STATE_WAIT_MS)); \
+            sleep_time += MAX_TRANSITORY_STATE_WAIT_MS; \
+            /* Check the state of the decoder */ \
             VIDEODECODER_GETSTATE(videoDecoder, lastState); \
-            if (lastState == (targetState)) break; \
-            usleep(delayMs * 1000); \
-        } while (++retries < maxRetries); \
-        UT_LOG_INFO("Waited for state %d, got %d after %d retries", \
-                    static_cast<int32_t>(targetState), static_cast<int32_t>(lastState), retries); \
-        if (retries >= maxRetries) { \
-            UT_LOG_ERROR("Timeout waiting for state %d; last state was %d", \
-                    static_cast<int32_t>(targetState), static_cast<int32_t>(lastState)); \
-        } \
+        } while (sleep_time < MAX_FINAL_STATE_WAIT_MS && lastState != targetState); \
     } while (0)
 
 /**
@@ -631,7 +627,7 @@ do { \
         } \
     } while (0)
 
-#define VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, checkResult) \
+#define VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, stateCheck) \
     do { \
         Status status; \
         UT_LOG_INFO("Calling stop()"); \
@@ -641,6 +637,11 @@ do { \
                     UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
         UT_ASSERT_TRUE(status.isOk()); \
         UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
+        if (stateCheck) { \
+            State lastState; \
+            VIDEODECODER_WAIT_FOR_STATE(videoDecoder, State::READY, lastState); \
+            UT_ASSERT_EQUAL(lastState, State::READY) << "Decoder did not reach READY state"; \
+        } \
     } while (0)
 
 #define VIDEODECODER_START_FAILURE(videoDecoderController, expectedException) \
@@ -674,17 +675,6 @@ do { \
  * @param[in] value The integer value to set.
  * @param[in] value_desc String description of the value for logging.
  */
-#define VIDEODECODER_GETCAPABILITIES(videoDecoder, capabilities) \
-    do { \
-        Status status; \
-        UT_LOG_INFO("Calling getCapabilities(OUT:capabilities)"); \
-        status = videoDecoder->getCapabilities(capabilities); \
-        UT_LOG_INFO("Result getCapabilities(OUT:capabilities), status:[isOK:%s, exception:%s]", \
-                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
-                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
-        UT_ASSERT_TRUE_FATAL(status.isOk()); \
-        UT_ASSERT_EQUAL_FATAL(status.exceptionCode(), Status::EX_NONE); \
-    } while (0)
 
 #define VIDEODECODER_SETPROPERTY_SUCCESS(videoDecoderController, property, propertyValue) \
     do { \
@@ -774,7 +764,7 @@ do { \
  * @param[in] reset The reset flag for flush.
  * @param[in] expectedException The expected binder exception (e.g., EX_ILLEGAL_STATE).
  */
-#define VIDEODECODER_FLUSH_SUCCESS(videoDecoderController, reset) \
+#define VIDEODECODER_FLUSH_SUCCESS(videoDecoderController, reset,stateCheck) \
     do { \
         Status status; \
         UT_LOG_INFO("Calling flush(IN:reset:[%s])", (reset) ? "true" : "false"); \
@@ -785,6 +775,17 @@ do { \
                     UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
         UT_ASSERT_TRUE(status.isOk()); \
         UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE);  \
+        if (stateCheck) { \
+            State lastState; \
+            if (reset){ \
+                VIDEODECODER_WAIT_FOR_STATE(videoDecoder, State::READY, lastState); \
+                UT_ASSERT_EQUAL(lastState, State::READY) << "Decoder did not reach READY state"; \
+            } \
+            else { \
+                VIDEODECODER_WAIT_FOR_STATE(videoDecoder, State::STARTED, lastState); \
+                UT_ASSERT_EQUAL(lastState, State::STARTED) << "Decoder did not reach STARTED state"; \
+            } \
+        } \
     } while (0)
 
 
