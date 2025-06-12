@@ -67,6 +67,127 @@
  #include "vts_videodecoder.h"
 
 
+struct PropertyTestCase {
+    ::com::rdk::hal::videodecoder::Property property;
+    int32_t testValue;
+    const char* propertyName;
+};
+std::vector<PropertyTestCase> testCases_readyState = {
+    {::com::rdk::hal::videodecoder::Property::OPERATIONAL_MODE, static_cast<int32_t>(OperationalMode::NON_TUNNELLED), "OPERATIONAL_MODE"},
+    {::com::rdk::hal::videodecoder::Property::OPERATIONAL_MODE, static_cast<int32_t>(OperationalMode::TUNNELLED), "OPERATIONAL_MODE"},
+    {::com::rdk::hal::videodecoder::Property::OPERATIONAL_MODE, static_cast<int32_t>(OperationalMode::GRAPHICS_TEXTURE), "OPERATIONAL_MODE"},
+    {::com::rdk::hal::videodecoder::Property::AV_SOURCE, static_cast<int32_t>(AVSource::AUTO), "AV_SOURCE"},
+    {::com::rdk::hal::videodecoder::Property::AV_SOURCE, static_cast<int32_t>(AVSource::IP), "AV_SOURCE"},
+    {::com::rdk::hal::videodecoder::Property::AV_SOURCE, static_cast<int32_t>(AVSource::TUNER), "AV_SOURCE"},
+    {::com::rdk::hal::videodecoder::Property::AV_SOURCE, static_cast<int32_t>(AVSource::SYSTEM), "AV_SOURCE"},
+    {::com::rdk::hal::videodecoder::Property::AV_SOURCE, static_cast<int32_t>(AVSource::HDMI_1), "AV_SOURCE"},
+    {::com::rdk::hal::videodecoder::Property::AV_SOURCE, static_cast<int32_t>(AVSource::HDMI_2), "AV_SOURCE"},
+    {::com::rdk::hal::videodecoder::Property::AV_SOURCE, static_cast<int32_t>(AVSource::HDMI_3), "AV_SOURCE"},
+    {::com::rdk::hal::videodecoder::Property::AV_SOURCE, static_cast<int32_t>(AVSource::HDMI_4), "AV_SOURCE"},
+    {::com::rdk::hal::videodecoder::Property::AV_SOURCE, static_cast<int32_t>(AVSource::HDMI_5), "AV_SOURCE"},
+    {::com::rdk::hal::videodecoder::Property::AV_SOURCE, static_cast<int32_t>(AVSource::COMPOSITE_1), "AV_SOURCE"},
+    {::com::rdk::hal::videodecoder::Property::AV_SOURCE, static_cast<int32_t>(AVSource::COMPOSITE_2), "AV_SOURCE"},
+    {::com::rdk::hal::videodecoder::Property::AV_SOURCE, static_cast<int32_t>(AVSource::COMPOSITE_3), "AV_SOURCE"},
+    {::com::rdk::hal::videodecoder::Property::AV_SOURCE, static_cast<int32_t>(AVSource::COMPOSITE_4), "AV_SOURCE"},
+    {::com::rdk::hal::videodecoder::Property::AV_SOURCE, static_cast<int32_t>(AVSource::COMPOSITE_5), "AV_SOURCE"},
+    {::com::rdk::hal::videodecoder::Property::LOW_LATENCY_MODE , 1, "LOW_LATENCY_MODE"},
+    {::com::rdk::hal::videodecoder::Property::LOW_LATENCY_MODE, 0, "LOW_LATENCY_MODE"},
+    {::com::rdk::hal::videodecoder::Property::DECODE_ERROR_POLICY  , 1, "DECODE_ERROR_POLICY"},
+    {::com::rdk::hal::videodecoder::Property::DECODE_ERROR_POLICY , 0, "DECODE_ERROR_POLICY"},
+    {::com::rdk::hal::videodecoder::Property::SHA1_CALC   , 1, "SHA1_CALC"},
+    {::com::rdk::hal::videodecoder::Property::SHA1_CALC  , 0, "SHA1_CALC"},
+};
+std::vector<PropertyTestCase> testCases_startedState = {
+    {::com::rdk::hal::videodecoder::Property::OPERATIONAL_MODE, static_cast<int32_t>(OperationalMode::NON_TUNNELLED), "OPERATIONAL_MODE"},
+    {::com::rdk::hal::videodecoder::Property::OPERATIONAL_MODE, static_cast<int32_t>(OperationalMode::TUNNELLED), "OPERATIONAL_MODE"},
+    {::com::rdk::hal::videodecoder::Property::OPERATIONAL_MODE, static_cast<int32_t>(OperationalMode::GRAPHICS_TEXTURE), "OPERATIONAL_MODE"},
+    {::com::rdk::hal::videodecoder::Property::SHA1_CALC   , 1, "SHA1_CALC"},
+    {::com::rdk::hal::videodecoder::Property::SHA1_CALC  , 0, "SHA1_CALC"},
+};
+
+class VTS_L2_VideoDecoder : public UTCore {
+    public:
+        std::vector<std::tuple<sp<IVideoDecoder>, sp<VideoDecoderControllerListener>, sp<VideoDecoderEventListener>,  videodecoder::Capabilities *>> mVideoDecoderList;
+        /**
+         * @brief Default constructor.
+         * Relies on UTCore's default initialization; no additional setup required.
+         */
+        VTS_L2_VideoDecoder() = default;
+
+        /**
+         * @brief Virtual destructor.
+         * Ensures proper cleanup; defaults to UTCore's implementation.
+         */
+        ~VTS_L2_VideoDecoder() override = default;
+
+        /**
+         * @brief Prepares the test environment before each test case.
+         * Calls UTCore::SetUp() to ensure base class initialization.
+         * Add custom setup logic here if needed.
+         */
+        void SetUp() override {
+            UTCore::SetUp();  // Call base class setup (if it exists)
+            std::vector<IVideoDecoder::Id> decoderIds;
+        /* Get the Video Sink IDs */
+            VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
+
+            android::ProcessState::self()->startThreadPool();
+
+            for(const auto& _decoderId: decoderIds)
+            {
+                sp<IVideoDecoder> videoDecoder;
+                videodecoder::Capabilities *capabilities = new videodecoder::Capabilities();
+                sp<VideoDecoderEventListener> eventListener = new VideoDecoderEventListener();
+
+                sp<VideoDecoderControllerListener> controlListener = new VideoDecoderControllerListener();
+
+                /* Get Video Sink handle */
+                VIDEODECODER_MANAGER_GETVIDEODECODER(_decoderId, videoDecoder);
+
+                /* Register events */
+                VIDEODECODER_REGISTER_EVENT_SUCCESS(videoDecoder, eventListener);
+
+                VIDEODECODER_GETCAPABILITIES(videoDecoder,capabilities);
+
+                mVideoDecoderList.push_back({videoDecoder, controlListener, eventListener, capabilities});
+            }
+            // Custom setup code here, e.g., initialize decoder mocks or profiles
+        }
+
+        void checkCompleteStateTransition(sp<IVideoDecoder> decoder, sp<VideoDecoderEventListener> eventListener, State oldState, State intermediateState, State newState)
+        {
+            ::com::rdk::hal::State currentState;
+
+            eventListener->waitForState(intermediateState, std::chrono::milliseconds(MAX_TRANSITORY_STATE_WAIT_MS));
+
+            UT_ASSERT_TRUE(eventListener->checkStateTransistion(oldState, intermediateState));
+
+            eventListener->waitForState(newState, std::chrono::milliseconds(MAX_FINAL_STATE_WAIT_MS));
+
+            VIDEODECODER_GETSTATE(decoder, currentState);
+
+            UT_ASSERT_EQUAL(currentState, newState);
+
+            UT_ASSERT_TRUE(eventListener->checkStateTransistion(intermediateState, newState));
+
+            eventListener->resetStateChanges();
+        }
+        /**
+         * @brief Cleans up the test environment after each test case.
+         * Calls UTCore::TearDown() to ensure base class cleanup.
+         * Add custom cleanup logic here if needed.
+         */
+        void TearDown() override {
+            // Custom cleanup code here, e.g., release resources
+            UTCore::TearDown();  // Call base class teardown (if it exists)
+            for (const auto& [decoder, controlListener, eventListener, capabilities] : mVideoDecoderList)
+            {
+             /* Un-register the events */
+                VIDEODECODER_UNREGISTER_EVENT_SUCCESS(decoder, eventListener);
+            }
+            mVideoDecoderList.clear();
+        }
+    };
 
 /**
 * @brief Test the ability to set and get properties on video decoders
@@ -77,66 +198,47 @@
 * **Test Case ID:** 001@n
 *
 * **Test Procedure:**
-* Refer to UT specification documentation [VideoDecoder_High-Level_TestSpec.md](../../docs/pages/VideoDecoder_High-Level_TestSpec.md)
+* Refer to UT specification documentation [VideoDecoder_L2_Low-level_TestSpecification.md](../docs/pages/VideoDecoder_L2_Low-level_TestSpecification.md)
 */
 UT_ADD_TEST(VTS_L2_VideoDecoder, TestGetAndSetProperties) {
-    for (size_t i = 0; i < decoderIds.size(); ++i) {
-        sp<IVideoDecoder> decoder = decoders[i];
-
-        std::string supported_secure_path_key =  "IVideoDecoderManager.IVideoDecoder." + std::to_string(i) + ".supportsSecure";
-        bool secure = UT_KVP_PROFILE_GET_BOOL(supported_secure_path_key.c_str());
-
-        int codecCount = 0;
-        std::string supported_codec_count_key = "IVideoDecoderManager.IVideoDecoder." + std::to_string(i) + ".supportedCodecs";
-        codecCount = UT_KVP_PROFILE_GET_LIST_COUNT(supported_codec_count_key.c_str());
-
-        for(int j = 0; j < codecCount; ++j){
-            char codecName[UT_KVP_MAX_ELEMENT_SIZE];
-            std::string codecpath_key = "IVideoDecoderManager.IVideoDecoder." + std::to_string(i) + ".supportedCodecs." + std::to_string(j);
-            UT_KVP_PROFILE_GET_STRING(codecpath_key.c_str(), codecName);
-            Codec codec = Codec::MPEG;
-            if (codecName == "H264") codec = Codec::H264;
-            else if (codecName == "H265") codec = Codec::H265;
-            else if (codecName == "VP9") codec = Codec::VP9;
-            else if (codecName == "AV1") codec = Codec::AV1;
+    // Fetch decoder IDs from the manager
+    for(const auto& [videoDecoder, controlListener, eventListener, capabilities] : mVideoDecoderList)
+    {
+        for (const auto& _codecCaps : capabilities->supportedCodecs) {
+            Codec _codec = _codecCaps.codec;
 
             sp<IVideoDecoderController> controller;
-            sp<VideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
+            // Open to READY
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities->supportsSecure,
+                                      controlListener, controller, false);
 
-            UT_LOG_INFO("Calling open(IN:codecName[%d], IN:secure[%s], IN:controllerListener[0x%X], OUT:controller[])", codec, UT_Control_GetMapString(bool_mapTable, secure), controllerListener.get());
-            Status status = decoder->open(codec, secure, controllerListener, &controller);
-            UT_LOG_INFO("Result open(IN:codec[%d], IN:secure[%s], IN:controllerListener[0x%X], OUT:controller[0x%X]), status:[isOK:%s, exception:%s]", codec, UT_Control_GetMapString(bool_mapTable, secure), controllerListener, controller.get(), UT_Control_GetMapString(bool_mapTable, status.isOk()), UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
-            UT_ASSERT_TRUE(status.isOk());
-            UT_ASSERT_TRUE(controller != nullptr);
-
-            // Set and verify read-write properties
-            for (int prop = static_cast<int>(::com::rdk::hal::videodecoder::Property::OPERATIONAL_MODE); prop <= static_cast<int>(::com::rdk::hal::videodecoder::Property::SHA1_CALC); ++prop) {
-                Property property = static_cast<Property>(prop);
+            for (const auto& testCase : testCases_readyState) {
                 PropertyValue setValue;
-                setValue.value = PropertyValue::Value::make<PropertyValue::Value::Tag::intValue>(1);
+                setValue.value = PropertyValue::Value::make<PropertyValue::Value::Tag::intValue>(testCase.testValue);
 
-                bool setResult = false;
-                UT_LOG_INFO("Calling setProperty(IN:property:[%s], IN:setValue:[1]), OUT:setResult[]", com::rdk::hal::videodecoder::toString(property).c_str());
-                Status setStatus = controller->setProperty(property, setValue, &setResult);
-                UT_LOG_INFO("Result setProperty(IN:property:[%s], IN:setValue:[1]), setResult[%s], setStatus:[isOK:%s, exception:%s]", com::rdk::hal::videodecoder::toString(property).c_str(), UT_Control_GetMapString(bool_mapTable, setStatus.isOk()), UT_Control_GetMapString(bool_mapTable, setResult), UT_Control_GetMapString(statusException_mapTable, setStatus.exceptionCode()));
-                UT_ASSERT_TRUE(setStatus.isOk());
-                UT_ASSERT_TRUE(setResult);
+                VIDEODECODER_SETPROPERTY_SUCCESS(controller,testCase.property,setValue);
 
-                std::optional<PropertyValue> getValue;
-                UT_LOG_INFO("Calling getProperty(IN:property:[%s], OUT:getValue[])", com::rdk::hal::videodecoder::toString(property).c_str());
-                Status getStatus = decoder->getProperty(property, &getValue);
-                UT_LOG_INFO("Result getProperty(IN:property:[%s], OUT:getValue:[%d]), getStatus:[isOK:%s, exception:%s]", com::rdk::hal::videodecoder::toString(property).c_str(), getValue->value->getTag(), UT_Control_GetMapString(bool_mapTable, getStatus.isOk()), UT_Control_GetMapString(statusException_mapTable, getStatus.exceptionCode()));
-                UT_ASSERT_TRUE(getStatus.isOk());
-                UT_ASSERT_TRUE(getValue.has_value());
-                UT_ASSERT_EQUAL(getValue->value->getTag(), ::com::rdk::hal::PropertyValue::Value::Tag::intValue);
+                std::optional<PropertyValue> getPropertyValue;
+                VIDEODECODER_GETPROPERTY(videoDecoder, testCase.property, getPropertyValue);
+                UT_ASSERT_EQUAL(getPropertyValue->value->get<com::rdk::hal::PropertyValue::Value::Tag::intValue>(), testCase.testValue);
             }
+
+            //Check and set and get properties for Started State
+            VIDEODECODER_START_SUCCESS(videoDecoder,controller,true);
+            for (const auto& testCase : testCases_startedState) {
+                PropertyValue setValue;
+                setValue.value = PropertyValue::Value::make<PropertyValue::Value::Tag::intValue>(testCase.testValue);
+
+                VIDEODECODER_SETPROPERTY_SUCCESS(controller,testCase.property,setValue);
+
+                std::optional<PropertyValue> getPropertyValue;
+                VIDEODECODER_GETPROPERTY(videoDecoder, testCase.property, getPropertyValue);
+                UT_ASSERT_EQUAL(getPropertyValue->value->get<com::rdk::hal::PropertyValue::Value::Tag::intValue>(), testCase.testValue);
+            }
+            // Stop decoder
+            VIDEODECODER_STOP_SUCCESS(videoDecoder,controller,true);
             // Close the decoder
-            bool closeResult = false;
-            UT_LOG_INFO("Calling close(IN:controller)");
-            Status closestatus = decoder->close(controller, &closeResult);
-            UT_LOG_INFO("Result close(IN:controller[0x%X], OUT:closeResult[%d]), closestatus:[isOK:%s, exception:%s]", controller.get(), UT_Control_GetMapString(bool_mapTable, closeResult), UT_Control_GetMapString(bool_mapTable, closestatus.isOk()), UT_Control_GetMapString(statusException_mapTable, closestatus.exceptionCode()));
-            UT_ASSERT_TRUE(closestatus.isOk());
-            UT_ASSERT_TRUE(closeResult);
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, controller, true);
         }
     }
 }
@@ -150,34 +252,61 @@ UT_ADD_TEST(VTS_L2_VideoDecoder, TestGetAndSetProperties) {
 * **Test Case ID:** 002@n
 *
 * **Test Procedure:**
-* Refer to UT specification documentation [VideoDecoder_High-Level_TestSpec.md](../../docs/pages/VideoDecoder_High-Level_TestSpec.md)
+* Refer to UT specification documentation [VideoDecoder_L2_Low-level_TestSpecification.md](../docs/pages/VideoDecoder_L2_Low-level_TestSpecification.md)
 */
 UT_ADD_TEST(VTS_L2_VideoDecoder, TestGetAndSetProperties_multipleInstance) {
-    for (size_t i = 0; i < decoderIds.size(); ++i) {
-        sp<IVideoDecoder> decoder = decoders[i];
-        sp<IVideoDecoderController> controller = controllers[i];
+    std::vector<sp<IVideoDecoderController>> videoDecoderControllersList;
 
-        for (int prop = static_cast<int>(::com::rdk::hal::videodecoder::Property::OPERATIONAL_MODE); prop <= static_cast<int>(::com::rdk::hal::videodecoder::Property::SHA1_CALC); ++prop) {
-            Property property = static_cast<Property>(prop);
-            PropertyValue setValue;
-            setValue.value = PropertyValue::Value::make<PropertyValue::Value::Tag::intValue>(1);
+    for(const auto& [videoDecoder, controlListener, eventListener, capabilities] : mVideoDecoderList)
+    {
+        Codec _codec = capabilities->supportedCodecs[0].codec;
+        sp<IVideoDecoderController> controller;
+            // Open to READY
+        VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities->supportsSecure,
+                                      controlListener, controller, false);
+        videoDecoderControllersList.push_back(controller);
 
-            bool setResult = false;
-            UT_LOG_INFO("Calling setProperty(IN:property:[%s], IN:setValue:[1]), OUT:setResult[]", com::rdk::hal::videodecoder::toString(property).c_str());
-            Status setStatus = controller->setProperty(property, setValue, &setResult);
-            UT_LOG_INFO("Result setProperty(IN:property:[%s], IN:propertyValue:[1]), setResult[%s], setStatus:[isOK:%s, exception:%s]", com::rdk::hal::videodecoder::toString(property).c_str(), UT_Control_GetMapString(bool_mapTable, setResult), UT_Control_GetMapString(bool_mapTable, setStatus.isOk()), UT_Control_GetMapString(statusException_mapTable, setStatus.exceptionCode()));
-            UT_ASSERT_TRUE(setStatus.isOk());
-            UT_ASSERT_TRUE(setResult);
-
-            std::optional<PropertyValue> getValue;
-            UT_LOG_INFO("Calling getProperty(IN:property:[%s], OUT:getValue[])", com::rdk::hal::videodecoder::toString(property).c_str());
-            Status getStatus = decoder->getProperty(property, &getValue);
-            UT_LOG_INFO("Result getProperty(IN:property:[%s], OUT:getValue:[%d]), getStatus:[isOK:%s, exception:%s]", com::rdk::hal::videodecoder::toString(property).c_str(), getValue->value->getTag(), UT_Control_GetMapString(bool_mapTable, getStatus.isOk()), UT_Control_GetMapString(statusException_mapTable, getStatus.exceptionCode()));
-            UT_ASSERT_TRUE(getStatus.isOk());
-            UT_ASSERT_TRUE(getValue.has_value());
-            UT_ASSERT_EQUAL(getValue->value->getTag(), ::com::rdk::hal::PropertyValue::Value::Tag::intValue);
-        }
     }
+    for(size_t i = 0; i < mVideoDecoderList.size(); ++i)
+    {
+        const auto& [videoDecoder,controlListener,eventListener,capabilities] = mVideoDecoderList[i];
+        const auto& controller = videoDecoderControllersList[i];
+
+        for (const auto& testCase : testCases_readyState) {
+            PropertyValue setValue;
+            setValue.value = PropertyValue::Value::make<PropertyValue::Value::Tag::intValue>(testCase.testValue);
+
+            VIDEODECODER_SETPROPERTY_SUCCESS(controller,testCase.property,setValue);
+
+            std::optional<PropertyValue> getPropertyValue;
+            VIDEODECODER_GETPROPERTY(videoDecoder, testCase.property, getPropertyValue);
+            UT_ASSERT_EQUAL(getPropertyValue->value->get<com::rdk::hal::PropertyValue::Value::Tag::intValue>(), testCase.testValue);
+        }
+
+        //Check and set and get properties for Started State
+        VIDEODECODER_START_SUCCESS(videoDecoder,controller,true);
+        for (const auto& testCase : testCases_startedState) {
+            PropertyValue setValue;
+            setValue.value = PropertyValue::Value::make<PropertyValue::Value::Tag::intValue>(testCase.testValue);
+
+            VIDEODECODER_SETPROPERTY_SUCCESS(controller,testCase.property,setValue);
+
+            std::optional<PropertyValue> getPropertyValue;
+            VIDEODECODER_GETPROPERTY(videoDecoder, testCase.property, getPropertyValue);
+            UT_ASSERT_EQUAL(getPropertyValue->value->get<com::rdk::hal::PropertyValue::Value::Tag::intValue>(), testCase.testValue);
+        }
+        // Stop decoder
+        VIDEODECODER_STOP_SUCCESS(videoDecoder,controller,true);
+    }
+
+    for(size_t i = 0; i < mVideoDecoderList.size(); ++i)
+    {
+        const auto& [videoDecoder,controlListener,eventListener,capabilities] = mVideoDecoderList[i];
+        const auto& controller = videoDecoderControllersList[i];
+        // Close the decoder
+        VIDEODECODER_CLOSE_SUCCESS(videoDecoder, controller, true);
+    }
+
 }
 
 
@@ -190,109 +319,38 @@ UT_ADD_TEST(VTS_L2_VideoDecoder, TestGetAndSetProperties_multipleInstance) {
 * **Test Case ID:** 003@n
 *
 * **Test Procedure:**
-* Refer to UT specification documentation [VideoDecoder_High-Level_TestSpec.md](../../docs/pages/VideoDecoder_High-Level_TestSpec.md)
+* Refer to UT specification documentation [VideoDecoder_L2_Low-level_TestSpecification.md](../docs/pages/VideoDecoder_L2_Low-level_TestSpecification.md)
 */
 UT_ADD_TEST(VTS_L2_VideoDecoder, TestDecoderStateTransitions) {
-    for (size_t i = 0; i < decoderIds.size(); ++i) {
-        sp<IVideoDecoder> decoder = decoders[i];
-        sp<VideoDecoderEventListener> listener = new VideoDecoderEventListener();
-
-        std::string supported_secure_path_key =  "IVideoDecoderManager.IVideoDecoder." + std::to_string(i) + ".supportsSecure";
-        bool secure = UT_KVP_PROFILE_GET_BOOL(supported_secure_path_key.c_str());
-
-        int codecCount = 0;
-        std::string supported_codec_count_key = "IVideoDecoderManager.IVideoDecoder." + std::to_string(i) + ".supportedCodecs";
-        codecCount = UT_KVP_PROFILE_GET_LIST_COUNT(supported_codec_count_key.c_str());
-
-        for(int j = 0; j < codecCount; ++j){
-            char codecName[UT_KVP_MAX_ELEMENT_SIZE];
-            std::string codecpath_key = "IVideoDecoderManager.IVideoDecoder." + std::to_string(i) + ".supportedCodecs." + std::to_string(j);
-            UT_KVP_PROFILE_GET_STRING(codecpath_key.c_str(), codecName);
-
-            Codec codec = Codec::MPEG;
-            if (codecName == "H264") codec = Codec::H264;
-            else if (codecName == "H265") codec = Codec::H265;
-            else if (codecName == "VP9") codec = Codec::VP9;
-            else if (codecName == "AV1") codec = Codec::AV1;
+    for(const auto& [videoDecoder, controlListener, eventListener, capabilities] : mVideoDecoderList)
+    {
+        for (const auto& _codecCaps : capabilities->supportedCodecs) {
+            Codec _codec = _codecCaps.codec;
 
             sp<IVideoDecoderController> controller;
-            sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
+            // Open to READY
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities->supportsSecure,
+                                      controlListener, controller, false);
+            checkCompleteStateTransition(videoDecoder,eventListener,State::CLOSED,State::OPENING,State::READY);
 
-            UT_LOG_INFO("Calling open(IN:codec[%d], IN:secure[%s], IN:controllerListener[0x%X], OUT:controller[])", codec, UT_Control_GetMapString(bool_mapTable, secure), controllerListener.get());
-            Status status = decoder->open(codec, secure, controllerListener, &controller);
-            UT_LOG_INFO("Result open(IN:codec[%d], IN:secure[%s], IN:controllerListener[0x%X], OUT:controller[0x%X]), status:[isOK:%s, exception:%s]", codec, UT_Control_GetMapString(bool_mapTable, secure), controllerListener, controller.get(), UT_Control_GetMapString(bool_mapTable, status.isOk()), UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
-            UT_ASSERT_TRUE(status.isOk());
-            UT_ASSERT_TRUE(controller != nullptr);
-
-
-
-            ::com::rdk::hal::State currentState;
-            UT_LOG_INFO("Calling getState(OUT:currentState[])");
-            Status statestatus = decoder->getState(&currentState);
-            UT_LOG_INFO("Result getState(OUT:currentState:[%s]), statestatus:[isOK:%s, exception:%s]", currentState, UT_Control_GetMapString(bool_mapTable, statestatus.isOk()), UT_Control_GetMapString(statusException_mapTable, statestatus.exceptionCode()));
-            UT_ASSERT_TRUE(status.isOk());
-            UT_ASSERT_EQUAL(currentState, State::READY);
-
-            // Start decoder
-            UT_LOG_INFO("Calling start()");
-            status = controller->start();
-            UT_LOG_INFO("Result start(), status:[isOK:%s, exception:%s]", UT_Control_GetMapString(bool_mapTable, status.isOk()), UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
-            UT_ASSERT_TRUE(status.isOk());
-
-
-
-            UT_LOG_INFO("Calling getState(OUT:currentState[])");
-            statestatus = decoder->getState(&currentState);
-            UT_LOG_INFO("Result getState(OUT:currentState:[%s]), statestatus:[isOK:%s, exception:%s]", currentState, UT_Control_GetMapString(bool_mapTable, statestatus.isOk()), UT_Control_GetMapString(statusException_mapTable, statestatus.exceptionCode()));
-            UT_ASSERT_TRUE(status.isOk());
-            UT_ASSERT_EQUAL(currentState, State::STARTED);
-
-            // Flush decoder
-            UT_LOG_INFO("Calling flush(IN:reset[%d])", false);
-            status = controller->flush(false);
-            UT_LOG_INFO("Result flush(), status:[isOK:%s, exception:%s]",UT_Control_GetMapString(bool_mapTable, status.isOk()), UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
-            UT_ASSERT_TRUE(status.isOk());
-
-
-
-            UT_LOG_INFO("Calling getState(OUT:currentState[])");
-            statestatus = decoder->getState(&currentState);
-            UT_LOG_INFO("Result getState(OUT:currentState:[%s]), statestatus:[isOK:%s, exception:%s]", currentState, UT_Control_GetMapString(bool_mapTable, statestatus.isOk()), UT_Control_GetMapString(statusException_mapTable, statestatus.exceptionCode()));
-            UT_ASSERT_TRUE(status.isOk());
-            UT_ASSERT_EQUAL(currentState, State::STARTED);
-
-            // Stop decoder
-            UT_LOG_INFO("Calling stop()");
-            status = controller->stop();
-            UT_LOG_INFO("Result stop(), status:[isOK:%s, exception:%s]", UT_Control_GetMapString(bool_mapTable, status.isOk()), UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
-            UT_ASSERT_TRUE(status.isOk());
-
-
-
-            UT_LOG_INFO("Calling getState(OUT:currentState[])");
-            statestatus = decoder->getState(&currentState);
-            UT_LOG_INFO("Result getState(OUT:currentState:[%s]), statestatus:[isOK:%s, exception:%s]", currentState, UT_Control_GetMapString(bool_mapTable, statestatus.isOk()), UT_Control_GetMapString(statusException_mapTable, statestatus.exceptionCode()));
-            UT_ASSERT_TRUE(status.isOk());
-            UT_ASSERT_EQUAL(currentState, State::READY);
-
-            // Close the decoder
-            bool result = false;
-            UT_LOG_INFO("Calling close(IN:controller:[0x%X], OUT:result)", controller.get());
-            status = decoder->close(controller, &result);
-            UT_LOG_INFO("Result close(IN:controller:[0x%X], OUT:result:[%d]), status:[isOK:%s, exception:%s]", controller.get(), result, UT_Control_GetMapString(bool_mapTable, status.isOk()), UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
-            UT_ASSERT_TRUE(status.isOk());
-            UT_ASSERT_TRUE(result);
-
-
-
-            UT_LOG_INFO("Calling getState(OUT:currentState[])");
-            statestatus = decoder->getState(&currentState);
-            UT_LOG_INFO("Result getState(OUT:currentState:[%s]), statestatus:[isOK:%s, exception:%s]", currentState, UT_Control_GetMapString(bool_mapTable, statestatus.isOk()), UT_Control_GetMapString(statusException_mapTable, statestatus.exceptionCode()));
-            UT_ASSERT_TRUE(status.isOk());
-            UT_ASSERT_EQUAL(currentState, State::CLOSED);
+            // Start to STARTED
+            VIDEODECODER_START_SUCCESS(videoDecoder, controller, false);
+            checkCompleteStateTransition(videoDecoder,eventListener,State::READY,State::STARTING,State::STARTED);
+            VIDEODECODER_FLUSH_SUCCESS(controller,false,false);
+            checkCompleteStateTransition(videoDecoder,eventListener,State::STARTED,State::FLUSHING,State::STARTED);
+            VIDEODECODER_FLUSH_SUCCESS(controller,true,false);
+            checkCompleteStateTransition(videoDecoder,eventListener,State::STARTED,State::FLUSHING,State::READY);
+            VIDEODECODER_START_SUCCESS(videoDecoder, controller, false);
+            checkCompleteStateTransition(videoDecoder,eventListener,State::READY,State::STARTING,State::STARTED);
+            // Cleanup
+            VIDEODECODER_STOP_SUCCESS(videoDecoder, controller, false);
+            checkCompleteStateTransition(videoDecoder,eventListener,State::STARTED,State::STOPPING,State::READY);
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, controller, false);
+            checkCompleteStateTransition(videoDecoder,eventListener,State::READY,State::CLOSING,State::CLOSED);
         }
     }
 }
+
 
 /**
 * @brief Test the state transitions of multiple instances of video decoders
@@ -303,124 +361,46 @@ UT_ADD_TEST(VTS_L2_VideoDecoder, TestDecoderStateTransitions) {
 * **Test Case ID:** 004@n
 *
 * **Test Procedure:**
-* Refer to UT specification documentation [VideoDecoder_High-Level_TestSpec.md](../../docs/pages/VideoDecoder_High-Level_TestSpec.md)
+* Refer to UT specification documentation [VideoDecoder_L2_Low-level_TestSpecification.md](../docs/pages/VideoDecoder_L2_Low-level_TestSpecification.md)
 */
 UT_ADD_TEST(VTS_L2_VideoDecoder, TestDecoderStateTransitions_multipleInstance) {
-    ::com::rdk::hal::State currentState;
+    std::vector<sp<IVideoDecoderController>> videoDecoderControllersList;
 
-    for (size_t i = 0; i < decoderIds.size(); ++i) {
-        sp<IVideoDecoder> decoder = decoders[i];
-        sp<IVideoDecoderEventListener> listener = new VideoDecoderEventListener();
+    for(const auto& [videoDecoder, controlListener, eventListener, capabilities] : mVideoDecoderList)
+    {
+        Codec _codec = capabilities->supportedCodecs[0].codec;
+        sp<IVideoDecoderController> controller;
+            // Open to READY
+        VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities->supportsSecure,
+                                      controlListener, controller, false);
+        videoDecoderControllersList.push_back(controller);
 
-        std::string supported_secure_path_key =  "IVideoDecoderManager.IVideoDecoder." + std::to_string(i) + ".supportsSecure";
-        bool secure = UT_KVP_PROFILE_GET_BOOL(supported_secure_path_key.c_str());
-
-        int codecCount = 0;
-        std::string supported_codec_count_key = "IVideoDecoderManager.IVideoDecoder." + std::to_string(i) + ".supportedCodecs";
-        codecCount = UT_KVP_PROFILE_GET_LIST_COUNT(supported_codec_count_key.c_str());
-
-        for(int j = 0; j < codecCount; ++j){
-            char codecName[UT_KVP_MAX_ELEMENT_SIZE];
-            std::string codecpath_key = "IVideoDecoderManager.IVideoDecoder." + std::to_string(i) + ".supportedCodecs." + std::to_string(j);
-            UT_KVP_PROFILE_GET_STRING(codecpath_key.c_str(), codecName);
-
-            Codec codec = Codec::MPEG;
-            if (codecName == "H264") codec = Codec::H264;
-            else if (codecName == "H265") codec = Codec::H265;
-            else if (codecName == "VP9") codec = Codec::VP9;
-            else if (codecName == "AV1") codec = Codec::AV1;
-
-            sp<IVideoDecoderController> controller;
-            sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
-
-            UT_LOG_INFO("Calling open(IN:codec[%d], IN:secure[%s], IN:controllerListener[0x%X], OUT:controller[])", codec, UT_Control_GetMapString(bool_mapTable, secure), controllerListener.get());
-            Status status = decoder->open(codec, secure, controllerListener, &controller);
-            UT_LOG_INFO("Result open(IN:codec[%d], IN:secure[%s], IN:controllerListener[0x%X], OUT:controller[0x%X]), status:[isOK:%s, exception:%s]", codec, UT_Control_GetMapString(bool_mapTable, secure), controllerListener, controller.get(), UT_Control_GetMapString(bool_mapTable, status.isOk()), UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
-            UT_ASSERT_TRUE(status.isOk());
-            UT_ASSERT_TRUE(controller != nullptr);
-            if (controller != nullptr){
-                controllers.push_back(controller);
-            }
-
-
-
-            UT_LOG_INFO("Calling getState(OUT:currentState[])");
-            Status statestatus = decoder->getState(&currentState);
-            UT_LOG_INFO("Result getState(OUT:currentState:[%s]), statestatus:[isOK:%s, exception:%s]", currentState, UT_Control_GetMapString(bool_mapTable, statestatus.isOk()), UT_Control_GetMapString(statusException_mapTable, statestatus.exceptionCode()));
-            UT_ASSERT_TRUE(status.isOk());
-            UT_ASSERT_EQUAL(currentState, State::READY);
-        }
+    }
+    for(size_t i = 0; i < mVideoDecoderList.size(); ++i)
+    {
+        const auto& [videoDecoder,controlListener,eventListener,capabilities] = mVideoDecoderList[i];
+        const auto& controller = videoDecoderControllersList[i];
+        VIDEODECODER_START_SUCCESS(videoDecoder, controller, false);
+        checkCompleteStateTransition(videoDecoder,eventListener,State::READY,State::STARTING,State::STARTED);
+        VIDEODECODER_FLUSH_SUCCESS(controller,false,false);
+        checkCompleteStateTransition(videoDecoder,eventListener,State::STARTED,State::FLUSHING,State::STARTED);
+        VIDEODECODER_FLUSH_SUCCESS(controller,true,false);
+        checkCompleteStateTransition(videoDecoder,eventListener,State::STARTED,State::FLUSHING,State::READY);
+        VIDEODECODER_START_SUCCESS(videoDecoder, controller, false);
+        checkCompleteStateTransition(videoDecoder,eventListener,State::READY,State::STARTING,State::STARTED);
+        // Cleanup
+    }
+    for(size_t i = 0; i < mVideoDecoderList.size(); ++i)
+    {
+        const auto& [videoDecoder,controlListener,eventListener,capabilities] = mVideoDecoderList[i];
+        const auto& controller = videoDecoderControllersList[i];
+        VIDEODECODER_STOP_SUCCESS(videoDecoder, controller, false);
+        checkCompleteStateTransition(videoDecoder,eventListener,State::STARTED,State::STOPPING,State::READY);
+        VIDEODECODER_CLOSE_SUCCESS(videoDecoder, controller, false);
+        checkCompleteStateTransition(videoDecoder,eventListener,State::READY,State::CLOSING,State::CLOSED);
     }
 
-    for (size_t i = 0; i < decoderIds.size(); ++i) {
-        sp<IVideoDecoder> decoder = decoders[i];
-        sp<IVideoDecoderControllerListener> listener = new VideoDecoderControllerListener();
-        sp<IVideoDecoderController> controller = controllers[i];
 
-        // Start decoder
-        UT_LOG_INFO("Calling start()");
-        Status status = controller->start();
-        UT_LOG_INFO("Result start(), status:[isOK:%s, exception:%s]", UT_Control_GetMapString(bool_mapTable, status.isOk()), UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
-        UT_ASSERT_TRUE(status.isOk());
-
-
-
-        UT_LOG_INFO("Calling getState(OUT:currentState[])");
-        Status statestatus = decoder->getState(&currentState);
-        UT_LOG_INFO("Result getState(OUT:currentState:[%s]), statestatus:[isOK:%s, exception:%s]", currentState, UT_Control_GetMapString(bool_mapTable, statestatus.isOk()), UT_Control_GetMapString(statusException_mapTable, statestatus.exceptionCode()));
-        UT_ASSERT_TRUE(status.isOk());
-        UT_ASSERT_EQUAL(currentState, State::STARTED);
-
-        // Flush decoder
-        UT_LOG_INFO("Calling flush(IN:reset[%d])", false);
-        status = controller->flush(false);
-        UT_LOG_INFO("Result flush(), status:[isOK:%s, exception:%s]",UT_Control_GetMapString(bool_mapTable, status.isOk()), UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
-        UT_ASSERT_TRUE(status.isOk());
-
-
-
-        UT_LOG_INFO("Calling getState(OUT:currentState[])");
-        statestatus = decoder->getState(&currentState);
-        UT_LOG_INFO("Result getState(OUT:currentState:[%s]), statestatus:[isOK:%s, exception:%s]", currentState, UT_Control_GetMapString(bool_mapTable, statestatus.isOk()), UT_Control_GetMapString(statusException_mapTable, statestatus.exceptionCode()));
-        UT_ASSERT_TRUE(status.isOk());
-        UT_ASSERT_EQUAL(currentState, State::STARTED);
-
-        // Stop decoder
-        UT_LOG_INFO("Calling stop()");
-        status = controller->stop();
-        UT_LOG_INFO("Result stop(), status:[isOK:%s, exception:%s]", UT_Control_GetMapString(bool_mapTable, status.isOk()), UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
-        UT_ASSERT_TRUE(status.isOk());
-
-
-
-        UT_LOG_INFO("Calling getState(OUT:currentState[])");
-        statestatus = decoder->getState(&currentState);
-        UT_LOG_INFO("Result getState(OUT:currentState:[%s]), statestatus:[isOK:%s, exception:%s]", currentState, UT_Control_GetMapString(bool_mapTable, statestatus.isOk()), UT_Control_GetMapString(statusException_mapTable, statestatus.exceptionCode()));
-        UT_ASSERT_TRUE(status.isOk());
-        UT_ASSERT_EQUAL(currentState, State::READY);
-    }
-
-    for (size_t i = 0; i < decoderIds.size(); ++i) {
-        sp<IVideoDecoder> decoder = decoders[i];
-        sp<IVideoDecoderControllerListener> listener = new VideoDecoderControllerListener();
-        sp<IVideoDecoderController> controller = controllers[i];
-
-        // Close the decoder
-        bool result = false;
-        UT_LOG_INFO("Calling close(IN:controller:[0x%X], OUT:result)", controller.get());
-        Status status = decoder->close(controller, &result);
-        UT_LOG_INFO("Result close(IN:controller:[0x%X], OUT:result:[%d]), status:[isOK:%s, exception:%s]", controller.get(), result, UT_Control_GetMapString(bool_mapTable, status.isOk()), UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
-        UT_ASSERT_TRUE(status.isOk());
-        UT_ASSERT_TRUE(result);
-
-
-
-        UT_LOG_INFO("Calling getState(OUT:currentState[])");
-        Status statestatus = decoder->getState(&currentState);
-        UT_LOG_INFO("Result getState(OUT:currentState:[%s]), statestatus:[isOK:%s, exception:%s]", currentState, UT_Control_GetMapString(bool_mapTable, statestatus.isOk()), UT_Control_GetMapString(statusException_mapTable, statestatus.exceptionCode()));
-        UT_ASSERT_TRUE(status.isOk());
-        UT_ASSERT_EQUAL(currentState, State::CLOSED);
-    }
 }
 
 
