@@ -779,7 +779,7 @@ do { \
             State lastState; \
             if (reset){ \
                 VIDEODECODER_WAIT_FOR_STATE(videoDecoder, State::READY, lastState); \
-                UT_ASSERT_EQUAL(lastState, State::READY) << "Decoder did not reach STARTED state"; \
+                UT_ASSERT_EQUAL(lastState, State::READY) << "Decoder did not reach READY state"; \
             } \
             else { \
                 VIDEODECODER_WAIT_FOR_STATE(videoDecoder, State::STARTED, lastState); \
