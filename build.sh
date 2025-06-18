@@ -35,7 +35,7 @@ LINUX_BINDER_OUT_DIR=${LINUX_BINDER_OUT_DIR:-${DEF_LINUX_BINDER}/local}
 mkdir -p $BUILD_DIR
 
 if [ ! -x $AIDL_BIN ]; then
-	echo "AIDL_BIN: path does not exists, consdier building the linux_binder_idl in $DEF_LINUX_BINDER"
+	echo "AIDL_BIN: path does not exists, consider building the linux_binder_idl in $DEF_LINUX_BINDER"
 	exit 1
 fi
 if [ ! -d $LINUX_BINDER_OUT_DIR ]; then
@@ -57,6 +57,31 @@ install_linux_binder()
 	install -t ${BUILD_INSTALL_PREFIX}/bin ${LINUX_BINDER_OUT_DIR}/bin/*
 	install -t ${BUILD_INSTALL_PREFIX}/lib ${LINUX_BINDER_OUT_DIR}/lib/*
 	cp -apr ${LINUX_BINDER_OUT_DIR}/include/* ${BUILD_INSTALL_PREFIX}/include/
+}
+
+generate_avbuffer_hal()
+{
+    declare -r HAL_BUILD_DIR=${BUILD_DIR}/avbuffer_aidl
+    declare -r VERSION=current
+    declare -r AIDL_GEN_DIR="${BUILD_DIR}/avbuffer_gen/$VERSION"
+    declare -r RDK_HAL_DIR=${TOP}/rdk-halif-aidl
+
+    # Clone the repository if not already present
+    if [ ! -d "$RDK_HAL_DIR" ]; then
+        echo "Checking out version: " $RDK_HALIF_AIDL_VERSION
+        git clone -b $RDK_HALIF_AIDL_VERSION 'http://git@github.com/rdkcentral/rdk-halif-aidl.git' $RDK_HAL_DIR
+    fi
+
+    for m in avbuffer audiodecoder videodecoder; do
+        cmake \
+        -DAIDL_BIN=$AIDL_BIN \
+        -DAIDL_GEN_DIR=$AIDL_GEN_DIR \
+        -DAIDL_SRC_VERSION=$VERSION \
+        -DAIDL_TARGET=$m  \
+        -B ${HAL_BUILD_DIR} \
+        $RDK_HAL_DIR
+    done
+
 }
 
 generate_videodecoder_hal() {
@@ -127,6 +152,7 @@ install_test()
 }
 
 install_linux_binder
+generate_avbuffer_hal
 generate_videodecoder_hal
 build_vcomponent
 build_ut_core

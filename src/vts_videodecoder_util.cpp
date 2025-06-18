@@ -66,7 +66,7 @@
 
 #include "vts_videodecoder.h"
 
-
+using namespace std;
 
 extern sp<IVideoDecoderManager> gVideoDecoderManager;
 std::vector<decoder_t> gVideodecoders_hfp;
@@ -75,16 +75,31 @@ UT_status_t getVideoDecoderService() {
     gVideoDecoderManager = android::interface_cast<IVideoDecoderManager>(
        defaultServiceManager()->getService(String16(IVideoDecoderManager::serviceName().c_str())));
    if (gVideoDecoderManager == nullptr) {
-       printf("Service not available\n");
+       UT_LOG_ERROR("Video Decoder Service is not available");
        return UT_STATUS_FAILURE;
    }
    return UT_STATUS_OK;
 }
 
-Codec stringToCodec(const std::string& codecStr) {
+sp<IAVBuffer> gAVBufferManager;
+
+sp<IAVBuffer> getAVBufferService()
+{
+    return
+        android::interface_cast<IAVBuffer>(
+            android::defaultServiceManager()->getService(
+                android::String16(IAVBuffer::serviceName().c_str())
+            )
+        );
+}
+
+Codec videoDecoderStringToCodec(const std::string& codecStr) {
     static const std::unordered_map<std::string, Codec> codecMap = {
-        {"MPEG", Codec::MPEG}, {"H264", Codec::H264}, {"H265", Codec::H265},
-        {"VP9", Codec::VP9}, {"AV1", Codec::AV1}
+        {"MPEG", Codec::MPEG},
+        {"H264", Codec::H264},
+        {"H265", Codec::H265},
+        {"VP9",  Codec::VP9},
+        {"AV1",  Codec::AV1}
     };
     auto it = codecMap.find(codecStr);
     if (it != codecMap.end()) {
@@ -94,17 +109,20 @@ Codec stringToCodec(const std::string& codecStr) {
     }
 }
 
-DynamicRange stringToDynamicRange(const std::string& rangeStr) {
+DynamicRange videoDecoderStringToDynamicRange(const std::string& rangeStr) {
     static const std::unordered_map<std::string, DynamicRange> dynamicRangeMap = {
-        {"UNKNOWN", DynamicRange::UNKNOWN}, {"SDR", DynamicRange::SDR},
-        {"HLG", DynamicRange::HLG}, {"HDR10", DynamicRange::HDR10},
-        {"HDR10PLUS", DynamicRange::HDR10PLUS}, {"DOLBY_VISION", DynamicRange::DOLBY_VISION}
+        {"UNKNOWN", DynamicRange::UNKNOWN},
+        {"SDR", DynamicRange::SDR},
+        {"HLG", DynamicRange::HLG},
+        {"HDR10", DynamicRange::HDR10},
+        {"HDR10PLUS", DynamicRange::HDR10PLUS},
+        {"DOLBY_VISION", DynamicRange::DOLBY_VISION}
     };
     auto it = dynamicRangeMap.find(rangeStr);
     return (it != dynamicRangeMap.end()) ? it->second : DynamicRange::UNKNOWN;
 }
 
-OperationalMode stringToOperationalMode(const std::string& modeStr) {
+OperationalMode videoDecoderStringToOperationalMode(const std::string& modeStr) {
     static const std::unordered_map<std::string, OperationalMode> modeMap = {
         {"TUNNELLED", OperationalMode::TUNNELLED},
         {"NON_TUNNELLED", OperationalMode::NON_TUNNELLED},
@@ -117,6 +135,21 @@ OperationalMode stringToOperationalMode(const std::string& modeStr) {
     } else {
         return OperationalMode::TUNNELLED;  // Return TUNNELLED for unknown/default modes
     }
+}
+
+PixelFormat videoDecoderStringToPixelFormat(const std::string& formatStr) {
+    static const std::unordered_map<std::string, PixelFormat> pixelFormatMap = {
+        {"YCBCR422", PixelFormat::YCBCR422},
+        {"YCBCR444", PixelFormat::YCBCR444},
+        {"NV12", PixelFormat::YCBCR420},
+        {"RGB", PixelFormat::RGB},
+        {"NATIVE", PixelFormat::NATIVE}
+    };
+    auto it = pixelFormatMap.find(formatStr);
+    if (it != pixelFormatMap.end()) {
+        return it->second;
+    }
+    return static_cast<PixelFormat>(0); // Unknown format
 }
 
 bool vts_videodecoder_helper_validatePropertyValue(int decoder_id,const std::optional<PropertyValue>& propertyValue, const Property property) {
@@ -207,7 +240,7 @@ UT_status_t vts_videodecoder_parseVideoDecoderHFP()
         //UT_LOG_DEBUG("Reading opmode path: %s, value: %s", modepath.c_str(), modeStr.c_str());
         if (!modeStr.empty()) {
             try {
-                temporary.supportedOperationalModes.push_back(stringToOperationalMode(modeStr));
+                temporary.supportedOperationalModes.push_back(videoDecoderStringToOperationalMode(modeStr));
             } catch (const std::invalid_argument& e) {
                 UT_LOG_WARNING("Invalid opmode at path: %s, value: %s, error: %s", modepath.c_str(), modeStr.c_str(), e.what());
             }
@@ -252,7 +285,7 @@ UT_status_t vts_videodecoder_parseVideoDecoderHFP()
                 {
                     //UT_LOG_DEBUG("Found codec at path: %s, codec: %s", codecpath.c_str(), codec_name.c_str());
                     try {
-                        cap.codec = stringToCodec(codec_name);
+                        cap.codec = videoDecoderStringToCodec(codec_name);
                     } catch (const std::invalid_argument& e) {
                         UT_LOG_WARNING("Invalid codec: %s, error: %s, skipping", codec_name.c_str(), e.what());
                         continue;
@@ -292,7 +325,7 @@ UT_status_t vts_videodecoder_parseVideoDecoderHFP()
             //UT_LOG_DEBUG("Reading dynamic range path: %s, value: %s", drpath.c_str(), drStr.c_str());
             if (!drStr.empty()) {
                 try {
-                    temporary.supportedDynamicRanges.push_back(stringToDynamicRange(drStr));
+                    temporary.supportedDynamicRanges.push_back(videoDecoderStringToDynamicRange(drStr));
                 } catch (const std::invalid_argument& e) {
                     UT_LOG_WARNING("Invalid dynamic range at path: %s, value: %s, error: %s",
                                    drpath.c_str(), drStr.c_str(), e.what());
@@ -326,6 +359,109 @@ UT_status_t vts_videodecoder_parseVideoDecoderHFP()
     return UT_STATUS_OK;
 }
 
+size_t vts_bytesPerPixel(PixelFormat format) {
+    switch (format) {
+        case PixelFormat::YCBCR420: return 1.5; // Y + 0.25*Cb + 0.25*Cr
+        case PixelFormat::YCBCR422: return 2;   // Y + 0.5*Cb + 0.5*Cr
+        case PixelFormat::YCBCR444: return 3;   // Y + Cb + Cr
+        case PixelFormat::RGB: return 3;        // R + G + B
+        case PixelFormat::NATIVE: return 3;     // Assume 3 bytes
+        default: return 1;
+    }
+}
+
+double vts_computeVideoRMSDiff(const uint8_t* ref, const uint8_t* dec, size_t width, size_t height, PixelFormat format) {
+    double sum = 0.0;
+    size_t componentCount = 0;
+
+    if (format == PixelFormat::RGB || format == PixelFormat::NATIVE) {
+        // RGB or NATIVE: 3 bytes per pixel (R, G, B)
+        size_t pixelCount = width * height;
+        size_t byteCount = pixelCount * 3;
+        for (size_t i = 0; i < byteCount; ++i) {
+            double diff = static_cast<double>(ref[i]) - static_cast<double>(dec[i]);
+            sum += diff * diff;
+            componentCount++;
+        }
+    } else if (format == PixelFormat::YCBCR444) {
+        // YCBCR444: 3 bytes per pixel (Y, Cb, Cr)
+        size_t pixelCount = width * height;
+        size_t byteCount = pixelCount * 3;
+        for (size_t i = 0; i < byteCount; ++i) {
+            double diff = static_cast<double>(ref[i]) - static_cast<double>(dec[i]);
+            sum += diff * diff;
+            componentCount++;
+        }
+    } else if (format == PixelFormat::YCBCR422) {
+        // YCBCR422: 4:2:2, 2 bytes per pixel (Y0, Y1, Cb, Cr for 2 pixels)
+        size_t pixelCount = width * height;
+        size_t yCount = pixelCount;
+        size_t chromaCount = pixelCount / 2; // One Cb/Cr per 2 Y
+        size_t byteOffset = 0;
+        for (size_t y = 0; y < height; ++y) {
+            for (size_t x = 0; x < width; x += 2) {
+                // Y0
+                double diffY0 = static_cast<double>(ref[byteOffset]) - static_cast<double>(dec[byteOffset]);
+                sum += diffY0 * diffY0;
+                componentCount++;
+                byteOffset++;
+                // Cb
+                double diffCb = static_cast<double>(ref[byteOffset]) - static_cast<double>(dec[byteOffset]);
+                sum += diffCb * diffCb;
+                componentCount++;
+                byteOffset++;
+                // Y1
+                double diffY1 = static_cast<double>(ref[byteOffset]) - static_cast<double>(dec[byteOffset]);
+                sum += diffY1 * diffY1;
+                componentCount++;
+                byteOffset++;
+                // Cr
+                double diffCr = static_cast<double>(ref[byteOffset]) - static_cast<double>(dec[byteOffset]);
+                sum += diffCr * diffCr;
+                componentCount++;
+                byteOffset++;
+            }
+        }
+    } else if (format == PixelFormat::YCBCR420) {
+        // YCBCR420: 4:2:0, 1.5 bytes per pixel (Y for each pixel, Cb/Cr for 2x2 block)
+        size_t pixelCount = width * height;
+        size_t yCount = pixelCount;
+        size_t chromaCount = pixelCount / 4; // One Cb/Cr per 4 Y
+        // Y plane
+        for (size_t i = 0; i < yCount; ++i) {
+            double diff = static_cast<double>(ref[i]) - static_cast<double>(dec[i]);
+            sum += diff * diff;
+            componentCount++;
+        }
+        // Cb plane
+        size_t cbOffset = yCount;
+        for (size_t i = 0; i < chromaCount; ++i) {
+            double diff = static_cast<double>(ref[cbOffset + i]) - static_cast<double>(dec[cbOffset + i]);
+            sum += diff * diff;
+            componentCount++;
+        }
+        // Cr plane
+        size_t crOffset = yCount + chromaCount;
+        for (size_t i = 0; i < chromaCount; ++i) {
+            double diff = static_cast<double>(ref[crOffset + i]) - static_cast<double>(dec[crOffset + i]);
+            sum += diff * diff;
+            componentCount++;
+        }
+    } else {
+        // Unknown format: treat as single-component
+        size_t byteCount = width * height;
+        for (size_t i = 0; i < byteCount; ++i) {
+            double diff = static_cast<double>(ref[i]) - static_cast<double>(dec[i]);
+            sum += diff * diff;
+            componentCount++;
+        }
+    }
+
+    if (componentCount == 0) {
+        return 0.0; // Avoid division by zero
+    }
+    return std::sqrt(sum / componentCount);
+}
 
 void vts_videodecoder_helper_validateCapabilities(
     int32_t decoderId,
@@ -384,6 +520,185 @@ void vts_videodecoder_helper_validateCapabilities(
             break;
         }
     }
+}
+
+void* vts_kvp_create_instance(char *fileName)
+{
+    ut_kvp_instance_t* instance;
+    ut_kvp_status_t result;
+
+    UT_LOG("In %s", __FUNCTION__);
+
+    instance = ut_kvp_createInstance();
+
+    if (!instance)
+    {
+        UT_LOG_ERROR("Failed to create ut kvp instance");
+        return nullptr;
+    }
+
+    result = ut_kvp_open(instance, fileName);
+
+    if (result != UT_KVP_STATUS_SUCCESS)
+    {
+        UT_LOG_ERROR("Failed to open test configuration file");
+        ut_kvp_destroyInstance(instance);
+        return nullptr;
+    }
+
+    UT_LOG("Out %s", __FUNCTION__);
+
+    return (ut_kvp_instance_t*)instance;
+}
+
+void vts_kvp_destroy_instance(void *instance)
+{
+    ut_kvp_destroyInstance((ut_kvp_instance_t*)instance);
+}
+
+UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, char *module, char *testGroup, char *testName, vector<testConfiguration_t>& testConfiguration)
+{
+    ut_kvp_status_t status;
+    ut_kvp_instance_t* kvpTestInstance = (ut_kvp_instance_t*)pTestInstance;
+    char streamInputPath[UT_KVP_MAX_ELEMENT_SIZE] = {0};
+    char streamRefPath[UT_KVP_MAX_ELEMENT_SIZE] = {0};
+    int32_t streamCount = 0;
+    filesystem::path currentPath = filesystem::current_path();
+    filesystem::path fullPath;
+    string testList = string(module) + "." + string(testGroup) + "." + string(testName);
+    string controlList = testList + "." + "Controls";
+    string streamList = testList + "." + "Inputs" + "." + "Streams";
+    string streamsDetails = string("VideoStreams");
+
+    status = ut_kvp_getStringField(kvpTestInstance, STREAM_INPUT_PATH, streamInputPath, UT_KVP_MAX_ELEMENT_SIZE);
+    status = ut_kvp_getStringField(kvpTestInstance, STREAM_REF_PATH, streamRefPath, UT_KVP_MAX_ELEMENT_SIZE);
+
+    streamCount = ut_kvp_getListCount(kvpTestInstance, streamList.c_str());
+
+    for (int32_t i = 0; i < streamCount; i++)
+    {
+        char resultKVP[UT_KVP_MAX_ELEMENT_SIZE] = {0};
+        testConfiguration_t testDetails;
+        vector<int32_t> errorFrameNum;
+
+        string streamName = streamList + "." + to_string(i) + "Name";
+        ut_kvp_getStringField(kvpTestInstance, streamName.c_str(), resultKVP, UT_KVP_MAX_ELEMENT_SIZE);
+
+        string input = streamsDetails + "." + string(resultKVP) + "." + "input";
+        string reference = streamsDetails + "." + string(resultKVP) + "." + "reference";
+        string codec = streamsDetails + "." + string(resultKVP) + "." + "codec";
+        string resolution = streamsDetails + "." + string(resultKVP) + "." + "resolution";
+        string frameRate = streamsDetails + "." + string(resultKVP) + "." + "frame_rate";
+        string pixelFormat = streamsDetails + "." + string(resultKVP) + "." + "pixel_formate";
+        string dynamicRange = streamsDetails + "." + string(resultKVP) + "." + "dynamic_range";
+        string colourSpace = streamsDetails + "." + string(resultKVP) + "." + "colour_space";
+        string depth = streamsDetails + "." + string(resultKVP) + "." + "depth";
+        string bitRate = streamsDetails + "." + string(resultKVP) + "." + "bit_rate";
+        string numOfFrames = streamsDetails + "." + string(resultKVP) + "." + "num_of_frames";
+        string frameSize = streamsDetails + "." + string(resultKVP) + "." + "frame_size";
+        string errorFrames = streamsDetails + "." + string(resultKVP) + "." + "error_frames";
+        string framePTS = streamList + "." + to_string(i) + "." + "PTS";
+        string rmsDiff = streamList + "." + to_string(i) + "." + "rms_diff_threshold";
+        string trimStart = streamList + "." + to_string(i) + "." + "trim.0";
+        string trimEnd = streamList + "." + to_string(i) + "." + "trim.1";
+        string decoderDelay = controlList + "." + "delay_between_decode_calls";
+        string stopPts = controlList + "." + "stop_start_pts";
+        string discontinuityPts = controlList + "." + "signal_discontinuity_pts";
+        string flushPts = controlList + "." + "flush_pts";
+        string flushResetPts = controlList + "." + "flush_reset_pts";
+        string eosPts = controlList + "." + "eos_pts";
+
+        // Input stream path
+        ut_kvp_getStringField(kvpTestInstance, input.c_str(), resultKVP, UT_KVP_MAX_ELEMENT_SIZE);
+        fullPath = currentPath;
+        fullPath.append(streamInputPath);
+        fullPath.append(resultKVP);
+        testDetails.input = fullPath.string();
+
+        // Reference stream path
+        ut_kvp_getStringField(kvpTestInstance, reference.c_str(), resultKVP, UT_KVP_MAX_ELEMENT_SIZE);
+        fullPath = currentPath;
+        fullPath.append(streamRefPath);
+        fullPath.append(resultKVP);
+        testDetails.reference = fullPath.string();
+
+        // Codec
+        ut_kvp_getStringField(kvpTestInstance, codec.c_str(), resultKVP, UT_KVP_MAX_ELEMENT_SIZE);
+        testDetails.codec = videoDecoderStringToCodec(string(resultKVP));
+
+        // Resolution (parse as width x height)
+        ut_kvp_getStringField(kvpTestInstance, resolution.c_str(), resultKVP, UT_KVP_MAX_ELEMENT_SIZE);
+        sscanf(resultKVP, "%dx%d", &testDetails.width, &testDetails.height);
+
+        // Frame rate
+        testDetails.frameRate = ut_kvp_getUInt32Field(kvpTestInstance, frameRate.c_str());
+
+        // Pixel format
+        ut_kvp_getStringField(kvpTestInstance, pixelFormat.c_str(), resultKVP, UT_KVP_MAX_ELEMENT_SIZE);
+        testDetails.pixelFormat = videoDecoderStringToPixelFormat(string(resultKVP));
+
+        // Dynamic range
+        ut_kvp_getStringField(kvpTestInstance, dynamicRange.c_str(), resultKVP, UT_KVP_MAX_ELEMENT_SIZE);
+        testDetails.dynamicRange = videoDecoderStringToDynamicRange(string(resultKVP));
+
+        // Colour space
+        ut_kvp_getStringField(kvpTestInstance, colourSpace.c_str(), resultKVP, UT_KVP_MAX_ELEMENT_SIZE);
+        testDetails.colourSpace = (string(resultKVP));
+
+        // Depth
+        testDetails.depth = ut_kvp_getUInt32Field(kvpTestInstance, depth.c_str());
+
+        // Bit rate
+        testDetails.bitRate = ut_kvp_getUInt32Field(kvpTestInstance, bitRate.c_str());
+
+        // Number of frames
+        testDetails.numOfFrames = ut_kvp_getUInt32Field(kvpTestInstance, numOfFrames.c_str());
+
+        // Error frames
+        if (ut_kvp_fieldPresent(kvpTestInstance, errorFrames.c_str()))
+        {
+            int32_t count = ut_kvp_getListCount(kvpTestInstance, errorFrames.c_str());
+            for (int32_t j = 0; j < count; j++)
+            {
+                string error = errorFrames + "." + to_string(j);
+                int32_t frameNum = ut_kvp_getUInt32Field(kvpTestInstance, error.c_str());
+                errorFrameNum.push_back(frameNum);
+            }
+        }
+
+        // Frame details (size, PTS, error flag)
+        for (int32_t j = 0; j < testDetails.numOfFrames; j++)
+        {
+            bool errorFrame = false;
+
+            string eachFrame = frameSize + "." + to_string(j);
+            string eachPTS = framePTS + "." + to_string(j);
+            int32_t size = ut_kvp_getUInt32Field(kvpTestInstance, eachFrame.c_str());
+            int64_t PTS = ut_kvp_getUInt64Field(kvpTestInstance, eachPTS.c_str());
+            if (find(errorFrameNum.begin(), errorFrameNum.end(), j + 1) != errorFrameNum.end())
+            {
+                errorFrame = true;
+            }
+            testDetails.frameDetails.push_back({size, PTS, errorFrame});
+        }
+
+        // RMS difference threshold
+        testDetails.rms_diff_threashold = ut_kvp_getDoubleField(kvpTestInstance, rmsDiff.c_str());
+
+        // Decoder delay
+        testDetails.decoderDelay = ut_kvp_getUInt32Field(kvpTestInstance, decoderDelay.c_str());
+
+        // Control points
+        testDetails.stopPts = ut_kvp_getUInt64Field(kvpTestInstance, stopPts.c_str());
+        testDetails.discontinuityPts = ut_kvp_getUInt64Field(kvpTestInstance, discontinuityPts.c_str());
+        testDetails.flushPts = ut_kvp_getUInt64Field(kvpTestInstance, flushPts.c_str());
+        testDetails.flushResetPts = ut_kvp_getUInt64Field(kvpTestInstance, flushResetPts.c_str());
+        testDetails.eosPts = ut_kvp_getUInt64Field(kvpTestInstance, eosPts.c_str());
+
+        testConfiguration.push_back(testDetails);
+    }
+
+    return UT_STATUS_OK;
 }
 
 /** @} */ // End of Video_Decoder_Halif_Test_Util

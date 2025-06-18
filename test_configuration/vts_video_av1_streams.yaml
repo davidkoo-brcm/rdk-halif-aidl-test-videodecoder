@@ -1,0 +1,12 @@
+VideoStreams:
+  av1_1920x1080_30f:
+    input: av1_1920x1080_30f.es #Stream Name
+    reference: av1_1920x1080_30f.yuv #reference decoder output
+    codec: AV1  #Video codec information, Refer `Codec` enum
+    resolution: 1920x1080
+    dynamic_range: #com.rdk.hal.video.decoder.DynamicRange enum.
+    colour_space:
+    depth:
+    frame_rate: 30 #Frame Rate
+    pixel_formate: #com.rdk.hal.video.decoder.PixelFormat enum
+    bit_rate:

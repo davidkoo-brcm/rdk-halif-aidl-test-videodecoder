@@ -1,0 +1,12 @@
+VideoStreams:
+  h264_1920x1080_60f:
+    input: h264_1920x1080_60f.es #Stream Name
+    reference: h264_1920x1080_60f.yuv #reference decoder output
+    codec: H264_AVC  #Video codec information, Refer `Codec` enum
+    resolution: 1920x1080
+    dynamic_range: #com.rdk.hal.video.decoder.DynamicRange enum.
+    colour_space:
+    depth:
+    frame_rate: 60 #Frame Rate
+    pixel_formate: #com.rdk.hal.video.decoder.PixelFormat enum
+    bit_rate:

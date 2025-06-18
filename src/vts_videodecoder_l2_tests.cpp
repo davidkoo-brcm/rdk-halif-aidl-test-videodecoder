@@ -64,7 +64,7 @@
  *
  */
 
- #include "vts_videodecoder.h"
+#include "vts_videodecoder.h"
 
 
 struct PropertyTestCase {
