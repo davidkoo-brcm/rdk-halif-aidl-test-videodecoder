@@ -120,25 +120,25 @@ The following table outlines the core features validated in the L3 test phase
 |-|---------------|-----------|
 |1|Tunnel/Non-Tunnel|Executes the decoder in tunnel mode. Based on stream format, the decoder chooses between tunnel and non-tunnel operation. In tunnel mode, the test validates only metrics and metadata.|
 |2|Secure and Non-Secure|Initializes the decoder in secure mode, ensuring all buffer operations occur in secure memory|
-|3|Error Streams|Verifies decoder behaviour with error streams. Ensures appropriate events are raised and frame metadata is updated accurately|
-|4|Trim|Sends trim parameters to the decoder and checks whether the output buffer is correctly trimmed|
+|3|Error Streams|Verifies decoder behavior with error streams. Ensures appropriate events are raised and frame metadata is updated accurately|
+|4|Codecs|Test the decoders ability to decode different codec Types supported as per the decoder capabilities. The decoder should be able to decode all the supported Codecs defined as per the capabilities and test all input streams defined in the configuration file|
 |5|Discontinuity|This test verifies that the discontinuity signal is correctly passed to the decoder. The decoder must continue decoding subsequent frames without errors, and the metadata of the decoded frames should indicate that the discontinuity signal is enabled|
 |6|EOS|Test the decoder's handling of an `eos` (end-of-stream) signal. The decoder should correctly decode all frames up to `eos` and update relevant metadata fields. It must ignore any buffers received after `eos` and resume normal decoding when restarted.|
 |7|Flush without reset|Test the decoder's flush functionality. The decoder should discard any buffers already queued and resume normal decoding of subsequent frames|
 |8|Flush with reset|Test the decoder’s flush functionality combined with reset. The decoder should discard all queued buffers and transition to the READY state. After restarting, the decoder should properly process incoming frames|
-|9| Resolution| Test the decoders ability to decode different resolution supported. The decoder should be able to decode all the supported resolution defined as per the configuration file|
-|10| HDR Modes |Test the decoders ability to decode different HDR modes supported. The decoder should be able to decode all the supported HDR modes defined as per the configuration file |
-|11| Frame Rates | Test the decoders ability to decode different frame rate supported. The decoder should be able to decode all the supported frame rate defined as per the configuration file|
-|12| GOP Structure |Test the decoders ability to decode different GOP structure supported. The decoder should be able to decode all the supported GOP structure defined as per the configuration file |
+|9| Resolution| Test the decoders ability to decode different resolution supported. The decoder should be able to decode all the test streams with different resolution defined as per the configuration file|
+|10| HDR Modes |Test the decoders ability to decode different HDR modes supported as per the decoder capabilities. The decoder should be able to decode all the supported HDR modes defined as per the capabilities and test all input streams defined in the configuration file |
+|11| Frame Rates | Test the decoders ability to decode different frame rates supported. The decoder should be able to decode all the test streams with different frame rates defined as per the configuration file|
+|12| GOP Structure |Test the decoders ability to decode different GOP structure in the following possibilities, Single I-frame or IDR frame,Single GOPs (closed), Multiple GOPs (open), Multiple GOPs (open and closed).|
 |13| Low Latency mode | Test the decoder’s low latency functionality. The decoder should skip over B-Frames for gaming and Casting functions|
 |14| Adaptive Bitrate Streaming | Test the decoders ability to decode ABR streams.|
 |15|Concurrent decoding|If platform supports multiple decoders, test executes multiple decoders simultaneously, validating decoded outputs and their respective metrics.|
 
-|#|Test|Tunnel|Secure|Error streams|Trim|Discontinuity|EOS|Flush|Flush+Rest|Resolutions|HDR Modes|Frame Rates|GOP|Low Latency|Concurrency|
+|#|Test|Tunnel|Secure|Error streams|CODEC|Discontinuity|EOS|Flush|Flush+Rest|Resolutions|HDR Modes|Frame Rates|GOP|Low Latency|Concurrency|
 |-|----|------|------|-------------|----|-------------|---|-----|----------|-----------|---------|-----------|---|-----------|-----------|
 |1|Decode_Sequential_NonTunnel_NonSecure|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|
 |2|Decode_Sequential_NonTunnel_NonSecure_Error|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|
-|3|Decode_Sequential_NonTunnel_NonSecure_Trim|✘|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|
+|3|Decode_Sequential_NonTunnel_NonSecure_CODEC|✘|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|
 |4|Decode_Sequential_NonTunnel_NonSecure_Discontinuity|✘|✘|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|
 |5|Decode_Sequential_NonTunnel_NonSecure_EOS|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|
 |6|Decode_Sequential_NonTunnel_NonSecure_Flush|✘|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|
@@ -150,7 +150,7 @@ The following table outlines the core features validated in the L3 test phase
 |12|Decode_Sequential_NonTunnel_NonSecure_LowLatency|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✔|✘|
 |13|Decode_Sequential_NonTunnel_Secure|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|
 |14|Decode_Sequential_NonTunnel_Secure_Error|✘|✔|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|
-|15|Decode_Sequential_NonTunnel_Secure_Trim|✘|✔|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|
+|15|Decode_Sequential_NonTunnel_Secure_CODEC|✘|✔|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|
 |16|Decode_Sequential_NonTunnel_Secure_Discontinuity|✘|✔|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|
 |17|Decode_Sequential_NonTunnel_Secure_EOS|✘|✔|✘|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|
 |18|Decode_Sequential_NonTunnel_Secure_Flush|✘|✔|✘|✘|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|
@@ -162,7 +162,7 @@ The following table outlines the core features validated in the L3 test phase
 |24|Decode_Sequential_NonTunnel_Secure_LowLatency|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✔|✘|
 |25|Decode_Sequential_Tunnel_NonSecure|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|
 |26|Decode_Sequential_Tunnel_NonSecure_Error|✔|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|
-|27|Decode_Sequential_Tunnel_NonSecure_Trim|✔|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|
+|27|Decode_Sequential_Tunnel_NonSecure_CODEC|✔|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|
 |28|Decode_Sequential_Tunnel_NonSecure_Discontinuity|✔|✘|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|
 |29|Decode_Sequential_Tunnel_NonSecure_EOS|✔|✘|✘|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|
 |30|Decode_Sequential_Tunnel_NonSecure_Flush|✔|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|
@@ -174,7 +174,7 @@ The following table outlines the core features validated in the L3 test phase
 |36|Decode_Sequential_Tunnel_NonSecure_LowLatency|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✔|✘|
 |37|Decode_Sequential_Tunnel_Secure|✔|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|
 |38|Decode_Sequential_Tunnel_Secure_Error|✔|✔|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|
-|39|Decode_Sequential_Tunnel_Secure_Trim|✔|✔|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|
+|39|Decode_Sequential_Tunnel_Secure_CODEC|✔|✔|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|
 |40|Decode_Sequential_Tunnel_Secure_Discontinuity|✔|✔|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|
 |41|Decode_Sequential_Tunnel_Secure_EOS|✔|✔|✘|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|
 |42|Decode_Sequential_Tunnel_Secure_Flush|✔|✔|✘|✘|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|
@@ -186,7 +186,7 @@ The following table outlines the core features validated in the L3 test phase
 |48|Decode_Sequential_Tunnel_Secure_LowLatency|✔|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✔|✘|
 |49|Decode_Concurrent_NonTunnel_NonSecure|✘|✘|✘|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✔|
 |50|Decode_Concurrent_NonTunnel_NonSecure_Error|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✔|
-|51|Decode_Concurrent_NonTunnel_NonSecure_Trim|✘|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✔|
+|51|Decode_Concurrent_NonTunnel_NonSecure_CODEC|✘|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✔|
 |52|Decode_Concurrent_NonTunnel_NonSecure_Discontinuity|✘|✘|✘|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✔|
 |53|Decode_Concurrent_NonTunnel_NonSecure_EOS|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|✔|
 |54|Decode_Concurrent_NonTunnel_NonSecure_Flush|✘|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✘|✘|✔|
@@ -198,7 +198,7 @@ The following table outlines the core features validated in the L3 test phase
 |60|Decode_Concurrent_NonTunnel_NonSecure_LowLatency|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✔|✔|
 |61|Decode_Concurrent_NonTunnel_Secure|✘|✔|✘|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✔|
 |62|Decode_Concurrent_NonTunnel_Secure_Error|✘|✔|✔|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✔|
-|63|Decode_Concurrent_NonTunnel_Secure_Trim|✘|✔|✘|✔|✘|✘|✘|✘|✔|✘|✘|✘|✘|✔|
+|63|Decode_Concurrent_NonTunnel_Secure_CODEC|✘|✔|✘|✔|✘|✘|✘|✘|✔|✘|✘|✘|✘|✔|
 |64|Decode_Concurrent_NonTunnel_Secure_Discontinuity|✘|✔|✘|✘|✔|✘|✘|✘|✔|✘|✘|✘|✘|✔|
 |65|Decode_Concurrent_NonTunnel_Secure_EOS|✘|✔|✘|✘|✘|✔|✘|✘|✔|✘|✘|✘|✘|✔|
 |66|Decode_Concurrent_NonTunnel_Secure_Flush|✘|✔|✘|✘|✘|✘|✔|✘|✔|✘|✘|✘|✘|✔|
@@ -210,7 +210,7 @@ The following table outlines the core features validated in the L3 test phase
 |72|Decode_Concurrent_NonTunnel_Secure_LowLatency|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✔|✔|
 |73|Decode_Concurrent_Tunnel_NonSecure|✔|✘|✘|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✔|
 |74|Decode_Concurrent_Tunnel_NonSecure_Error|✔|✘|✔|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✔|
-|75|Decode_Concurrent_Tunnel_NonSecure_Trim|✔|✘|✘|✔|✘|✘|✘|✘|✔|✘|✘|✘|✘|✔|
+|75|Decode_Concurrent_Tunnel_NonSecure_CODEC|✔|✘|✘|✔|✘|✘|✘|✘|✔|✘|✘|✘|✘|✔|
 |76|Decode_Concurrent_Tunnel_NonSecure_Discontinuity|✔|✘|✘|✘|✔|✘|✘|✘|✔|✘|✘|✘|✘|✔|
 |77|Decode_Concurrent_Tunnel_NonSecure_EOS|✔|✘|✘|✘|✘|✔|✘|✘|✔|✘|✘|✘|✘|✔|
 |78|Decode_Concurrent_Tunnel_NonSecure_Flush|✔|✘|✘|✘|✘|✘|✔|✘|✔|✘|✘|✘|✘|✔|
@@ -222,7 +222,7 @@ The following table outlines the core features validated in the L3 test phase
 |84|Decode_Concurrent_Tunnel_NonSecure_LowLatency|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✔|✔|
 |85|Decode_Concurrent_Tunnel_Secure|✔|✔|✘|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✔|
 |86|Decode_Concurrent_Tunnel_Secure_Error|✔|✔|✔|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✔|
-|87|Decode_Concurrent_Tunnel_Secure_Trim|✔|✔|✘|✔|✘|✘|✘|✘|✔|✘|✘|✘|✘|✔|
+|87|Decode_Concurrent_Tunnel_Secure_CODEC|✔|✔|✘|✔|✘|✘|✘|✘|✔|✘|✘|✘|✘|✔|
 |88|Decode_Concurrent_Tunnel_Secure_Discontinuity|✔|✔|✘|✘|✔|✘|✘|✘|✔|✘|✘|✘|✘|✔|
 |89|Decode_Concurrent_Tunnel_Secure_EOS|✔|✔|✘|✘|✘|✔|✘|✘|✔|✘|✘|✘|✘|✔|
 |90|Decode_Concurrent_Tunnel_Secure_Flush|✔|✔|✘|✘|✘|✘|✔|✘|✔|✘|✘|✘|✘|✔|
