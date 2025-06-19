@@ -5,9 +5,9 @@
 - [Acronyms, Terms and Abbreviations](#acronyms-terms-and-abbreviations)
 - [Introduction](#introduction)
 - [Module Description](#module-description)
+- [Test Stream specifications](#test-stream-specifications)
 - [L2 Test Specification](#l2-test-specification)
 - [L3 Test Specification](#l3-test-specification)
-- [Test Stream specifications](#test-stream-specifications)
 
 ## Acronyms, Terms and Abbreviations
 
@@ -38,11 +38,11 @@ This document provides an overview of the testing requirements for the Video Dec
 
 ## Module Description
 
-The Video Decoder `HAL` service provides the interfaces for compressed audio to be passed to the vendor layer for decoding.  It may be passed secure buffers if it indicates support for secure audio processing.
+The Video Decoder `HAL` service provides the interfaces for compressed video to be passed to the vendor layer for decoding.  It may be passed secure buffers if it indicates support for secure video processing.
 
-The output of an audio decoder can take two routes:
+The output of an video decoder can take two routes:
 
-1. **Non-tunnel mode** - Decoded `PCM` audio frames with metadata are sent back to the `RDK` media pipeline.
+1. **Non-tunnel mode** - Decoded video frames with metadata are sent back to the `RDK` media pipeline.
 2. **Tunnel mode** - Video is passed directly to the vendor layer mixer.
 
 ## Test Stream specifications
@@ -73,7 +73,7 @@ VTS L3 validates all the Video Decoder features in both sequential and concurren
 
 #### Sequential Decoding
 
-The Sequential Decoding test evaluates each audio decoder individually, one after another, to ensure functional correctness across all supported features. This approach helps isolate issues and verify that every decoder instance performs as expected in a standalone environment.
+The Sequential Decoding test evaluates each video decoder individually, one after another, to ensure functional correctness across all supported features. This approach helps isolate issues and verify that every decoder instance performs as expected in a standalone environment.
 
 ```mermaid
 block-beta
@@ -87,7 +87,7 @@ block-beta
 
 #### Concurrent Decoding
 
-The Concurrent Decoding test assesses the system's ability to handle multiple audio decoders operating simultaneously, each configured with different supported features. This test is designed to validate the robustness, resource management, and feature compatibility of the platform under concurrent load, and is applicable only if the platform supports multiple decoder instances.
+The Concurrent Decoding test assesses the system's ability to handle multiple video decoders operating simultaneously, each configured with different supported features. This test is designed to validate the robustness, resource management, and feature compatibility of the platform under concurrent load, and is applicable only if the platform supports multiple decoder instances.
 
 ```mermaid
 block-beta
