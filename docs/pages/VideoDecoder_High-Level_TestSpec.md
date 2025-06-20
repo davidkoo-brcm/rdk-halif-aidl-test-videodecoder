@@ -118,21 +118,21 @@ The following table outlines the core features validated in the L3 test phase
 
 |#|Testing Feature|Description|
 |-|---------------|-----------|
-|1|Tunnel/Non-Tunnel|Executes the decoder in tunnel mode. Based on stream format, the decoder chooses between tunnel and non-tunnel operation. In tunnel mode, the test validates only metrics and metadata.|
+|1|Tunnel/Non-Tunnel|Executes the decoder in tunnel mode or in non tunnel mode based on the property OPERATION_MOde set by the user. The test validates metrics, metadata and bufferHandle.|
 |2|Secure and Non-Secure|Initializes the decoder in secure mode, ensuring all buffer operations occur in secure memory|
 |3|Error Streams|Verifies decoder behavior with error streams. Ensures appropriate events are raised and frame metadata is updated accurately|
-|4|Codecs|Test the decoders ability to decode different codec Types supported as per the decoder capabilities. The decoder should be able to decode all the supported Codecs defined as per the capabilities and test all input streams defined in the configuration file|
-|5|Discontinuity|This test verifies that the discontinuity signal is correctly passed to the decoder. The decoder must continue decoding subsequent frames without errors, and the metadata of the decoded frames should indicate that the discontinuity signal is enabled|
-|6|EOS|Test the decoder's handling of an `eos` (end-of-stream) signal. The decoder should correctly decode all frames up to `eos` and update relevant metadata fields. It must ignore any buffers received after `eos` and resume normal decoding when restarted.|
+|4|Codecs|Tests the decoder’s ability to decode all supported codec types per its capabilities, using input streams defined in the configuration file.|
+|5|Discontinuity|This test Verifies that the discontinuity signal is processed, ensuring subsequent frames decode without errors and metadata reflects the discontinuity.|
+|6|EOS|Tests the decoder’s handling of an End-of-Stream (EOS) signal, ensuring all frames up to EOS are decoded, metadata is updated, post-EOS buffers are ignored, and decoding resumes after restart.|
 |7|Flush without reset|Test the decoder's flush functionality. The decoder should discard any buffers already queued and resume normal decoding of subsequent frames|
 |8|Flush with reset|Test the decoder’s flush functionality combined with reset. The decoder should discard all queued buffers and transition to the READY state. After restarting, the decoder should properly process incoming frames|
-|9| Resolution| Test the decoders ability to decode different resolution supported. The decoder should be able to decode all the test streams with different resolution defined as per the configuration file|
-|10| HDR Modes |Test the decoders ability to decode different HDR modes supported as per the decoder capabilities. The decoder should be able to decode all the supported HDR modes defined as per the capabilities and test all input streams defined in the configuration file |
-|11| Frame Rates | Test the decoders ability to decode different frame rates supported. The decoder should be able to decode all the test streams with different frame rates defined as per the configuration file|
-|12| GOP Structure |Test the decoders ability to decode different GOP structure in the following possibilities, Single I-frame or IDR frame,Single GOPs (closed), Multiple GOPs (open), Multiple GOPs (open and closed).|
-|13| Low Latency mode | Test the decoder’s low latency functionality. The decoder should skip over B-Frames for gaming and Casting functions|
-|14| Adaptive Bitrate Streaming | Test the decoders ability to decode ABR streams.|
-|15|Concurrent decoding|If platform supports multiple decoders, test executes multiple decoders simultaneously, validating decoded outputs and their respective metrics.|
+|9| Resolution| Tests the decoder’s ability to decode streams with different resolutions (up to maxFrameWidth and maxFrameHeight per CodecCapability) as defined in the configuration file, validated via frame metadata|
+|10| HDR Modes |Tests the decoder’s ability to decode all supported HDR modes per its capabilities, using input streams defined in the configuration file.|
+|11| Frame Rates | Tests the decoder’s capability for supported frame rates (up to maxFrameRate per CodecCapability) and checks streams with different frame rates as defined in the configuration file, validated via frame metadata|
+|12| GOP Structure |Tests the decoder’s ability to decode various GOP structures, including single I-frame or IDR frame, single closed GOPs, multiple open GOPs, and mixed open/closed GOPs, as defined in the configuration file.|
+|13| Low Latency mode | Tests the decoder’s low latency mode, ensuring B-frames are skipped, as required for low-latency applications.|
+|14| Adaptive Bitrate Streaming | Tests the decoder’s ability to decode Adaptive Bitrate Streams (ABR) with dynamic bitrate changes, as defined in the configuration fileTests the decoder’s ability to decode Adaptive Bitrate Streams (ABR) with dynamic bitrate changes, as defined in the configuration file.|
+|15|Concurrent decoding|Tests multiple decoders simultaneously, if supported, validating decoded outputs and their respective metrics (e.g., frame timing, error rates).|
 
 |#|Test|Tunnel|Secure|Error streams|CODEC|Discontinuity|EOS|Flush|Flush+Rest|Resolutions|HDR Modes|Frame Rates|GOP|Low Latency|Concurrency|
 |-|----|------|------|-------------|----|-------------|---|-----|----------|-----------|---------|-----------|---|-----------|-----------|
