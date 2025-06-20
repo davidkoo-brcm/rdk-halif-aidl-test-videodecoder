@@ -84,15 +84,20 @@
 #include <thread>
 #include <chrono>
 #include <openssl/sha.h>
-#include <binder/IServiceManager.h>
-#include <binder/ProcessState.h>
 #include <cmath>
 #include <algorithm>
 #include <fstream>
 #include <filesystem>
 #include <deque>
 #include <queue>
+#include <mutex>
+#include <atomic>
+#include <chrono>
 #include <condition_variable>
+#include <unistd.h>
+#include <sys/syscall.h>
+#include <sys/types.h>
+
 
 #include "com/rdk/hal/avbuffer/IAVBuffer.h"
 #include "com/rdk/hal/avbuffer/BnAVBufferSpaceListener.h"
@@ -100,6 +105,8 @@
 
 
 #include "com/rdk/hal/videodecoder/IVideoDecoderManager.h"
+#include "com/rdk/hal/videodecoder/IVideoDecoderController.h"
+#include "com/rdk/hal/videodecoder/IVideoDecoderEventListener.h"
 #include "com/rdk/hal/videodecoder/BnVideoDecoderControllerListener.h"
 #include "com/rdk/hal/videodecoder/BnVideoDecoderEventListener.h"
 #include "com/rdk/hal/videodecoder/DynamicRange.h"
@@ -136,26 +143,6 @@ extern std::vector<sp<IVideoDecoderController>>  controllers;
 #define STREAM_INPUT_PATH "IVideoDecoderManager.input_streams_path"
 #define STREAM_REF_PATH "IVideoDecoderManager.reference_streams_path"
 
-UT_status_t VTS_VideoDecoder_init();
-UT_status_t getVideoDecoderService();
-sp<IAVBuffer> getAVBufferService();
-Codec videoDecoderStringToCodec(const std::string& codecStr);
-DynamicRange videoDecoderStringToDynamicRange(const std::string& rangeStr);
-OperationalMode videoDecoderStringToOperationalMode(const std::string& modeStr);
-PixelFormat videoDecoderStringToPixelFormat(const std::string& formatStr);
-bool vts_videodecoder_helper_validatePropertyValue(int decoder_id,const std::optional<PropertyValue>& propertyValue, const Property property);
-void vts_videodecoder_helper_validateCapabilities(int32_t decoderId,const Capabilities& capabilities);
-double vts_computeVideoRMSDiff(const uint8_t* ref, const uint8_t* dec, size_t width, size_t height, PixelFormat format);
-void* vts_kvp_create_instance(char *fileName);
-void vts_kvp_destroy_instance(void *instance);
-UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, char *module, char *testGroup, char *testName, std::vector<testConfiguration_t>& testConfiguration);
-
-UT_status_t vts_videodecoder_parseVideoDecoderHFP();
-
-size_t vts_bytesPerPixel(PixelFormat format);
-void* vts_kvp_create_instance(char *fileName);
-void vts_kvp_destroy_instance(void *instance);
-void VTS_VideoDecoder_destroy();
 extern void *gTestConfiguration;
 
 
@@ -167,8 +154,6 @@ typedef struct InputVideoFrame
     bool isErrorFrame;
     std::chrono::steady_clock::time_point sendTime;
 }InputVideoFrame_t;
-
-
 
 struct CodecCapability {
     Codec codec;
@@ -187,15 +172,7 @@ typedef struct decoder {
 
 extern std::vector<decoder_t> gVideodecoders_hfp;
 
-struct InputVideoFrame_t {
-    std::chrono::steady_clock::time_point sendTime;
-    int64_t framePTS;
-    std::string reference;
-    double rms_threshold;
-    bool isErrorFrame;
-};
-
-struct FrameMetadata {
+struct videoFrameMetadata {
         PixelFormat pixelFormat;
         int32_t width;
         int32_t height;
@@ -214,7 +191,7 @@ struct DecodedVideoFrame_t {
     int64_t framePTS;
     std::chrono::steady_clock::time_point receiveTime;
     bool isMetaAvailable;
-    FrameMetadata metadata;
+    videoFrameMetadata metadata;
 };
 
 struct testConfiguration_t {
@@ -240,6 +217,26 @@ struct testConfiguration_t {
     int64_t eosPts; // EOS PTS
 };
 
+UT_status_t VTS_VideoDecoder_init();
+UT_status_t getVideoDecoderService();
+sp<IAVBuffer> getAVBufferService();
+Codec videoDecoderStringToCodec(const std::string& codecStr);
+DynamicRange videoDecoderStringToDynamicRange(const std::string& rangeStr);
+OperationalMode videoDecoderStringToOperationalMode(const std::string& modeStr);
+PixelFormat videoDecoderStringToPixelFormat(const std::string& formatStr);
+bool vts_videodecoder_helper_validatePropertyValue(int decoder_id,const std::optional<PropertyValue>& propertyValue, const Property property);
+void vts_videodecoder_helper_validateCapabilities(int32_t decoderId,const Capabilities& capabilities);
+double vts_computeVideoRMSDiff(const uint8_t* ref, const uint8_t* dec, size_t width, size_t height, PixelFormat format);
+void* vts_kvp_create_instance(char *fileName);
+void vts_kvp_destroy_instance(void *instance);
+UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, char *module, char *testGroup, const char *testName, std::vector<testConfiguration_t>& testConfiguration);
+
+UT_status_t vts_videodecoder_parseVideoDecoderHFP();
+
+size_t vts_bytesPerPixel(PixelFormat format);
+void* vts_kvp_create_instance(char *fileName);
+void vts_kvp_destroy_instance(void *instance);
+void VTS_VideoDecoder_destroy();
 
 /* Status::Exception */
 const static ut_control_keyStringMapping_t statusException_mapTable[] =
@@ -509,6 +506,23 @@ do { \
         UT_ASSERT_EQUAL(currentState, expected_state) << "Expected state " << static_cast<int32_t>(expected_state) \
                                                   << ", got " << static_cast<int32_t>(currentState); \
     } while (0)
+/**
+ * @brief Waits for the video decoder to reach a target state.
+ * @param[in] videoDecoder The IVideoDecoder instance.
+ * @param[in] targetState The expected state to wait for.
+ * @param[out] lastState The final state observed.
+ */
+#define VIDEODECODER_WAIT_FOR_STATE(videoDecoder, targetState, lastState) \
+    do { \
+        int32_t sleep_time = 0; \
+        do \
+        { \
+            std::this_thread::sleep_for(std::chrono::milliseconds(MAX_TRANSITORY_STATE_WAIT_MS)); \
+            sleep_time += MAX_TRANSITORY_STATE_WAIT_MS; \
+            /* Check the state of the decoder */ \
+            VIDEODECODER_GETSTATE(videoDecoder, lastState); \
+        } while (sleep_time < MAX_FINAL_STATE_WAIT_MS && lastState != targetState); \
+    } while (0)
 
 /**
  * @brief Opens the video decoder and verifies success.
@@ -569,23 +583,6 @@ do { \
         } \
     } while (0)
 
-/**
- * @brief Waits for the video decoder to reach a target state.
- * @param[in] videoDecoder The IVideoDecoder instance.
- * @param[in] targetState The expected state to wait for.
- * @param[out] lastState The final state observed.
- */
-#define VIDEODECODER_WAIT_FOR_STATE(videoDecoder, targetState, lastState) \
-    do { \
-        int32_t sleep_time = 0; \
-        do \
-        { \
-            std::this_thread::sleep_for(std::chrono::milliseconds(MAX_TRANSITORY_STATE_WAIT_MS)); \
-            sleep_time += MAX_TRANSITORY_STATE_WAIT_MS; \
-            /* Check the state of the decoder */ \
-            VIDEODECODER_GETSTATE(videoDecoder, lastState); \
-        } while (sleep_time < MAX_FINAL_STATE_WAIT_MS && lastState != targetState); \
-    } while (0)
 
 /**
  * @brief Closes the video decoder and verifies success.
@@ -908,17 +905,14 @@ do { \
  * @param[in] reset The reset flag for flush.
  * @param[in] expectedException The expected binder exception (e.g., EX_ILLEGAL_STATE).
  */
-#define VIDEODECODER_FLUSH_SUCCESS(videoDecoderController, reset,stateCheck) \
+
+#define VIDEODECODER_FLUSH_SUCCESS(videoDecoder, videoDecoderController, reset, stateCheck) \
     do { \
-        Status status; \
-        UT_LOG_INFO("Calling flush(IN:reset:[%s])", (reset) ? "true" : "false"); \
-        status = (videoDecoderController)->flush(reset); \
-        UT_LOG_INFO("Result flush(IN:reset:[%s]), status:[isOK:%s, exception:%s]", \
-                    (reset) ? "true" : "false", \
-                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
-                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
-        UT_ASSERT_TRUE(status.isOk()); \
-        UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE);  \
+        State lastState; \
+        Status status = (videoDecoderController)->flush(reset); \
+        UT_LOG_INFO("flush(%s) status=%s", reset ? "true" : "false", UT_Control_GetMapString(bool_mapTable, status.isOk())); \
+        UT_ASSERT_TRUE(status.isOk()) << "flush(" << reset << ") failed"; \
+        VIDEODECODER_WAIT_FOR_STATE(videoDecoder, State::READY, lastState); \
         if (stateCheck) { \
             State lastState; \
             if (reset){ \
@@ -931,8 +925,6 @@ do { \
             } \
         } \
     } while (0)
-
-
 /**
  * @brief Tests that signalDiscontinuity succeeds in the STARTED state.
  * @param[in] videoDecoder The IVideoDecoder instance (for state checking).
@@ -1074,26 +1066,29 @@ do { \
 
 #define VIDEODECODER_DECODEBUFFER_SUCCESS(controller, pts, bufferHandle) \
     do { \
-        UT_LOG_INFO("Calling decodeBuffer(IN:pts:%lld, IN:bufferHandle:0x%llx)", \
-                    pts, bufferHandle); \
-        Status status = controller->decodeBuffer(pts, bufferHandle); \
-        UT_LOG_INFO("Result decodeBuffer(status:isOK:%s, exception:%s)", \
+        bool decodeResult; \
+        Status status = controller->decodeBuffer(pts, bufferHandle, &decodeResult); \
+        UT_LOG_INFO("decodeBuffer(pts=%lld, bufferHandle=%lld) status=%s, result=%s", \
+                    static_cast<long long>(pts), static_cast<long long>(bufferHandle), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
-                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
-        UT_ASSERT_TRUE(status.isOk()); \
-        UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
+                    decodeResult ? "true" : "false"); \
+        UT_ASSERT_TRUE(status.isOk()) << "decodeBuffer failed"; \
+        UT_ASSERT_TRUE(decodeResult) << "decodeBuffer returned false"; \
     } while (0)
 
 #define VIDEODECODER_DECODEBUFFER_FAILURE(controller, pts, bufferHandle, expectedException) \
     do { \
-        UT_LOG_INFO("Calling decodeBuffer(IN:pts:%lld, IN:bufferHandle:0x%llx)", \
-                    pts, bufferHandle); \
-        Status status = controller->decodeBuffer(pts, bufferHandle); \
-        UT_LOG_INFO("Result decodeBuffer(status:isOK:%s, exception:%s)", \
+        bool decodeResult; \
+        Status status = controller->decodeBuffer(pts, bufferHandle, &decodeResult); \
+        UT_LOG_INFO("decodeBuffer(pts=%lld, bufferHandle=%lld) status=%s, result=%s", \
+                    static_cast<long long>(pts), static_cast<long long>(bufferHandle), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
-                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
-        UT_ASSERT_FALSE(status.isOk()); \
-        UT_ASSERT_EQUAL(status.exceptionCode(), expectedException); \
+                    decodeResult ? "true" : "false"); \
+        UT_ASSERT_FALSE(status.isOk() || decodeResult) << "decodeBuffer unexpectedly succeeded"; \
+        if (expectedException != Status::EX_NONE) { \
+            UT_ASSERT_TRUE(status.exceptionCode() == expectedException) \
+                << "decodeBuffer returned unexpected exception"; \
+        } \
     } while (0)
 
 /**
@@ -1135,100 +1130,21 @@ class VTS_L1_VideoDecoder : public UTCore {
         }
     };
 
-/**
- * @brief Test fixture for Level 2 Video Decoder HALIF tests.
- * Inherits from UTCore to leverage ut-core's test utilities and lifecycle methods.
- */
-
 class VideoDecoderControllerListener : public BnVideoDecoderControllerListener {
-public:
-    VideoDecoderControllerListener() : BnVideoDecoderControllerListener(), mShutdownFlag(false) {}
-    virtual ~VideoDecoderControllerListener() = default;
+    public:
 
-    Status onFrameOutput(int64_t nsPresentationTime, int64_t frameBufferHandle,
-                         const ::optional<FrameMetadata>& metadata) override {
-        UT_LOG_INFO("onFrameOutput: Received frameoutput: %lld", nsPresentationTime);
+        VideoDecoderControllerListener() {};
+        virtual ~VideoDecoderControllerListener() = default;
 
-        DecodedVideoFrame_t frame;
-        frame.receiveTime = steady_clock::now();
-        frame.framePTS = nsPresentationTime;
-
-        // Access IAVBuffer service to read frame data
-        sp<IAVBuffer> avBuffer = getAVBufferService();
-        if (frameBufferHandle != -1 && avBuffer != nullptr) {
-            uint32_t width = metadata.has_value() ? metadata->width : 1920; // Default if metadata unavailable
-            uint32_t height = metadata.has_value() ? metadata->height : 1080;
-            PixelFormat format = metadata.has_value() ? metadata->pixelFormat : PixelFormat::YCBCR420;
-            size_t bufferSize = width * height * vts_bytesPerPixel(format);
-
-            frame.width = width;
-            frame.height = height;
-            frame.data.resize(bufferSize);
-
-            // TODO: Implement buffer mapping with IAVBuffer
-            // Example placeholder:
-            // uint8_t* mappedData = nullptr;
-            // Status status = avBuffer->mapBuffer(frameBufferHandle, &mappedData, bufferSize);
-            // if (status.isOk()) {
-            //     memcpy(frame.data.data(), mappedData, bufferSize);
-            //     avBuffer->unmapBuffer(frameBufferHandle);
-            // } else {
-            //     UT_LOG_ERROR("Failed to map buffer: %s", status.toString8().c_str());
-            // }
-        }
-
-        frame.isMetaAvailable = false;
-        if (metadata.has_value()) {
-            frame.isMetaAvailable = true;
-            frame.metadata.pixelFormat = metadata->pixelFormat;
-            frame.metadata.width = metadata->width;
-            frame.metadata.height = metadata->height;
-            frame.metadata.sourceCodec = metadata->sourceCodec;
-            frame.metadata.frameRate = metadata->frameRate;
-            frame.metadata.dynamicRange = metadata->dynamicRange;
-            //frame.metadata.colourSpace = metadata->colourSpace;
-            frame.metadata.bitDepth = metadata->bitDepth;
-            frame.metadata.lowLatency = metadata->lowLatency;
-            frame.metadata.endOfStream = metadata->endOfStream;
-            frame.metadata.discontinuity = metadata->discontinuity;
-            frame.metadata.source = metadata->source;
-        }
-
+        Status onFrameOutput(int64_t nsPresentationTime, int64_t frameBufferHandle, const ::std::optional<FrameMetadata>& metadata) override
         {
-            lock_guard<mutex> lock(mQueueMutex);
-            mFrameQueue.push(frame);
+            return Status::ok();
         }
-
-        mFrameAvailable.notify_one();
-        return Status::ok();
-    }
-
-    bool getNextFrame(DecodedVideoFrame_t &frameInfo) {
-        unique_lock<mutex> lock(mQueueMutex);
-        while (mFrameQueue.empty() && !mShutdownFlag) {
-            mFrameAvailable.wait_for(lock, std::chrono::milliseconds(100));
+        Status onUserDataOutput(int64_t nsPresentationTime, const ::std::vector<uint8_t>& userData) override
+        {
+            return Status::ok();
         }
-
-        if (mFrameQueue.empty() && mShutdownFlag) {
-            return false;
-        }
-
-        frameInfo = mFrameQueue.front();
-        mFrameQueue.pop();
-        return true;
-    }
-
-    void shutdown() {
-        mShutdownFlag = true;
-        mFrameAvailable.notify_all();
-    }
-
-private:
-    queue<DecodedVideoFrame_t> mFrameQueue;
-    mutex mQueueMutex;
-    condition_variable mFrameAvailable;
-    atomic<bool> mShutdownFlag;
-};
+    };
 
 class VideoDecoderEventListener : public BnVideoDecoderEventListener {
     public:

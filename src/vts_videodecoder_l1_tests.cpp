@@ -1745,10 +1745,10 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, flush_pos) {
             VIDEODECODER_CHECK_STATE(videoDecoder, State::STARTED);
 
             // Test flush without reset
-            VIDEODECODER_FLUSH_SUCCESS(videoDecoderController,false,true);
+            VIDEODECODER_FLUSH_SUCCESS(videoDecoder,videoDecoderController,false,true);
 
             // Test flush with reset
-            VIDEODECODER_FLUSH_SUCCESS(videoDecoderController,true,true);
+            VIDEODECODER_FLUSH_SUCCESS(videoDecoder,videoDecoderController,true,true);
 
             // Close
             VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);

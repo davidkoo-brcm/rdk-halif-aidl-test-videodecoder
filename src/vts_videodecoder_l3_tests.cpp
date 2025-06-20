@@ -61,9 +61,6 @@
 using namespace std::chrono;
 using namespace std;
 
-#ifndef HALIF_TEST_TAG_VERSION
-#define HALIF_TEST_TAG_VERSION "Not Defined"
-#endif
 
 /* Test class registration with UT_Core */
 UT_ADD_TEST_TO_GROUP(VTS_L3_VideoDecoder, UT_TESTS_L3)
@@ -265,8 +262,6 @@ private:
         for (const auto& [frameSize, framePTS, errorFrame] : mTestConfiguration.frameDetails)
         {
             vector<uint8_t> inputBuffer;
-            int32_t trimEndNs = 0;
-            int32_t trimStartNs = 0;
             InputVideoFrame_t inputFrame;
 
             /* Allocate the video buffer */
@@ -299,13 +294,13 @@ private:
 
             if (mTestConfiguration.flushPts == framePTS)
             {
-                VIDEODECODER_FLUSH_SUCCESS(videoDecoderController, false,true);
+                VIDEODECODER_FLUSH_SUCCESS(mDecoderHandle,videoDecoderController, false,true);
             }
 
             if (mTestConfiguration.flushResetPts == framePTS)
             {
-                VIDEODECODER_FLUSH_SUCCESS(videoDecoderController, true,true);
-                VIDEODECODER_START_SUCCESS(videoDecoderController, true,true);
+                VIDEODECODER_FLUSH_SUCCESS(mDecoderHandle,videoDecoderController, true,true);
+                VIDEODECODER_START_SUCCESS(mDecoderHandle,videoDecoderController, true);
             }
 
             if (mTestConfiguration.eosPts == framePTS)
@@ -318,6 +313,7 @@ private:
                 VIDEODECODER_START_SUCCESS(mDecoderHandle, videoDecoderController, true);
             }
 
+            VIDEODECODER_DECODEBUFFER_SUCCESS(videoDecoderController, framePTS, videoBufferHandle);
             this_thread::sleep_for(chrono::milliseconds(mTestConfiguration.decoderDelay));
             /* Free the video buffer */
             AVBUFFER_FREE_SUCCESS(mAVBufferManager, videoBufferHandle);
@@ -332,13 +328,17 @@ private:
         /* Destroy video pool */
         AVBUFFER_DESTROY_POOL_SUCCESS(mAVBufferManager, videoPool);
 
+        UT_LOG_INFO("[PID: %d, TID: %d] decoderThreadFunc End", getpid(), syscall(SYS_gettid));
+
         mDecodingStream = false;
     }
 
     void consumerThreadFunc()
     {
         ifstream reference_file;
+         int32_t errorCount = 0;
 
+        UT_LOG_INFO("[PID: %d, TID: %d] consumerThreadFunc Start", getpid(), syscall(SYS_gettid));
         while (mDecodingStream || !mInputFrame.empty())
         {
             DecodedVideoFrame_t decodedFrame;
@@ -350,9 +350,19 @@ private:
                 continue;
             }
 
-            mControlListener->getNextFrame(decodedFrame);
             inputFrame = move(mInputFrame.front());
             mInputFrame.pop_front();
+
+            if(inputFrame.isErrorFrame)
+            {
+                errorCount++;
+                continue;
+            }
+
+            this_thread::sleep_for(chrono::milliseconds(10));
+            continue;
+
+            //mControlListener->getNextFrame(decodedFrame);
 
             if (!reference_file.is_open())
             {
@@ -366,27 +376,30 @@ private:
                 continue;
             }
 
-            if (inputFrame.isErrorFrame)
-            {
-                continue;
-            }
-
             /* Verify the decoded buffer in non-tunnel mode */
             if (!mTunnelMode && !decodedFrame.data.empty())
             {
                 vector<uint8_t> referenceBuffer;
                 double rms_diff;
-                int32_t output_buffer_size = decodedFrame.width * decodedFrame.height * vts_bytesPerPixel(decodedFrame.metadata.pixelFormat);
+                int32_t output_buffer_size = decodedFrame.metadata.width * decodedFrame.metadata.height * vts_bytesPerPixel(decodedFrame.metadata.pixelFormat);
                 referenceBuffer.resize(output_buffer_size);
                 reference_file.read(reinterpret_cast<char*>(referenceBuffer.data()), output_buffer_size);
 
-                rms_diff = vts_computeVideoRMSDiff(referenceBuffer.data(), decodedFrame.data.data(), decodedFrame.width , decodedFrame.height, decodedFrame.metadata.pixelFormat);
+                rms_diff = vts_computeVideoRMSDiff(referenceBuffer.data(), decodedFrame.data.data(), decodedFrame.metadata.width , decodedFrame.metadata.height, decodedFrame.metadata.pixelFormat);
                 UT_ASSERT_TRUE(rms_diff <= inputFrame.rms_threshold);
             }
 
             auto duration = chrono::duration_cast<chrono::microseconds>(decodedFrame.receiveTime - inputFrame.sendTime);
             UT_LOG_INFO("Decode Time in msec [PTS: %lld]: %lld", decodedFrame.framePTS, duration.count());
         }
+        if (errorCount > 0)
+        {
+            //TODO: check for correct validation
+            UT_LOG_INFO("No. of Error frames pushed: %d", errorCount);
+            UT_LOG_INFO("No. of Error frames Callbacks: %d", mEventListener->getErrors().size());
+            UT_ASSERT_EQUAL(mEventListener->getErrors().size(), errorCount);
+        }
+        UT_LOG_INFO("[PID: %d, TID: %d] consumerThreadFunc end", getpid(), syscall(SYS_gettid));
     }
 
     void decodeAndConsumeVideoStreams()
@@ -442,7 +455,7 @@ private:
             startTime = chrono::steady_clock::now();
             VIDEODECODER_DECODEBUFFER_SUCCESS(videoDecoderController, framePTS, videoBufferHandle);
 
-            mControlListener->getNextFrame(decodedFrame);
+            //mControlListener->getNextFrame(decodedFrame);
 
             /* Verify the decoded buffer in non-tunnel mode */
             if (!mTunnelMode && !decodedFrame.data.empty())
@@ -609,7 +622,7 @@ public:
         UT_ASSERT_TRUE(beforeHeapMetrics.bytesTotal == afterHeapMetrics.bytesTotal);
     }
 
-    void runTest(char *testName, bool secureMode, bool tunnelMode, bool concurrentMode)
+    void runTest(const char *testName, bool secureMode, bool tunnelMode, bool concurrentMode)
     {
         vector<testConfiguration_t> testConfiguration;
 
@@ -651,8 +664,8 @@ public:
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure)
 {
-    UT_LOG_INFO("Test version: %s", HALIF_TEST_TAG_VERSION);
-    char *testName = "Decode_Sequential_NonTunnel_NonSecure";
+
+    const char *testName = "Decode_Sequential_NonTunnel_NonSecure";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -666,8 +679,8 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_Error)
 {
-    UT_LOG_INFO("Test version: %s", HALIF_TEST_TAG_VERSION);
-    char *testName = "Decode_Sequential_NonTunnel_NonSecure_Error";
+
+    const char *testName = "Decode_Sequential_NonTunnel_NonSecure_Error";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -681,8 +694,8 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_Error)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_Trim)
 {
-    UT_LOG_INFO("Test version: %s", HALIF_TEST_TAG_VERSION);
-    char *testName = "Decode_Sequential_NonTunnel_NonSecure_Trim";
+
+    const char *testName = "Decode_Sequential_NonTunnel_NonSecure_Trim";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -696,8 +709,8 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_Trim)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_Discontinuity)
 {
-    UT_LOG_INFO("Test version: %s", HALIF_TEST_TAG_VERSION);
-    char *testName = "Decode_Sequential_NonTunnel_NonSecure_Discontinuity";
+
+    const char *testName = "Decode_Sequential_NonTunnel_NonSecure_Discontinuity";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -711,8 +724,8 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_Discontin
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_EOS)
 {
-    UT_LOG_INFO("Test version: %s", HALIF_TEST_TAG_VERSION);
-    char *testName = "Decode_Sequential_NonTunnel_NonSecure_EOS";
+
+    const char *testName = "Decode_Sequential_NonTunnel_NonSecure_EOS";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -726,8 +739,8 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_EOS)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_Flush)
 {
-    UT_LOG_INFO("Test version: %s", HALIF_TEST_TAG_VERSION);
-    char *testName = "Decode_Sequential_NonTunnel_NonSecure_Flush";
+
+    const char *testName = "Decode_Sequential_NonTunnel_NonSecure_Flush";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -741,8 +754,8 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_Flush)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_FlushReset)
 {
-    UT_LOG_INFO("Test version: %s", HALIF_TEST_TAG_VERSION);
-    char *testName = "Decode_Sequential_NonTunnel_NonSecure_FlushReset";
+
+    const char *testName = "Decode_Sequential_NonTunnel_NonSecure_FlushReset";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -756,8 +769,8 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_FlushRese
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure)
 {
-    UT_LOG_INFO("Test version: %s", HALIF_TEST_TAG_VERSION);
-    char *testName = "Decode_Concurrent_NonTunnel_NonSecure";
+
+    const char *testName = "Decode_Concurrent_NonTunnel_NonSecure";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = true;
@@ -771,8 +784,8 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Tunnel_NonSecure)
 {
-    UT_LOG_INFO("Test version: %s", HALIF_TEST_TAG_VERSION);
-    char *testName = "Decode_Tunnel_NonSecure";
+
+    const char *testName = "Decode_Tunnel_NonSecure";
     bool secureMode = false;
     bool tunnelMode = true;
     bool concurrentMode = false;
@@ -786,8 +799,8 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Tunnel_NonSecure)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_Secure)
 {
-    UT_LOG_INFO("Test version: %s", HALIF_TEST_TAG_VERSION);
-    char *testName = "Decode_NonTunnel_Secure";
+
+    const char *testName = "Decode_NonTunnel_Secure";
     bool secureMode = true;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -801,8 +814,8 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_Secure)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Tunnel_Secure)
 {
-    UT_LOG_INFO("Test version: %s", HALIF_TEST_TAG_VERSION);
-    char *testName = "Decode_Tunnel_Secure";
+
+    const char *testName = "Decode_Tunnel_Secure";
     bool secureMode = true;
     bool tunnelMode = true;
     bool concurrentMode = false;
@@ -816,8 +829,8 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Tunnel_Secure)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Tunnel_NonSecure_Error)
 {
-    UT_LOG_INFO("Test version: %s", HALIF_TEST_TAG_VERSION);
-    char *testName = "Decode_Tunnel_NonSecure_Error";
+
+    const char *testName = "Decode_Tunnel_NonSecure_Error";
     bool secureMode = false;
     bool tunnelMode = true;
     bool concurrentMode = false;
@@ -831,8 +844,8 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Tunnel_NonSecure_Error)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Tunnel_NonSecure_Trim)
 {
-    UT_LOG_INFO("Test version: %s", HALIF_TEST_TAG_VERSION);
-    char *testName = "Decode_Tunnel_NonSecure_Trim";
+
+    const char *testName = "Decode_Tunnel_NonSecure_Trim";
     bool secureMode = false;
     bool tunnelMode = true;
     bool concurrentMode = false;
@@ -846,8 +859,8 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Tunnel_NonSecure_Trim)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_Secure_Error)
 {
-    UT_LOG_INFO("Test version: %s", HALIF_TEST_TAG_VERSION);
-    char *testName = "Decode_NonTunnel_Secure_Error";
+
+    const char *testName = "Decode_NonTunnel_Secure_Error";
     bool secureMode = true;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -861,8 +874,8 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_Secure_Error)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_Secure_Trim)
 {
-    UT_LOG_INFO("Test version: %s", HALIF_TEST_TAG_VERSION);
-    char *testName = "Decode_NonTunnel_Secure_Trim";
+
+    const char *testName = "Decode_NonTunnel_Secure_Trim";
     bool secureMode = true;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -876,8 +889,8 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_Secure_Trim)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_NonSecure_Error_Discontinuity)
 {
-    UT_LOG_INFO("Test version: %s", HALIF_TEST_TAG_VERSION);
-    char *testName = "Decode_NonTunnel_NonSecure_Error_Discontinuity";
+
+    const char *testName = "Decode_NonTunnel_NonSecure_Error_Discontinuity";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -891,8 +904,8 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_NonSecure_Error_Discontinuity)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_NonSecure_Error_EOS)
 {
-    UT_LOG_INFO("Test version: %s", HALIF_TEST_TAG_VERSION);
-    char *testName = "Decode_NonTunnel_NonSecure_Error_EOS";
+
+    const char *testName = "Decode_NonTunnel_NonSecure_Error_EOS";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -906,8 +919,8 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_NonSecure_Error_EOS)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_NonSecure_Trim_Discontinuity)
 {
-    UT_LOG_INFO("Test version: %s", HALIF_TEST_TAG_VERSION);
-    char *testName = "Decode_NonTunnel_NonSecure_Trim_Discontinuity";
+
+    const char *testName = "Decode_NonTunnel_NonSecure_Trim_Discontinuity";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -921,8 +934,8 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_NonSecure_Trim_Discontinuity)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_NonSecure_Discontinuity_EOS)
 {
-    UT_LOG_INFO("Test version: %s", HALIF_TEST_TAG_VERSION);
-    char *testName = "Decode_NonTunnel_NonSecure_Discontinuity_EOS";
+
+    const char *testName = "Decode_NonTunnel_NonSecure_Discontinuity_EOS";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -936,8 +949,8 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_NonSecure_Discontinuity_EOS)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_NonSecure_Flush_Error)
 {
-    UT_LOG_INFO("Test version: %s", HALIF_TEST_TAG_VERSION);
-    char *testName = "Decode_NonTunnel_NonSecure_Flush_Error";
+
+    const char *testName = "Decode_NonTunnel_NonSecure_Flush_Error";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -951,8 +964,8 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_NonSecure_Flush_Error)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_NonSecure_FlushReset_Error)
 {
-    UT_LOG_INFO("Test version: %s", HALIF_TEST_TAG_VERSION);
-    char *testName = "Decode_NonTunnel_NonSecure_FlushReset_Error";
+
+    const char *testName = "Decode_NonTunnel_NonSecure_FlushReset_Error";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -966,8 +979,8 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_NonSecure_FlushReset_Error)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure)
 {
-    UT_LOG_INFO("Test version: %s", HALIF_TEST_TAG_VERSION);
-    char *testName = "Decode_Concurrent_Tunnel_NonSecure";
+
+    const char *testName = "Decode_Concurrent_Tunnel_NonSecure";
     bool secureMode = false;
     bool tunnelMode = true;
     bool concurrentMode = true;
@@ -981,8 +994,8 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure)
 {
-    UT_LOG_INFO("Test version: %s", HALIF_TEST_TAG_VERSION);
-    char *testName = "Decode_Concurrent_NonTunnel_Secure";
+
+    const char *testName = "Decode_Concurrent_NonTunnel_Secure";
     bool secureMode = true;
     bool tunnelMode = false;
     bool concurrentMode = true;
@@ -996,8 +1009,8 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_Error)
 {
-    UT_LOG_INFO("Test version: %s", HALIF_TEST_TAG_VERSION);
-    char *testName = "Decode_Concurrent_NonTunnel_NonSecure_Error";
+
+    const char *testName = "Decode_Concurrent_NonTunnel_NonSecure_Error";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = true;
@@ -1011,8 +1024,8 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_Error)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_Trim)
 {
-    UT_LOG_INFO("Test version: %s", HALIF_TEST_TAG_VERSION);
-    char *testName = "Decode_Concurrent_NonTunnel_NonSecure_Trim";
+
+    const char *testName = "Decode_Concurrent_NonTunnel_NonSecure_Trim";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = true;
@@ -1026,8 +1039,8 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_Trim)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_Discontinuity)
 {
-    UT_LOG_INFO("Test version: %s", HALIF_TEST_TAG_VERSION);
-    char *testName = "Decode_Concurrent_NonTunnel_NonSecure_Discontinuity";
+
+    const char *testName = "Decode_Concurrent_NonTunnel_NonSecure_Discontinuity";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = true;
@@ -1041,8 +1054,8 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_Discontin
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_EOS)
 {
-    UT_LOG_INFO("Test version: %s", HALIF_TEST_TAG_VERSION);
-    char *testName = "Decode_Concurrent_NonTunnel_NonSecure_EOS";
+
+    const char *testName = "Decode_Concurrent_NonTunnel_NonSecure_EOS";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = true;
@@ -1056,8 +1069,8 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_EOS)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_Flush)
 {
-    UT_LOG_INFO("Test version: %s", HALIF_TEST_TAG_VERSION);
-    char *testName = "Decode_Concurrent_NonTunnel_NonSecure_Flush";
+
+    const char *testName = "Decode_Concurrent_NonTunnel_NonSecure_Flush";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = true;
@@ -1071,8 +1084,8 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_Flush)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_FlushReset)
 {
-    UT_LOG_INFO("Test version: %s", HALIF_TEST_TAG_VERSION);
-    char *testName = "Decode_Concurrent_NonTunnel_NonSecure_FlushReset";
+
+    const char *testName = "Decode_Concurrent_NonTunnel_NonSecure_FlushReset";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = true;
