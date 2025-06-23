@@ -229,7 +229,7 @@ void vts_videodecoder_helper_validateCapabilities(int32_t decoderId,const Capabi
 double vts_computeVideoRMSDiff(const uint8_t* ref, const uint8_t* dec, size_t width, size_t height, PixelFormat format);
 void* vts_kvp_create_instance(char *fileName);
 void vts_kvp_destroy_instance(void *instance);
-UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, char *module, char *testGroup, const char *testName, std::vector<testConfiguration_t>& testConfiguration);
+UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, char *module, char *testGroup, char *testName, std::vector<testConfiguration_t>& testConfiguration);
 
 UT_status_t vts_videodecoder_parseVideoDecoderHFP();
 
