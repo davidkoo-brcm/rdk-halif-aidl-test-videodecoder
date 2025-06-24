@@ -118,7 +118,7 @@ The following table outlines the core features validated in the L3 test phase
 
 |#|Testing Feature|Description|
 |-|---------------|-----------|
-|1|Tunnel/Non-Tunnel|Executes the decoder in tunnel mode or in non tunnel mode based on the property OPERATION_MOde set by the user. The test validates metrics, metadata and bufferHandle.|
+|1|Tunnel/Non-Tunnel|Executes the decoder in tunnel mode or in non tunnel mode based on the property OPERATION_MODE set by the user. The test validates metrics, metadata and bufferHandle.|
 |2|Secure and Non-Secure|Initializes the decoder in secure mode, ensuring all buffer operations occur in secure memory|
 |3|Error Streams|Verifies decoder behavior with error streams. Ensures appropriate events are raised and frame metadata is updated accurately|
 |4|Codecs|Tests the decoder’s ability to decode all supported codec types per its capabilities, using input streams defined in the configuration file.|
