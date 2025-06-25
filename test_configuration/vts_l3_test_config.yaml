@@ -1,0 +1,34 @@
+include_0: test_configuration/vts_video_streams.yaml
+
+IAudioDecoderManager:
+  stream_download_path: "http://<>/streams" #`URL` path to download the audio test streams
+  input_streams_path: "assets/streams/input" #Target path where input streams are stored
+  reference_streams_path: "assets/streams/reference/" #Target path for reference PCM streams
+  L3: #Test Level
+    Decode_Sequential_NonTunnel_NonSecure: #Test Name
+      Controls:
+        delay_between_decode_calls: 5 # Insert delay in msec between each `decodeBuffer()` call
+        stop_start_pts: -1 #`pts` value in nano seconds at which the decoder should be stopped and restarted during the test. -1 indicates that decoder should not be restarted
+        signal_discontinuity_pts: -1 #`pts` value in nano seconds at which the test should signal discontinuity to the decoder. -1 indicates that no discontinuity signal should be sent
+        flush_pts: -1 #`pts` value in nano seconds that determine when the test should flush the decoder. -1 indicates that test should not flush
+        flush_reset_pts: -1 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
+        eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
+      Inputs:
+        Streams:
+          - Name: H265_MAIN10_3840x2160_DR_HLG_DR_BT2020_25p_PIXEL_FORMAT_YCBCR420_18000.es #Stream name
+            PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
+              - 0
+              - 21333333
+              - 42666666
+              - 63999999
+              - 85333332
+              - 106666665
+              - 127999998
+              - 149333331
+              - 170666664
+              - 191999997
+            trim: #Start and end trim points in Nano seconds
+              - 0 #Start in Nano seconds
+              - 0 #End
+            rms_diff_threshold: 0.5 #Maximum allowed `rms` difference for output validation
+            decode_time_threshold: 10000000 #Time budget per frame for decoding, in nanoseconds
