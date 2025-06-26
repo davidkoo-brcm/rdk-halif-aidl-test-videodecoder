@@ -102,6 +102,7 @@
 #include "com/rdk/hal/avbuffer/IAVBuffer.h"
 #include "com/rdk/hal/avbuffer/BnAVBufferSpaceListener.h"
 //#include "com/rdk/hal/avbufferhelper.h"
+#include "IAVBufferHelper.h"
 
 
 #include "com/rdk/hal/videodecoder/IVideoDecoderManager.h"

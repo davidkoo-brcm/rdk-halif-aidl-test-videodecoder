@@ -599,8 +599,6 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, char *module,
         string errorFrames = streamsDetails + "." + string(resultKVP) + "." + "error_frames";
         string framePTS = streamList + "." + to_string(i) + "." + "PTS";
         string rmsDiff = streamList + "." + to_string(i) + "." + "rms_diff_threshold";
-        string trimStart = streamList + "." + to_string(i) + "." + "trim.0";
-        string trimEnd = streamList + "." + to_string(i) + "." + "trim.1";
         string decoderDelay = controlList + "." + "delay_between_decode_calls";
         string stopPts = controlList + "." + "stop_start_pts";
         string discontinuityPts = controlList + "." + "signal_discontinuity_pts";

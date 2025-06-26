@@ -1,12 +1,46 @@
 VideoStreams:
-  h264_1920x1080_60f:
-    input: h264_1920x1080_60f.es #Stream Name
-    reference: h264_1920x1080_60f.yuv #reference decoder output
-    codec: H264_AVC  #Video codec information, Refer `Codec` enum
-    resolution: 1920x1080
-    dynamic_range: #com.rdk.hal.video.decoder.DynamicRange enum.
-    colour_space:
-    depth:
-    frame_rate: 60 #Frame Rate
-    pixel_formate: #com.rdk.hal.video.decoder.PixelFormat enum
-    bit_rate:
+  H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734:
+    input: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
+    reference: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.yuv #reference decoder output
+    codec: H264  #Video codec information, Refer `Codec` enum
+    codedWidth: 1920
+    codedHeight: 1080
+    colorDepth: 8
+    pixelFormat: YUV
+    dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
+    scanType: PROGRESSIVE_FRAME
+    frameRateNumerator: 60 #Frame Rate
+    frameRateDenominator: 1
+    endOfStream:
+    discontinuity:
+    lowLatency:
+    bit_rate: 734
+    no_of_frames: 12
+    frame_size:
+      - 110225
+      - 1043
+      - 1101
+      - 1076
+      - 1198
+      - 1092
+      - 715
+      - 2897
+      - 1390
+      - 1493
+      - 1260
+      - 4040
+    PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
+      - 0
+      - 16667000
+      - 33333000
+      - 50000000
+      - 66667000
+      - 83333000
+      - 100000000
+      - 116667000
+      - 133333000
+      - 150000000
+      - 166667000
+      - 183333000
+      - 200000000
+      - 216667000
