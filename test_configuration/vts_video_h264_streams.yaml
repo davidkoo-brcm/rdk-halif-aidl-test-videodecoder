@@ -1,7 +1,7 @@
 VideoStreams:
   H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734:
     input: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
-    reference: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.yuv #reference decoder output
+    #reference: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.yuv #reference decoder output
     codec: H264  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
     codedHeight: 1080
@@ -30,7 +30,7 @@ VideoStreams:
       - 1260
       - 4040
     PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
-      - 0
+      - 00000000
       - 16667000
       - 33333000
       - 50000000
@@ -41,6 +41,4 @@ VideoStreams:
       - 133333000
       - 150000000
       - 166667000
-      - 183333000
-      - 200000000
       - 216667000

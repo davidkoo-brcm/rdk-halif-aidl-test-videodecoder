@@ -560,8 +560,8 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, char *module,
 {
     ut_kvp_status_t status;
     ut_kvp_instance_t* kvpTestInstance = (ut_kvp_instance_t*)pTestInstance;
-    char streamInputPath[UT_KVP_MAX_ELEMENT_SIZE] = {0};
-    char streamRefPath[UT_KVP_MAX_ELEMENT_SIZE] = {0};
+    std::string streamInputPath;
+    std::string streamRefPath;
     int32_t streamCount = 0;
     filesystem::path currentPath = filesystem::current_path();
     filesystem::path fullPath;
@@ -570,87 +570,149 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, char *module,
     string streamList = testList + "." + "Inputs" + "." + "Streams";
     string streamsDetails = string("VideoStreams");
 
-    status = ut_kvp_getStringField(kvpTestInstance, STREAM_INPUT_PATH, streamInputPath, UT_KVP_MAX_ELEMENT_SIZE);
-    status = ut_kvp_getStringField(kvpTestInstance, STREAM_REF_PATH, streamRefPath, UT_KVP_MAX_ELEMENT_SIZE);
+    // Get input and reference paths
+    char tempBuffer[UT_KVP_MAX_ELEMENT_SIZE] = {0};
+    status = ut_kvp_getStringField(kvpTestInstance, "IVideoDecoderManager.input_streams_path", tempBuffer, UT_KVP_MAX_ELEMENT_SIZE);
+    if (status != UT_KVP_STATUS_SUCCESS)
+    {
+        UT_LOG_ERROR("Failed to get input_streams_path, status: %d", status);
+        return UT_STATUS_FAILURE;
+    }
+    streamInputPath = tempBuffer;
+    UT_LOG_INFO("streamInputPath: %s", streamInputPath.c_str());
+
+    status = ut_kvp_getStringField(kvpTestInstance, "IVideoDecoderManager.reference_streams_path", tempBuffer, UT_KVP_MAX_ELEMENT_SIZE);
+    if (status != UT_KVP_STATUS_SUCCESS)
+    {
+        UT_LOG_ERROR("Failed to get reference_streams_path, status: %d", status);
+        return UT_STATUS_FAILURE;
+    }
+    streamRefPath = tempBuffer;
+    UT_LOG_INFO("streamRefPath: %s", streamRefPath.c_str());
 
     streamCount = ut_kvp_getListCount(kvpTestInstance, streamList.c_str());
+    if (streamCount <= 0)
+    {
+        UT_LOG_ERROR("No streams found in %s", streamList.c_str());
+        return UT_STATUS_FAILURE;
+    }
+    UT_LOG_INFO("Found %d streams", streamCount);
 
     for (int32_t i = 0; i < streamCount; i++)
     {
-        char resultKVP[UT_KVP_MAX_ELEMENT_SIZE] = {0};
+        std::string resultKVP;
         testConfiguration_t testDetails;
         vector<int32_t> errorFrameNum;
 
-        string streamName = streamList + "." + to_string(i) + "Name";
-        ut_kvp_getStringField(kvpTestInstance, streamName.c_str(), resultKVP, UT_KVP_MAX_ELEMENT_SIZE);
+        string streamName = streamList + "." + to_string(i) + ".Name";
+        status = ut_kvp_getStringField(kvpTestInstance, streamName.c_str(), tempBuffer, UT_KVP_MAX_ELEMENT_SIZE);
+        if (status != UT_KVP_STATUS_SUCCESS)
+        {
+            UT_LOG_ERROR("Failed to get stream name for index %d, status: %d", i, status);
+            continue;
+        }
+        resultKVP = tempBuffer;
+        UT_LOG_INFO("Stream name: %s", resultKVP.c_str());
 
-        string input = streamsDetails + "." + string(resultKVP) + "." + "input";
-        string reference = streamsDetails + "." + string(resultKVP) + "." + "reference";
-        string codec = streamsDetails + "." + string(resultKVP) + "." + "codec";
-        string resolution = streamsDetails + "." + string(resultKVP) + "." + "resolution";
-        string frameRate = streamsDetails + "." + string(resultKVP) + "." + "frame_rate";
-        string pixelFormat = streamsDetails + "." + string(resultKVP) + "." + "pixel_formate";
-        string dynamicRange = streamsDetails + "." + string(resultKVP) + "." + "dynamic_range";
-        string colourSpace = streamsDetails + "." + string(resultKVP) + "." + "colour_space";
-        string depth = streamsDetails + "." + string(resultKVP) + "." + "depth";
-        string bitRate = streamsDetails + "." + string(resultKVP) + "." + "bit_rate";
-        string numOfFrames = streamsDetails + "." + string(resultKVP) + "." + "num_of_frames";
-        string frameSize = streamsDetails + "." + string(resultKVP) + "." + "frame_size";
-        string errorFrames = streamsDetails + "." + string(resultKVP) + "." + "error_frames";
-        string framePTS = streamList + "." + to_string(i) + "." + "PTS";
-        string rmsDiff = streamList + "." + to_string(i) + "." + "rms_diff_threshold";
-        string decoderDelay = controlList + "." + "delay_between_decode_calls";
-        string stopPts = controlList + "." + "stop_start_pts";
-        string discontinuityPts = controlList + "." + "signal_discontinuity_pts";
-        string flushPts = controlList + "." + "flush_pts";
-        string flushResetPts = controlList + "." + "flush_reset_pts";
-        string eosPts = controlList + "." + "eos_pts";
+        string prefix = streamsDetails + "." + resultKVP + ".";
+        string input = prefix + "input";
+        string reference = prefix + "reference";
+        string codec = prefix + "codec";
+        string codedWidth = prefix + "codedWidth";
+        string codedHeight = prefix + "codedHeight";
+        string frameRateNumerator = prefix + "frameRateNumerator";
+        string frameRateDenominator = prefix + "frameRateDenominator";
+        string pixelFormat = prefix + "pixelFormat";
+        string dynamicRange = prefix + "dynamic_range";
+        string colourSpace = prefix + "colour_space";
+        string colorDepth = prefix + "colorDepth";
+        string bitRate = prefix + "bit_rate";
+        string noOfFrames = prefix + "no_of_frames";
+        string frameSize = prefix + "frame_size";
+        string errorFrames = prefix + "error_frames";
+        string framePTS = prefix  + ".PTS";
+        string rmsDiff = streamList + "." + to_string(i) + ".rms_diff_threshold";
+        string decodeTime = streamList + "." + to_string(i) + ".decode_time_threshold";
+        string decoderDelay = controlList + ".delay_between_decode_calls";
+        string stopPts = controlList + ".stop_start_pts";
+        string discontinuityPts = controlList + ".signal_discontinuity_pts";
+        string flushPts = controlList + ".flush_pts";
+        string flushResetPts = controlList + ".flush_reset_pts";
+        string eosPts = controlList + ".eos_pts";
 
         // Input stream path
-        ut_kvp_getStringField(kvpTestInstance, input.c_str(), resultKVP, UT_KVP_MAX_ELEMENT_SIZE);
-        fullPath = currentPath;
-        fullPath.append(streamInputPath);
-        fullPath.append(resultKVP);
-        testDetails.input = fullPath.string();
+        status = ut_kvp_getStringField(kvpTestInstance, input.c_str(), tempBuffer, UT_KVP_MAX_ELEMENT_SIZE);
+        if (status == UT_KVP_STATUS_SUCCESS)
+        {
+            resultKVP = tempBuffer;
+            fullPath = filesystem::path(streamInputPath) / resultKVP;
+            UT_LOG_INFO("Full input file path: %s", fullPath.string().c_str());
 
-        // Reference stream path
-        ut_kvp_getStringField(kvpTestInstance, reference.c_str(), resultKVP, UT_KVP_MAX_ELEMENT_SIZE);
-        fullPath = currentPath;
-        fullPath.append(streamRefPath);
-        fullPath.append(resultKVP);
-        testDetails.reference = fullPath.string();
+            if (!filesystem::exists(fullPath))
+            {
+                UT_LOG_ERROR("Input file does not exist: %s", fullPath.string().c_str());
+                continue;
+            }
+
+            testDetails.input = fullPath.string();
+            UT_LOG_INFO("Input path set: %s", testDetails.input.c_str());
+        }
+        else
+        {
+            UT_LOG_ERROR("Failed to get input path for stream %s, status: %d", resultKVP.c_str(), status);
+            continue;
+        }
 
         // Codec
-        ut_kvp_getStringField(kvpTestInstance, codec.c_str(), resultKVP, UT_KVP_MAX_ELEMENT_SIZE);
-        testDetails.codec = videoDecoderStringToCodec(string(resultKVP));
+        status = ut_kvp_getStringField(kvpTestInstance, codec.c_str(), tempBuffer, UT_KVP_MAX_ELEMENT_SIZE);
+        if (status == UT_KVP_STATUS_SUCCESS)
+        {
+            testDetails.codec = videoDecoderStringToCodec(string(tempBuffer));
+        }
 
-        // Resolution (parse as width x height)
-        ut_kvp_getStringField(kvpTestInstance, resolution.c_str(), resultKVP, UT_KVP_MAX_ELEMENT_SIZE);
-        sscanf(resultKVP, "%dx%d", &testDetails.width, &testDetails.height);
+        // Resolution
+        testDetails.codedWidth = ut_kvp_getUInt32Field(kvpTestInstance, codedWidth.c_str());
+        testDetails.codedHeight = ut_kvp_getUInt32Field(kvpTestInstance, codedHeight.c_str());
 
         // Frame rate
-        testDetails.frameRate = ut_kvp_getUInt32Field(kvpTestInstance, frameRate.c_str());
+        testDetails.frameRateNumerator = ut_kvp_getUInt32Field(kvpTestInstance, frameRateNumerator.c_str());
+        testDetails.frameRateDenominator = ut_kvp_getUInt32Field(kvpTestInstance, frameRateDenominator.c_str());
 
         // Pixel format
-        ut_kvp_getStringField(kvpTestInstance, pixelFormat.c_str(), resultKVP, UT_KVP_MAX_ELEMENT_SIZE);
-        testDetails.pixelFormat = videoDecoderStringToPixelFormat(string(resultKVP));
+        status = ut_kvp_getStringField(kvpTestInstance, pixelFormat.c_str(), tempBuffer, UT_KVP_MAX_ELEMENT_SIZE);
+        if (status == UT_KVP_STATUS_SUCCESS)
+        {
+            testDetails.pixelFormat = videoDecoderStringToPixelFormat(string(tempBuffer));
+        }
 
         // Dynamic range
-        ut_kvp_getStringField(kvpTestInstance, dynamicRange.c_str(), resultKVP, UT_KVP_MAX_ELEMENT_SIZE);
-        testDetails.dynamicRange = videoDecoderStringToDynamicRange(string(resultKVP));
+        status = ut_kvp_getStringField(kvpTestInstance, dynamicRange.c_str(), tempBuffer, UT_KVP_MAX_ELEMENT_SIZE);
+        if (status == UT_KVP_STATUS_SUCCESS)
+        {
+            testDetails.dynamicRange = videoDecoderStringToDynamicRange(string(tempBuffer));
+        }
 
         // Colour space
-        ut_kvp_getStringField(kvpTestInstance, colourSpace.c_str(), resultKVP, UT_KVP_MAX_ELEMENT_SIZE);
-        testDetails.colourSpace = (string(resultKVP));
+        status = ut_kvp_getStringField(kvpTestInstance, colourSpace.c_str(), tempBuffer, UT_KVP_MAX_ELEMENT_SIZE);
+        if (status == UT_KVP_STATUS_SUCCESS)
+        {
+            testDetails.colourSpace = string(tempBuffer);
+            UT_LOG_INFO("Colour space: %s", testDetails.colourSpace.c_str());
+        }
+        else
+        {
+            UT_LOG_WARNING("Colour space not found, defaulting to empty");
+            testDetails.colourSpace = "";
+        }
 
-        // Depth
-        testDetails.depth = ut_kvp_getUInt32Field(kvpTestInstance, depth.c_str());
+        // Color depth
+        testDetails.colorDepth = ut_kvp_getUInt32Field(kvpTestInstance, colorDepth.c_str());
 
         // Bit rate
         testDetails.bitRate = ut_kvp_getUInt32Field(kvpTestInstance, bitRate.c_str());
 
         // Number of frames
-        testDetails.numOfFrames = ut_kvp_getUInt32Field(kvpTestInstance, numOfFrames.c_str());
+        testDetails.no_of_frames = ut_kvp_getUInt32Field(kvpTestInstance, noOfFrames.c_str());
 
         // Error frames
         if (ut_kvp_fieldPresent(kvpTestInstance, errorFrames.c_str()))
@@ -660,28 +722,40 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, char *module,
             {
                 string error = errorFrames + "." + to_string(j);
                 int32_t frameNum = ut_kvp_getUInt32Field(kvpTestInstance, error.c_str());
-                errorFrameNum.push_back(frameNum);
+                if (frameNum >= 1 && frameNum <= testDetails.no_of_frames)
+                {
+                    errorFrameNum.push_back(frameNum);
+                }
+                else
+                {
+                    UT_LOG_WARNING("Invalid error frame index: %d, max: %d", frameNum, testDetails.no_of_frames);
+                }
             }
         }
 
-        // Frame details (size, PTS, error flag)
-        for (int32_t j = 0; j < testDetails.numOfFrames; j++)
+        // Frame details
+        int32_t frameCount = ut_kvp_getListCount(kvpTestInstance, frameSize.c_str());
+        if (frameCount != testDetails.no_of_frames || frameCount != ut_kvp_getListCount(kvpTestInstance, framePTS.c_str()))
         {
-            bool errorFrame = false;
-
+            UT_LOG_ERROR("Frame size/PTS count mismatch: frames=%d, sizes=%d, PTS=%d",
+                         testDetails.no_of_frames, frameCount, ut_kvp_getListCount(kvpTestInstance, framePTS.c_str()));
+            continue;
+        }
+        for (int32_t j = 0; j < frameCount; j++)
+        {
             string eachFrame = frameSize + "." + to_string(j);
             string eachPTS = framePTS + "." + to_string(j);
             int32_t size = ut_kvp_getUInt32Field(kvpTestInstance, eachFrame.c_str());
             int64_t PTS = ut_kvp_getUInt64Field(kvpTestInstance, eachPTS.c_str());
-            if (find(errorFrameNum.begin(), errorFrameNum.end(), j + 1) != errorFrameNum.end())
-            {
-                errorFrame = true;
-            }
+            bool errorFrame = (find(errorFrameNum.begin(), errorFrameNum.end(), j + 1) != errorFrameNum.end());
             testDetails.frameDetails.push_back({size, PTS, errorFrame});
         }
 
         // RMS difference threshold
-        testDetails.rms_diff_threashold = ut_kvp_getDoubleField(kvpTestInstance, rmsDiff.c_str());
+        testDetails.rms_diff_threshold = ut_kvp_getDoubleField(kvpTestInstance, rmsDiff.c_str());
+
+        // Decode time threshold
+        testDetails.decode_time_threshold = ut_kvp_getUInt64Field(kvpTestInstance, decodeTime.c_str());
 
         // Decoder delay
         testDetails.decoderDelay = ut_kvp_getUInt32Field(kvpTestInstance, decoderDelay.c_str());

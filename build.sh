@@ -204,8 +204,6 @@ build_hal_log()
 
 install_test()
 {
-    declare -r INSTALL_PATH=${BUILD_DIR}/bin
-
     install -t ${INSTALL_PATH} ${BUILD_INSTALL_PREFIX}/bin/*
     install -t ${INSTALL_PATH} ${BUILD_INSTALL_PREFIX}/lib/*
     install -t ${INSTALL_PATH} run.sh

@@ -197,25 +197,28 @@ struct DecodedVideoFrame_t {
 
 struct testConfiguration_t {
     std::string input; // Path to input .es file
-    std::string reference; // Path to reference .yuv file
+    //std::string reference; // Path to reference .yuv file
     videodecoder::Codec codec; // H264_AVC, HEVC, etc.
-    int32_t width; // Video width
-    int32_t height; // Video height
-    uint32_t frameRate; // Frames per second
-    videodecoder::PixelFormat pixelFormat; // YUV420P, etc.
+    int32_t codedWidth; // Video width
+    int32_t codedHeight; // Video height
+    uint32_t frameRateNumerator; // Frame rate numerator
+    uint32_t frameRateDenominator; // Frame rate denominator
+    videodecoder::PixelFormat pixelFormat; // YUV, etc.
     videodecoder::DynamicRange dynamicRange; // SDR, HDR, etc.
     std::string colourSpace; // BT709, etc.
-    uint32_t depth; // Bit depth
+    uint32_t colorDepth; // Bit depth
     uint32_t bitRate; // Bit rate
-    uint32_t numOfFrames; // Total frames
+    uint32_t no_of_frames; // Total frames
     std::vector<std::tuple<int32_t, int64_t, bool>> frameDetails; // {size, PTS, isErrorFrame}
-    double rms_diff_threashold; // RMS difference threshold
-    uint32_t decoderDelay; // Delay between decode calls
+    double rms_diff_threshold; // RMS difference threshold
+    uint32_t decoderDelay; // Delay between decode calls (ms)
     int64_t stopPts; // Stop/restart PTS
     int64_t discontinuityPts; // Discontinuity PTS
     int64_t flushPts; // Flush PTS
     int64_t flushResetPts; // Flush with reset PTS
     int64_t eosPts; // EOS PTS
+    int64_t decode_time_threshold; // Decode time budget per frame (ns)
+    double rms_diff_threashold; // RMS difference threshold
 };
 
 UT_status_t VTS_VideoDecoder_init();
@@ -1139,10 +1142,12 @@ class VideoDecoderControllerListener : public BnVideoDecoderControllerListener {
 
         Status onFrameOutput(int64_t nsPresentationTime, int64_t frameBufferHandle, const ::std::optional<FrameMetadata>& metadata) override
         {
+            UT_LOG_INFO("onFrameOutput is received ");
             return Status::ok();
         }
         Status onUserDataOutput(int64_t nsPresentationTime, const ::std::vector<uint8_t>& userData) override
         {
+            UT_LOG_INFO("onUserDataOutput is received ");
             return Status::ok();
         }
     };
