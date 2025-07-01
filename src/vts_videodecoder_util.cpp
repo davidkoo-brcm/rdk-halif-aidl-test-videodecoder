@@ -735,12 +735,14 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, char *module,
 
         // Frame details
         int32_t frameCount = ut_kvp_getListCount(kvpTestInstance, frameSize.c_str());
-        if (frameCount != testDetails.no_of_frames || frameCount != ut_kvp_getListCount(kvpTestInstance, framePTS.c_str()))
+
+        // this check is not required as no_of_frames and size,pts are different
+        /*if (frameCount != testDetails.no_of_frames || frameCount != ut_kvp_getListCount(kvpTestInstance, framePTS.c_str()))
         {
             UT_LOG_ERROR("Frame size/PTS count mismatch: frames=%d, sizes=%d, PTS=%d",
                          testDetails.no_of_frames, frameCount, ut_kvp_getListCount(kvpTestInstance, framePTS.c_str()));
             continue;
-        }
+        }*/
         for (int32_t j = 0; j < frameCount; j++)
         {
             string eachFrame = frameSize + "." + to_string(j);

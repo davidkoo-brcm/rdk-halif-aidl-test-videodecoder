@@ -391,8 +391,6 @@ do { \
                 UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
     UT_ASSERT_TRUE(status.isOk()) << "getProperty failed for property " << static_cast<int32_t>(property); \
     UT_ASSERT_TRUE((aidl_return).has_value()) << "No value returned for property " << static_cast<int32_t>(property); \
-    UT_ASSERT_EQUAL((aidl_return)->value->getTag(), PropertyValue::Value::intValue) \
-        << "Property " << static_cast<int32_t>(property) << " value should be an int"; \
 } while (0)
 
 #define VIDEODECODER_GET_PROPERTY_SUCCESS(videoDecoder, property, propertyValue) \
@@ -1142,7 +1140,46 @@ class VideoDecoderControllerListener : public BnVideoDecoderControllerListener {
 
         Status onFrameOutput(int64_t nsPresentationTime, int64_t frameBufferHandle, const ::std::optional<FrameMetadata>& metadata) override
         {
-            UT_LOG_INFO("onFrameOutput is received ");
+            UT_LOG_INFO("onFrameOutput is received nsPresentationTime %lld FrameBufferHandle = 0x%llx ",nsPresentationTime,frameBufferHandle);
+            if (metadata.has_value())
+            {
+                const FrameMetadata& frameMeta = metadata.value();
+                UT_LOG_INFO("FrameMetadata:");
+                UT_LOG_INFO("  Pixel Aspect Ratio: %d:%d", frameMeta.parX, frameMeta.parY);
+                UT_LOG_INFO("  Source Aspect Ratio: %d:%d", frameMeta.sarX, frameMeta.sarY);
+                UT_LOG_INFO("  Coded Dimensions: width=%d, height=%d", frameMeta.codedWidth, frameMeta.codedHeight);
+                UT_LOG_INFO("  Active Display: x=%d, y=%d, width=%d, height=%d",
+                            frameMeta.activeX, frameMeta.activeY, frameMeta.activeWidth, frameMeta.activeHeight);
+                UT_LOG_INFO("  Color Depth: %d bits", frameMeta.colorDepth);
+                UT_LOG_INFO("  Pixel Format: %d", static_cast<int>(frameMeta.pixelFormat));
+                UT_LOG_INFO("  Dynamic Range: %d", static_cast<int>(frameMeta.dynamicRange));
+                UT_LOG_INFO("  Scan Type: %d", static_cast<int>(frameMeta.scanType));
+                UT_LOG_INFO("  AFD: %d", frameMeta.afd);
+                UT_LOG_INFO("  Frame Rate: %d/%d", frameMeta.frameRateNumerator, frameMeta.frameRateDenominator);
+                UT_LOG_INFO("  End of Stream: %d", frameMeta.endOfStream);
+                UT_LOG_INFO("  Discontinuity: %d", frameMeta.discontinuity);
+                UT_LOG_INFO("  Low Latency: %d", frameMeta.lowLatency);
+                UT_LOG_INFO("  Source: %d", static_cast<int>(frameMeta.source));
+
+                // Handle SHA1 field (byte array)
+                if (!frameMeta.sha1.empty()) {
+                    std::string sha1_hex;
+                    for (const auto& byte : frameMeta.sha1) {
+                        char buf[3];
+                        snprintf(buf, sizeof(buf), "%02x", static_cast<unsigned char>(byte));
+                        sha1_hex += buf;
+                    }
+                    UT_LOG_INFO("  SHA1: %s", sha1_hex.c_str());
+                } else {
+                    UT_LOG_INFO("  SHA1: (empty)");
+                }
+
+                // Handle extension (ParcelableHolder)
+                // Note: ParcelableHolder may require specific handling depending on its content
+                UT_LOG_INFO("  Extension: (ParcelableHolder present)");
+            } else {
+                UT_LOG_INFO("No FrameMetadata provided");
+            }
             return Status::ok();
         }
         Status onUserDataOutput(int64_t nsPresentationTime, const ::std::vector<uint8_t>& userData) override

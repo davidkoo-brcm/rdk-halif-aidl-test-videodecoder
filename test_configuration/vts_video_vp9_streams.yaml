@@ -1,12 +1,44 @@
 VideoStreams:
-  vp9_1920x1080_30f:
-    input: vp9_1920x1080_30f.es #Stream Name
-    reference: vp9_1920x1080_30f.yuv #reference decoder output
+  VP9_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734:
+    input: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
+    #reference: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.yuv #reference decoder output
     codec: VP9  #Video codec information, Refer `Codec` enum
-    resolution: 1920x1080
-    dynamic_range: #com.rdk.hal.video.decoder.DynamicRange enum.
-    colour_space:
-    depth:
-    frame_rate: 30 #Frame Rate
-    pixel_formate: #com.rdk.hal.video.decoder.PixelFormat enum
-    bit_rate:
+    codedWidth: 1920
+    codedHeight: 1080
+    colorDepth: 8
+    pixelFormat: YUV
+    dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
+    scanType: PROGRESSIVE_FRAME
+    frameRateNumerator: 60 #Frame Rate
+    frameRateDenominator: 1
+    endOfStream:
+    discontinuity:
+    lowLatency:
+    bit_rate: 734
+    no_of_frames: 12
+    frame_size:
+      - 79916
+      - 125
+      - 191
+      - 410
+      - 1213
+      - 1296
+      - 1358
+      - 1576
+      - 1035
+      - 2145
+      - 17142
+      - 463
+    PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
+      - 00000000
+      - 33333000
+      - 66667000
+      - 100000000
+      - 133333000
+      - 166667000
+      - 200000000
+      - 233333000
+      - 266667000
+      - 300000000
+      - 400000000
+      - 466667000
