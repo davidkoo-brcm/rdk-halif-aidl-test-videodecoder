@@ -224,8 +224,8 @@ public:
     }
 
     // Parse frames based on codec type
-    std::vector<std::pair<uint64_t, uint32_t>> parseFrames(const std::vector<uint8_t>& inputBuffer, uint64_t fileSize, com::rdk::hal::videodecoder::Codec codec) {
-        std::vector<std::pair<uint64_t, uint32_t>> frames; // {offset, size}
+    std::vector<std::tuple<uint64_t, uint32_t, int64_t>> parseFrames(const std::vector<uint8_t>& inputBuffer, uint64_t fileSize, com::rdk::hal::videodecoder::Codec codec) {
+        std::vector<std::tuple<uint64_t, uint32_t, int64_t>> frames; // {offset, size, pts}
 
         if (mTestConfiguration.frameDetails.empty()) {
             UT_LOG_ERROR("frameDetails is empty");
@@ -236,6 +236,7 @@ public:
             case com::rdk::hal::videodecoder::Codec::H264:
             case com::rdk::hal::videodecoder::Codec::H265: {
                 uint64_t pos = 0;
+                size_t frameIndex = 0;
                 while (pos < fileSize - 4) {
                     bool isStartCode = false;
                     uint32_t startCodeLen = 0;
@@ -243,7 +244,7 @@ public:
                         isStartCode = true;
                         startCodeLen = 3;
                     } else if (pos < fileSize - 4 && inputBuffer[pos] == 0 && inputBuffer[pos + 1] == 0 &&
-                               inputBuffer[pos + 2] == 0 && inputBuffer[pos + 3] == 1) {
+                            inputBuffer[pos + 2] == 0 && inputBuffer[pos + 3] == 1) {
                         isStartCode = true;
                         startCodeLen = 4;
                     }
@@ -255,17 +256,21 @@ public:
                         while (nextPos < fileSize - 3) {
                             if ((inputBuffer[nextPos] == 0 && inputBuffer[nextPos + 1] == 0 && inputBuffer[nextPos + 2] == 1) ||
                                 (nextPos < fileSize - 4 && inputBuffer[nextPos] == 0 && inputBuffer[nextPos + 1] == 0 &&
-                                 inputBuffer[nextPos + 2] == 0 && inputBuffer[nextPos + 3] == 1)) {
+                                inputBuffer[nextPos + 2] == 0 && inputBuffer[nextPos + 3] == 1)) {
                                 break;
                             }
                             nextPos++;
                         }
                         uint32_t frameSize = nextPos - start;
                         if (frameSize > startCodeLen) {
-                            frames.emplace_back(start, frameSize);
-                            UT_LOG_INFO("Frame detected: offset=%llu, size=%u", start, frameSize);
+                            int64_t pts = (frameIndex < mTestConfiguration.frameDetails.size()) ?
+                                        std::get<1>(mTestConfiguration.frameDetails[frameIndex]) :
+                                        frameIndex * 33333333; // Default 30fps
+                            frames.emplace_back(start, frameSize, pts);
+                            UT_LOG_INFO("Frame detected: offset=%llu, size=%u, pts=%lld", start, frameSize, pts);
                         }
                         pos = nextPos;
+                        frameIndex++;
                     } else {
                         pos++;
                     }
@@ -274,21 +279,24 @@ public:
             }
             case com::rdk::hal::videodecoder::Codec::MPEG: {
                 uint64_t pos = 0;
+                size_t frameIndex = 0;
                 while (pos < fileSize - 4) {
                     if (inputBuffer[pos] == 0 && inputBuffer[pos + 1] == 0 && inputBuffer[pos + 2] == 1 &&
                         inputBuffer[pos + 3] >= 0xE0 && inputBuffer[pos + 3] <= 0xEF) { // Video stream ID
                         uint64_t start = pos;
                         pos += 4;
-                        // Read PES packet length (2 bytes at offset 4)
                         if (pos + 2 >= fileSize) break;
                         uint32_t pesLength = (inputBuffer[pos] << 8) | inputBuffer[pos + 1];
                         pos += 2;
                         uint32_t frameSize = pesLength + 6; // Include start code and length
-                        if (start + frameSize <= fileSize) {
-                            frames.emplace_back(start, frameSize);
-                            UT_LOG_INFO("MPEG PES packet detected: offset=%llu, size=%u", start, frameSize);
-                        }
+                        if (start + frameSize > fileSize) break;
+                        int64_t pts = (frameIndex < mTestConfiguration.frameDetails.size()) ?
+                                    std::get<1>(mTestConfiguration.frameDetails[frameIndex]) :
+                                    frameIndex * 33333333; // Default 30fps
+                        frames.emplace_back(start, frameSize, pts);
+                        UT_LOG_INFO("MPEG PES packet detected: offset=%llu, size=%u, pts=%lld", start, frameSize, pts);
                         pos = start + frameSize;
+                        frameIndex++;
                     } else {
                         pos++;
                     }
@@ -296,8 +304,8 @@ public:
                 break;
             }
             case com::rdk::hal::videodecoder::Codec::VP9: {
-                // VP9 frames: Look for frame markers (bit 7 = 1 for keyframes) or superframe index
                 uint64_t pos = 32; // Skip IVF header (fixed 32 bytes)
+                size_t frameIndex = 0;
                 while (pos + 12 <= fileSize) {
                     uint32_t frameSize = inputBuffer[pos] |
                                         (inputBuffer[pos + 1] << 8) |
@@ -315,25 +323,29 @@ public:
                     uint64_t frameStart = pos + 12;
                     if (frameStart + frameSize > fileSize) break;
 
-                    frames.emplace_back(frameStart, frameSize);
-                    UT_LOG_INFO("VP9 IVF frame: offset=%llu, size=%u, pts=%llu", frameStart, frameSize, timestamp);
+                    int64_t pts = (frameIndex < mTestConfiguration.frameDetails.size()) ?
+                                std::get<1>(mTestConfiguration.frameDetails[frameIndex]) :
+                                static_cast<int64_t>(timestamp); // Use IVF timestamp
+                    frames.emplace_back(frameStart, frameSize, pts);
+                    UT_LOG_INFO("VP9 IVF frame: offset=%llu, size=%u, pts=%lld", frameStart, frameSize, pts);
 
                     pos = frameStart + frameSize;
+                    frameIndex++;
                 }
-
+                break;
             }
             case com::rdk::hal::videodecoder::Codec::AV1: {
-                // AV1: Parse OBUs with length fields
                 uint64_t pos = 0;
+                size_t frameIndex = 0;
                 while (pos < fileSize) {
                     if (pos + 1 >= fileSize) break;
                     uint8_t obuHeader = inputBuffer[pos];
                     uint32_t obuType = (obuHeader >> 3) & 0x1F;
                     bool hasSize = (obuHeader & 0x02) == 0;
+                    uint64_t start = pos;
                     pos++;
                     uint32_t obuSize = 0;
                     if (hasSize) {
-                        // Read variable-length size (LEB128)
                         for (int i = 0; i < 8 && pos < fileSize; i++) {
                             uint8_t byte = inputBuffer[pos++];
                             obuSize |= (byte & 0x7F) << (i * 7);
@@ -341,13 +353,15 @@ public:
                         }
                     }
                     if (obuType == 1 || obuType == 3 || obuType == 6) { // Frame or Temporal Unit OBUs
-                        uint64_t start = pos - (hasSize ? (pos - start) : 1);
                         uint32_t frameSize = obuSize + (pos - start);
-                        if (start + frameSize <= fileSize) {
-                            frames.emplace_back(start, frameSize);
-                            UT_LOG_INFO("AV1 OBU detected: offset=%llu, size=%u", start, frameSize);
-                        }
+                        if (start + frameSize > fileSize) break;
+                        int64_t pts = (frameIndex < mTestConfiguration.frameDetails.size()) ?
+                                    std::get<1>(mTestConfiguration.frameDetails[frameIndex]) :
+                                    frameIndex * 33333333; // Default 30fps
+                        frames.emplace_back(start, frameSize, pts);
+                        UT_LOG_INFO("AV1 OBU detected: offset=%llu, size=%u, pts=%lld", start, frameSize, pts);
                         pos += obuSize;
+                        frameIndex++;
                     } else {
                         pos += obuSize;
                     }
@@ -359,8 +373,7 @@ public:
                 return frames;
         }
 
-        // Match parsed frames to frameDetails count
-        if (frames.size() != mTestConfiguration.frameDetails.size()) {
+        if (!frames.empty() && frames.size() != mTestConfiguration.frameDetails.size()) {
             UT_LOG_WARNING("Frame count mismatch: parsed=%zu, expected=%zu", frames.size(), mTestConfiguration.frameDetails.size());
         }
         return frames;
@@ -382,8 +395,8 @@ private:
     bool mConcurrentDecodeConsume;
     mutex mAVbufferHelperLock;
 
-#if 1 // Read the frame size using parser
-void decoderThreadFunc() {
+    void decoderThreadFunc()
+    {
         sp<IVideoDecoderController> videoDecoderController;
         int64_t videoBufferHandle = 0;
         Pool videoPool;
@@ -392,6 +405,7 @@ void decoderThreadFunc() {
 
         UT_LOG_INFO("[PID: %d, TID: %d] decoderThreadFunc Start", getpid(), syscall(SYS_gettid));
 
+        // Validate gAVbufferHelper
         if (!gAVbufferHelper) {
             UT_LOG_ERROR("gAVbufferHelper is null");
             mDecodingStream = false;
@@ -415,15 +429,21 @@ void decoderThreadFunc() {
             return;
         }
         std::ifstream inputFile(mTestConfiguration.input, std::ios::binary);
-        if (!inputFile) {
+        if (!inputFile.is_open()) {
             UT_LOG_ERROR("Failed to open file: %s", mTestConfiguration.input.c_str());
             mDecodingStream = false;
             return;
         }
 
         inputFile.seekg(0, std::ios::end);
-        uint64_t fileSize = static_cast<uint64_t>(inputFile.tellg());
-        inputFile.seekg(0, std::ios::beg);
+        auto fileSizePos = inputFile.tellg();
+        if (fileSizePos < 0) {
+            UT_LOG_ERROR("Failed to get file size for %s: tellg returned %lld",
+                        mTestConfiguration.input.c_str(), static_cast<int64_t>(fileSizePos));
+            mDecodingStream = false;
+            return;
+        }
+        uint64_t fileSize = static_cast<uint64_t>(fileSizePos);
         if (fileSize == 0) {
             UT_LOG_ERROR("Input file is empty: %s", mTestConfiguration.input.c_str());
             mDecodingStream = false;
@@ -431,40 +451,69 @@ void decoderThreadFunc() {
         }
         if (fileSize > std::numeric_limits<uint32_t>::max()) {
             UT_LOG_ERROR("File size too large: %llu bytes, max allowed: %u bytes",
-                         fileSize, std::numeric_limits<uint32_t>::max());
+                        fileSize, std::numeric_limits<uint32_t>::max());
             mDecodingStream = false;
             return;
         }
         UT_LOG_INFO("Input file size: %llu bytes", fileSize);
 
         std::vector<uint8_t> inputBuffer(fileSize);
-        inputFile.read(reinterpret_cast<char*>(inputBuffer.data()), fileSize);
-        if (!inputFile) {
-            UT_LOG_ERROR("Failed to read file data: only %zu bytes read", inputFile.gcount());
+        try {
+            inputFile.seekg(0, std::ios::beg);
+            inputFile.read(reinterpret_cast<char*>(inputBuffer.data()), fileSize);
+            if (!inputFile) {
+                UT_LOG_ERROR("Failed to read file data: only %zu bytes read", inputFile.gcount());
+                mDecodingStream = false;
+                return;
+            }
+            uint64_t actualSize = static_cast<uint64_t>(inputFile.gcount());
+            if (actualSize != fileSize) {
+                UT_LOG_WARNING("Read %llu bytes, expected %llu bytes", actualSize, fileSize);
+                fileSize = actualSize;
+            }
+        } catch (const std::exception& e) {
+            UT_LOG_ERROR("Exception reading file: %s", e.what());
             mDecodingStream = false;
             return;
         }
-        uint64_t actualSize = static_cast<uint64_t>(inputFile.gcount());
-        if (actualSize != fileSize) {
-            UT_LOG_WARNING("Read %llu bytes, expected %llu bytes", actualSize, fileSize);
-            fileSize = actualSize;
-        }
 
-        /* Validate frameDetails
-        if (mTestConfiguration.no_of_frames != mTestConfiguration.frameDetails.size()) {
-            UT_LOG_ERROR("Frame details mismatch: no_of_frames=%d, frameDetails=%zu",
-                         mTestConfiguration.no_of_frames, mTestConfiguration.frameDetails.size());
-            mDecodingStream = false;
-            return;
-        }*/
-
-
-        // Parse frames based on codec
-        auto frames = parseFrames(inputBuffer, fileSize, mTestConfiguration.codec);
-        if (frames.empty()) {
-            UT_LOG_ERROR("No frames parsed for codec: %d", static_cast<int>(mTestConfiguration.codec));
-            mDecodingStream = false;
-            return;
+        // Determine frame data based on codec
+        std::vector<std::tuple<uint64_t, uint32_t, int64_t, bool>> frameData; // [offset, size, pts, isErrorFrame]
+        if (mTestConfiguration.codec == com::rdk::hal::videodecoder::Codec::H264 ||
+            mTestConfiguration.codec == com::rdk::hal::videodecoder::Codec::H265) {
+            if (mTestConfiguration.frameDetails.empty()) {
+                UT_LOG_ERROR("frameDetails is empty for H.264/H.265");
+                mDecodingStream = false;
+                return;
+            }
+            uint64_t offset = 0;
+            for (const auto& [size, pts, isErrorFrame] : mTestConfiguration.frameDetails) {
+                if (offset + size > fileSize) {
+                    UT_LOG_ERROR("Frame size at offset %llu exceeds file size %llu", offset + size, fileSize);
+                    mDecodingStream = false;
+                    return;
+                }
+                frameData.emplace_back(offset, size, pts, isErrorFrame);
+                UT_LOG_INFO("Frame from frameDetails: offset=%llu, size=%u, pts=%lld, errorFrame=%d",
+                            offset, size, pts, isErrorFrame);
+                offset += size;
+            }
+        } else {
+            // Parse frames for VP9, MPEG, AV1
+            auto parsedFrames = parseFrames(inputBuffer, fileSize, mTestConfiguration.codec);
+            if (parsedFrames.empty()) {
+                UT_LOG_ERROR("No frames parsed for codec: %d", static_cast<int>(mTestConfiguration.codec));
+                mDecodingStream = false;
+                return;
+            }
+            for (size_t i = 0; i < parsedFrames.size(); ++i) {
+                auto [offset, size, pts] = parsedFrames[i];
+                bool isErrorFrame = (i < mTestConfiguration.frameDetails.size()) ?
+                                    std::get<2>(mTestConfiguration.frameDetails[i]) : false;
+                frameData.emplace_back(offset, size, pts, isErrorFrame);
+                UT_LOG_INFO("Parsed frame: offset=%llu, size=%u, pts=%lld, errorFrame=%d",
+                            offset, size, pts, isErrorFrame);
+            }
         }
 
         // Open Decoder
@@ -473,23 +522,18 @@ void decoderThreadFunc() {
             UT_LOG_INFO("Calling open(codec:%d, secure:%d, listener:%p)",
                         mTestConfiguration.codec, mSecureDecode, mControlListener.get());
             VIDEODECODER_OPEN_SUCCESS(mDecoderHandle, mTestConfiguration.codec, mSecureDecode,
-                                      mControlListener, videoDecoderController, true);
+                                    mControlListener, videoDecoderController, true);
             UT_LOG_INFO("Decoder opened, controller:%p", videoDecoderController.get());
 
-
-            if (mTunnelMode){
-                /* Define property list for STARTED state */
+            if (mTunnelMode) {
                 std::vector<std::pair<Property, int32_t>> startedIntProps = {
                     {Property::OPERATIONAL_MODE, static_cast<int32_t>(OperationalMode::TUNNELLED)}
                 };
-                UT_LOG_INFO("Set properties in TUNNELLED Mode ");
-
-                /* Set properties in STARTED state */
+                UT_LOG_INFO("Set properties in TUNNELLED Mode");
                 VIDEODECODER_SETPROPERTY_LIST_SUCCESS(videoDecoderController, startedIntProps, intValue);
             }
-            ::std::optional<PropertyValue> aidl_return;
+            std::optional<PropertyValue> aidl_return;
             VIDEODECODER_GETPROPERTY(mDecoderHandle, Property::OPERATIONAL_MODE, aidl_return);
-
         }
 
         // Start Decoder
@@ -502,15 +546,13 @@ void decoderThreadFunc() {
 
         // Get initial metrics
         int32_t framesDecoded, decodeErrors, framesDropped;
-        this->getDecoderMetrics(framesDecoded, decodeErrors, framesDropped);
-        UT_LOG_INFO("Decoder Metrics Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
+        getDecoderMetrics(framesDecoded, decodeErrors, framesDropped);
+        UT_LOG_INFO("Initial Decoder Metrics: Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
                     framesDecoded, decodeErrors, framesDropped);
 
         // Process Frames
-        for (size_t i = 0; i < std::min(frames.size(), mTestConfiguration.frameDetails.size()); ++i) {
-            auto [frameOffset, frameSize] = frames[i];
-            auto [_, framePTS, isErrorFrame] = mTestConfiguration.frameDetails[i];
-            auto decodeStart = std::chrono::steady_clock::now();
+        for (size_t i = 0; i < frameData.size(); ++i) {
+            auto [frameOffset, frameSize, framePTS, isErrorFrame] = frameData[i];
 
             UT_LOG_INFO("Processing frame %zu: offset=%llu, size=%u, PTS=%lldns, errorFrame=%d",
                         i, frameOffset, frameSize, framePTS, isErrorFrame);
@@ -546,11 +588,11 @@ void decoderThreadFunc() {
                 }
                 mapBuffer = gAVbufferHelper->mapHandle(videoBufferHandle, &mapSize);
                 if (mapBuffer && mapSize >= frameSize) {
-                    UT_LOG_INFO("Copying frame data to mapped buffer, size:%u", frameSize);
+                    UT_LOG_INFO("Copying frame data to mapped buffer, size=%u", frameSize);
                     memcpy(mapBuffer, inputBuffer.data() + frameOffset, frameSize);
                 } else {
                     UT_LOG_ERROR("Failed to map buffer or insufficient size (mapBuffer:%p, mapSize:%u, required:%u)",
-                                 mapBuffer, mapSize, frameSize);
+                                mapBuffer, mapSize, frameSize);
                     AVBUFFER_FREE_SUCCESS(mAVBufferManager, videoBufferHandle);
                     continue;
                 }
@@ -594,6 +636,8 @@ void decoderThreadFunc() {
                 mInputFrame.push_back(inputVideo);
             }
 
+            auto decodeStart = std::chrono::steady_clock::now();
+
             // Decode Frame
             {
                 std::lock_guard<std::mutex> lock(mDecodeMutex);
@@ -612,8 +656,8 @@ void decoderThreadFunc() {
                 } else {
                     VIDEODECODER_DECODEBUFFER_SUCCESS(videoDecoderController, framePTS, videoBufferHandle);
                 }
-                this->getDecoderMetrics(framesDecoded, decodeErrors, framesDropped);
-                UT_LOG_INFO("Decoder Metrics Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
+                getDecoderMetrics(framesDecoded, decodeErrors, framesDropped);
+                UT_LOG_INFO("Decoder Metrics: Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
                             framesDecoded, decodeErrors, framesDropped);
             }
 
@@ -622,7 +666,7 @@ void decoderThreadFunc() {
             auto decodeTimeNs = std::chrono::duration_cast<std::chrono::nanoseconds>(decodeEnd - decodeStart).count();
             if (decodeTimeNs > mTestConfiguration.decode_time_threshold) {
                 UT_LOG_WARNING("Frame %zu decode time %lld ns exceeds threshold %lld ns",
-                               i, decodeTimeNs, mTestConfiguration.decode_time_threshold);
+                            i, decodeTimeNs, mTestConfiguration.decode_time_threshold);
             }
 
             std::this_thread::sleep_for(std::chrono::milliseconds(mTestConfiguration.decoderDelay));
@@ -644,8 +688,8 @@ void decoderThreadFunc() {
         }
 
         // Get final metrics
-        this->getDecoderMetrics(framesDecoded, decodeErrors, framesDropped);
-        UT_LOG_INFO("Before stop Decoder Metrics Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
+        getDecoderMetrics(framesDecoded, decodeErrors, framesDropped);
+        UT_LOG_INFO("Final Decoder Metrics: Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
                     framesDecoded, decodeErrors, framesDropped);
 
         // Stop Decoder
@@ -655,8 +699,8 @@ void decoderThreadFunc() {
             VIDEODECODER_STOP_SUCCESS(mDecoderHandle, videoDecoderController, true);
         }
 
-        this->getDecoderMetrics(framesDecoded, decodeErrors, framesDropped);
-        UT_LOG_INFO("After stop Decoder Metrics Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
+        getDecoderMetrics(framesDecoded, decodeErrors, framesDropped);
+        UT_LOG_INFO("After Stop Decoder Metrics: Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
                     framesDecoded, decodeErrors, framesDropped);
 
         // Close Decoder
@@ -672,383 +716,6 @@ void decoderThreadFunc() {
         UT_LOG_INFO("[PID: %d, TID: %d] decoderThreadFunc End", getpid(), syscall(SYS_gettid));
         mDecodingStream = false;
     }
-
-#endif
-
-#if 0 // Read frame size from yaml file
-    void decoderThreadFunc()
-    {
-        sp<IVideoDecoderController> videoDecoderController;
-        int64_t videoBufferHandle = 0;
-        Pool videoPool;
-        sp<IAVBufferSpaceListener> bufferListener = new AVBufferSpaceListener();
-        mDecodingStream = true;
-
-        UT_LOG_INFO("[PID: %d, TID: %d] decoderThreadFunc Start", getpid(), syscall(SYS_gettid));
-
-        // Validate gAVbufferHelper
-        if (!gAVbufferHelper)
-        {
-            UT_LOG_ERROR("gAVbufferHelper is null");
-            mDecodingStream = false;
-            return;
-        }
-        UT_LOG_INFO("gAVbufferHelper initialized: %p, secureDecode: %d", gAVbufferHelper, mSecureDecode);
-
-        // Create Video Pool
-        {
-            lock_guard<mutex> lock(mDecodeMutex);
-            UT_LOG_INFO("Calling createVideoPool(secureHeap:%d, videoDecoderId:%d, listener:%p)",
-                        mSecureDecode, mDecoderId, bufferListener.get());
-            AVBUFFER_CREATE_VIDEOPOOL_SUCCESS(mAVBufferManager, mSecureDecode, mDecoderId, bufferListener, videoPool);
-            UT_LOG_INFO("Created video pool with handle:%lld", videoPool.handle);
-        }
-
-        // Log and validate input file path
-        UT_LOG_INFO("Input file path: %s", mTestConfiguration.input.c_str());
-        if (!filesystem::exists(mTestConfiguration.input))
-        {
-            UT_LOG_ERROR("Input file does not exist: %s", mTestConfiguration.input.c_str());
-            mDecodingStream = false;
-            return;
-        }
-
-        // Open input file
-        ifstream inputFile(mTestConfiguration.input, ios::binary);
-        if (!inputFile.is_open())
-        {
-            UT_LOG_ERROR("Failed to open file: %s", mTestConfiguration.input.c_str());
-            mDecodingStream = false;
-            return;
-        }
-
-        // Get file size with validation
-        inputFile.seekg(0, ios::end);
-        auto fileSizePos = inputFile.tellg();
-        if (fileSizePos < 0)
-        {
-            UT_LOG_ERROR("Failed to get file size for %s: tellg returned %lld",
-                        mTestConfiguration.input.c_str(), static_cast<int64_t>(fileSizePos));
-            mDecodingStream = false;
-            return;
-        }
-        uint64_t fileSize = static_cast<uint64_t>(fileSizePos);
-        if (fileSize == 0)
-        {
-            UT_LOG_ERROR("Input file is empty: %s", mTestConfiguration.input.c_str());
-            mDecodingStream = false;
-            return;
-        }
-        if (fileSize > std::numeric_limits<uint32_t>::max())
-        {
-            UT_LOG_ERROR("File size too large: %llu bytes, max allowed: %u bytes",
-                        fileSize, std::numeric_limits<uint32_t>::max());
-            mDecodingStream = false;
-            return;
-        }
-        UT_LOG_INFO("Input file size: %llu bytes", fileSize);
-
-        // Validate vector allocation size
-        std::vector<uint8_t> tempVector;
-        if (fileSize > tempVector.max_size())
-        {
-            UT_LOG_ERROR("File size %llu exceeds vector max_size %zu",
-                        fileSize, tempVector.max_size());
-            mDecodingStream = false;
-            return;
-        }
-
-        // Allocate input buffer
-        vector<uint8_t> inputBuffer;
-        try
-        {
-            inputBuffer.resize(fileSize);
-        }
-        catch (const std::length_error& e)
-        {
-            UT_LOG_ERROR("Failed to allocate inputBuffer: %s", e.what());
-            mDecodingStream = false;
-            return;
-        }
-        catch (const std::bad_alloc& e)
-        {
-            UT_LOG_ERROR("Memory allocation failed for inputBuffer: %s", e.what());
-            mDecodingStream = false;
-            return;
-        }
-
-        // Read file
-        inputFile.seekg(0, ios::beg);
-        inputFile.read(reinterpret_cast<char*>(inputBuffer.data()), fileSize);
-        if (!inputFile)
-        {
-            UT_LOG_ERROR("Failed to read file data: only %zu bytes read", inputFile.gcount());
-            mDecodingStream = false;
-            return;
-        }
-        uint64_t actualSize = static_cast<uint64_t>(inputFile.gcount());
-        if (actualSize != fileSize)
-        {
-            UT_LOG_WARNING("Read %llu bytes, expected %llu bytes", actualSize, fileSize);
-            fileSize = actualSize;
-        }
-
-        /* Validate is not required here as frames,pts,size are different in frameDetails
-        if (mTestConfiguration.no_of_frames != mTestConfiguration.frameDetails.size())
-        {
-            UT_LOG_ERROR("Frame details mismatch: no_of_frames=%d, frameDetails=%zu",
-                        mTestConfiguration.no_of_frames, mTestConfiguration.frameDetails.size());
-            mDecodingStream = false;
-            return;
-        }*/
-
-        uint64_t totalFrameSize = 0;
-        for (const auto& [size, pts, error] : mTestConfiguration.frameDetails)
-        {
-            totalFrameSize += static_cast<uint64_t>(size);
-        }
-        if (totalFrameSize > fileSize)
-        {
-            UT_LOG_ERROR("Frame sizes (%llu bytes) exceed file size (%llu bytes)", totalFrameSize, fileSize);
-            mDecodingStream = false;
-            return;
-        }
-        UT_LOG_INFO("Validated %d frames, total size=%llu bytes, decode_time_threshold=%lld ns",
-                    mTestConfiguration.no_of_frames, totalFrameSize, mTestConfiguration.decode_time_threshold);
-
-        // Open Decoder
-        {
-            lock_guard<mutex> lock(mDecodeMutex);
-            UT_LOG_INFO("Calling open(codec:%d, secure:%d, listener:%p)",
-                        mTestConfiguration.codec, mSecureDecode, mControlListener.get());
-            VIDEODECODER_OPEN_SUCCESS(mDecoderHandle, mTestConfiguration.codec, mSecureDecode,
-                                    mControlListener, videoDecoderController, true);
-            UT_LOG_INFO("Decoder opened, controller:%p", videoDecoderController.get());
-            if (mTunnelMode){
-                /* Define property list for STARTED state */
-                std::vector<std::pair<Property, int32_t>> startedIntProps = {
-                    {Property::OPERATIONAL_MODE, static_cast<int32_t>(OperationalMode::TUNNELLED)}
-                };
-                UT_LOG_INFO("Set properties in TUNNELLED Mode ");
-
-                /* Set properties in STARTED state */
-                VIDEODECODER_SETPROPERTY_LIST_SUCCESS(videoDecoderController, startedIntProps, intValue);
-            }
-            ::std::optional<PropertyValue> aidl_return;
-            VIDEODECODER_GETPROPERTY(mDecoderHandle, Property::OPERATIONAL_MODE, aidl_return);
-        }
-
-        // Start Decoder
-        {
-            lock_guard<mutex> lock(mDecodeMutex);
-            UT_LOG_INFO("Calling start()");
-            VIDEODECODER_START_SUCCESS(mDecoderHandle, videoDecoderController, true);
-            UT_LOG_INFO("Decoder started");
-        }
-
-        // Get initial metrics
-        int32_t framesDecoded, decodeErrors, framesDropped;
-        this->getDecoderMetrics(framesDecoded, decodeErrors, framesDropped);
-        UT_LOG_INFO("Decoder Metrics Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
-                    framesDecoded, decodeErrors, framesDropped);
-
-        // Process Frames
-        uint64_t offset = 0;
-        for (size_t i = 0; i < mTestConfiguration.frameDetails.size(); ++i)
-        {
-            auto [frameSize, framePTS, isErrorFrame] = mTestConfiguration.frameDetails[i];
-            auto decodeStart = chrono::steady_clock::now();
-
-            UT_LOG_INFO("Processing frame %zu: offset=%llu, size=%d, PTS=%lldns, errorFrame=%d",
-                        i, offset, frameSize, framePTS, isErrorFrame);
-
-            // Allocate Buffer
-            {
-                lock_guard<mutex> lock(mDecodeMutex);
-                UT_LOG_INFO("Calling alloc(poolHandle:%lld, size:%d)", videoPool.handle, frameSize);
-                videoBufferHandle = 0;
-                AVBUFFER_ALLOC_SUCCESS(mAVBufferManager, videoPool, frameSize, videoBufferHandle);
-                UT_LOG_INFO("Allocated buffer handle:0x%llx", videoBufferHandle);
-            }
-
-            /* Validate buffer handle
-            if (videoBufferHandle <= 0 || videoBufferHandle == IAVBuffer::INVALID_HANDLE ||
-                videoBufferHandle > 0xFFFFFFFF)
-            {
-                UT_LOG_ERROR("Invalid buffer handle: 0x%llx", videoBufferHandle);
-                offset += frameSize;
-                continue;
-            }*/
-
-            // Write Frame Data
-            void* mapBuffer = nullptr;
-            uint32_t mapSize = 0;
-            if (mSecureDecode)
-            {
-                lock_guard<mutex> lock(mAVbufferHelperLock);
-                UT_LOG_INFO("Calling writeSecureHandle(handle:0x%llx, size:%d, gAVbufferHelper:%p)",
-                            videoBufferHandle, frameSize, gAVbufferHelper);
-                if (!gAVbufferHelper ||
-                    !gAVbufferHelper->writeSecureHandle(videoBufferHandle, inputBuffer.data() + offset, frameSize))
-                {
-                    UT_LOG_ERROR("Failed to copy frame data to secure buffer");
-                    AVBUFFER_FREE_SUCCESS(mAVBufferManager, videoBufferHandle);
-                    offset += frameSize;
-                    continue;
-                }
-            }
-            else
-            {
-                lock_guard<mutex> lock(mAVbufferHelperLock);
-                UT_LOG_INFO("Calling mapHandle(handle:0x%llx, gAVbufferHelper:%p)",
-                            videoBufferHandle, gAVbufferHelper);
-                if (!gAVbufferHelper)
-                {
-                    UT_LOG_ERROR("gAVbufferHelper is null before mapHandle");
-                    AVBUFFER_FREE_SUCCESS(mAVBufferManager, videoBufferHandle);
-                    offset += frameSize;
-                    continue;
-                }
-                mapBuffer = gAVbufferHelper->mapHandle(videoBufferHandle, &mapSize);
-                if (mapBuffer && mapSize >= static_cast<uint32_t>(frameSize))
-                {
-                    UT_LOG_INFO("Copying frame data to mapped buffer, size:%d", frameSize);
-                    memcpy(mapBuffer, inputBuffer.data() + offset, frameSize);
-                }
-                else
-                {
-                    UT_LOG_ERROR("Failed to map buffer or insufficient size (mapBuffer:%p, mapSize:%u, required:%d)",
-                                mapBuffer, mapSize, frameSize);
-                    AVBUFFER_FREE_SUCCESS(mAVBufferManager, videoBufferHandle);
-                    offset += frameSize;
-                    continue;
-                }
-            }
-
-            // Decoder Operations
-            {
-                lock_guard<mutex> lock(mDecodeMutex);
-                if (mTestConfiguration.stopPts == framePTS)
-                {
-                    UT_LOG_INFO("Stopping decoder at PTS:%lld", framePTS);
-                    VIDEODECODER_STOP_SUCCESS(mDecoderHandle, videoDecoderController, true);
-                    VIDEODECODER_START_SUCCESS(mDecoderHandle, videoDecoderController, true);
-                }
-                if (mTestConfiguration.discontinuityPts == framePTS)
-                {
-                    UT_LOG_INFO("Signaling discontinuity at PTS:%lld", framePTS);
-                    VIDEODECODER_SIGNAL_DISCONTINUITY_SUCCESS(mDecoderHandle, videoDecoderController, true);
-                }
-                if (mTestConfiguration.flushPts == framePTS)
-                {
-                    UT_LOG_INFO("Flushing decoder at PTS:%lld", framePTS);
-                    VIDEODECODER_FLUSH_SUCCESS(mDecoderHandle, videoDecoderController, false, true);
-                }
-                if (mTestConfiguration.flushResetPts == framePTS)
-                {
-                    UT_LOG_INFO("Flush reset at PTS:%lld", framePTS);
-                    VIDEODECODER_FLUSH_SUCCESS(mDecoderHandle, videoDecoderController, true, true);
-                    VIDEODECODER_START_SUCCESS(mDecoderHandle, videoDecoderController, true);
-                }
-                if (mTestConfiguration.eosPts == framePTS)
-                {
-                    UT_LOG_INFO("Signaling EOS at PTS:%lld", framePTS);
-                    VIDEODECODER_DECODEBUFFER_FAILURE(videoDecoderController, framePTS, videoBufferHandle, Status::EX_NONE);
-                    VIDEODECODER_STOP_SUCCESS(mDecoderHandle, videoDecoderController, true);
-                    VIDEODECODER_START_SUCCESS(mDecoderHandle, videoDecoderController, true);
-                }
-
-                InputVideoFrame_t inputVideo;
-                inputVideo.sendTime = chrono::steady_clock::now();
-                inputVideo.framePTS = framePTS;
-                //inputVideo.reference = mTestConfiguration.reference;
-                inputVideo.rms_threshold = mTestConfiguration.rms_diff_threshold;
-                inputVideo.isErrorFrame = isErrorFrame;
-                UT_LOG_INFO("Adding frame to mInputFrame, PTS:%lld, errorFrame:%d", framePTS, isErrorFrame);
-                mInputFrame.push_back(inputVideo);
-            }
-
-            // Decode Frame
-            {
-                lock_guard<mutex> lock(mDecodeMutex);
-                if (!videoDecoderController)
-                {
-                    UT_LOG_ERROR("videoDecoderController is null");
-                    AVBUFFER_FREE_SUCCESS(mAVBufferManager, videoBufferHandle);
-                    if (!mSecureDecode && mapBuffer)
-                    {
-                        UT_LOG_INFO("Unmapping buffer handle:0x%llx", videoBufferHandle);
-                        gAVbufferHelper->unmapHandle(videoBufferHandle);
-                    }
-                    offset += frameSize;
-                    continue;
-                }
-                UT_LOG_INFO("Calling decodeBuffer(PTS:%lld, bufferHandle:0x%llx)", framePTS, videoBufferHandle);
-                VIDEODECODER_DECODEBUFFER_SUCCESS(videoDecoderController, framePTS, videoBufferHandle);
-                this->getDecoderMetrics(framesDecoded, decodeErrors, framesDropped);
-                UT_LOG_INFO("calling Decoder Metrics Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
-                            framesDecoded, decodeErrors, framesDropped);
-            }
-
-            // Check decode time
-            auto decodeEnd = chrono::steady_clock::now();
-            auto decodeTimeNs = chrono::duration_cast<chrono::nanoseconds>(decodeEnd - decodeStart).count();
-            if (decodeTimeNs > mTestConfiguration.decode_time_threshold)
-            {
-                UT_LOG_WARNING("Frame %zu decode time %lld ns exceeds threshold %lld ns",
-                            i, decodeTimeNs, mTestConfiguration.decode_time_threshold);
-            }
-
-            this_thread::sleep_for(chrono::milliseconds(mTestConfiguration.decoderDelay));
-
-            // Free Buffer
-            {
-                lock_guard<mutex> lock(mDecodeMutex);
-                UT_LOG_INFO("Freeing buffer handle:0x%llx", videoBufferHandle);
-                AVBUFFER_FREE_SUCCESS(mAVBufferManager, videoBufferHandle);
-            }
-
-            if (!mSecureDecode && mapBuffer)
-            {
-                lock_guard<mutex> lock(mAVbufferHelperLock);
-                UT_LOG_INFO("Unmapping buffer handle:0x%llx", videoBufferHandle);
-                if (gAVbufferHelper)
-                {
-                    gAVbufferHelper->unmapHandle(videoBufferHandle);
-                }
-            }
-
-            offset += frameSize;
-        }
-
-        this->getDecoderMetrics(framesDecoded, decodeErrors, framesDropped);
-        UT_LOG_INFO("-->before Decoder Metrics Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
-                    framesDecoded, decodeErrors, framesDropped);
-        UT_LOG_INFO("No of frames form yml no_of_frames %d ",mTestConfiguration.no_of_frames);
-        // Stop Decoder
-        {
-            lock_guard<mutex> lock(mDecodeMutex);
-            UT_LOG_INFO("Stopping decoder");
-            VIDEODECODER_STOP_SUCCESS(mDecoderHandle, videoDecoderController, true);
-        }
-        this->getDecoderMetrics(framesDecoded, decodeErrors, framesDropped);
-        UT_LOG_INFO("--->After stop Decoder Metrics Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
-                    framesDecoded, decodeErrors, framesDropped);
-
-        // Close Decoder
-        VIDEODECODER_CLOSE_SUCCESS(mDecoderHandle, videoDecoderController, true);
-
-        // Destroy Video Pool
-        {
-            lock_guard<mutex> lock(mDecodeMutex);
-            UT_LOG_INFO("Destroying video pool handle:%lld", videoPool.handle);
-            AVBUFFER_DESTROY_POOL_SUCCESS(mAVBufferManager, videoPool);
-        }
-
-        UT_LOG_INFO("[PID: %d, TID: %d] decoderThreadFunc End", getpid(), syscall(SYS_gettid));
-        mDecodingStream = false;
-    }
-#endif
 
     void consumerThreadFunc()
     {
