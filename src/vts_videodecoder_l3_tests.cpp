@@ -59,6 +59,7 @@
 #include "vts_videodecoder.h"
 #include <fstream>
 #include <vector>
+#include <future>
 
 using namespace std::chrono;
 using namespace std;
@@ -494,8 +495,8 @@ private:
                     return;
                 }
                 frameData.emplace_back(offset, size, pts, isErrorFrame);
-                UT_LOG_INFO("Frame from frameDetails: offset=%llu, size=%u, pts=%lld, errorFrame=%d",
-                            offset, size, pts, isErrorFrame);
+                UT_LOG_INFO("Codec:%d Frame from frameDetails: offset=%llu, size=%u, pts=%lld, errorFrame=%d",
+                            mTestConfiguration.codec,offset, size, pts, isErrorFrame);
                 offset += size;
             }
         } else {
@@ -511,8 +512,8 @@ private:
                 bool isErrorFrame = (i < mTestConfiguration.frameDetails.size()) ?
                                     std::get<2>(mTestConfiguration.frameDetails[i]) : false;
                 frameData.emplace_back(offset, size, pts, isErrorFrame);
-                UT_LOG_INFO("Parsed frame: offset=%llu, size=%u, pts=%lld, errorFrame=%d",
-                            offset, size, pts, isErrorFrame);
+                UT_LOG_INFO("Parsed frame: Codec:%d offset=%llu, size=%u, pts=%lld, errorFrame=%d",
+                            mTestConfiguration.codec,offset, size, pts, isErrorFrame);
             }
         }
 
@@ -547,8 +548,8 @@ private:
         // Get initial metrics
         int32_t framesDecoded, decodeErrors, framesDropped;
         getDecoderMetrics(framesDecoded, decodeErrors, framesDropped);
-        UT_LOG_INFO("Initial Decoder Metrics: Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
-                    framesDecoded, decodeErrors, framesDropped);
+        UT_LOG_INFO("Initial Decoder Metrics: Codec: %d ,Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
+                    mTestConfiguration.codec,framesDecoded, decodeErrors, framesDropped);
 
         // Process Frames
         for (size_t i = 0; i < frameData.size(); ++i) {
@@ -597,6 +598,12 @@ private:
                     continue;
                 }
             }
+
+            UT_LOG_INFO("mTestConfiguration.stopPts = %lld framePTS = %lld ",mTestConfiguration.stopPts,framePTS);
+            UT_LOG_INFO("mTestConfiguration.discontinuityPts = %lld framePTS = %lld ",mTestConfiguration.discontinuityPts,framePTS);
+            UT_LOG_INFO("mTestConfiguration.flushPts = %lld framePTS = %lld ",mTestConfiguration.flushPts,framePTS);
+            UT_LOG_INFO("mTestConfiguration.flushResetPts = %lld framePTS = %lld ",mTestConfiguration.flushResetPts,framePTS);
+            UT_LOG_INFO("mTestConfiguration.eosPts = %lld framePTS = %lld ",mTestConfiguration.eosPts,framePTS);
 
             // Decoder Operations
             {
@@ -657,8 +664,8 @@ private:
                     VIDEODECODER_DECODEBUFFER_SUCCESS(videoDecoderController, framePTS, videoBufferHandle);
                 }
                 getDecoderMetrics(framesDecoded, decodeErrors, framesDropped);
-                UT_LOG_INFO("Decoder Metrics: Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
-                            framesDecoded, decodeErrors, framesDropped);
+                UT_LOG_INFO("Decoder Metrics: Codec: %d, Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
+                            mTestConfiguration.codec,framesDecoded, decodeErrors, framesDropped);
             }
 
             // Check decode time
@@ -689,8 +696,8 @@ private:
 
         // Get final metrics
         getDecoderMetrics(framesDecoded, decodeErrors, framesDropped);
-        UT_LOG_INFO("Final Decoder Metrics: Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
-                    framesDecoded, decodeErrors, framesDropped);
+        UT_LOG_INFO("Final Decoder Metrics: Codec: %d, Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
+                    mTestConfiguration.codec,framesDecoded, decodeErrors, framesDropped);
 
         // Stop Decoder
         {
@@ -700,8 +707,8 @@ private:
         }
 
         getDecoderMetrics(framesDecoded, decodeErrors, framesDropped);
-        UT_LOG_INFO("After Stop Decoder Metrics: Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
-                    framesDecoded, decodeErrors, framesDropped);
+        UT_LOG_INFO("After Stop Decoder Metrics: Code: %d, Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
+                    mTestConfiguration.codec,framesDecoded, decodeErrors, framesDropped);
 
         // Close Decoder
         VIDEODECODER_CLOSE_SUCCESS(mDecoderHandle, videoDecoderController, true);
@@ -1014,6 +1021,105 @@ public:
     }
 #endif
 
+    void runConcurrentDecode(testConfiguration_t& testConfig, bool secureDecode, bool tunnelMode, bool concurrentDecodeConsume)
+    {
+        std::vector<std::unique_ptr<DecoderTest>> decoderTests;
+        std::vector<std::future<void>> futures;
+        HeapMetrics beforeHeapMetrics, afterHeapMetrics;
+
+        // Get heap metrics before decoding
+        AVBUFFER_GETMETRICS(mAVBufferManager, secureDecode, beforeHeapMetrics);
+
+        size_t activeDecoders = 0;
+        decoderTests.reserve(mVideoDecoderList.size());
+        futures.reserve(mVideoDecoderList.size());
+
+        UT_LOG_INFO("Launching decoding for stream: %s, codec: %s, secure: %d, tunnel: %d, concurrentDecodeConsume: %d",
+                    testConfig.streamName, videodecoder::toString(testConfig.codec).c_str(),
+                    secureDecode, tunnelMode, concurrentDecodeConsume);
+
+        for (const auto& [_decoderId, decoderHandle, controlListener, eventListener, capabilities] : mVideoDecoderList) {
+            auto it = std::find_if(gVideodecoders_hfp.begin(), gVideodecoders_hfp.end(),
+                [_decoderId](const decoder& item) { return item.id == _decoderId.value; });
+            if (it == gVideodecoders_hfp.end()) {
+                UT_LOG_INFO("[DecoderID: %d] Not available", _decoderId.value);
+                continue;
+            }
+
+            if (secureDecode && !capabilities->supportsSecure) {
+                UT_LOG_INFO("[DecoderID: %d] Doesn't support secure decoding", _decoderId.value);
+                continue;
+            }
+
+            auto result = std::find_if(capabilities->supportedCodecs.begin(), capabilities->supportedCodecs.end(),
+                                    [&testConfig](const CodecCapabilities& cap) { return cap.codec == testConfig.codec; });
+            if (result == capabilities->supportedCodecs.end()) {
+                UT_LOG_INFO("[DecoderID: %d] Doesn't support Codec [%s]", _decoderId.value,
+                            videodecoder::toString(testConfig.codec).c_str());
+                continue;
+            }
+
+            auto decoderTest = std::make_unique<DecoderTest>(_decoderId, decoderHandle, controlListener, eventListener,
+                                                            mAVBufferManager, secureDecode, tunnelMode, testConfig);
+            futures.push_back(std::async(std::launch::async, &DecoderTest::run, decoderTest.get(), concurrentDecodeConsume));
+            decoderTests.push_back(std::move(decoderTest));
+            activeDecoders++;
+        }
+
+        if (activeDecoders == 0) {
+            UT_LOG("ERROR", "No decoders support the requested configuration (codec: %s, secure: %d)",
+                videodecoder::toString(testConfig.codec).c_str(), secureDecode);
+            UT_ASSERT_TRUE(false) << "No valid decoders found";
+        }
+
+        // Wait for all decoding tasks to complete
+        for (auto& f : futures) {
+            try {
+                f.get();
+            } catch (const std::exception& e) {
+                UT_LOG("ERROR", "Exception in decoder thread: %s", e.what());
+                UT_ASSERT_TRUE(false) << "Decoder thread failed";
+            }
+        }
+
+        // Validate decoder metrics
+        for (const auto& decoderTest : decoderTests) {
+            int32_t framesDecoded, decodeErrors, framesDropped;
+            bool metricsSuccess = decoderTest->getDecoderMetrics(framesDecoded, decodeErrors, framesDropped);
+            UT_ASSERT_TRUE(metricsSuccess) << "Failed to get decoder metrics for decoder ID ";
+            UT_LOG_INFO("Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
+                         framesDecoded, decodeErrors, framesDropped);
+
+            // Validate metrics
+            size_t expectedFrames = testConfig.frameDetails.size();
+            UT_ASSERT_TRUE(framesDecoded == static_cast<int32_t>(expectedFrames))
+                << "Frame count mismatch: expected=" << expectedFrames << ", actual=" << framesDecoded;
+
+            int32_t expectedErrorFrames = std::count_if(testConfig.frameDetails.begin(),
+                                                        testConfig.frameDetails.end(),
+                                                        [](const auto& frame) { return std::get<2>(frame); });
+            UT_ASSERT_TRUE(decodeErrors == expectedErrorFrames)
+                << "Decode errors mismatch: expected=" << expectedErrorFrames << ", actual=" << decodeErrors;
+
+            UT_ASSERT_TRUE(framesDropped == 0) << "Unexpected frames dropped: " << framesDropped;
+        }
+
+        // Get heap metrics after decoding
+        AVBUFFER_GETMETRICS(mAVBufferManager, secureDecode, afterHeapMetrics);
+
+        // Check if the decoder freed all buffer pools
+        if (beforeHeapMetrics.secure != afterHeapMetrics.secure ||
+            beforeHeapMetrics.bytesUsed != afterHeapMetrics.bytesUsed ||
+            beforeHeapMetrics.bytesTotal != afterHeapMetrics.bytesTotal) {
+            UT_LOG("ERROR", "Heap metrics mismatch: "
+                "secure(before=%d, after=%d), bytesUsed(before=%zu, after=%zu), bytesTotal(before=%zu, after=%zu)",
+                beforeHeapMetrics.secure, afterHeapMetrics.secure,
+                beforeHeapMetrics.bytesUsed, afterHeapMetrics.bytesUsed,
+                beforeHeapMetrics.bytesTotal, afterHeapMetrics.bytesTotal);
+            UT_ASSERT_TRUE(false) << "Heap metrics mismatch";
+        }
+    }
+
     void runTest(char *testName, bool secureMode, bool tunnelMode, bool concurrentMode)
     {
         vector<testConfiguration_t> testConfiguration;
@@ -1026,7 +1132,7 @@ public:
         {
             for (auto& test : testConfiguration)
             {
-                runSequentialDecode(test, secureMode, tunnelMode, true);
+                runConcurrentDecode(test, secureMode, tunnelMode, true);
             }
         }
         else
@@ -1082,14 +1188,14 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_Error)
 }
 
 /**
- * @brief Test decoding with trim option
+ * @brief Test decoding with Graphics option
  *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 003
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_Trim)
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_Graphics)
 {
 
-    char *testName = "Decode_Sequential_NonTunnel_NonSecure_Trim";
+    char *testName = "Decode_Sequential_NonTunnel_NonSecure_Graphics";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = false;

@@ -613,6 +613,7 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, char *module,
         }
         resultKVP = tempBuffer;
         UT_LOG_INFO("Stream name: %s", resultKVP.c_str());
+        testDetails.streamName = resultKVP.c_str();
 
         string prefix = streamsDetails + "." + resultKVP + ".";
         string input = prefix + "input";
@@ -634,11 +635,11 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, char *module,
         string rmsDiff = streamList + "." + to_string(i) + ".rms_diff_threshold";
         string decodeTime = streamList + "." + to_string(i) + ".decode_time_threshold";
         string decoderDelay = controlList + ".delay_between_decode_calls";
-        string stopPts = controlList + ".stop_start_pts";
-        string discontinuityPts = controlList + ".signal_discontinuity_pts";
-        string flushPts = controlList + ".flush_pts";
-        string flushResetPts = controlList + ".flush_reset_pts";
-        string eosPts = controlList + ".eos_pts";
+        string stopPts = prefix + "stop_start_pts";
+        string discontinuityPts = prefix + "signal_discontinuity_pts";
+        string flushPts = prefix + "flush_pts";
+        string flushResetPts = prefix + "flush_reset_pts";
+        string eosPts = prefix + "eos_pts";
 
         // Input stream path
         status = ut_kvp_getStringField(kvpTestInstance, input.c_str(), tempBuffer, UT_KVP_MAX_ELEMENT_SIZE);

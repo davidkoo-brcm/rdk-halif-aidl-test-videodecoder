@@ -197,7 +197,7 @@ struct DecodedVideoFrame_t {
 
 struct testConfiguration_t {
     std::string input; // Path to input .es file
-    //std::string reference; // Path to reference .yuv file
+    std::string streamName; //
     videodecoder::Codec codec; // H264_AVC, HEVC, etc.
     int32_t codedWidth; // Video width
     int32_t codedHeight; // Video height
