@@ -162,7 +162,7 @@ public:
                 sp<VideoDecoderControllerListener> controlListener,
                 sp<VideoDecoderEventListener> eventListener,
                 sp<IAVBuffer> AVBufferManager,
-                bool secureDecode, bool tunnelMode, testConfiguration_t& config)
+                bool secureDecode, bool tunnelMode, testConfiguration_t config)
     {
         mDecoderId = decoderId;
         mDecoderHandle = decoderHandle;
@@ -170,23 +170,25 @@ public:
         mSecureDecode = secureDecode;
         mTunnelMode = tunnelMode;
         mEventListener = eventListener;
-        mTestConfiguration = config;
+        mTestConfiguration = std::move(config);;
         mAVBufferManager = AVBufferManager;
         mDecodingStream = false;
     }
 
     void run(bool concurrentDecodeConsume)
     {
+        UT_LOG_INFO("concurrentDecodeConsume %d ",concurrentDecodeConsume);
         mConcurrentDecodeConsume = concurrentDecodeConsume;
         mDecodingStream = true;
         if (concurrentDecodeConsume)
         {
+            UT_LOG_INFO("Start decoderThreadFunc & consumerThreadFunc");
             mDecoderThread = thread(&DecoderTest::decoderThreadFunc, this);
-            this_thread::sleep_for(chrono::milliseconds(100));
-            //mConsumerThread = thread(&DecoderTest::consumerThreadFunc, this);
+            this_thread::sleep_for(chrono::milliseconds(300));
+            mConsumerThread = thread(&DecoderTest::consumerThreadFunc, this);
 
             mDecoderThread.join();
-            //mConsumerThread.join();
+            mConsumerThread.join();
         }
         else
         {
@@ -727,50 +729,84 @@ private:
     void consumerThreadFunc()
     {
         int32_t errorCount = 0;
-
         UT_LOG_INFO("[PID: %d, TID: %d] consumerThreadFunc Start", getpid(), syscall(SYS_gettid));
-        while (mDecodingStream || !mInputFrame.empty())
-        {
+
+        while (mDecodingStream || !mInputFrame.empty()) {
             DecodedVideoFrame_t decodedFrame;
             InputVideoFrame_t inputFrame;
 
-            if (mInputFrame.empty())
-            {
-                this_thread::sleep_for(chrono::milliseconds(10));
+            if (!mControlListener->getNextFrame(decodedFrame, std::chrono::milliseconds(50))) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(5));
                 continue;
             }
 
-            inputFrame = move(mInputFrame.front());
-            mInputFrame.pop_front();
-
-            if(inputFrame.isErrorFrame)
+            bool found = false;
             {
+                std::lock_guard<std::mutex> lock(mDecodeMutex);
+                for (auto it = mInputFrame.begin(); it != mInputFrame.end(); ++it) {
+                    if (it->framePTS == decodedFrame.framePTS) {
+                        inputFrame = std::move(*it);
+                        mInputFrame.erase(it);
+                        found = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!found) {
+                UT_LOG_ERROR("No input frame found for decoded frame PTS=%lld", decodedFrame.framePTS);
+                continue;
+            }
+
+            if (inputFrame.isErrorFrame) {
                 errorCount++;
                 continue;
             }
 
-            this_thread::sleep_for(chrono::milliseconds(10));
-            continue;
+            UT_ASSERT_EQUAL(decodedFrame.framePTS, inputFrame.framePTS)
+                << "PTS mismatch: decoded=" << decodedFrame.framePTS << ", input=" << inputFrame.framePTS;
 
-            //mControlListener->getNextFrame(decodedFrame);
-
-            if (decodedFrame.framePTS != inputFrame.framePTS)
-            {
-                UT_LOG_ERROR("Input frame and decoded frame PTS do not match");
-                UT_ASSERT_TRUE(false);
-                continue;
+            if (decodedFrame.isMetaAvailable && decodedFrame.metadata) {
+                UT_LOG_INFO("Validating metadata for PTS=%lld", decodedFrame.framePTS);
+                UT_ASSERT_EQUAL(decodedFrame.metadata->codedWidth, mTestConfiguration.codedWidth)
+                    << "Width mismatch: expected=" << mTestConfiguration.codedWidth
+                    << ", actual=" << decodedFrame.metadata->codedWidth;
+                UT_ASSERT_EQUAL(decodedFrame.metadata->codedHeight, mTestConfiguration.codedHeight)
+                    << "Height mismatch: expected=" << mTestConfiguration.codedHeight
+                    << ", actual=" << decodedFrame.metadata->codedHeight;
+                /*UT_ASSERT_EQUAL(decodedFrame.metadata->pixelFormat, mTestConfiguration.pixelFormat)
+                    << "Pixel format mismatch: expected=" << static_cast<int>(mTestConfiguration.pixelFormat)
+                    << ", actual=" << static_cast<int>(decodedFrame.metadata->pixelFormat);
+                UT_ASSERT_EQUAL(decodedFrame.metadata->dynamicRange, mTestConfiguration.dynamicRange)
+                    << "Dynamic range mismatch: expected=" << static_cast<int>(mTestConfiguration.dynamicRange)
+                    << ", actual=" << static_cast<int>(decodedFrame.metadata->dynamicRange);*/
+                UT_ASSERT_EQUAL(decodedFrame.metadata->frameRateNumerator, mTestConfiguration.frameRateNumerator)
+                    << "Frame rate numerator mismatch: expected=" << mTestConfiguration.frameRateNumerator
+                    << ", actual=" << decodedFrame.metadata->frameRateNumerator;
+                UT_ASSERT_EQUAL(decodedFrame.metadata->frameRateDenominator, mTestConfiguration.frameRateDenominator)
+                    << "Frame rate denominator mismatch: expected=" << mTestConfiguration.frameRateDenominator
+                    << ", actual=" << decodedFrame.metadata->frameRateDenominator;
+                /*UT_ASSERT_EQUAL(decodedFrame.metadata->colorDepth, mTestConfiguration.colorDepth)
+                    << "Color depth mismatch: expected=" << mTestConfiguration.colorDepth
+                    << ", actual=" << decodedFrame.metadata->colorDepth;*/
+            } else {
+                UT_LOG_WARNING("No metadata available for PTS=%lld", decodedFrame.framePTS);
             }
 
-            auto duration = chrono::duration_cast<chrono::microseconds>(decodedFrame.receiveTime - inputFrame.sendTime);
-            UT_LOG_INFO("Decode Time in msec [PTS: %lld]: %lld", decodedFrame.framePTS, duration.count());
+            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
+                decodedFrame.receiveTime - inputFrame.sendTime).count();
+            UT_LOG_INFO("Decode Time in msec [PTS: %lld]: %lld", decodedFrame.framePTS, duration / 1000);
+            /*UT_ASSERT_TRUE(duration <= mTestConfiguration.decode_time_threshold / 1000)
+                << "Decode time " << duration << " us exceeds threshold "
+                << mTestConfiguration.decode_time_threshold / 1000 << " us";*/
         }
-        if (errorCount > 0)
-        {
-            //TODO: check for correct validation
+
+        if (errorCount > 0) {
             UT_LOG_INFO("No. of Error frames pushed: %d", errorCount);
             UT_LOG_INFO("No. of Error frames Callbacks: %d", mEventListener->getErrors().size());
             UT_ASSERT_EQUAL(mEventListener->getErrors().size(), errorCount);
         }
+
         UT_LOG_INFO("[PID: %d, TID: %d] consumerThreadFunc end", getpid(), syscall(SYS_gettid));
     }
 
@@ -780,6 +816,8 @@ private:
         int64_t videoBufferHandle;
         Pool videoPool;
         sp<IAVBufferSpaceListener> bufferListener = new AVBufferSpaceListener();
+
+        UT_LOG_INFO("decodeAndConsumeVideoStreams start:");
 
         /* Create Video Pool */
         AVBUFFER_CREATE_VIDEOPOOL_SUCCESS(mAVBufferManager, mSecureDecode, mDecoderId, bufferListener, videoPool);
@@ -820,12 +858,12 @@ private:
             startTime = chrono::steady_clock::now();
             VIDEODECODER_DECODEBUFFER_SUCCESS(videoDecoderController, framePTS, videoBufferHandle);
 
-            //mControlListener->getNextFrame(decodedFrame);
+            mControlListener->getNextFrame(decodedFrame, std::chrono::milliseconds(100));
 
             /* Verify the decoded buffer in non-tunnel mode */
             if (!mTunnelMode && !decodedFrame.data.empty())
             {
-                output_buffer_size = decodedFrame.metadata.width * decodedFrame.metadata.height * vts_bytesPerPixel(decodedFrame.metadata.pixelFormat);
+                //output_buffer_size = decodedFrame.metadata.codedWidth * decodedFrame.metadata.codedHeight * vts_bytesPerPixel(decodedFrame.metadata.pixelFormat);
 
                 //rms_diff = vts_computeVideoRMSDiff(referenceBuffer.data(), decodedFrame.data.data(), decodedFrame.metadata.width , decodedFrame.metadata.height, decodedFrame.metadata.pixelFormat);
                 UT_ASSERT_TRUE(rms_diff <= mTestConfiguration.rms_diff_threashold);
@@ -904,7 +942,7 @@ public:
             mVideoDecoderList.push_back({_decoderId, videoDecoder, controlListener, eventListener, capabilities});
         }
     }
-#if 1
+
     void runSequentialDecode(testConfiguration_t& testConfig, bool secureDecode, bool tunnelMode, bool concurrentDecodeConsume)
     {
         for (const auto& [_decoderId, decoderHandle, controlListener, eventListener, capabilities] : mVideoDecoderList)
@@ -947,7 +985,7 @@ public:
             UT_ASSERT_TRUE(beforeHeapMetrics.bytesTotal == afterHeapMetrics.bytesTotal);
         }
     }
-#endif
+
 #if 0
     void runConcurrentDecode(testConfiguration_t& testConfig, bool secureDecode, bool tunnelMode, bool concurrentDecodeConsume)
     {
@@ -989,13 +1027,13 @@ public:
         }
 
         // Check decoder metrics for each test
-        for (const auto& decoderTest : decoderTestList)
+        for (auto& decoderTest : decoderTestList)
         {
             int32_t framesDecoded, decodeErrors, framesDropped;
             bool metricsSuccess = decoderTest.getDecoderMetrics(framesDecoded, decodeErrors, framesDropped);
-            UT_ASSERT_TRUE(metricsSuccess) << "Failed to get decoder metrics for decoder ID " << decoderTest.getDecoderId().value;
-            UT_LOG_INFO("Decoder Metrics [ID: %d]: Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
-                        decoderTest.getDecoderId().value, framesDecoded, decodeErrors, framesDropped);
+            UT_ASSERT_TRUE(metricsSuccess) << "Failed to get decoder metrics for decoder ID ";
+            UT_LOG_INFO("Decoder Metrics  Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
+                        framesDecoded, decodeErrors, framesDropped);
 
             // Validate metrics
             UT_ASSERT_TRUE(framesDecoded >= 0) << "Invalid frames decoded count";
@@ -1019,8 +1057,10 @@ public:
         UT_ASSERT_TRUE(beforeHeapMetrics.bytesUsed == afterHeapMetrics.bytesUsed) << "Heap bytes used mismatch";
         UT_ASSERT_TRUE(beforeHeapMetrics.bytesTotal == afterHeapMetrics.bytesTotal) << "Heap bytes total mismatch";
     }
+
 #endif
 
+#if 1
     void runConcurrentDecode(testConfiguration_t& testConfig, bool secureDecode, bool tunnelMode, bool concurrentDecodeConsume)
     {
         std::vector<std::unique_ptr<DecoderTest>> decoderTests;
@@ -1034,8 +1074,8 @@ public:
         decoderTests.reserve(mVideoDecoderList.size());
         futures.reserve(mVideoDecoderList.size());
 
-        UT_LOG_INFO("Launching decoding for stream: %s, codec: %s, secure: %d, tunnel: %d, concurrentDecodeConsume: %d",
-                    testConfig.streamName, videodecoder::toString(testConfig.codec).c_str(),
+        UT_LOG_INFO("Launching decoding for codec: %s, secure: %d, tunnel: %d, concurrentDecodeConsume: %d",
+                    videodecoder::toString(testConfig.codec).c_str(),
                     secureDecode, tunnelMode, concurrentDecodeConsume);
 
         for (const auto& [_decoderId, decoderHandle, controlListener, eventListener, capabilities] : mVideoDecoderList) {
@@ -1119,7 +1159,7 @@ public:
             UT_ASSERT_TRUE(false) << "Heap metrics mismatch";
         }
     }
-
+#endif
     void runTest(char *testName, bool secureMode, bool tunnelMode, bool concurrentMode)
     {
         vector<testConfiguration_t> testConfiguration;

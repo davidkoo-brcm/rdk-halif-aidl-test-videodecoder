@@ -97,12 +97,13 @@
 #include <unistd.h>
 #include <sys/syscall.h>
 #include <sys/types.h>
-
+#include <memory> // For std::unique_ptr
 
 #include "com/rdk/hal/avbuffer/IAVBuffer.h"
 #include "com/rdk/hal/avbuffer/BnAVBufferSpaceListener.h"
 //#include "com/rdk/hal/avbufferhelper.h"
 #include "IAVBufferHelper.h"
+
 
 
 #include "com/rdk/hal/videodecoder/IVideoDecoderManager.h"
@@ -175,15 +176,18 @@ extern std::vector<decoder_t> gVideodecoders_hfp;
 
 struct videoFrameMetadata {
         PixelFormat pixelFormat;
-        int32_t width;
-        int32_t height;
+        int32_t codedWidth;
+        int32_t codedHeight;
+        int colorDepth;
         Codec sourceCodec;
-        float frameRate;
+        int frameRateNumerator;
+	    int frameRateDenominator;
         DynamicRange dynamicRange;
         int32_t bitDepth;
         bool lowLatency;
         bool endOfStream;
         bool discontinuity;
+        ScanType scanType;
         AVSource source;
 };
 
@@ -192,7 +196,7 @@ struct DecodedVideoFrame_t {
     int64_t framePTS;
     std::chrono::steady_clock::time_point receiveTime;
     bool isMetaAvailable;
-    videoFrameMetadata metadata;
+    std::unique_ptr<com::rdk::hal::videodecoder::FrameMetadata> metadata; // Changed to unique_ptr
 };
 
 struct testConfiguration_t {
@@ -1133,61 +1137,54 @@ class VTS_L1_VideoDecoder : public UTCore {
     };
 
 class VideoDecoderControllerListener : public BnVideoDecoderControllerListener {
-    public:
+public:
+    VideoDecoderControllerListener() {}
+    virtual ~VideoDecoderControllerListener() = default;
 
-        VideoDecoderControllerListener() {};
-        virtual ~VideoDecoderControllerListener() = default;
-
-        Status onFrameOutput(int64_t nsPresentationTime, int64_t frameBufferHandle, const ::std::optional<FrameMetadata>& metadata) override
-        {
-            UT_LOG_INFO("onFrameOutput is received nsPresentationTime %lld FrameBufferHandle = 0x%llx ",nsPresentationTime,frameBufferHandle);
-            if (metadata.has_value())
-            {
-                const FrameMetadata& frameMeta = metadata.value();
-                UT_LOG_INFO("FrameMetadata:");
-                UT_LOG_INFO("  Pixel Aspect Ratio: %d:%d", frameMeta.parX, frameMeta.parY);
-                UT_LOG_INFO("  Source Aspect Ratio: %d:%d", frameMeta.sarX, frameMeta.sarY);
-                UT_LOG_INFO("  Coded Dimensions: width=%d, height=%d", frameMeta.codedWidth, frameMeta.codedHeight);
-                UT_LOG_INFO("  Active Display: x=%d, y=%d, width=%d, height=%d",
-                            frameMeta.activeX, frameMeta.activeY, frameMeta.activeWidth, frameMeta.activeHeight);
-                UT_LOG_INFO("  Color Depth: %d bits", frameMeta.colorDepth);
-                UT_LOG_INFO("  Pixel Format: %d", static_cast<int>(frameMeta.pixelFormat));
-                UT_LOG_INFO("  Dynamic Range: %d", static_cast<int>(frameMeta.dynamicRange));
-                UT_LOG_INFO("  Scan Type: %d", static_cast<int>(frameMeta.scanType));
-                UT_LOG_INFO("  AFD: %d", frameMeta.afd);
-                UT_LOG_INFO("  Frame Rate: %d/%d", frameMeta.frameRateNumerator, frameMeta.frameRateDenominator);
-                UT_LOG_INFO("  End of Stream: %d", frameMeta.endOfStream);
-                UT_LOG_INFO("  Discontinuity: %d", frameMeta.discontinuity);
-                UT_LOG_INFO("  Low Latency: %d", frameMeta.lowLatency);
-                UT_LOG_INFO("  Source: %d", static_cast<int>(frameMeta.source));
-
-                // Handle SHA1 field (byte array)
-                if (!frameMeta.sha1.empty()) {
-                    std::string sha1_hex;
-                    for (const auto& byte : frameMeta.sha1) {
-                        char buf[3];
-                        snprintf(buf, sizeof(buf), "%02x", static_cast<unsigned char>(byte));
-                        sha1_hex += buf;
-                    }
-                    UT_LOG_INFO("  SHA1: %s", sha1_hex.c_str());
-                } else {
-                    UT_LOG_INFO("  SHA1: (empty)");
-                }
-
-                // Handle extension (ParcelableHolder)
-                // Note: ParcelableHolder may require specific handling depending on its content
-                UT_LOG_INFO("  Extension: (ParcelableHolder present)");
-            } else {
-                UT_LOG_INFO("No FrameMetadata provided");
-            }
-            return Status::ok();
+    Status onFrameOutput(int64_t nsPresentationTime, int64_t frameBufferHandle, const ::std::optional<com::rdk::hal::videodecoder::FrameMetadata>& metadata) override {
+        UT_LOG_INFO("onFrameOutput received: nsPresentationTime=%lld, frameBufferHandle=0x%llx", nsPresentationTime, frameBufferHandle);
+        DecodedVideoFrame_t frame;
+        frame.framePTS = nsPresentationTime;
+        frame.receiveTime = std::chrono::steady_clock::now();
+        frame.isMetaAvailable = metadata.has_value();
+        if (metadata.has_value()) {
+            frame.metadata = std::make_unique<com::rdk::hal::videodecoder::FrameMetadata>(metadata.value()); // Create a copy
+            UT_LOG_INFO("FrameMetadata: width=%d, height=%d, pixelFormat=%d, dynamicRange=%d, frameRate=%d/%d",
+                        frame.metadata->codedWidth, frame.metadata->codedHeight,
+                        static_cast<int>(frame.metadata->pixelFormat), static_cast<int>(frame.metadata->dynamicRange),
+                        frame.metadata->frameRateNumerator, frame.metadata->frameRateDenominator);
+        } else {
+            UT_LOG_INFO("No FrameMetadata provided");
         }
-        Status onUserDataOutput(int64_t nsPresentationTime, const ::std::vector<uint8_t>& userData) override
+
         {
-            UT_LOG_INFO("onUserDataOutput is received ");
-            return Status::ok();
+            std::lock_guard<std::mutex> lock(mMutex);
+            mDecodedFrames.push_back(std::move(frame)); // Move is now possible
         }
-    };
+        mCV.notify_all();
+        return Status::ok();
+    }
+
+    Status onUserDataOutput(int64_t nsPresentationTime, const ::std::vector<uint8_t>& userData) override {
+        UT_LOG_INFO("onUserDataOutput received");
+        return Status::ok();
+    }
+
+    bool getNextFrame(DecodedVideoFrame_t& frame, std::chrono::milliseconds timeout) {
+        std::unique_lock<std::mutex> lock(mMutex);
+        if (mCV.wait_for(lock, timeout, [this]() { return !mDecodedFrames.empty(); })) {
+            frame = std::move(mDecodedFrames.front()); // Move is now possible
+            mDecodedFrames.pop_front();
+            return true;
+        }
+        return false;
+    }
+
+private:
+    std::mutex mMutex;
+    std::condition_variable mCV;
+    std::deque<DecodedVideoFrame_t> mDecodedFrames;
+};
 
 class VideoDecoderEventListener : public BnVideoDecoderEventListener {
     public:
