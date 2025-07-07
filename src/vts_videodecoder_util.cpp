@@ -122,6 +122,15 @@ DynamicRange videoDecoderStringToDynamicRange(const std::string& rangeStr) {
     return (it != dynamicRangeMap.end()) ? it->second : DynamicRange::UNKNOWN;
 }
 
+ScanType videoDecoderStringToScanType(const std::string& scanTypeStr) {
+    static const std::unordered_map<std::string, ScanType> scanTypeMap = {
+        {"PROGRESSIVE_FRAME", ScanType::PROGRESSIVE_FRAME},
+        {"INTERLACED_FRAME", ScanType::INTERLACED_FRAME}
+    };
+    auto it = scanTypeMap.find(scanTypeStr);
+    return (it != scanTypeMap.end()) ? it->second : ScanType::PROGRESSIVE_FRAME; // Default fallback
+}
+
 OperationalMode videoDecoderStringToOperationalMode(const std::string& modeStr) {
     static const std::unordered_map<std::string, OperationalMode> modeMap = {
         {"TUNNELLED", OperationalMode::TUNNELLED},
@@ -141,7 +150,7 @@ PixelFormat videoDecoderStringToPixelFormat(const std::string& formatStr) {
     static const std::unordered_map<std::string, PixelFormat> pixelFormatMap = {
         {"YCBCR422", PixelFormat::YCBCR422},
         {"YCBCR444", PixelFormat::YCBCR444},
-        {"NV12", PixelFormat::YCBCR420},
+        {"YCBCR420", PixelFormat::YCBCR420},
         {"RGB", PixelFormat::RGB},
         {"NATIVE", PixelFormat::NATIVE}
     };
@@ -527,7 +536,7 @@ void* vts_kvp_create_instance(char *fileName)
     ut_kvp_instance_t* instance;
     ut_kvp_status_t result;
 
-    UT_LOG("In %s", __FUNCTION__);
+    UT_LOG_INFO("In %s", __FUNCTION__);
 
     instance = ut_kvp_createInstance();
 
@@ -546,7 +555,7 @@ void* vts_kvp_create_instance(char *fileName)
         return nullptr;
     }
 
-    UT_LOG("Out %s", __FUNCTION__);
+    UT_LOG_INFO("Out %s", __FUNCTION__);
 
     return (ut_kvp_instance_t*)instance;
 }
@@ -625,10 +634,12 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, char *module,
         string frameRateDenominator = prefix + "frameRateDenominator";
         string pixelFormat = prefix + "pixelFormat";
         string dynamicRange = prefix + "dynamic_range";
-        string colourSpace = prefix + "colour_space";
+        string scanType = prefix + "dynamic_range";
         string colorDepth = prefix + "colorDepth";
-        string bitRate = prefix + "bit_rate";
+        string bit_rate = prefix + "bit_rate";
         string noOfFrames = prefix + "no_of_frames";
+        string decodeErrors = prefix + "decodeErrors";
+        string framesDropped = prefix + "framesDropped";
         string frameSize = prefix + "frame_size";
         string errorFrames = prefix + "error_frames";
         string framePTS = prefix  + ".PTS";
@@ -640,6 +651,9 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, char *module,
         string flushPts = prefix + "flush_pts";
         string flushResetPts = prefix + "flush_reset_pts";
         string eosPts = prefix + "eos_pts";
+        string endOfStream = prefix + "endOfStream";
+        string discontinuity = prefix + "discontinuity";
+        string lowLatency = prefix + "lowLatency";
 
         // Input stream path
         status = ut_kvp_getStringField(kvpTestInstance, input.c_str(), tempBuffer, UT_KVP_MAX_ELEMENT_SIZE);
@@ -693,27 +707,27 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, char *module,
             testDetails.dynamicRange = videoDecoderStringToDynamicRange(string(tempBuffer));
         }
 
-        // Colour space
-        status = ut_kvp_getStringField(kvpTestInstance, colourSpace.c_str(), tempBuffer, UT_KVP_MAX_ELEMENT_SIZE);
+        // scanType
+        status = ut_kvp_getStringField(kvpTestInstance, scanType.c_str(), tempBuffer, UT_KVP_MAX_ELEMENT_SIZE);
         if (status == UT_KVP_STATUS_SUCCESS)
         {
-            testDetails.colourSpace = string(tempBuffer);
-            UT_LOG_INFO("Colour space: %s", testDetails.colourSpace.c_str());
-        }
-        else
-        {
-            UT_LOG_WARNING("Colour space not found, defaulting to empty");
-            testDetails.colourSpace = "";
+            testDetails.scanType = videoDecoderStringToScanType(string(tempBuffer));
         }
 
         // Color depth
         testDetails.colorDepth = ut_kvp_getUInt32Field(kvpTestInstance, colorDepth.c_str());
 
         // Bit rate
-        testDetails.bitRate = ut_kvp_getUInt32Field(kvpTestInstance, bitRate.c_str());
+        testDetails.bit_rate = ut_kvp_getUInt32Field(kvpTestInstance, bit_rate.c_str());
 
         // Number of frames
         testDetails.no_of_frames = ut_kvp_getUInt32Field(kvpTestInstance, noOfFrames.c_str());
+
+        // Number of Error frames
+        testDetails.decodeErrors = ut_kvp_getUInt32Field(kvpTestInstance, decodeErrors.c_str());
+
+        // Number of Dropped frames
+        testDetails.framesDropped = ut_kvp_getUInt32Field(kvpTestInstance, framesDropped.c_str());
 
         // Error frames
         if (ut_kvp_fieldPresent(kvpTestInstance, errorFrames.c_str()))
@@ -769,6 +783,9 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, char *module,
         testDetails.flushPts = ut_kvp_getUInt64Field(kvpTestInstance, flushPts.c_str());
         testDetails.flushResetPts = ut_kvp_getUInt64Field(kvpTestInstance, flushResetPts.c_str());
         testDetails.eosPts = ut_kvp_getUInt64Field(kvpTestInstance, eosPts.c_str());
+        testDetails.endOfStream = UT_KVP_PROFILE_GET_BOOL( endOfStream.c_str());
+        testDetails.discontinuity = UT_KVP_PROFILE_GET_BOOL( discontinuity.c_str());
+        testDetails.lowLatency = UT_KVP_PROFILE_GET_BOOL(lowLatency.c_str());
 
         testConfiguration.push_back(testDetails);
     }

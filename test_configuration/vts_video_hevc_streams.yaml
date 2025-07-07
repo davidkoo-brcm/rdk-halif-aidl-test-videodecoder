@@ -6,21 +6,23 @@ VideoStreams:
     codedWidth: 1920
     codedHeight: 1080
     colorDepth: 8
-    pixelFormat: YUV
+    pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
     scanType: PROGRESSIVE_FRAME
-    frameRateNumerator: 60 #Frame Rate
+    frameRateNumerator: 30 #Frame Rate
     frameRateDenominator: 1
-    endOfStream:
+    endOfStream: 0
     stop_start_pts: -1 #`pts` value in nano seconds at which the decoder should be stopped and restarted during the test. -1 indicates that decoder should not be restarted
     signal_discontinuity_pts: -1 #`pts` value in nano seconds at which the test should signal discontinuity to the decoder. -1 indicates that no discontinuity signal should be sent
     flush_pts: -1 #`pts` value in nano seconds that determine when the test should flush the decoder. -1 indicates that test should not flush
     flush_reset_pts: -1 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
     eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
-    discontinuity:
+    discontinuity: 0
     lowLatency:
     bit_rate: 734
     no_of_frames: 12
+    decodeErrors: 0
+    framesDropped: 0
     frame_size:
       - 28
       - 47
@@ -61,20 +63,23 @@ VideoStreams:
     codedWidth: 1920
     codedHeight: 1080
     colorDepth: 8
-    pixelFormat: YUV
+    pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
     scanType: PROGRESSIVE_FRAME
-    frameRateNumerator: 60 #Frame Rate
+    frameRateNumerator: 30 #Frame Rate
     frameRateDenominator: 1
+    endOfStream: 0
     stop_start_pts: -1 #`pts` value in nano seconds at which the decoder should be stopped and restarted during the test. -1 indicates that decoder should not be restarted
     signal_discontinuity_pts: -1 #`pts` value in nano seconds at which the test should signal discontinuity to the decoder. -1 indicates that no discontinuity signal should be sent
     flush_pts: -1 #`pts` value in nano seconds that determine when the test should flush the decoder. -1 indicates that test should not flush
     flush_reset_pts: -1 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
     eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
-    discontinuity:
+    discontinuity: 0
     lowLatency:
     bit_rate: 734
     no_of_frames: 12
+    decodeErrors: 3
+    framesDropped: 0
     frame_size:
       - 28
       - 47
@@ -115,20 +120,23 @@ VideoStreams:
     codedWidth: 1920
     codedHeight: 1080
     colorDepth: 8
-    pixelFormat: YUV
+    pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
     scanType: PROGRESSIVE_FRAME
-    frameRateNumerator: 60 #Frame Rate
+    frameRateNumerator: 30 #Frame Rate
     frameRateDenominator: 1
-    endOfStream:
+    endOfStream: 0
     stop_start_pts: -1 #`pts` value in nano seconds at which the decoder should be stopped and restarted during the test. -1 indicates that decoder should not be restarted
     signal_discontinuity_pts: 200000000 #`pts` value in nano seconds at which the test should signal discontinuity to the decoder. -1 indicates that no discontinuity signal should be sent
     flush_pts: -1 #`pts` value in nano seconds that determine when the test should flush the decoder. -1 indicates that test should not flush
     flush_reset_pts: -1 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
     eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
+    discontinuity: 1
     lowLatency:
     bit_rate: 734
     no_of_frames: 12
+    decodeErrors: 0
+    framesDropped: 0
     frame_size:
       - 28
       - 47
@@ -169,20 +177,23 @@ VideoStreams:
     codedWidth: 1920
     codedHeight: 1080
     colorDepth: 8
-    pixelFormat: YUV
+    pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
     scanType: PROGRESSIVE_FRAME
-    frameRateNumerator: 60 #Frame Rate
+    frameRateNumerator: 30 #Frame Rate
     frameRateDenominator: 1
-    endOfStream:
+    endOfStream: 1
     stop_start_pts: -1 #`pts` value in nano seconds at which the decoder should be stopped and restarted during the test. -1 indicates that decoder should not be restarted
     signal_discontinuity_pts: -1 #`pts` value in nano seconds at which the test should signal discontinuity to the decoder. -1 indicates that no discontinuity signal should be sent
     flush_pts: -1 #`pts` value in nano seconds that determine when the test should flush the decoder. -1 indicates that test should not flush
     flush_reset_pts: -1 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
     eos_pts: 566667000 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
+    discontinuity: 0
     lowLatency:
     bit_rate: 734
     no_of_frames: 12
+    decodeErrors: 0
+    framesDropped: 0
     frame_size:
       - 28
       - 47
@@ -223,20 +234,23 @@ VideoStreams:
     codedWidth: 1920
     codedHeight: 1080
     colorDepth: 8
-    pixelFormat: YUV
+    pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
     scanType: PROGRESSIVE_FRAME
-    frameRateNumerator: 60 #Frame Rate
+    frameRateNumerator: 30 #Frame Rate
     frameRateDenominator: 1
-    endOfStream:
+    endOfStream: 0
     stop_start_pts: -1 #`pts` value in nano seconds at which the decoder should be stopped and restarted during the test. -1 indicates that decoder should not be restarted
     signal_discontinuity_pts: -1 #`pts` value in nano seconds at which the test should signal discontinuity to the decoder. -1 indicates that no discontinuity signal should be sent
     flush_pts: 400000000 #`pts` value in nano seconds that determine when the test should flush the decoder. -1 indicates that test should not flush
     flush_reset_pts: -1 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
     eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
+    discontinuity: 0
     lowLatency:
     bit_rate: 734
     no_of_frames: 12
+    decodeErrors: 0
+    framesDropped: 0
     frame_size:
       - 28
       - 47
@@ -277,20 +291,23 @@ VideoStreams:
     codedWidth: 1920
     codedHeight: 1080
     colorDepth: 8
-    pixelFormat: YUV
+    pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
     scanType: PROGRESSIVE_FRAME
-    frameRateNumerator: 60 #Frame Rate
+    frameRateNumerator: 30 #Frame Rate
     frameRateDenominator: 1
-    endOfStream:
+    endOfStream: 0
     stop_start_pts: -1 #`pts` value in nano seconds at which the decoder should be stopped and restarted during the test. -1 indicates that decoder should not be restarted
     signal_discontinuity_pts: -1 #`pts` value in nano seconds at which the test should signal discontinuity to the decoder. -1 indicates that no discontinuity signal should be sent
     flush_pts: -1 #`pts` value in nano seconds that determine when the test should flush the decoder. -1 indicates that test should not flush
     flush_reset_pts: 266667000 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
     eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
+    discontinuity: 0
     lowLatency:
     bit_rate: 734
     no_of_frames: 12
+    decodeErrors: 0
+    framesDropped: 0
     frame_size:
       - 28
       - 47

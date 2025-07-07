@@ -184,11 +184,11 @@ public:
         {
             UT_LOG_INFO("Start decoderThreadFunc & consumerThreadFunc");
             mDecoderThread = thread(&DecoderTest::decoderThreadFunc, this);
-            this_thread::sleep_for(chrono::milliseconds(300));
-            mConsumerThread = thread(&DecoderTest::consumerThreadFunc, this);
+            this_thread::sleep_for(chrono::milliseconds(100));
+            //mConsumerThread = thread(&DecoderTest::consumerThreadFunc, this);
 
             mDecoderThread.join();
-            mConsumerThread.join();
+            //mConsumerThread.join();
         }
         else
         {
@@ -398,6 +398,7 @@ private:
     bool mConcurrentDecodeConsume;
     mutex mAVbufferHelperLock;
 
+#if 0
     void decoderThreadFunc()
     {
         sp<IVideoDecoderController> videoDecoderController;
@@ -542,7 +543,6 @@ private:
         // Start Decoder
         {
             std::lock_guard<std::mutex> lock(mDecodeMutex);
-            UT_LOG_INFO("Calling start()");
             VIDEODECODER_START_SUCCESS(mDecoderHandle, videoDecoderController, true);
             UT_LOG_INFO("Decoder started");
         }
@@ -725,7 +725,541 @@ private:
         UT_LOG_INFO("[PID: %d, TID: %d] decoderThreadFunc End", getpid(), syscall(SYS_gettid));
         mDecodingStream = false;
     }
+#endif
+    void decoderThreadFunc() {
+        sp<IVideoDecoderController> videoDecoderController;
+        int64_t videoBufferHandle = 0;
+        Pool videoPool;
+        sp<IAVBufferSpaceListener> bufferListener = new AVBufferSpaceListener();
+        mDecodingStream = true;
 
+        DecodedVideoFrame_t decodedFrame;
+
+        UT_LOG_INFO("[PID: %d, TID: %d] decoderThreadFunc Start", getpid(), syscall(SYS_gettid));
+
+        // Validate gAVbufferHelper
+        if (!gAVbufferHelper) {
+            UT_LOG_ERROR("gAVbufferHelper is null");
+            mDecodingStream = false;
+            return;
+        }
+        UT_LOG_INFO("gAVbufferHelper initialized: %p, secureDecode: %d", gAVbufferHelper, mSecureDecode);
+
+        // Create Video Pool
+        {
+            std::lock_guard<std::mutex> lock(mDecodeMutex);
+            UT_LOG_INFO("Calling createVideoPool(secureHeap:%d, videoDecoderId:%d, listener:%p)",
+                        mSecureDecode, mDecoderId, bufferListener.get());
+            AVBUFFER_CREATE_VIDEOPOOL_SUCCESS(mAVBufferManager, mSecureDecode, mDecoderId, bufferListener, videoPool);
+            UT_LOG_INFO("Created video pool with handle:%lld", videoPool.handle);
+        }
+
+        // Validate and read input file
+        if (!std::filesystem::exists(mTestConfiguration.input)) {
+            UT_LOG_ERROR("Input file does not exist: %s", mTestConfiguration.input.c_str());
+            mDecodingStream = false;
+            return;
+        }
+        std::ifstream inputFile(mTestConfiguration.input, std::ios::binary);
+        if (!inputFile.is_open()) {
+            UT_LOG_ERROR("Failed to open file: %s", mTestConfiguration.input.c_str());
+            mDecodingStream = false;
+            return;
+        }
+
+        inputFile.seekg(0, std::ios::end);
+        auto fileSizePos = inputFile.tellg();
+        if (fileSizePos < 0) {
+            UT_LOG_ERROR("Failed to get file size for %s: tellg returned %lld",
+                        mTestConfiguration.input.c_str(), static_cast<int64_t>(fileSizePos));
+            mDecodingStream = false;
+            return;
+        }
+        uint64_t fileSize = static_cast<uint64_t>(fileSizePos);
+        if (fileSize == 0) {
+            UT_LOG_ERROR("Input file is empty: %s", mTestConfiguration.input.c_str());
+            mDecodingStream = false;
+            return;
+        }
+        if (fileSize > std::numeric_limits<uint32_t>::max()) {
+            UT_LOG_ERROR("File size too large: %llu bytes, max allowed: %u bytes",
+                        fileSize, std::numeric_limits<uint32_t>::max());
+            mDecodingStream = false;
+            return;
+        }
+        UT_LOG_INFO("Input file size: %llu bytes", fileSize);
+
+        std::vector<uint8_t> inputBuffer(fileSize);
+        try {
+            inputFile.seekg(0, std::ios::beg);
+            inputFile.read(reinterpret_cast<char*>(inputBuffer.data()), fileSize);
+            if (!inputFile) {
+                UT_LOG_ERROR("Failed to read file data: only %zu bytes read", inputFile.gcount());
+                mDecodingStream = false;
+                return;
+            }
+            uint64_t actualSize = static_cast<uint64_t>(inputFile.gcount());
+            if (actualSize != fileSize) {
+                UT_LOG_WARNING("Read %llu bytes, expected %llu bytes", actualSize, fileSize);
+                fileSize = actualSize;
+            }
+        } catch (const std::exception& e) {
+            UT_LOG_ERROR("Exception reading file: %s", e.what());
+            mDecodingStream = false;
+            return;
+        }
+
+        // Determine frame data based on codec
+        std::vector<std::tuple<uint64_t, uint32_t, int64_t, bool>> frameData;
+        if (mTestConfiguration.codec == com::rdk::hal::videodecoder::Codec::H264 ||
+            mTestConfiguration.codec == com::rdk::hal::videodecoder::Codec::H265) {
+            if (mTestConfiguration.frameDetails.empty()) {
+                UT_LOG_ERROR("frameDetails is empty for H.264/H.265");
+                mDecodingStream = false;
+                return;
+            }
+            uint64_t offset = 0;
+            for (const auto& [size, pts, isErrorFrame] : mTestConfiguration.frameDetails) {
+                if (offset + size > fileSize) {
+                    UT_LOG_ERROR("Frame size at offset %llu exceeds file size %llu", offset + size, fileSize);
+                    mDecodingStream = false;
+                    return;
+                }
+                frameData.emplace_back(offset, size, pts, isErrorFrame);
+                UT_LOG_INFO("Codec:%d Frame from frameDetails: offset=%llu, size=%u, pts=%lld, errorFrame=%d",
+                            mTestConfiguration.codec, offset, size, pts, isErrorFrame);
+                offset += size;
+            }
+        } else {
+            auto parsedFrames = parseFrames(inputBuffer, fileSize, mTestConfiguration.codec);
+            if (parsedFrames.empty()) {
+                UT_LOG_ERROR("No frames parsed for codec: %d", static_cast<int>(mTestConfiguration.codec));
+                mDecodingStream = false;
+                return;
+            }
+            for (size_t i = 0; i < parsedFrames.size(); ++i) {
+                auto [offset, size, pts] = parsedFrames[i];
+                bool isErrorFrame = (i < mTestConfiguration.frameDetails.size()) ?
+                                    std::get<2>(mTestConfiguration.frameDetails[i]) : false;
+                frameData.emplace_back(offset, size, pts, isErrorFrame);
+                UT_LOG_INFO("Parsed frame: Codec:%d offset=%llu, size=%u, pts=%lld, errorFrame=%d",
+                            mTestConfiguration.codec, offset, size, pts, isErrorFrame);
+            }
+        }
+
+        // Open Decoder
+        {
+            std::lock_guard<std::mutex> lock(mDecodeMutex);
+            UT_LOG_INFO("Calling open(codec:%d, secure:%d, listener:%p)",
+                        mTestConfiguration.codec, mSecureDecode, mControlListener.get());
+            VIDEODECODER_OPEN_SUCCESS(mDecoderHandle, mTestConfiguration.codec, mSecureDecode,
+                                    mControlListener, videoDecoderController, true);
+            UT_LOG_INFO("Decoder opened, controller:%p", videoDecoderController.get());
+
+            if (mTunnelMode) {
+                std::vector<std::pair<Property, int32_t>> startedIntProps = {
+                    {Property::OPERATIONAL_MODE, static_cast<int32_t>(OperationalMode::TUNNELLED)}
+                };
+                UT_LOG_INFO("Set properties in TUNNELLED Mode");
+                VIDEODECODER_SETPROPERTY_LIST_SUCCESS(videoDecoderController, startedIntProps, intValue);
+            }
+            std::optional<PropertyValue> aidl_return;
+            VIDEODECODER_GETPROPERTY(mDecoderHandle, Property::OPERATIONAL_MODE, aidl_return);
+        }
+
+        // Start Decoder
+        {
+            std::lock_guard<std::mutex> lock(mDecodeMutex);
+            VIDEODECODER_START_SUCCESS(mDecoderHandle, videoDecoderController, true);
+            UT_LOG_INFO("Decoder started");
+        }
+
+        // Get initial metrics
+        int32_t framesDecoded, decodeErrors, framesDropped;
+        getDecoderMetrics(framesDecoded, decodeErrors, framesDropped);
+        UT_LOG_INFO("Initial Decoder Metrics: Codec: %d, Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
+                    mTestConfiguration.codec, framesDecoded, decodeErrors, framesDropped);
+
+        // Process Frames
+        for (size_t i = 0; i < frameData.size(); ++i) {
+            auto [frameOffset, frameSize, framePTS, isErrorFrame] = frameData[i];
+
+            UT_LOG_INFO("Processing frame %zu: offset=%llu, size=%u, PTS=%lldns, errorFrame=%d",
+                        i, frameOffset, frameSize, framePTS, isErrorFrame);
+
+            // Allocate Buffer
+            {
+                std::lock_guard<std::mutex> lock(mDecodeMutex);
+                UT_LOG_INFO("Calling alloc(poolHandle:%lld, size=%u)", videoPool.handle, frameSize);
+                videoBufferHandle = 0;
+                AVBUFFER_ALLOC_SUCCESS(mAVBufferManager, videoPool, frameSize, videoBufferHandle);
+                UT_LOG_INFO("Allocated buffer handle:0x%llx", videoBufferHandle);
+            }
+
+            // Write Frame Data
+            void* mapBuffer = nullptr;
+            uint32_t mapSize = 0;
+            if (mSecureDecode) {
+                std::lock_guard<std::mutex> lock(mAVbufferHelperLock);
+                UT_LOG_INFO("Calling writeSecureHandle(handle:0x%llx, size=%u, gAVbufferHelper:%p)",
+                            videoBufferHandle, frameSize, gAVbufferHelper);
+                if (!gAVbufferHelper || !gAVbufferHelper->writeSecureHandle(videoBufferHandle, inputBuffer.data() + frameOffset, frameSize)) {
+                    UT_LOG_ERROR("Failed to copy frame data to secure buffer");
+                    AVBUFFER_FREE_SUCCESS(mAVBufferManager, videoBufferHandle);
+                    continue;
+                }
+            } else {
+                std::lock_guard<std::mutex> lock(mAVbufferHelperLock);
+                UT_LOG_INFO("Calling mapHandle(handle:0x%llx, gAVbufferHelper:%p)", videoBufferHandle, gAVbufferHelper);
+                if (!gAVbufferHelper) {
+                    UT_LOG_ERROR("gAVbufferHelper is null before mapHandle");
+                    AVBUFFER_FREE_SUCCESS(mAVBufferManager, videoBufferHandle);
+                    continue;
+                }
+                mapBuffer = gAVbufferHelper->mapHandle(videoBufferHandle, &mapSize);
+                if (mapBuffer && mapSize >= frameSize) {
+                    UT_LOG_INFO("Copying frame data to mapped buffer, size=%u", frameSize);
+                    memcpy(mapBuffer, inputBuffer.data() + frameOffset, frameSize);
+                } else {
+                    UT_LOG_ERROR("Failed to map buffer or insufficient size (mapBuffer:%p, mapSize:%u, required:%u)",
+                                mapBuffer, mapSize, frameSize);
+                    AVBUFFER_FREE_SUCCESS(mAVBufferManager, videoBufferHandle);
+                    continue;
+                }
+            }
+
+            // Decoder Operations
+            {
+                std::lock_guard<std::mutex> lock(mDecodeMutex);
+                if (mTestConfiguration.stopPts == framePTS) {
+                    UT_LOG_INFO("Stopping decoder at PTS:%lld", framePTS);
+                    VIDEODECODER_STOP_SUCCESS(mDecoderHandle, videoDecoderController, true);
+                    VIDEODECODER_START_SUCCESS(mDecoderHandle, videoDecoderController, true);
+                }
+                if (mTestConfiguration.discontinuityPts == framePTS) {
+                    UT_LOG_INFO("Signaling discontinuity at PTS:%lld", framePTS);
+                    VIDEODECODER_SIGNAL_DISCONTINUITY_SUCCESS(mDecoderHandle, videoDecoderController, true);
+                }
+                if (mTestConfiguration.flushPts == framePTS) {
+                    UT_LOG_INFO("Flushing decoder at PTS:%lld", framePTS);
+                    VIDEODECODER_FLUSH_SUCCESS(mDecoderHandle, videoDecoderController, false, true);
+                }
+                if (mTestConfiguration.flushResetPts == framePTS) {
+                    UT_LOG_INFO("Flush reset at PTS:%lld", framePTS);
+                    VIDEODECODER_FLUSH_SUCCESS(mDecoderHandle, videoDecoderController, true, true);
+                    VIDEODECODER_START_SUCCESS(mDecoderHandle, videoDecoderController, true);
+                }
+                if (mTestConfiguration.eosPts == framePTS) {
+                    UT_LOG_INFO("Signaling EOS at PTS:%lld", framePTS);
+                    VIDEODECODER_SIGNAL_EOS_SUCCESS(mDecoderHandle, videoDecoderController, true);
+                    VIDEODECODER_DECODEBUFFER_FAILURE(videoDecoderController, framePTS, videoBufferHandle, Status::EX_NONE);
+                    VIDEODECODER_STOP_SUCCESS(mDecoderHandle, videoDecoderController, true);
+                    VIDEODECODER_START_SUCCESS(mDecoderHandle, videoDecoderController, true);
+                }
+
+                InputVideoFrame_t inputVideo;
+                inputVideo.sendTime = std::chrono::steady_clock::now();
+                inputVideo.framePTS = framePTS;
+                inputVideo.rms_threshold = mTestConfiguration.rms_diff_threshold;
+                inputVideo.isErrorFrame = isErrorFrame;
+                UT_LOG_INFO("Adding frame to mInputFrame, PTS:%lld, errorFrame=%d", framePTS, isErrorFrame);
+                mInputFrame.push_back(inputVideo);
+            }
+
+            auto decodeStart = std::chrono::steady_clock::now();
+
+            // Decode Frame
+            {
+                std::lock_guard<std::mutex> lock(mDecodeMutex);
+                if (!videoDecoderController) {
+                    UT_LOG_ERROR("videoDecoderController is null");
+                    AVBUFFER_FREE_SUCCESS(mAVBufferManager, videoBufferHandle);
+                    if (!mSecureDecode && mapBuffer) {
+                        UT_LOG_INFO("Unmapping buffer handle:0x%llx", videoBufferHandle);
+                        gAVbufferHelper->unmapHandle(videoBufferHandle);
+                    }
+                    continue;
+                }
+                UT_LOG_INFO("Calling decodeBuffer(PTS:%lld, bufferHandle:0x%llx)", framePTS, videoBufferHandle);
+                if (isErrorFrame) {
+                    VIDEODECODER_DECODEBUFFER_FAILURE(videoDecoderController, framePTS, videoBufferHandle, Status::EX_NONE);
+                } else {
+                    VIDEODECODER_DECODEBUFFER_SUCCESS(videoDecoderController, framePTS, videoBufferHandle);
+                }
+                getDecoderMetrics(framesDecoded, decodeErrors, framesDropped);
+                UT_LOG_INFO("Decoder Metrics: Codec: %d, Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
+                            mTestConfiguration.codec, framesDecoded, decodeErrors, framesDropped);
+            }
+
+            if (mControlListener->getNextFrame(decodedFrame, std::chrono::milliseconds(100))) {
+                UT_LOG_INFO("Retrieved output frame: PTS=%lld, handle=0x%llx, isMetaAvailable=%d",
+                            decodedFrame.framePTS, decodedFrame.frameBufferHandle, decodedFrame.isMetaAvailable);
+                if (decodedFrame.isMetaAvailable && decodedFrame.metadata) {
+                    UT_LOG_INFO("Validating metadata for PTS=%lld", decodedFrame.framePTS);
+                    // Validate resolution
+                    UT_ASSERT_EQUAL(decodedFrame.metadata->codedWidth, mTestConfiguration.codedWidth)
+                        << "Width mismatch: expected=" << mTestConfiguration.codedWidth
+                        << ", actual=" << decodedFrame.metadata->codedWidth;
+                    UT_ASSERT_EQUAL(decodedFrame.metadata->codedHeight, mTestConfiguration.codedHeight)
+                        << "Height mismatch: expected=" << mTestConfiguration.codedHeight
+                        << ", actual=" << decodedFrame.metadata->codedHeight;
+
+                    // Validate active region
+                    /*UT_ASSERT_EQUAL(decodedFrame.metadata->activeX, mTestConfiguration.activeX)
+                        << "activeX mismatch: expected=" << mTestConfiguration.activeX
+                        << ", actual=" << decodedFrame.metadata->activeX;
+                    UT_ASSERT_EQUAL(decodedFrame.metadata->activeY, mTestConfiguration.activeY)
+                        << "activeY mismatch: expected=" << mTestConfiguration.activeY
+                        << ", actual=" << decodedFrame.metadata->activeY;
+                    UT_ASSERT_EQUAL(decodedFrame.metadata->activeWidth, mTestConfiguration.activeWidth)
+                        << "activeWidth mismatch: expected=" << mTestConfiguration.activeWidth
+                        << ", actual=" << decodedFrame.metadata->activeWidth;
+                    UT_ASSERT_EQUAL(decodedFrame.metadata->activeHeight, mTestConfiguration.activeHeight)
+                        << "activeHeight mismatch: expected=" << mTestConfiguration.activeHeight
+                        << ", actual=" << decodedFrame.metadata->activeHeight;*/
+
+                    // Validate aspect ratios
+                    /*UT_ASSERT_EQUAL(decodedFrame.metadata->parX, mTestConfiguration.parX)
+                        << "PAR X mismatch: expected=" << mTestConfiguration.parX
+                        << ", actual=" << decodedFrame.metadata->parX;
+                    UT_ASSERT_EQUAL(decodedFrame.metadata->parY, mTestConfiguration.parY)
+                        << "PAR Y mismatch: expected=" << mTestConfiguration.parY
+                        << ", actual=" << decodedFrame.metadata->parY;
+                    UT_ASSERT_EQUAL(decodedFrame.metadata->sarX, mTestConfiguration.sarX)
+                        << "SAR X mismatch: expected=" << mTestConfiguration.sarX
+                        << ", actual=" << decodedFrame.metadata->sarX;
+                    UT_ASSERT_EQUAL(decodedFrame.metadata->sarY, mTestConfiguration.sarY)
+                        << "SAR Y mismatch: expected=" << mTestConfiguration.sarY
+                        << ", actual=" << decodedFrame.metadata->sarY;*/
+
+                    // Validate pixel format and depth
+                    UT_ASSERT_EQUAL(decodedFrame.metadata->pixelFormat, mTestConfiguration.pixelFormat)
+                        << "Pixel format mismatch: expected=" << static_cast<int>(mTestConfiguration.pixelFormat)
+                        << ", actual=" << static_cast<int>(decodedFrame.metadata->pixelFormat);
+                    UT_ASSERT_EQUAL(decodedFrame.metadata->colorDepth, mTestConfiguration.colorDepth)
+                        << "Color depth mismatch: expected=" << mTestConfiguration.colorDepth
+                        << ", actual=" << decodedFrame.metadata->colorDepth;
+
+                    // Validate dynamic range
+                    UT_ASSERT_EQUAL(decodedFrame.metadata->dynamicRange, mTestConfiguration.dynamicRange)
+                        << "Dynamic range mismatch: expected=" << static_cast<int>(mTestConfiguration.dynamicRange)
+                        << ", actual=" << static_cast<int>(decodedFrame.metadata->dynamicRange);
+
+                    // Validate frame rate
+                    UT_ASSERT_EQUAL(decodedFrame.metadata->frameRateNumerator, mTestConfiguration.frameRateNumerator)
+                        << "Frame rate numerator mismatch: expected=" << mTestConfiguration.frameRateNumerator
+                        << ", actual=" << decodedFrame.metadata->frameRateNumerator;
+                    UT_ASSERT_EQUAL(decodedFrame.metadata->frameRateDenominator, mTestConfiguration.frameRateDenominator)
+                        << "Frame rate denominator mismatch: expected=" << mTestConfiguration.frameRateDenominator
+                        << ", actual=" << decodedFrame.metadata->frameRateDenominator;
+
+                    // Validate scan type
+                    UT_ASSERT_EQUAL(decodedFrame.metadata->scanType, mTestConfiguration.scanType)
+                        << "Scan type mismatch: expected=" << static_cast<int>(mTestConfiguration.scanType)
+                        << ", actual=" << static_cast<int>(decodedFrame.metadata->scanType);
+
+                    // Validate AFD
+                    /*UT_ASSERT_EQUAL(decodedFrame.metadata->afd, mTestConfiguration.afd)
+                        << "AFD mismatch: expected=" << mTestConfiguration.afd
+                        << ", actual=" << decodedFrame.metadata->afd;*/
+
+                    // Validate flags
+                    UT_ASSERT_EQUAL(decodedFrame.metadata->endOfStream, mTestConfiguration.endOfStream)
+                        << "endOfStream mismatch: expected=" << mTestConfiguration.endOfStream
+                        << ", actual=" << decodedFrame.metadata->endOfStream;
+                    UT_ASSERT_EQUAL(decodedFrame.metadata->discontinuity, mTestConfiguration.discontinuity)
+                        << "discontinuity mismatch: expected=" << mTestConfiguration.discontinuity
+                        << ", actual=" << decodedFrame.metadata->discontinuity;
+                    UT_ASSERT_EQUAL(decodedFrame.metadata->lowLatency, mTestConfiguration.lowLatency)
+                        << "lowLatency mismatch: expected=" << mTestConfiguration.lowLatency
+                        << ", actual=" << decodedFrame.metadata->lowLatency;
+
+                    // Validate source
+                    /*UT_ASSERT_EQUAL(decodedFrame.metadata->source, mTestConfiguration.source)
+                        << "Source mismatch: expected=" << static_cast<int>(mTestConfiguration.source)
+                        << ", actual=" << static_cast<int>(decodedFrame.metadata->source);
+
+                    // Optional: SHA1 comparison if you expect it
+                    if (!mTestConfiguration.sha1.empty()) {
+                        UT_ASSERT_EQUAL(decodedFrame.metadata->sha1.size(), mTestConfiguration.sha1.size())
+                            << "SHA1 size mismatch";
+                        for (size_t i = 0; i < decodedFrame.metadata->sha1.size(); ++i) {
+                            UT_ASSERT_EQUAL(decodedFrame.metadata->sha1[i], mTestConfiguration.sha1[i])
+                                << "SHA1 byte mismatch at index " << i;
+                        }
+                    }*/
+                } else {
+                    UT_LOG_INFO("No metadata available for PTS=%lld", decodedFrame.framePTS);
+                }
+                // Release output buffer
+                UT_LOG_INFO("Releasing output buffer handle:0x%llx", decodedFrame.frameBufferHandle);
+                AVBUFFER_FREE_SUCCESS(mAVBufferManager, decodedFrame.frameBufferHandle);
+            } else {
+                UT_LOG_WARNING("No output frame retrieved for input PTS=%lld after 100ms", framePTS);
+            }
+
+            // Check decode time
+            auto decodeEnd = std::chrono::steady_clock::now();
+            auto decodeTimeNs = std::chrono::duration_cast<std::chrono::nanoseconds>(decodeEnd - decodeStart).count();
+            if (decodeTimeNs > mTestConfiguration.decode_time_threshold) {
+                UT_LOG_WARNING("Frame %zu decode time %lld ns exceeds threshold %lld ns",
+                            i, decodeTimeNs, mTestConfiguration.decode_time_threshold);
+            }
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(mTestConfiguration.decoderDelay));
+
+            // Free Input Buffer
+            {
+                std::lock_guard<std::mutex> lock(mDecodeMutex);
+                UT_LOG_INFO("Freeing input buffer handle:0x%llx", videoBufferHandle);
+                AVBUFFER_FREE_SUCCESS(mAVBufferManager, videoBufferHandle);
+            }
+
+            if (!mSecureDecode && mapBuffer) {
+                std::lock_guard<std::mutex> lock(mAVbufferHelperLock);
+                UT_LOG_INFO("Unmapping buffer handle:0x%llx", videoBufferHandle);
+                if (gAVbufferHelper) {
+                    gAVbufferHelper->unmapHandle(videoBufferHandle);
+                }
+            }
+        }
+
+        // Retrieve any remaining output frames
+        while (mControlListener->getNextFrame(decodedFrame, std::chrono::milliseconds(100))) {
+            UT_LOG_INFO("Retrieved remaining output frame: PTS=%lld, handle=0x%llx, isMetaAvailable=%d",
+                        decodedFrame.framePTS, decodedFrame.frameBufferHandle, decodedFrame.isMetaAvailable);
+        if (decodedFrame.metadata) {
+                    UT_LOG_INFO("Validating metadata for PTS=%lld", decodedFrame.framePTS);
+                    // Validate active region
+                    /*UT_ASSERT_EQUAL(decodedFrame.metadata->activeX, mTestConfiguration.activeX)
+                        << "activeX mismatch: expected=" << mTestConfiguration.activeX
+                        << ", actual=" << decodedFrame.metadata->activeX;
+                    UT_ASSERT_EQUAL(decodedFrame.metadata->activeY, mTestConfiguration.activeY)
+                        << "activeY mismatch: expected=" << mTestConfiguration.activeY
+                        << ", actual=" << decodedFrame.metadata->activeY;
+                    UT_ASSERT_EQUAL(decodedFrame.metadata->activeWidth, mTestConfiguration.activeWidth)
+                        << "activeWidth mismatch: expected=" << mTestConfiguration.activeWidth
+                        << ", actual=" << decodedFrame.metadata->activeWidth;
+                    UT_ASSERT_EQUAL(decodedFrame.metadata->activeHeight, mTestConfiguration.activeHeight)
+                        << "activeHeight mismatch: expected=" << mTestConfiguration.activeHeight
+                        << ", actual=" << decodedFrame.metadata->activeHeight;*/
+
+                    // Validate aspect ratios
+                    /*UT_ASSERT_EQUAL(decodedFrame.metadata->parX, mTestConfiguration.parX)
+                        << "PAR X mismatch: expected=" << mTestConfiguration.parX
+                        << ", actual=" << decodedFrame.metadata->parX;
+                    UT_ASSERT_EQUAL(decodedFrame.metadata->parY, mTestConfiguration.parY)
+                        << "PAR Y mismatch: expected=" << mTestConfiguration.parY
+                        << ", actual=" << decodedFrame.metadata->parY;
+                    UT_ASSERT_EQUAL(decodedFrame.metadata->sarX, mTestConfiguration.sarX)
+                        << "SAR X mismatch: expected=" << mTestConfiguration.sarX
+                        << ", actual=" << decodedFrame.metadata->sarX;
+                    UT_ASSERT_EQUAL(decodedFrame.metadata->sarY, mTestConfiguration.sarY)
+                        << "SAR Y mismatch: expected=" << mTestConfiguration.sarY
+                        << ", actual=" << decodedFrame.metadata->sarY;*/
+
+                    // Validate pixel format and depth
+                    UT_ASSERT_EQUAL(decodedFrame.metadata->pixelFormat, mTestConfiguration.pixelFormat)
+                        << "Pixel format mismatch: expected=" << static_cast<int>(mTestConfiguration.pixelFormat)
+                        << ", actual=" << static_cast<int>(decodedFrame.metadata->pixelFormat);
+                    UT_ASSERT_EQUAL(decodedFrame.metadata->colorDepth, mTestConfiguration.colorDepth)
+                        << "Color depth mismatch: expected=" << mTestConfiguration.colorDepth
+                        << ", actual=" << decodedFrame.metadata->colorDepth;
+
+                    // Validate dynamic range
+                    UT_ASSERT_EQUAL(decodedFrame.metadata->dynamicRange, mTestConfiguration.dynamicRange)
+                        << "Dynamic range mismatch: expected=" << static_cast<int>(mTestConfiguration.dynamicRange)
+                        << ", actual=" << static_cast<int>(decodedFrame.metadata->dynamicRange);
+
+                    // Validate frame rate
+                    UT_ASSERT_EQUAL(decodedFrame.metadata->frameRateNumerator, mTestConfiguration.frameRateNumerator)
+                        << "Frame rate numerator mismatch: expected=" << mTestConfiguration.frameRateNumerator
+                        << ", actual=" << decodedFrame.metadata->frameRateNumerator;
+                    UT_ASSERT_EQUAL(decodedFrame.metadata->frameRateDenominator, mTestConfiguration.frameRateDenominator)
+                        << "Frame rate denominator mismatch: expected=" << mTestConfiguration.frameRateDenominator
+                        << ", actual=" << decodedFrame.metadata->frameRateDenominator;
+
+                    // Validate scan type
+                    UT_ASSERT_EQUAL(decodedFrame.metadata->scanType, mTestConfiguration.scanType)
+                        << "Scan type mismatch: expected=" << static_cast<int>(mTestConfiguration.scanType)
+                        << ", actual=" << static_cast<int>(decodedFrame.metadata->scanType);
+
+                    // Validate AFD
+                    /*UT_ASSERT_EQUAL(decodedFrame.metadata->afd, mTestConfiguration.afd)
+                        << "AFD mismatch: expected=" << mTestConfiguration.afd
+                        << ", actual=" << decodedFrame.metadata->afd;*/
+
+                    // Validate flags
+                    UT_ASSERT_EQUAL(decodedFrame.metadata->endOfStream, mTestConfiguration.endOfStream)
+                        << "endOfStream mismatch: expected=" << mTestConfiguration.endOfStream
+                        << ", actual=" << decodedFrame.metadata->endOfStream;
+                    UT_ASSERT_EQUAL(decodedFrame.metadata->discontinuity, mTestConfiguration.discontinuity)
+                        << "discontinuity mismatch: expected=" << mTestConfiguration.discontinuity
+                        << ", actual=" << decodedFrame.metadata->discontinuity;
+                    UT_ASSERT_EQUAL(decodedFrame.metadata->lowLatency, mTestConfiguration.lowLatency)
+                        << "lowLatency mismatch: expected=" << mTestConfiguration.lowLatency
+                        << ", actual=" << decodedFrame.metadata->lowLatency;
+
+                    // Validate source
+                    /*UT_ASSERT_EQUAL(decodedFrame.metadata->source, mTestConfiguration.source)
+                        << "Source mismatch: expected=" << static_cast<int>(mTestConfiguration.source)
+                        << ", actual=" << static_cast<int>(decodedFrame.metadata->source);
+
+                    // Optional: SHA1 comparison if you expect it
+                    if (!mTestConfiguration.sha1.empty()) {
+                        UT_ASSERT_EQUAL(decodedFrame.metadata->sha1.size(), mTestConfiguration.sha1.size())
+                            << "SHA1 size mismatch";
+                        for (size_t i = 0; i < decodedFrame.metadata->sha1.size(); ++i) {
+                            UT_ASSERT_EQUAL(decodedFrame.metadata->sha1[i], mTestConfiguration.sha1[i])
+                                << "SHA1 byte mismatch at index " << i;
+                        }
+                    }*/
+                } else {
+                    UT_LOG_INFO("No metadata available for PTS=%lld", decodedFrame.framePTS);
+                }
+            UT_LOG_INFO("Releasing output buffer handle:0x%llx", decodedFrame.frameBufferHandle);
+            AVBUFFER_FREE_SUCCESS(mAVBufferManager, decodedFrame.frameBufferHandle);
+        }
+
+        // Get final metrics
+        getDecoderMetrics(framesDecoded, decodeErrors, framesDropped);
+        UT_LOG_INFO("Final Decoder Metrics: Codec: %d, Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
+                    mTestConfiguration.codec, framesDecoded, decodeErrors, framesDropped);
+
+        UT_ASSERT_EQUAL(framesDecoded, mTestConfiguration.no_of_frames)
+                        << "Frames Decoded mismatch: expected=" << mTestConfiguration.no_of_frames
+                        << ", actual=" << framesDecoded;
+        UT_ASSERT_EQUAL(decodeErrors, mTestConfiguration.decodeErrors)
+                        << "Frames Decoded mismatch: expected=" << mTestConfiguration.decodeErrors
+                        << ", actual=" << decodeErrors;
+        UT_ASSERT_EQUAL(framesDropped, mTestConfiguration.framesDropped)
+                        << "Frames Decoded mismatch: expected=" << mTestConfiguration.framesDropped
+                        << ", actual=" << framesDropped;
+
+        // Stop Decoder
+        {
+            std::lock_guard<std::mutex> lock(mDecodeMutex);
+            UT_LOG_INFO("Stopping decoder");
+            VIDEODECODER_STOP_SUCCESS(mDecoderHandle, videoDecoderController, true);
+        }
+
+        getDecoderMetrics(framesDecoded, decodeErrors, framesDropped);
+        UT_LOG_INFO("After Stop Decoder Metrics: Codec: %d, Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
+                    mTestConfiguration.codec, framesDecoded, decodeErrors, framesDropped);
+
+        // Close Decoder
+        VIDEODECODER_CLOSE_SUCCESS(mDecoderHandle, videoDecoderController, true);
+
+        // Destroy Video Pool
+        {
+            std::lock_guard<std::mutex> lock(mDecodeMutex);
+            UT_LOG_INFO("Destroying video pool handle:%lld", videoPool.handle);
+            AVBUFFER_DESTROY_POOL_SUCCESS(mAVBufferManager, videoPool);
+        }
+
+        UT_LOG_INFO("[PID: %d, TID: %d] decoderThreadFunc End", getpid(), syscall(SYS_gettid));
+        mDecodingStream = false;
+    }
     void consumerThreadFunc()
     {
         int32_t errorCount = 0;

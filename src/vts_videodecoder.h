@@ -105,6 +105,16 @@
 #include "IAVBufferHelper.h"
 
 
+// Undefine UT_LOG_INFO from ut_log.h to avoid redefinition conflicts
+#undef UT_LOG_INFO
+
+#ifdef ENABLE_UT_INFO_LOGGING
+// Enable INFO logging using ut_log.h's definition
+#define UT_LOG_INFO(format, ...) UT_logPrefix(__FILE__, __LINE__, UT_LOG_ASCII_CYAN "INFO  " UT_LOG_ASCII_NC, format, ## __VA_ARGS__)
+#else
+#define UT_LOG_INFO(format, ...) // Disable INFO logging by default (no-op)
+#endif
+
 
 #include "com/rdk/hal/videodecoder/IVideoDecoderManager.h"
 #include "com/rdk/hal/videodecoder/IVideoDecoderController.h"
@@ -183,7 +193,7 @@ struct videoFrameMetadata {
         int frameRateNumerator;
 	    int frameRateDenominator;
         DynamicRange dynamicRange;
-        int32_t bitDepth;
+        int bit_rate;
         bool lowLatency;
         bool endOfStream;
         bool discontinuity;
@@ -196,7 +206,9 @@ struct DecodedVideoFrame_t {
     int64_t framePTS;
     std::chrono::steady_clock::time_point receiveTime;
     bool isMetaAvailable;
-    std::unique_ptr<com::rdk::hal::videodecoder::FrameMetadata> metadata; // Changed to unique_ptr
+    std::unique_ptr<com::rdk::hal::videodecoder::FrameMetadata> metadata;
+    bool validationStatus; // Added for validation result
+    int64_t frameBufferHandle; // Added for output buffer handle
 };
 
 struct testConfiguration_t {
@@ -209,10 +221,12 @@ struct testConfiguration_t {
     uint32_t frameRateDenominator; // Frame rate denominator
     videodecoder::PixelFormat pixelFormat; // YUV, etc.
     videodecoder::DynamicRange dynamicRange; // SDR, HDR, etc.
-    std::string colourSpace; // BT709, etc.
+    videodecoder::ScanType scanType;
     uint32_t colorDepth; // Bit depth
-    uint32_t bitRate; // Bit rate
+    uint32_t bit_rate; // Bit rate
     uint32_t no_of_frames; // Total frames
+    uint32_t decodeErrors;
+    uint32_t framesDropped;
     std::vector<std::tuple<int32_t, int64_t, bool>> frameDetails; // {size, PTS, isErrorFrame}
     double rms_diff_threshold; // RMS difference threshold
     uint32_t decoderDelay; // Delay between decode calls (ms)
@@ -223,6 +237,9 @@ struct testConfiguration_t {
     int64_t eosPts; // EOS PTS
     int64_t decode_time_threshold; // Decode time budget per frame (ns)
     double rms_diff_threashold; // RMS difference threshold
+    bool endOfStream;
+    bool discontinuity;
+    bool lowLatency;
 };
 
 UT_status_t VTS_VideoDecoder_init();
@@ -1147,15 +1164,52 @@ public:
         frame.framePTS = nsPresentationTime;
         frame.receiveTime = std::chrono::steady_clock::now();
         frame.isMetaAvailable = metadata.has_value();
+        frame.frameBufferHandle = frameBufferHandle; // Store handle
         if (metadata.has_value()) {
-            frame.metadata = std::make_unique<com::rdk::hal::videodecoder::FrameMetadata>(metadata.value()); // Create a copy
-            UT_LOG_INFO("FrameMetadata: width=%d, height=%d, pixelFormat=%d, dynamicRange=%d, frameRate=%d/%d",
+            frame.metadata = std::make_unique<com::rdk::hal::videodecoder::FrameMetadata>(metadata.value());
+
+            UT_LOG_INFO("FrameMetadata: codedWidth=%d, codedHeight=%d, activeX=%d, activeY=%d, activeWidth=%d, activeHeight=%d",
                         frame.metadata->codedWidth, frame.metadata->codedHeight,
-                        static_cast<int>(frame.metadata->pixelFormat), static_cast<int>(frame.metadata->dynamicRange),
-                        frame.metadata->frameRateNumerator, frame.metadata->frameRateDenominator);
+                        frame.metadata->activeX, frame.metadata->activeY,
+                        frame.metadata->activeWidth, frame.metadata->activeHeight);
+
+            UT_LOG_INFO("AspectRatios: PAR=%d:%d, SAR=%d:%d",
+                        frame.metadata->parX, frame.metadata->parY,
+                        frame.metadata->sarX, frame.metadata->sarY);
+
+            UT_LOG_INFO("FrameMetadata: colorDepth=%d, pixelFormat=%d, dynamicRange=%d, scanType=%d, afd=%d",
+                        frame.metadata->colorDepth,
+                        static_cast<int>(frame.metadata->pixelFormat),
+                        static_cast<int>(frame.metadata->dynamicRange),
+                        static_cast<int>(frame.metadata->scanType),
+                        frame.metadata->afd);
+
+            UT_LOG_INFO("FrameRate: %d/%d",
+                        frame.metadata->frameRateNumerator,
+                        frame.metadata->frameRateDenominator);
+
+            UT_LOG_INFO("Flags: endOfStream=%d, discontinuity=%d, lowLatency=%d",
+                        frame.metadata->endOfStream,
+                        frame.metadata->discontinuity,
+                        frame.metadata->lowLatency);
+
+            UT_LOG_INFO("Source: %d", static_cast<int>(frame.metadata->source));
+
+            // Log SHA1 if present
+            if (!frame.metadata->sha1.empty()) {
+                std::ostringstream sha1Str;
+                for (const auto& byte : frame.metadata->sha1) {
+                    sha1Str << std::hex << std::setfill('0') << std::setw(2) << static_cast<int>(byte);
+                }
+                UT_LOG_INFO("SHA1: %s", sha1Str.str().c_str());
+            } else {
+                UT_LOG_INFO("SHA1: <empty>");
+            }
+
         } else {
             UT_LOG_INFO("No FrameMetadata provided");
         }
+
 
         {
             std::lock_guard<std::mutex> lock(mMutex);
