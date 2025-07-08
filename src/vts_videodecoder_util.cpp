@@ -766,6 +766,7 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, char *module,
             int64_t PTS = ut_kvp_getUInt64Field(kvpTestInstance, eachPTS.c_str());
             bool errorFrame = (find(errorFrameNum.begin(), errorFrameNum.end(), j + 1) != errorFrameNum.end());
             testDetails.frameDetails.push_back({size, PTS, errorFrame});
+            testDetails.expectedPts.push_back(PTS); // Store PTS for validation
         }
 
         // RMS difference threshold

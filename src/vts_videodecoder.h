@@ -228,6 +228,7 @@ struct testConfiguration_t {
     uint32_t decodeErrors;
     uint32_t framesDropped;
     std::vector<std::tuple<int32_t, int64_t, bool>> frameDetails; // {size, PTS, isErrorFrame}
+    std::vector<int64_t> expectedPts; // Added for PTS validation
     double rms_diff_threshold; // RMS difference threshold
     uint32_t decoderDelay; // Delay between decode calls (ms)
     int64_t stopPts; // Stop/restart PTS

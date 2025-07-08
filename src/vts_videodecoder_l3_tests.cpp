@@ -734,6 +734,8 @@ private:
         mDecodingStream = true;
 
         DecodedVideoFrame_t decodedFrame;
+        // Initialize PTS tracking
+        std::set<int64_t> mReceivedPts(mTestConfiguration.expectedPts.begin(), mTestConfiguration.expectedPts.end());
 
         UT_LOG_INFO("[PID: %d, TID: %d] decoderThreadFunc Start", getpid(), syscall(SYS_gettid));
 
@@ -994,6 +996,16 @@ private:
             if (mControlListener->getNextFrame(decodedFrame, std::chrono::milliseconds(100))) {
                 UT_LOG_INFO("Retrieved output frame: PTS=%lld, handle=0x%llx, isMetaAvailable=%d",
                             decodedFrame.framePTS, decodedFrame.frameBufferHandle, decodedFrame.isMetaAvailable);
+                // Validate PTS
+                {
+                    auto it = mReceivedPts.find(decodedFrame.framePTS);
+                    if (it == mReceivedPts.end()) {
+                        UT_LOG_ERROR("Unexpected PTS received: %lld", decodedFrame.framePTS);
+                    } else {
+                        UT_LOG_INFO("Validated PTS: %lld", decodedFrame.framePTS);
+                        mReceivedPts.erase(it); // Remove to track received PTS
+                    }
+                }
                 if (decodedFrame.isMetaAvailable && decodedFrame.metadata) {
                     UT_LOG_INFO("Validating metadata for PTS=%lld", decodedFrame.framePTS);
                     // Validate resolution
@@ -1128,8 +1140,25 @@ private:
         while (mControlListener->getNextFrame(decodedFrame, std::chrono::milliseconds(100))) {
             UT_LOG_INFO("Retrieved remaining output frame: PTS=%lld, handle=0x%llx, isMetaAvailable=%d",
                         decodedFrame.framePTS, decodedFrame.frameBufferHandle, decodedFrame.isMetaAvailable);
-        if (decodedFrame.metadata) {
+            // Validate PTS
+            {
+                auto it = mReceivedPts.find(decodedFrame.framePTS);
+                if (it == mReceivedPts.end()) {
+                    UT_LOG_ERROR("Unexpected PTS received: %lld", decodedFrame.framePTS);
+                } else {
+                    UT_LOG_INFO("Validated PTS: %lld", decodedFrame.framePTS);
+                    mReceivedPts.erase(it); // Remove to track received PTS
+                }
+            }
+            if (decodedFrame.metadata) {
                     UT_LOG_INFO("Validating metadata for PTS=%lld", decodedFrame.framePTS);
+                    // Validate resolution
+                    UT_ASSERT_EQUAL(decodedFrame.metadata->codedWidth, mTestConfiguration.codedWidth)
+                        << "Width mismatch: expected=" << mTestConfiguration.codedWidth
+                        << ", actual=" << decodedFrame.metadata->codedWidth;
+                    UT_ASSERT_EQUAL(decodedFrame.metadata->codedHeight, mTestConfiguration.codedHeight)
+                        << "Height mismatch: expected=" << mTestConfiguration.codedHeight
+                        << ", actual=" << decodedFrame.metadata->codedHeight;
                     // Validate active region
                     /*UT_ASSERT_EQUAL(decodedFrame.metadata->activeX, mTestConfiguration.activeX)
                         << "activeX mismatch: expected=" << mTestConfiguration.activeX
@@ -1226,8 +1255,8 @@ private:
         UT_LOG_INFO("Final Decoder Metrics: Codec: %d, Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
                     mTestConfiguration.codec, framesDecoded, decodeErrors, framesDropped);
 
-        UT_ASSERT_EQUAL(framesDecoded, mTestConfiguration.no_of_frames)
-                        << "Frames Decoded mismatch: expected=" << mTestConfiguration.no_of_frames
+        UT_ASSERT_EQUAL(framesDecoded, mTestConfiguration.no_of_frames - mTestConfiguration.decodeErrors)
+                        << "Frames Decoded mismatch: expected=" << (mTestConfiguration.no_of_frames - mTestConfiguration.decodeErrors)
                         << ", actual=" << framesDecoded;
         UT_ASSERT_EQUAL(decodeErrors, mTestConfiguration.decodeErrors)
                         << "Frames Decoded mismatch: expected=" << mTestConfiguration.decodeErrors

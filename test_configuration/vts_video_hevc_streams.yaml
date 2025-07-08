@@ -1,7 +1,7 @@
 VideoStreams:
-  H265_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734:
-    input: H265_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
-    #reference: H265_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.yuv #reference decoder output
+  H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734:
+    input: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
+    #reference: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.yuv #reference decoder output
     codec: H265  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
     codedHeight: 1080
@@ -42,23 +42,19 @@ VideoStreams:
       - 327
     PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
       - 00000000
+      - 166667000
+      - 100000000
       - 33333000
       - 66667000
-      - 100000000
       - 133333000
-      - 166667000
-      - 200000000
-      - 233333000
-      - 266667000
       - 300000000
-      - 400000000
-      - 466667000
-      - 500000000
-      - 566667000
-      - 600000000
-      - 666667000
-  H265_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_ERROR:
-    input: H265_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
+      - 233333000
+      - 200000000
+      - 266667000
+      - 366667000
+      - 333333000
+  H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_ERROR:
+    input: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     codec: H265  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
     codedHeight: 1080
@@ -99,23 +95,19 @@ VideoStreams:
       - 327
     PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
       - 00000000
+      - 166667000
+      - 100000000
       - 33333000
       - 66667000
-      - 100000000
       - 133333000
-      - 166667000
-      - 200000000
-      - 233333000
-      - 266667000
       - 300000000
-      - 400000000
-      - 466667000
-      - 500000000
-      - 566667000
-      - 600000000
-      - 666667000
-  H265_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_Discontinuity:
-    input: H265_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
+      - 233333000
+      - 200000000
+      - 266667000
+      - 366667000
+      - 333333000
+  H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_Discontinuity:
+    input: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     codec: H265  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
     codedHeight: 1080
@@ -156,23 +148,19 @@ VideoStreams:
       - 327
     PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
       - 00000000
+      - 166667000
+      - 100000000
       - 33333000
       - 66667000
-      - 100000000
       - 133333000
-      - 166667000
-      - 200000000
-      - 233333000
-      - 266667000
       - 300000000
-      - 400000000
-      - 466667000
-      - 500000000
-      - 566667000
-      - 600000000
-      - 666667000
-  H265_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_EOS:
-    input: H265_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
+      - 233333000
+      - 200000000
+      - 266667000
+      - 366667000
+      - 333333000
+  H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_EOS:
+    input: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     codec: H265  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
     codedHeight: 1080
@@ -187,7 +175,7 @@ VideoStreams:
     signal_discontinuity_pts: -1 #`pts` value in nano seconds at which the test should signal discontinuity to the decoder. -1 indicates that no discontinuity signal should be sent
     flush_pts: -1 #`pts` value in nano seconds that determine when the test should flush the decoder. -1 indicates that test should not flush
     flush_reset_pts: -1 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
-    eos_pts: 566667000 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
+    eos_pts: 366667000 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
     discontinuity: 0
     lowLatency:
     bit_rate: 734
@@ -213,23 +201,19 @@ VideoStreams:
       - 327
     PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
       - 00000000
+      - 166667000
+      - 100000000
       - 33333000
       - 66667000
-      - 100000000
       - 133333000
-      - 166667000
-      - 200000000
-      - 233333000
-      - 266667000
       - 300000000
-      - 400000000
-      - 466667000
-      - 500000000
-      - 566667000
-      - 600000000
-      - 666667000
-  H265_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_FLUSH:
-    input: H265_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
+      - 233333000
+      - 200000000
+      - 266667000
+      - 366667000
+      - 333333000
+  H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_FLUSH:
+    input: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     codec: H265  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
     codedHeight: 1080
@@ -242,7 +226,7 @@ VideoStreams:
     endOfStream: 0
     stop_start_pts: -1 #`pts` value in nano seconds at which the decoder should be stopped and restarted during the test. -1 indicates that decoder should not be restarted
     signal_discontinuity_pts: -1 #`pts` value in nano seconds at which the test should signal discontinuity to the decoder. -1 indicates that no discontinuity signal should be sent
-    flush_pts: 400000000 #`pts` value in nano seconds that determine when the test should flush the decoder. -1 indicates that test should not flush
+    flush_pts: 300000000 #`pts` value in nano seconds that determine when the test should flush the decoder. -1 indicates that test should not flush
     flush_reset_pts: -1 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
     eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
     discontinuity: 0
@@ -270,23 +254,19 @@ VideoStreams:
       - 327
     PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
       - 00000000
+      - 166667000
+      - 100000000
       - 33333000
       - 66667000
-      - 100000000
       - 133333000
-      - 166667000
-      - 200000000
-      - 233333000
-      - 266667000
       - 300000000
-      - 400000000
-      - 466667000
-      - 500000000
-      - 566667000
-      - 600000000
-      - 666667000
-  H265_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_FLUSH_RESET:
-    input: H265_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
+      - 233333000
+      - 200000000
+      - 266667000
+      - 366667000
+      - 333333000
+  H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_FLUSH_RESET:
+    input: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     codec: H265  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
     codedHeight: 1080
@@ -327,18 +307,14 @@ VideoStreams:
       - 327
     PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
       - 00000000
+      - 166667000
+      - 100000000
       - 33333000
       - 66667000
-      - 100000000
       - 133333000
-      - 166667000
-      - 200000000
-      - 233333000
-      - 266667000
       - 300000000
-      - 400000000
-      - 466667000
-      - 500000000
-      - 566667000
-      - 600000000
-      - 666667000
+      - 233333000
+      - 200000000
+      - 266667000
+      - 366667000
+      - 333333000
