@@ -394,24 +394,9 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure)
 }
 
 /**
- * @brief Test decoding in tunnel mode
- *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 009
- */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Tunnel_NonSecure)
-{
-
-    char *testName = "Decode_Tunnel_NonSecure";
-    bool secureMode = false;
-    bool tunnelMode = true;
-    bool concurrentMode = false;
-    runTest(testName, secureMode, tunnelMode, concurrentMode);
-}
-
-/**
  * @brief Test decoding in secure mode
  *        Decoding type: Sequential, Modes: Non-Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 010
+ * **Test Group ID:** 01 **Test Case ID:** 009
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_Secure)
 {
@@ -424,54 +409,9 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_Secure)
 }
 
 /**
- * @brief Test tunnel and secure modes together
- *        Decoding type: Sequential, Modes: Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 011
- */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Tunnel_Secure)
-{
-
-    char *testName = "Decode_Tunnel_Secure";
-    bool secureMode = true;
-    bool tunnelMode = true;
-    bool concurrentMode = false;
-    runTest(testName, secureMode, tunnelMode, concurrentMode);
-}
-
-/**
- * @brief Test tunnel mode with error streams
- *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 012
- */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Tunnel_NonSecure_Error)
-{
-
-    char *testName = "Decode_Tunnel_NonSecure_Error";
-    bool secureMode = false;
-    bool tunnelMode = true;
-    bool concurrentMode = false;
-    runTest(testName, secureMode, tunnelMode, concurrentMode);
-}
-
-/**
- * @brief Test tunnel mode with trim
- *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 013
- */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Tunnel_NonSecure_Trim)
-{
-
-    char *testName = "Decode_Tunnel_NonSecure_Trim";
-    bool secureMode = false;
-    bool tunnelMode = true;
-    bool concurrentMode = false;
-    runTest(testName, secureMode, tunnelMode, concurrentMode);
-}
-
-/**
  * @brief Test secure mode with error streams
  *        Decoding type: Sequential, Modes: Non-Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 014
+ * **Test Group ID:** 01 **Test Case ID:** 010
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_Secure_Error)
 {
@@ -484,14 +424,14 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_Secure_Error)
 }
 
 /**
- * @brief Test secure mode with trim
+ * @brief Test secure mode with GOP
  *        Decoding type: Sequential, Modes: Non-Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 015
+ * **Test Group ID:** 01 **Test Case ID:** 011
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_Secure_Trim)
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_Secure_GOP)
 {
 
-    char *testName = "Decode_NonTunnel_Secure_Trim";
+    char *testName = "Decode_NonTunnel_Secure_GOP";
     bool secureMode = true;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -501,7 +441,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_Secure_Trim)
 /**
  * @brief Test error streams with discontinuity
  *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 016
+ * **Test Group ID:** 01 **Test Case ID:** 012
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_NonSecure_Error_Discontinuity)
 {
@@ -516,7 +456,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_NonSecure_Error_Discontinuity)
 /**
  * @brief Test error streams with EOS
  *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 017
+ * **Test Group ID:** 01 **Test Case ID:** 013
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_NonSecure_Error_EOS)
 {
@@ -585,21 +525,6 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_NonSecure_FlushReset_Error)
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = false;
-    runTest(testName, secureMode, tunnelMode, concurrentMode);
-}
-
-/**
- * @brief Test concurrent decoding in tunnel mode
- *        Decoding type: Concurrent, Modes: Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 022
- */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure)
-{
-
-    char *testName = "Decode_Concurrent_Tunnel_NonSecure";
-    bool secureMode = false;
-    bool tunnelMode = true;
-    bool concurrentMode = true;
     runTest(testName, secureMode, tunnelMode, concurrentMode);
 }
 
@@ -707,6 +632,1147 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_FlushRese
     bool concurrentMode = true;
     runTest(testName, secureMode, tunnelMode, concurrentMode);
 }
+
+/**
+ * @brief Test decoding with codec support
+ *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 030
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_CODEC)
+{
+    char *testName = "Decode_Sequential_NonTunnel_NonSecure_CODEC";
+    bool secureMode = false;
+    bool tunnelMode = false;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with different resolutions
+ *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 031
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_Resolutions)
+{
+    char *testName = "Decode_Sequential_NonTunnel_NonSecure_Resolutions";
+    bool secureMode = false;
+    bool tunnelMode = false;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with HDR modes
+ *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 032
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_HDRModes)
+{
+    char *testName = "Decode_Sequential_NonTunnel_NonSecure_HDRModes";
+    bool secureMode = false;
+    bool tunnelMode = false;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with different frame rates
+ *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 033
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_FrameRate)
+{
+    char *testName = "Decode_Sequential_NonTunnel_NonSecure_FrameRate";
+    bool secureMode = false;
+    bool tunnelMode = false;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding in low latency mode
+ *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 034
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_LowLatency)
+{
+    char *testName = "Decode_Sequential_NonTunnel_NonSecure_LowLatency";
+    bool secureMode = false;
+    bool tunnelMode = false;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with adaptive bitrate streaming
+ *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 035
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_AdaptiveBitrate)
+{
+    char *testName = "Decode_Sequential_NonTunnel_NonSecure_AdaptiveBitrate";
+    bool secureMode = false;
+    bool tunnelMode = false;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with codec support in secure mode
+ *        Decoding type: Sequential, Modes: Non-Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 036
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_CODEC)
+{
+    char *testName = "Decode_Sequential_NonTunnel_Secure_CODEC";
+    bool secureMode = true;
+    bool tunnelMode = false;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test handling of discontinuity signal in secure mode
+ *        Decoding type: Sequential, Modes: Non-Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 037
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_Discontinuity)
+{
+    char *testName = "Decode_Sequential_NonTunnel_Secure_Discontinuity";
+    bool secureMode = true;
+    bool tunnelMode = false;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test handling of EOS signal in secure mode
+ *        Decoding type: Sequential, Modes: Non-Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 038
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_EOS)
+{
+    char *testName = "Decode_Sequential_NonTunnel_Secure_EOS";
+    bool secureMode = true;
+    bool tunnelMode = false;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test flush functionality in secure mode
+ *        Decoding type: Sequential, Modes: Non-Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 039
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_Flush)
+{
+    char *testName = "Decode_Sequential_NonTunnel_Secure_Flush";
+    bool secureMode = true;
+    bool tunnelMode = false;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test flush with reset functionality in secure mode
+ *        Decoding type: Sequential, Modes: Non-Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 040
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_FlushReset)
+{
+    char *testName = "Decode_Sequential_NonTunnel_Secure_FlushReset";
+    bool secureMode = true;
+    bool tunnelMode = false;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with different resolutions in secure mode
+ *        Decoding type: Sequential, Modes: Non-Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 041
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_Resolutions)
+{
+    char *testName = "Decode_Sequential_NonTunnel_Secure_Resolutions";
+    bool secureMode = true;
+    bool tunnelMode = false;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with HDR modes in secure mode
+ *        Decoding type: Sequential, Modes: Non-Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 042
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_HDRModes)
+{
+    char *testName = "Decode_Sequential_NonTunnel_Secure_HDRModes";
+    bool secureMode = true;
+    bool tunnelMode = false;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with different frame rates in secure mode
+ *        Decoding type: Sequential, Modes: Non-Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 043
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_FrameRate)
+{
+    char *testName = "Decode_Sequential_NonTunnel_Secure_FrameRate";
+    bool secureMode = true;
+    bool tunnelMode = false;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding in low latency mode in secure mode
+ *        Decoding type: Sequential, Modes: Non-Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 044
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_LowLatency)
+{
+    char *testName = "Decode_Sequential_NonTunnel_Secure_LowLatency";
+    bool secureMode = true;
+    bool tunnelMode = false;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with codec support in concurrent mode
+ *        Decoding type: Concurrent, Modes: Non-Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 066
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_CODEC)
+{
+    char *testName = "Decode_Concurrent_NonTunnel_NonSecure_CODEC";
+    bool secureMode = false;
+    bool tunnelMode = false;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with different resolutions in concurrent mode
+ *        Decoding type: Concurrent, Modes: Non-Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 067
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_Resolutions)
+{
+    char *testName = "Decode_Concurrent_NonTunnel_NonSecure_Resolutions";
+    bool secureMode = false;
+    bool tunnelMode = false;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with HDR modes in concurrent mode
+ *        Decoding type: Concurrent, Modes: Non-Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 068
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_HDRModes)
+{
+    char *testName = "Decode_Concurrent_NonTunnel_NonSecure_HDRModes";
+    bool secureMode = false;
+    bool tunnelMode = false;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with different frame rates in concurrent mode
+ *        Decoding type: Concurrent, Modes: Non-Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 069
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_FrameRate)
+{
+    char *testName = "Decode_Concurrent_NonTunnel_NonSecure_FrameRate";
+    bool secureMode = false;
+    bool tunnelMode = false;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with GOP structure in concurrent mode
+ *        Decoding type: Concurrent, Modes: Non-Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 070
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_GOPStructure)
+{
+    char *testName = "Decode_Concurrent_NonTunnel_NonSecure_GOPStructure";
+    bool secureMode = false;
+    bool tunnelMode = false;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding in low latency mode in concurrent mode
+ *        Decoding type: Concurrent, Modes: Non-Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 071
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_LowLatency)
+{
+    char *testName = "Decode_Concurrent_NonTunnel_NonSecure_LowLatency";
+    bool secureMode = false;
+    bool tunnelMode = false;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with error streams in concurrent and secure modes
+ *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 072
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_Error)
+{
+    char *testName = "Decode_Concurrent_NonTunnel_Secure_Error";
+    bool secureMode = true;
+    bool tunnelMode = false;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with codec support in concurrent and secure modes
+ *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 073
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_CODEC)
+{
+    char *testName = "Decode_Concurrent_NonTunnel_Secure_CODEC";
+    bool secureMode = true;
+    bool tunnelMode = false;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test handling of discontinuity signal in concurrent and secure modes
+ *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 074
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_Discontinuity)
+{
+    char *testName = "Decode_Concurrent_NonTunnel_Secure_Discontinuity";
+    bool secureMode = true;
+    bool tunnelMode = false;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test handling of EOS signal in concurrent and secure modes
+ *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 075
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_EOS)
+{
+    char *testName = "Decode_Concurrent_NonTunnel_Secure_EOS";
+    bool secureMode = true;
+    bool tunnelMode = false;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test flush functionality in concurrent and secure modes
+ *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 076
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_Flush)
+{
+    char *testName = "Decode_Concurrent_NonTunnel_Secure_Flush";
+    bool secureMode = true;
+    bool tunnelMode = false;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test flush with reset functionality in concurrent and secure modes
+ *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 077
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_FlushReset)
+{
+    char *testName = "Decode_Concurrent_NonTunnel_Secure_FlushReset";
+    bool secureMode = true;
+    bool tunnelMode = false;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with different resolutions in concurrent and secure modes
+ *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 078
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_Resolutions)
+{
+    char *testName = "Decode_Concurrent_NonTunnel_Secure_Resolutions";
+    bool secureMode = true;
+    bool tunnelMode = false;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with HDR modes in concurrent and secure modes
+ *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 079
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_HDRModes)
+{
+    char *testName = "Decode_Concurrent_NonTunnel_Secure_HDRModes";
+    bool secureMode = true;
+    bool tunnelMode = false;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with different frame rates in concurrent and secure modes
+ *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 080
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_FrameRate)
+{
+    char *testName = "Decode_Concurrent_NonTunnel_Secure_FrameRate";
+    bool secureMode = true;
+    bool tunnelMode = false;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with GOP structure in concurrent and secure modes
+ *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 081
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_GOPStructure)
+{
+    char *testName = "Decode_Concurrent_NonTunnel_Secure_GOPStructure";
+    bool secureMode = true;
+    bool tunnelMode = false;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding in low latency mode in concurrent and secure modes
+ *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 082
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_LowLatency)
+{
+    char *testName = "Decode_Concurrent_NonTunnel_Secure_LowLatency";
+    bool secureMode = true;
+    bool tunnelMode = false;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+#if 0
+/**
+ * @brief Test concurrent decoding in tunnel mode
+ *        Decoding type: Concurrent, Modes: Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 022
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure)
+{
+
+    char *testName = "Decode_Concurrent_Tunnel_NonSecure";
+    bool secureMode = false;
+    bool tunnelMode = true;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding in tunnel mode
+ *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 009
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Tunnel_NonSecure)
+{
+
+    char *testName = "Decode_Tunnel_NonSecure";
+    bool secureMode = false;
+    bool tunnelMode = true;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test tunnel and secure modes together
+ *        Decoding type: Sequential, Modes: Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 011
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Tunnel_Secure)
+{
+
+    char *testName = "Decode_Tunnel_Secure";
+    bool secureMode = true;
+    bool tunnelMode = true;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test tunnel mode with error streams
+ *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 012
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Tunnel_NonSecure_Error)
+{
+
+    char *testName = "Decode_Tunnel_NonSecure_Error";
+    bool secureMode = false;
+    bool tunnelMode = true;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test tunnel mode with trim
+ *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 013
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Tunnel_NonSecure_Trim)
+{
+
+    char *testName = "Decode_Tunnel_NonSecure_Trim";
+    bool secureMode = false;
+    bool tunnelMode = true;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with codec support in tunnel mode
+ *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 045
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_CODEC)
+{
+    char *testName = "Decode_Sequential_Tunnel_NonSecure_CODEC";
+    bool secureMode = false;
+    bool tunnelMode = true;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test handling of discontinuity signal in tunnel mode
+ *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 046
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_Discontinuity)
+{
+    char *testName = "Decode_Sequential_Tunnel_NonSecure_Discontinuity";
+    bool secureMode = false;
+    bool tunnelMode = true;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test handling of EOS signal in tunnel mode
+ *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 047
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_EOS)
+{
+    char *testName = "Decode_Sequential_Tunnel_NonSecure_EOS";
+    bool secureMode = false;
+    bool tunnelMode = true;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test flush functionality in tunnel mode
+ *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 048
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_Flush)
+{
+    char *testName = "Decode_Sequential_Tunnel_NonSecure_Flush";
+    bool secureMode = false;
+    bool tunnelMode = true;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test flush with reset functionality in tunnel mode
+ *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 049
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_FlushReset)
+{
+    char *testName = "Decode_Sequential_Tunnel_NonSecure_FlushReset";
+    bool secureMode = false;
+    bool tunnelMode = true;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with different resolutions in tunnel mode
+ *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 050
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_Resolutions)
+{
+    char *testName = "Decode_Sequential_Tunnel_NonSecure_Resolutions";
+    bool secureMode = false;
+    bool tunnelMode = true;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with HDR modes in tunnel mode
+ *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 051
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_HDRModes)
+{
+    char *testName = "Decode_Sequential_Tunnel_NonSecure_HDRModes";
+    bool secureMode = false;
+    bool tunnelMode = true;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with different frame rates in tunnel mode
+ *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 052
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_FrameRate)
+{
+    char *testName = "Decode_Sequential_Tunnel_NonSecure_FrameRate";
+    bool secureMode = false;
+    bool tunnelMode = true;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with GOP structure in tunnel mode
+ *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 053
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_GOPStructure)
+{
+    char *testName = "Decode_Sequential_Tunnel_NonSecure_GOPStructure";
+    bool secureMode = false;
+    bool tunnelMode = true;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding in low latency mode in tunnel mode
+ *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 054
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_LowLatency)
+{
+    char *testName = "Decode_Sequential_Tunnel_NonSecure_LowLatency";
+    bool secureMode = false;
+    bool tunnelMode = true;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with error streams in tunnel and secure modes
+ *        Decoding type: Sequential, Modes: Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 055
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_Error)
+{
+    char *testName = "Decode_Sequential_Tunnel_Secure_Error";
+    bool secureMode = true;
+    bool tunnelMode = true;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with codec support in tunnel and secure modes
+ *        Decoding type: Sequential, Modes: Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 056
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_CODEC)
+{
+    char *testName = "Decode_Sequential_Tunnel_Secure_CODEC";
+    bool secureMode = true;
+    bool tunnelMode = true;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test handling of discontinuity signal in tunnel and secure modes
+ *        Decoding type: Sequential, Modes: Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 057
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_Discontinuity)
+{
+    char *testName = "Decode_Sequential_Tunnel_Secure_Discontinuity";
+    bool secureMode = true;
+    bool tunnelMode = true;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test handling of EOS signal in tunnel and secure modes
+ *        Decoding type: Sequential, Modes: Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 058
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_EOS)
+{
+    char *testName = "Decode_Sequential_Tunnel_Secure_EOS";
+    bool secureMode = true;
+    bool tunnelMode = true;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test flush functionality in tunnel and secure modes
+ *        Decoding type: Sequential, Modes: Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 059
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_Flush)
+{
+    char *testName = "Decode_Sequential_Tunnel_Secure_Flush";
+    bool secureMode = true;
+    bool tunnelMode = true;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test flush with reset functionality in tunnel and secure modes
+ *        Decoding type: Sequential, Modes: Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 060
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_FlushReset)
+{
+    char *testName = "Decode_Sequential_Tunnel_Secure_FlushReset";
+    bool secureMode = true;
+    bool tunnelMode = true;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with different resolutions in tunnel and secure modes
+ *        Decoding type: Sequential, Modes: Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 061
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_Resolutions)
+{
+    char *testName = "Decode_Sequential_Tunnel_Secure_Resolutions";
+    bool secureMode = true;
+    bool tunnelMode = true;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with HDR modes in tunnel and secure modes
+ *        Decoding type: Sequential, Modes: Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 062
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_HDRModes)
+{
+    char *testName = "Decode_Sequential_Tunnel_Secure_HDRModes";
+    bool secureMode = true;
+    bool tunnelMode = true;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with different frame rates in tunnel and secure modes
+ *        Decoding type: Sequential, Modes: Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 063
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_FrameRate)
+{
+    char *testName = "Decode_Sequential_Tunnel_Secure_FrameRate";
+    bool secureMode = true;
+    bool tunnelMode = true;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with GOP structure in tunnel and secure modes
+ *        Decoding type: Sequential, Modes: Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 064
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_GOPStructure)
+{
+    char *testName = "Decode_Sequential_Tunnel_Secure_GOPStructure";
+    bool secureMode = true;
+    bool tunnelMode = true;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding in low latency mode in tunnel and secure modes
+ *        Decoding type: Sequential, Modes: Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 065
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_LowLatency)
+{
+    char *testName = "Decode_Sequential_Tunnel_Secure_LowLatency";
+    bool secureMode = true;
+    bool tunnelMode = true;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with error streams in concurrent and tunnel modes
+ *        Decoding type: Concurrent, Modes: Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 083
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_Error)
+{
+    char *testName = "Decode_Concurrent_Tunnel_NonSecure_Error";
+    bool secureMode = false;
+    bool tunnelMode = true;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with codec support in concurrent and tunnel modes
+ *        Decoding type: Concurrent, Modes: Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 084
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_CODEC)
+{
+    char *testName = "Decode_Concurrent_Tunnel_NonSecure_CODEC";
+    bool secureMode = false;
+    bool tunnelMode = true;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test handling of discontinuity signal in concurrent and tunnel modes
+ *        Decoding type: Concurrent, Modes: Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 085
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_Discontinuity)
+{
+    char *testName = "Decode_Concurrent_Tunnel_NonSecure_Discontinuity";
+    bool secureMode = false;
+    bool tunnelMode = true;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test handling of EOS signal in concurrent and tunnel modes
+ *        Decoding type: Concurrent, Modes: Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 086
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_EOS)
+{
+    char *testName = "Decode_Concurrent_Tunnel_NonSecure_EOS";
+    bool secureMode = false;
+    bool tunnelMode = true;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test flush functionality in concurrent and tunnel modes
+ *        Decoding type: Concurrent, Modes: Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 087
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_Flush)
+{
+    char *testName = "Decode_Concurrent_Tunnel_NonSecure_Flush";
+    bool secureMode = false;
+    bool tunnelMode = true;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test flush with reset functionality in concurrent and tunnel modes
+ *        Decoding type: Concurrent, Modes: Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 088
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_FlushReset)
+{
+    char *testName = "Decode_Concurrent_Tunnel_NonSecure_FlushReset";
+    bool secureMode = false;
+    bool tunnelMode = true;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with different resolutions in concurrent and tunnel modes
+ *        Decoding type: Concurrent, Modes: Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 089
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_Resolutions)
+{
+    char *testName = "Decode_Concurrent_Tunnel_NonSecure_Resolutions";
+    bool secureMode = false;
+    bool tunnelMode = true;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with HDR modes in concurrent and tunnel modes
+ *        Decoding type: Concurrent, Modes: Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 090
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_HDRModes)
+{
+    char *testName = "Decode_Concurrent_Tunnel_NonSecure_HDRModes";
+    bool secureMode = false;
+    bool tunnelMode = true;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with different frame rates in concurrent and tunnel modes
+ *        Decoding type: Concurrent, Modes: Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 091
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_FrameRate)
+{
+    char *testName = "Decode_Concurrent_Tunnel_NonSecure_FrameRate";
+    bool secureMode = false;
+    bool tunnelMode = true;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with GOP structure in concurrent and tunnel modes
+ *        Decoding type: Concurrent, Modes: Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 092
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_GOPStructure)
+{
+    char *testName = "Decode_Concurrent_Tunnel_NonSecure_GOPStructure";
+    bool secureMode = false;
+    bool tunnelMode = true;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding in low latency mode in concurrent and tunnel modes
+ *        Decoding type: Concurrent, Modes: Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 093
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_LowLatency)
+{
+    char *testName = "Decode_Concurrent_Tunnel_NonSecure_LowLatency";
+    bool secureMode = false;
+    bool tunnelMode = true;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test concurrent decoding in tunnel and secure modes
+ *        Decoding type: Concurrent, Modes: Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 094
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_Secure)
+{
+    char *testName = "Decode_Concurrent_Tunnel_Secure";
+    bool secureMode = true;
+    bool tunnelMode = true;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with error streams in concurrent, tunnel, and secure modes
+ *        Decoding type: Concurrent, Modes: Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 095
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_Secure_Error)
+{
+    char *testName = "Decode_Concurrent_Tunnel_Secure_Error";
+    bool secureMode = true;
+    bool tunnelMode = true;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with codec support in concurrent, tunnel, and secure modes
+ *        Decoding type: Concurrent, Modes: Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 096
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_Secure_CODEC)
+{
+    char *testName = "Decode_Concurrent_Tunnel_Secure_CODEC";
+    bool secureMode = true;
+    bool tunnelMode = true;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test handling of discontinuity signal in concurrent, tunnel, and secure modes
+ *        Decoding type: Concurrent, Modes: Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 097
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_Secure_Discontinuity)
+{
+    char *testName = "Decode_Concurrent_Tunnel_Secure_Discontinuity";
+    bool secureMode = true;
+    bool tunnelMode = true;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test handling of EOS signal in concurrent, tunnel, and secure modes
+ *        Decoding type: Concurrent, Modes: Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 098
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_Secure_EOS)
+{
+    char *testName = "Decode_Concurrent_Tunnel_Secure_EOS";
+    bool secureMode = true;
+    bool tunnelMode = true;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test flush functionality in concurrent, tunnel, and secure modes
+ *        Decoding type: Concurrent, Modes: Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 099
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_Secure_Flush)
+{
+    char *testName = "Decode_Concurrent_Tunnel_Secure_Flush";
+    bool secureMode = true;
+    bool tunnelMode = true;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test flush with reset functionality in concurrent, tunnel, and secure modes
+ *        Decoding type: Concurrent, Modes: Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 100
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_Secure_FlushReset)
+{
+    char *testName = "Decode_Concurrent_Tunnel_Secure_FlushReset";
+    bool secureMode = true;
+    bool tunnelMode = true;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with different resolutions in concurrent, tunnel, and secure modes
+ *        Decoding type: Concurrent, Modes: Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 101
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_Secure_Resolutions)
+{
+    char *testName = "Decode_Concurrent_Tunnel_Secure_Resolutions";
+    bool secureMode = true;
+    bool tunnelMode = true;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with HDR modes in concurrent, tunnel, and secure modes
+ *        Decoding type: Concurrent, Modes: Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 102
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_Secure_HDRModes)
+{
+    char *testName = "Decode_Concurrent_Tunnel_Secure_HDRModes";
+    bool secureMode = true;
+    bool tunnelMode = true;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with different frame rates in concurrent, tunnel, and secure modes
+ *        Decoding type: Concurrent, Modes: Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 103
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_Secure_FrameRate)
+{
+    char *testName = "Decode_Concurrent_Tunnel_Secure_FrameRate";
+    bool secureMode = true;
+    bool tunnelMode = true;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding with GOP structure in concurrent, tunnel, and secure modes
+ *        Decoding type: Concurrent, Modes: Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 104
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_Secure_GOPStructure)
+{
+    char *testName = "Decode_Concurrent_Tunnel_Secure_GOPStructure";
+    bool secureMode = true;
+    bool tunnelMode = true;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test decoding in low latency mode in concurrent, tunnel, and secure modes
+ *        Decoding type: Concurrent, Modes: Tunnel, Secure
+ * **Test Group ID:** 01 **Test Case ID:** 105
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_Secure_LowLatency)
+{
+    char *testName = "Decode_Concurrent_Tunnel_Secure_LowLatency";
+    bool secureMode = true;
+    bool tunnelMode = true;
+    bool concurrentMode = true;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+#endif
 
 /** @} */ // End of VIDEO_DECODER_HALTEST_L3 File
 /** @} */ // End of VIDEO_DECODER_HALTEST
