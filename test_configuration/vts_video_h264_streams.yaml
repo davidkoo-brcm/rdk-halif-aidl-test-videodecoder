@@ -18,7 +18,7 @@ VideoStreams:
     flush_reset_pts: -1 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
     eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
     discontinuity: 0
-    lowLatency:
+    lowLatency: 0
     bit_rate: 734
     no_of_frames: 12
     decodeErrors: 0
@@ -41,6 +41,10 @@ VideoStreams:
       - 1390
       - 1490
     PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
+      - 00000000
+      - 00000000
+      - 00000000
+      - 00000000
       - 00000000
       - 116667000
       - 50000000
@@ -71,7 +75,7 @@ VideoStreams:
     flush_reset_pts: -1 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
     eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
     discontinuity: 0
-    lowLatency:
+    lowLatency: 0
     bit_rate: 734
     no_of_frames: 12
     decodeErrors: 3
@@ -94,6 +98,10 @@ VideoStreams:
       - 190
       - 1490
     PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
+      - 00000000
+      - 00000000
+      - 00000000
+      - 00000000
       - 00000000
       - 116667000
       - 50000000
@@ -124,7 +132,7 @@ VideoStreams:
     flush_reset_pts: -1 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
     eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
     discontinuity: 1
-    lowLatency:
+    lowLatency: 0
     bit_rate: 734
     no_of_frames: 12
     decodeErrors: 0
@@ -147,6 +155,10 @@ VideoStreams:
       - 1390
       - 1490
     PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
+      - 00000000
+      - 00000000
+      - 00000000
+      - 00000000
       - 00000000
       - 116667000
       - 50000000
@@ -177,7 +189,7 @@ VideoStreams:
     flush_reset_pts: -1 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
     eos_pts: 183333000 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
     discontinuity: 0
-    lowLatency:
+    lowLatency: 0
     bit_rate: 734
     no_of_frames: 12
     decodeErrors: 0
@@ -200,6 +212,10 @@ VideoStreams:
       - 1390
       - 1490
     PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
+      - 00000000
+      - 00000000
+      - 00000000
+      - 00000000
       - 00000000
       - 116667000
       - 50000000
@@ -230,7 +246,7 @@ VideoStreams:
     flush_reset_pts: -1 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
     eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
     discontinuity: 0
-    lowLatency:
+    lowLatency: 0
     bit_rate: 734
     no_of_frames: 12
     decodeErrors: 0
@@ -253,6 +269,10 @@ VideoStreams:
       - 1390
       - 1490
     PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
+      - 00000000
+      - 00000000
+      - 00000000
+      - 00000000
       - 00000000
       - 116667000
       - 50000000
@@ -283,7 +303,7 @@ VideoStreams:
     flush_reset_pts: 166667000 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
     eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
     discontinuity: 0
-    lowLatency:
+    lowLatency: 0
     bit_rate: 734
     no_of_frames: 12
     decodeErrors: 0
@@ -307,6 +327,10 @@ VideoStreams:
       - 1490
     PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
       - 00000000
+      - 00000000
+      - 00000000
+      - 00000000
+      - 00000000
       - 116667000
       - 50000000
       - 16667000
@@ -318,3 +342,284 @@ VideoStreams:
       - 166667000
       - 133333000
       - 150000000
+  H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_GOP:
+    input: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_GOP.es #Stream Name
+    codec: H264  #Video codec information, Refer `Codec` enum
+    codedWidth: 1920
+    codedHeight: 1080
+    colorDepth: 8
+    pixelFormat: YCBCR420
+    dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
+    scanType: PROGRESSIVE_FRAME
+    frameRateNumerator: 60 #Frame Rate
+    frameRateDenominator: 1
+    endOfStream: 0
+    stop_start_pts: -1 #`pts` value in nano seconds at which the decoder should be stopped and restarted during the test. -1 indicates that decoder should not be restarted
+    signal_discontinuity_pts: -1 #`pts` value in nano seconds at which the test should signal discontinuity to the decoder. -1 indicates that no discontinuity signal should be sent
+    flush_pts: -1 #`pts` value in nano seconds that determine when the test should flush the decoder. -1 indicates that test should not flush
+    flush_reset_pts: -1 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
+    eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
+    discontinuity: 0
+    lowLatency: 0
+    bit_rate: 734
+    no_of_frames: 126
+    decodeErrors: 0
+    framesDropped: 0
+    frame_size:
+      - 733
+      - 31
+      - 11
+      - 732
+      - 108718
+      - 2897
+      - 1076
+      - 1043
+      - 1101
+      - 1198
+      - 1092
+      - 715
+      - 4040
+      - 1260
+      - 1390
+      - 1493
+      - 1296
+      - 979
+      - 4274
+      - 1244
+      - 852
+      - 1265
+      - 1187
+      - 922
+      - 4673
+      - 1237
+      - 865
+      - 1279
+      - 1265
+      - 917
+      - 4852
+      - 1146
+      - 826
+      - 1305
+      - 1247
+      - 992
+      - 5026
+      - 1281
+      - 845
+      - 1364
+      - 1315
+      - 957
+      - 4932
+      - 1799
+      - 1086
+      - 1323
+      - 1156
+      - 1035
+      - 5427
+      - 1305
+      - 1101
+      - 1365
+      - 1317
+      - 1071
+      - 5182
+      - 1277
+      - 962
+      - 1335
+      - 1243
+      - 1096
+      - 5565
+      - 1273
+      - 1011
+      - 1363
+      - 1242
+      - 1030
+      - 2667
+      - 1716
+      - 867
+      - 1191
+      - 1084
+      - 808
+      - 3258
+      - 1026
+      - 542
+      - 938
+      - 805
+      - 682
+      - 3562
+      - 1027
+      - 679
+      - 957
+      - 830
+      - 717
+      - 3437
+      - 1559
+      - 845
+      - 996
+      - 897
+      - 793
+      - 3892
+      - 1046
+      - 694
+      - 971
+      - 855
+      - 755
+      - 3626
+      - 1019
+      - 821
+      - 855
+      - 783
+      - 3746
+      - 1065
+      - 634
+      - 977
+      - 839
+      - 747
+      - 3683
+      - 1015
+      - 718
+      - 859
+      - 740
+      - 4074
+      - 1063
+      - 718
+      - 945
+      - 901
+      - 638
+      - 4057
+      - 1096
+      - 737
+      - 967
+      - 881
+      - 666
+      - 4252
+      - 1092
+    PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
+      - 00000000
+      - 00000000
+      - 00000000
+      - 00000000
+      - 00000000
+      - 116667000
+      - 50000000
+      - 16667000
+      - 33333000
+      - 66667000
+      - 83333000
+      - 100000000
+      - 183333000
+      - 166667000
+      - 133333000
+      - 150000000
+      - 0
+      - 0
+      - 0
+      - 0
+      - 533333328
+      - 566666661
+      - 599999994
+      - 633333327
+      - 666666660
+      - 699999993
+      - 733333326
+      - 766666659
+      - 799999992
+      - 833333325
+      - 866666658
+      - 899999991
+      - 933333324
+      - 966666657
+      - 999999990
+      - 1033333323
+      - 1066666656
+      - 1099999989
+      - 1133333322
+      - 1166666655
+      - 1199999988
+      - 1233333321
+      - 1266666654
+      - 1299999987
+      - 1333333320
+      - 1366666653
+      - 1399999986
+      - 1433333319
+      - 1466666652
+      - 1499999985
+      - 1533333318
+      - 1566666651
+      - 1599999984
+      - 1633333317
+      - 1666666650
+      - 1699999983
+      - 1733333316
+      - 1766666649
+      - 1799999982
+      - 1833333315
+      - 1866666648
+      - 1899999981
+      - 1933333314
+      - 1966666647
+      - 1999999980
+      - 2033333313
+      - 2066666646
+      - 2099999979
+      - 2133333312
+      - 2166666645
+      - 2199999978
+      - 2233333311
+      - 2266666644
+      - 2299999977
+      - 2333333310
+      - 2366666643
+      - 2399999976
+      - 2433333309
+      - 2466666642
+      - 2499999975
+      - 2533333308
+      - 2566666641
+      - 2599999974
+      - 2633333307
+      - 2666666640
+      - 2699999973
+      - 2733333306
+      - 2766666639
+      - 2799999972
+      - 2833333305
+      - 2866666638
+      - 2899999971
+      - 2933333304
+      - 2966666637
+      - 2999999970
+      - 3033333303
+      - 3066666636
+      - 3099999969
+      - 3133333302
+      - 3166666635
+      - 3199999968
+      - 3233333301
+      - 3266666634
+      - 3299999967
+      - 3333333399
+      - 3366666633
+      - 3399999966
+      - 3433333299
+      - 3466666632
+      - 3499999965
+      - 3533333298
+      - 3566666631
+      - 3599999964
+      - 3633333297
+      - 3666666630
+      - 3699999963
+      - 3733333296
+      - 3766666629
+      - 3799999962
+      - 3833333295
+      - 3866666628
+      - 3899999961
+      - 3933333294
+      - 3966666627
+      - 3999999960
+      - 4033333293
+      - 4066666626
+      - 4099999959
+      - 4133333292
+      - 4166666625

@@ -42,6 +42,15 @@ IVideoDecoderManager:
             Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_ERROR
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+    Decode_Sequential_NonTunnel_NonSecure_GOP: #Test Name
+      Controls:
+        delay_between_decode_calls: 5 # Insert delay in msec between each `decodeBuffer()` call
+      Inputs:
+        Streams:
+          - Codec: H264
+            Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_GOP
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 10000000
     Decode_Sequential_NonTunnel_NonSecure_Discontinuity: #Test Name
       Controls:
         delay_between_decode_calls: 5 # Insert delay in msec between each `decodeBuffer()` call

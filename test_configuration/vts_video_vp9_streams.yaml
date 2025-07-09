@@ -18,7 +18,7 @@ VideoStreams:
     flush_reset_pts: -1 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
     eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
     discontinuity: 0
-    lowLatency:
+    lowLatency: 0
     bit_rate: 734
     no_of_frames: 12
     decodeErrors: 0
@@ -68,7 +68,7 @@ VideoStreams:
     flush_reset_pts: -1 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
     eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
     discontinuity: 0
-    lowLatency:
+    lowLatency: 0
     bit_rate: 734
     no_of_frames: 12
     decodeErrors: 3
@@ -118,7 +118,7 @@ VideoStreams:
     flush_reset_pts: -1 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
     eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
     discontinuity: 1
-    lowLatency:
+    lowLatency: 0
     bit_rate: 734
     no_of_frames: 12
     decodeErrors: 0
@@ -168,7 +168,7 @@ VideoStreams:
     flush_reset_pts: -1 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
     eos_pts: 466667000 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
     discontinuity: 0
-    lowLatency:
+    lowLatency: 0
     bit_rate: 734
     no_of_frames: 12
     decodeErrors: 0
@@ -218,7 +218,7 @@ VideoStreams:
     flush_reset_pts: -1 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
     eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
     discontinuity: 0
-    lowLatency:
+    lowLatency: 0
     bit_rate: 734
     no_of_frames: 12
     decodeErrors: 0
@@ -268,7 +268,7 @@ VideoStreams:
     flush_reset_pts: 266667000 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
     eos_pts: 466667000 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
     discontinuity: 0
-    lowLatency:
+    lowLatency: 0
     bit_rate: 734
     no_of_frames: 12
     decodeErrors: 0

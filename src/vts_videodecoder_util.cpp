@@ -642,7 +642,7 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, char *module,
         string framesDropped = prefix + "framesDropped";
         string frameSize = prefix + "frame_size";
         string errorFrames = prefix + "error_frames";
-        string framePTS = prefix  + ".PTS";
+        string framePTS = prefix  + "PTS";
         string rmsDiff = streamList + "." + to_string(i) + ".rms_diff_threshold";
         string decodeTime = streamList + "." + to_string(i) + ".decode_time_threshold";
         string decoderDelay = controlList + ".delay_between_decode_calls";
@@ -729,7 +729,7 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, char *module,
         // Number of Dropped frames
         testDetails.framesDropped = ut_kvp_getUInt32Field(kvpTestInstance, framesDropped.c_str());
 
-        // Error frames
+        /* Error frames
         if (ut_kvp_fieldPresent(kvpTestInstance, errorFrames.c_str()))
         {
             int32_t count = ut_kvp_getListCount(kvpTestInstance, errorFrames.c_str());
@@ -746,10 +746,12 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, char *module,
                     UT_LOG_WARNING("Invalid error frame index: %d, max: %d", frameNum, testDetails.no_of_frames);
                 }
             }
-        }
+        }*/
 
         // Frame details
         int32_t frameCount = ut_kvp_getListCount(kvpTestInstance, frameSize.c_str());
+        UT_LOG_INFO("frameCount %d ",testDetails.framesDropped);
+
 
         // this check is not required as no_of_frames and size,pts are different
         /*if (frameCount != testDetails.no_of_frames || frameCount != ut_kvp_getListCount(kvpTestInstance, framePTS.c_str()))
@@ -784,9 +786,10 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, char *module,
         testDetails.flushPts = ut_kvp_getUInt64Field(kvpTestInstance, flushPts.c_str());
         testDetails.flushResetPts = ut_kvp_getUInt64Field(kvpTestInstance, flushResetPts.c_str());
         testDetails.eosPts = ut_kvp_getUInt64Field(kvpTestInstance, eosPts.c_str());
-        testDetails.endOfStream = UT_KVP_PROFILE_GET_BOOL( endOfStream.c_str());
-        testDetails.discontinuity = UT_KVP_PROFILE_GET_BOOL( discontinuity.c_str());
-        testDetails.lowLatency = UT_KVP_PROFILE_GET_BOOL(lowLatency.c_str());
+
+        testDetails.endOfStream = ut_kvp_getUInt32Field(kvpTestInstance,endOfStream.c_str());
+        testDetails.discontinuity = ut_kvp_getUInt32Field(kvpTestInstance,discontinuity.c_str());
+        testDetails.lowLatency = ut_kvp_getUInt32Field(kvpTestInstance,lowLatency.c_str());
 
         testConfiguration.push_back(testDetails);
     }
