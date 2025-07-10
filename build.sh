@@ -210,8 +210,8 @@ install_test()
     cp -rf ${TOP}/profiles ${INSTALL_PATH}
     cp -rf ${TOP}/test_configuration ${INSTALL_PATH}
     #cp -rf ${TOP}/stream_configuration ${INSTALL_PATH}
-    mkdir -p ${INSTALL_PATH}/assets/streams/input
-    mkdir -p ${INSTALL_PATH}/assets/streams/reference
+    #mkdir -p ${INSTALL_PATH}/assets/streams/input
+    #mkdir -p ${INSTALL_PATH}/assets/streams/reference
     rm -rf ${INSTALL_PATH}/libavbufferhelper.so
 }
 

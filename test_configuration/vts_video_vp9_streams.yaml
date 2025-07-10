@@ -19,7 +19,7 @@ VideoStreams:
     eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
     discontinuity: 0
     lowLatency: 0
-    bit_rate: 734
+    bit_rate: 801
     no_of_frames: 12
     decodeErrors: 0
     framesDropped: 0
@@ -69,7 +69,7 @@ VideoStreams:
     eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
     discontinuity: 0
     lowLatency: 0
-    bit_rate: 734
+    bit_rate: 801
     no_of_frames: 12
     decodeErrors: 2
     framesDropped: 0
@@ -119,7 +119,7 @@ VideoStreams:
     eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
     discontinuity: 1
     lowLatency: 0
-    bit_rate: 734
+    bit_rate: 801
     no_of_frames: 12
     decodeErrors: 0
     framesDropped: 0
@@ -169,7 +169,7 @@ VideoStreams:
     eos_pts: 466667000 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
     discontinuity: 0
     lowLatency: 0
-    bit_rate: 734
+    bit_rate: 801
     no_of_frames: 12
     decodeErrors: 0
     framesDropped: 0
@@ -219,7 +219,7 @@ VideoStreams:
     eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
     discontinuity: 0
     lowLatency: 0
-    bit_rate: 734
+    bit_rate: 801
     no_of_frames: 12
     decodeErrors: 0
     framesDropped: 0
@@ -269,7 +269,7 @@ VideoStreams:
     eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
     discontinuity: 0
     lowLatency: 0
-    bit_rate: 734
+    bit_rate: 801
     no_of_frames: 12
     decodeErrors: 0
     framesDropped: 0
@@ -319,7 +319,7 @@ VideoStreams:
     eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
     discontinuity: 1
     lowLatency: 0
-    bit_rate: 734
+    bit_rate: 801
     no_of_frames: 12
     decodeErrors: 2
     framesDropped: 0
@@ -369,7 +369,7 @@ VideoStreams:
     eos_pts: 466667000 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
     discontinuity: 0
     lowLatency: 0
-    bit_rate: 734
+    bit_rate: 801
     no_of_frames: 12
     decodeErrors: 2
     framesDropped: 0
@@ -419,7 +419,7 @@ VideoStreams:
     eos_pts: 466667000 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
     discontinuity: 1
     lowLatency: 0
-    bit_rate: 734
+    bit_rate: 801
     no_of_frames: 12
     decodeErrors: 0
     framesDropped: 0
@@ -469,7 +469,7 @@ VideoStreams:
     eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
     discontinuity: 0
     lowLatency: 0
-    bit_rate: 734
+    bit_rate: 801
     no_of_frames: 12
     decodeErrors: 2
     framesDropped: 0
@@ -519,7 +519,7 @@ VideoStreams:
     eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
     discontinuity: 0
     lowLatency: 0
-    bit_rate: 734
+    bit_rate: 801
     no_of_frames: 12
     decodeErrors: 2
     framesDropped: 0
