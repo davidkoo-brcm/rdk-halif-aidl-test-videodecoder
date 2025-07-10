@@ -30,7 +30,7 @@
 
 This document provides an overview of High Level Test Specification requirements for the Video Decoder module. It outlines the scope of testing, objectives, testing levels and approaches, specific test requirements, and expected deliverables.
 
-- `HAL` Interface Header [Interface Header](https://github.com/rdkcentral/rdk-halif-aidl/tree/v0.6/videodecoder/current/com/rdk/hal/videodecoder)
+- `HAL` Interface Header [Interface Header](https://github.com/rdkcentral/rdk-halif-aidl/tree/v0.7/videodecoder/current/com/rdk/hal/videodecoder)
 - `HAL` specification documentation in this link - [Video Decoder HAL Specification info](https://rdkcentral.github.io/rdk-halif-aidl/halif/video_decoder/current/video_decoder/)
 
 ## Module Description

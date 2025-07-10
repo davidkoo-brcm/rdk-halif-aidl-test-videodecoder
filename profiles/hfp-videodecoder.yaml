@@ -6,6 +6,7 @@ IVideoDecoderManager:           # Component object begins
     - NON_TUNNELLED
   IVideoDecoder:                # Resource list
     - 0:                        # Resource object begins
+      ID : 0
       supportedCodecs:          # Array of codec capabilities
         - MPEG:
             maxFrameRate: 60
@@ -34,6 +35,7 @@ IVideoDecoderManager:           # Component object begins
         - DOLBY_VISION
       supportsSecure: true
     - 1:                          # Resource object begins
+      ID : 1
       supportedCodecs:          # Array of codec capabilities
         - MPEG:
             maxFrameRate: 60
