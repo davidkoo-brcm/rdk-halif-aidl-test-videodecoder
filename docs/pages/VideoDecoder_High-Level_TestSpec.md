@@ -32,9 +32,10 @@
 
 This document provides an overview of the testing requirements for the Video Decoder module. It outlines the scope of testing, objectives, testing levels and approaches, specific test requirements.
 
-- Video Decoder Interface Definitions - [Video Decoder HAL](https://github.com/rdkcentral/rdk-halif-aidl/tree/v0.6/videodecoder/current/com/rdk/hal/videodecoder)
 
-- Video Decoder Overview - [Video Decoder Overview](https://wiki.rdkcentral.com/display/RDKHAL/Video+Decoder)
+- `HAL` Interface Header [Interface Header](https://github.com/rdkcentral/rdk-halif-aidl/tree/v0.7/videodecoder/current/com/rdk/hal/videodecoder)
+- `HAL` specification documentation in this link - [Video Decoder HAL Specification info](https://rdkcentral.github.io/rdk-halif-aidl/halif/video_decoder/current/video_decoder/)
+
 
 ## Module Description
 
