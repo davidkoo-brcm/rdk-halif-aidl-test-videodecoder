@@ -5,9 +5,9 @@
 - [Acronyms, Terms and Abbreviations](#acronyms-terms-and-abbreviations)
 - [Introduction](#introduction)
 - [Module Description](#module-description)
+- [Test Stream specifications](#test-stream-specifications)
 - [L2 Test Specification](#l2-test-specification)
 - [L3 Test Specification](#l3-test-specification)
-- [Test Stream specifications](#test-stream-specifications)
 
 ## Acronyms, Terms and Abbreviations
 
@@ -15,8 +15,10 @@
 - `API`    - Application Programming Interface
 - `AIDL`   - Android Interface Definition Language
 - `Caller` - Any user of the interface via the APIs
+- `NA`     - Not Applicable
 - `L2`     - Level 2 Testing
 - `L3`     - Level 3 Testing
+- `CB`     - Call-back function (suffix)
 - `HDR`    - High Dynamic Range
 - `SDR`    - Standard Dynamic Range
 - `HEVC`   - High Efficiency Video Coding
@@ -28,22 +30,27 @@
 
 ## Introduction
 
-This document provides an overview of High Level Test Specification requirements for the Video Decoder module. It outlines the scope of testing, objectives, testing levels and approaches, specific test requirements, and expected deliverables.
+This document provides an overview of the testing requirements for the Video Decoder module. It outlines the scope of testing, objectives, testing levels and approaches, specific test requirements.
 
-- `HAL` Interface Header [Interface Header](https://github.com/rdkcentral/rdk-halif-aidl/tree/v0.6/videodecoder/current/com/rdk/hal/videodecoder)
+
+- `HAL` Interface Header [Interface Header](https://github.com/rdkcentral/rdk-halif-aidl/tree/v0.7/videodecoder/current/com/rdk/hal/videodecoder)
 - `HAL` specification documentation in this link - [Video Decoder HAL Specification info](https://rdkcentral.github.io/rdk-halif-aidl/halif/video_decoder/current/video_decoder/)
+
 
 ## Module Description
 
-The Video Decoder HAL service provides the interfaces for compressed video to be passed to the vendor layer for decoding.It may be passed secure buffers if it indicates support for secure video processing.
+The Video Decoder `HAL` service provides the interfaces for compressed video to be passed to the vendor layer for decoding.  It may be passed secure buffers if it indicates support for secure video processing.
 
-The output of a video decoder can take 2 routes; non-tunnelled it comes back to the `RDK` media pipeline as a video frame buffer and metadata or tunnelled through the vendor layer.
+The output of an video decoder can take two routes:
 
-The choice of whether video is tunnelled or non-tunnelled has no impact on the operational mode of the video decoder.  It is possible to have tunnelled video and non-tunnelled audio.
+1. **Non-tunnel mode** - Decoded video frames with metadata are sent back to the `RDK` media pipeline.
+2. **Tunnel mode** - Video is passed directly to the vendor layer mixer.
 
-The video decoder operational mode can be chosen by the client once opened.
+## Test Stream specifications
 
-The `RDK` middleware GStreamer pipeline contains an `RDK` Video Decoder element designed specifically to work with the Video Decoder HAL interface.
+- List of video test streams: [Video TestStreams](VideoDecoder_TestStreamsInfo.md)
+
+- Each Test should refer [vts_l3_test_config.yaml](../../test_configuration/vts_l3_test_config.yaml) for the streams and information like `PTS`, frame sizes for the test.
 
 ### L2 Test Specification
 
@@ -55,31 +62,175 @@ The `RDK` middleware GStreamer pipeline contains an `RDK` Video Decoder element 
 |4|Verify Decoder State Changes with multiple video Decoder |- Get Supported Video Decoders using the `IVideoDecoderManager` class by calling `getVideoDecoderIds()`. <br> - Verify that the returned array of `IVideoDecoder.Id` objects is not null and contains valid IDs. <br> - Loop through each supported video decoder ID: <br>&emsp; - Get the Video Decoder Interface using `getVideoDecoder(videoDecoderId)`. <br> &emsp; - Verify that the returned `IVideoDecoder` object is not null. <br> &emsp; - Register event listeners using `registerEventListener`. <br> &emsp; - If platform supports multiple decoder, open all the instances of the decoders using `open()`. <br> &emsp; - Ensure each state(i.e. in the enum `State`) transitions(`open -> start -> flush -> stop -> close`) work as expected using `getState()`. <br> &emsp; - Validate event listener notifications using `onStateChanged`. <br>  - Close the decoder using `close()`. <br> | - `IVideoDecoderManager:` getVideoDecoderIds, getVideoDecoder <br> - `IVideoDecoder:` open, getState, registerEventListener, unregisterEventListener, close <br> - `IVideoDecoderController` - start, stop, flush <br> |
 
 ### L3 Test Specification
+### Prerequisites
 
-| # | Test  | Description | HAL APIs | Test Streams |
-|---|-------|-------------|----------|--------------|
-| 1 | Decode Video Frames (secure, non-tunneled) | - Get Supported Video Decoders `IVideoDecoderManager` class by calling `getVideoDecoderIds()`. <br> - Loop through supported video decoders <br> - Loop through supported video formats <br> - Retrieve `Capabilities` and check `supportsSecure` field <br> - `open` video decoder in `secure` mode if supported <br> - Check supported operational modes using `getSupportedOperationalModes()` <br> - Set `OperationalMode` to `NON_TUNNELLED` using `setProperty(Property.OPERATIONAL_MODE, OperationalMode.NON_TUNNELLED)` if supported <br> - Register control and event listeners <br> - Enable SHA-1 calculation using `setProperty(Property.SHA1_CALC, 1)` <br> - `start` the decoder <br> - Provide video frames from test streams with known frame sizes to decoder <br> - Verify the decoded frame, `nsPresentationTime`, `FrameMetadata` fields (including SHA-1 hash) received from `onFrameOutput` <br> - After decoding all frames, `stop` and `close` the decoder <br>| - `IVideoDecoderManager:` getVideoDecoderIds, getVideoDecoder, getSupportedOperationalModes <br> - `IVideoDecoder:` open, getCapabilities, registerEventListener, unregisterEventListener, close <br> - `IVideoDecoderController:` start, decodeBuffer, stop, setProperty <br> - `IVideoDecoderControllerListener:` onFrameOutput <br> - `IVideoDecoderEventListener:` onDecodeError <br> - `IAVBuffer:` createVideoPool, alloc, free, getHeapMetrics, getPoolMetrics, getAllPoolMetrics,destroyPool ||
-| 2 | Decode Video Frames (non-secure, non-tunneled) | - Get Supported Video Decoders `IVideoDecoderManager` class by calling `getVideoDecoderIds()`. <br> - Loop through supported video decoders <br> - Loop through supported video formats <br> - `open` video decoder in `non-secure` mode <br> - Check supported operational modes using `getSupportedOperationalModes()` <br> - Set `OperationalMode` to `NON_TUNNELLED` using `setProperty(Property.OPERATIONAL_MODE, OperationalMode.NON_TUNNELLED)` if supported <br> - Register control and event listeners <br> - Enable SHA-1 calculation using `setProperty(Property.SHA1_CALC, 1)` <br> - `start` the decoder <br> - Provide video frames from test streams with known frame sizes to decoder <br> - Verify the decoded frame, `nsPresentationTime`, `FrameMetadata` fields (including SHA-1 hash) received from `onFrameOutput` <br> - After decoding all frames, `stop` and `close` the decoder <br> - Test also should validate the decoder states using `getState` and `onStateChanged` <br> | - `IVideoDecoderManager:` getVideoDecoderIds, getVideoDecoder, getSupportedOperationalModes <br> - `IVideoDecoder:` open, getCapabilities, registerEventListener, unregisterEventListener, close <br> - `IVideoDecoderController:` start, decodeBuffer, stop, setProperty <br> - `IVideoDecoderControllerListener:` onFrameOutput <br> - `IVideoDecoderEventListener:` onDecodeError <br> - `IAVBuffer:` createVideoPool, alloc, free, getHeapMetrics, getPoolMetrics, getAllPoolMetrics,destroyPool ||
-| 3 | Decode Video Frames (non-secure, tunneled) | - Get Supported Video Decoders `IVideoDecoderManager` class by calling `getVideoDecoderIds()`. <br> - Loop through supported video decoders <br> - Loop through supported video formats <br> - `open` video decoder in `non-secure` mode <br> - Check supported operational modes using `getSupportedOperationalModes()` <br> - Set `OperationalMode` to `TUNNELLED` using `setProperty(Property.OPERATIONAL_MODE, OperationalMode.TUNNELLED)` if supported <br> - Register control and event listeners <br> - Enable SHA-1 calculation using `setProperty(Property.SHA1_CALC, 1)` <br> - `start` the decoder <br> - Provide video frames from test streams with known frame sizes to decoder <br> - Verify the decoded frame, `nsPresentationTime`, `FrameMetadata` fields (including SHA-1 hash) received from `onFrameOutput` <br> - After decoding all frames, `stop` and `close` the decoder <br> | - `IVideoDecoderManager:` getVideoDecoderIds, getVideoDecoder, getSupportedOperationalModes <br> - `IVideoDecoder:` open, getCapabilities, registerEventListener, unregisterEventListener, close <br> - `IVideoDecoderController:` start, decodeBuffer, stop, setProperty <br> - `IVideoDecoderControllerListener:` onFrameOutput <br> - `IVideoDecoderEventListener:` onDecodeError <br> - `IAVBuffer:` createVideoPool, alloc, free, getHeapMetrics, getPoolMetrics, getAllPoolMetrics,destroyPool ||
-| 4 | Decode Video Frames (non-secure, GRAPHICS_TEXTURE) |- Get Supported Video Decoders `IVideoDecoderManager` class by calling `getVideoDecoderIds()`. <br> - Loop through supported video decoders <br> - Loop through supported video formats <br> - `open` video decoder in `non-secure` mode <br> - Check supported operational modes using `getSupportedOperationalModes()` <br> - Set `OperationalMode` to `GRAPHICS_TEXTURE` using `setProperty(Property.OPERATIONAL_MODE, OperationalMode.GRAPHICS_TEXTURE)` if supported <br> - Register control and event listeners <br> - Enable SHA-1 calculation using `setProperty(Property.SHA1_CALC, 1)` <br> - `start` the decoder <br> - Provide video frames from test streams with known frame sizes to decoder <br> - Verify the `NV12 textures` (Verify Texture Format in API (Direct3D/OpenGL/Vulkan)), <br> - After decoding all frames, `stop` and `close` the decoder <br> | - `IVideoDecoderManager:` getVideoDecoderIds, getVideoDecoder, getSupportedOperationalModes <br> - `IVideoDecoder:` open, getCapabilities, registerEventListener, unregisterEventListener, close <br> - `IVideoDecoderController:` start, decodeBuffer, stop, setProperty <br> - `IVideoDecoderControllerListener:` onFrameOutput <br> - `IVideoDecoderEventListener:` onDecodeError <br> - `IAVBuffer:` createVideoPool, alloc, free, getHeapMetrics, getPoolMetrics, getAllPoolMetrics,destroyPool ||
-| 5 | Invalid Video Frames (e.g., corrupted frames, missing frames, bitstream errors) to test error handling. | - Get Supported Video Decoders `IVideoDecoderManager` class by calling `getVideoDecoderIds()`. <br> - Loop through supported video decoders <br> - Loop through supported video formats <br> - `open` video decoder in non-secure mode <br> - Register control and event listeners <br> - `start` the decoder <br> - Provide invalid video frames from test streams to decoder in non-tunnel mode <br> - Check if the decoder raises proper error using `onDecodeError` callback <br> - Verify the `METRIC_DECODE_ERRORS` property to ensure errors are counted <br> - Check the decoder's behavior for different types of invalid frames (e.g., corrupted frames, missing frames, bitstream errors) <br> - After decoding all frames, `stop` and `close` the decoder | - `IVideoDecoderManager:` getVideoDecoderIds, getVideoDecoder <br> - `IVideoDecoder:` open, getCapabilities, getProperty,registerEventListener, unregisterEventListener, close <br> - `IVideoDecoderController:` start, decodeBuffer, stop <br> - `IVideoDecoderEventListener:` onDecodeError <br> - `IAVBuffer:` createVideoPool, alloc, free, getHeapMetrics, getPoolMetrics, getAllPoolMetrics,destroyPool <br>  ||
-| 6 | Signal Discontinuity | - Get Supported Video Decoders `IVideoDecoderManager` class by calling `getVideoDecoderIds()`. <br> - Loop through supported video decoders <br> - Loop through supported video formats <br> - `open` video decoder in non-secure mode <br> - Register control and event listeners <br> - `start` the decoder <br> - Provide video frames from test streams with known frame sizes to decoder in non-tunnel mode <br> - Signal discontinuity using `signalDiscontinuity` <br> &nbsp;&nbsp;&nbsp;&nbsp; - At the start of a Group of Pictures (GOP) <br> &nbsp;&nbsp;&nbsp;&nbsp; - In the middle of a GOP <br>  - Decoder should continue decoding without any issue <br> - Verify the decoded frame, `nsPresentationTime`, `FrameMetadata` fields received from `onFrameOutput` <br> - Check the `discontinuity` field in `FrameMetadata` to ensure it is set correctly <br> - After decoding all frames, `stop` and `close` the decoder | - `IVideoDecoderManager:` getVideoDecoderIds, getVideoDecoder <br> - `IVideoDecoder:` open, getCapabilities, registerEventListener, unregisterEventListener, close <br> - `IVideoDecoderController:` start, decodeBuffer, stop, signalDiscontinuity <br> - `IVideoDecoderControllerListener:` onFrameOutput <br> - `IVideoDecoderEventListener:` onDecodeError <br> - `IAVBuffer:` createVideoPool, alloc, free, getHeapMetrics, getPoolMetrics, getAllPoolMetrics,destroyPool ||
-| 7 | Test with Multiple Video Streams without decoder close(e.g. channel change ) | - Get Supported Video Decoders `IVideoDecoderManager` class by calling `getVideoDecoderIds()`. <br> - Verify that the returned array of `IVideoDecoder.Id` objects is not null and contains valid IDs. <br>- Open the video decoder for Stream 1 with one codec <br> - Start the video decoder for Stream 1 <br> - Decode buffers for Stream 1 <br> - stop and stop the decoder  <br> - Switch to Stream 2 with different codec <br> - Decode buffers for Stream 2 <br> - Switch back to Stream1 with stop and stop the decoder <br> -  After decoding all frames, `stop` and `close` the decoder  | - `IVideoDecoderManager:` getVideoDecoderIds, getVideoDecoder <br> - `IVideoDecoder:` open, getCapabilities, registerEventListener, unregisterEventListener, close <br> - `IVideoDecoderController:` start, decodeBuffer, stop <br> - `IVideoDecoderEventListener:` onDecodeError <br> - `IAVBuffer:` createVideoPool, alloc, free, getHeapMetrics, getPoolMetrics, getAllPoolMetrics,destroyPool <br> - `IVideoDecoder:` getProperty ||
-| 8 | Verify Video Decoder with Different Resolutions | - Get Supported Video Decoders `IVideoDecoderManager` class by calling `getVideoDecoderIds()`. <br> - Verify that the returned array of `IVideoDecoder.Id` objects is not null and contains valid IDs. <br>- Open the video decoder <br> - Start the video decoder <br> - Decode buffers with different resolutions(e.g. 1080p, 4K) <br> - Verify using `FrameMetadata` <br> -   After decoding all frames, `stop` and `close` the decoder |- `IVideoDecoderManager:` getVideoDecoderIds, getVideoDecoder, getSupportedOperationalModes <br> - `IVideoDecoder:` open, getCapabilities, registerEventListener, unregisterEventListener, close <br> - `IVideoDecoderController:` start, decodeBuffer, stop, setProperty <br> - `IVideoDecoderControllerListener:` onFrameOutput <br> - `IVideoDecoderEventListener:` onDecodeError <br> - `IAVBuffer:` createVideoPool, alloc, free, getHeapMetrics, getPoolMetrics, getAllPoolMetrics,destroyPool ||
-| 9 | Verify Video Decoder with Different Dynamic Ranges | - Get Supported Video Decoders `IVideoDecoderManager` class by calling `getVideoDecoderIds()`. <br> - Verify that the returned array of `IVideoDecoder.Id` objects is not null and contains valid IDs. <br>- Open the video decoder <br> - Start the video decoder <br> - Decode buffers with different dynamic ranges(e.g. SDR,HDR,HLG,Dolby Vision) <br> - Verify using `FrameMetadata` <br> -   After decoding all frames, `stop` and `close` the decoder |- `IVideoDecoderManager:` getVideoDecoderIds, getVideoDecoder, getSupportedOperationalModes <br> - `IVideoDecoder:` open, getCapabilities, registerEventListener, unregisterEventListener, close <br> - `IVideoDecoderController:` start, decodeBuffer, stop, setProperty <br> - `IVideoDecoderControllerListener:` onFrameOutput <br> - `IVideoDecoderEventListener:` onDecodeError <br> - `IAVBuffer:` createVideoPool, alloc, free, getHeapMetrics, getPoolMetrics, getAllPoolMetrics,destroyPool ||
-| 10 | Verify Video Decoder with Different Frame Rates | - Get Supported Video Decoders `IVideoDecoderManager` class by calling `getVideoDecoderIds()`. <br> - Verify that the returned array of `IVideoDecoder.Id` objects is not null and contains valid IDs. <br>- Open the video decoder <br> - Start the video decoder <br> - Decode buffers with different frame rates (e.g.30fps, 60fps) <br> - Verify using `FrameMetadata` <br> -   After decoding all frames, `stop` and `close` the decoder |- `IVideoDecoderManager:` getVideoDecoderIds, getVideoDecoder, getSupportedOperationalModes <br> - `IVideoDecoder:` open, getCapabilities, registerEventListener, unregisterEventListener, close <br> - `IVideoDecoderController:` start, decodeBuffer, stop, setProperty <br> - `IVideoDecoderControllerListener:` onFrameOutput <br> - `IVideoDecoderEventListener:` onDecodeError <br> - `IAVBuffer:` createVideoPool, alloc, free, getHeapMetrics, getPoolMetrics, getAllPoolMetrics,destroyPool ||
-| 11 | Verify Video Decoder with Different GOP Structures | - Get Supported Video Decoders `IVideoDecoderManager` class by calling `getVideoDecoderIds()`. <br> - Verify that the returned array of `IVideoDecoder.Id` objects is not null and contains valid IDs. <br>- Open the video decoder <br> - Start the video decoder <br> - Decode buffers with different GOP structures (e.g. open GOP,Multiple GOP,closed GOP) <br> - Verify using `FrameMetadata` <br> -   After decoding all frames, `stop` and `close` the decoder |- `IVideoDecoderManager:` getVideoDecoderIds, getVideoDecoder, getSupportedOperationalModes <br> - `IVideoDecoder:` open, getCapabilities, registerEventListener, unregisterEventListener, close <br> - `IVideoDecoderController:` start, decodeBuffer, stop, setProperty <br> - `IVideoDecoderControllerListener:` onFrameOutput <br> - `IVideoDecoderEventListener:` onDecodeError <br> - `IAVBuffer:` createVideoPool, alloc, free, getHeapMetrics, getPoolMetrics, getAllPoolMetrics,destroyPool ||
-| 12 | Verify Video Decoder with Low Latency Mode | - Get Supported Video Decoders `IVideoDecoderManager` class by calling `getVideoDecoderIds()`. <br> - Verify that the returned array of `IVideoDecoder.Id` objects is not null and contains valid IDs. <br>- Open the video decoder <br> - Set low latency mode <br> - Start the video decoder <br> - Decode buffers in low latency mode <br> - Verify using metrics and `FrameMetadata` <br> -   After decoding all frames, `stop` and `close` the decoder | - `IVideoDecoderManager:` getVideoDecoderIds, getVideoDecoder, getSupportedOperationalModes <br> - `IVideoDecoder:` open, getCapabilities, registerEventListener, unregisterEventListener, close <br> - `IVideoDecoderController:` start, decodeBuffer, stop, setProperty <br> - `IVideoDecoderControllerListener:` onFrameOutput <br> - `IVideoDecoderEventListener:` onDecodeError <br> - `IAVBuffer:` createVideoPool, alloc, free, getHeapMetrics, getPoolMetrics, getAllPoolMetrics,destroyPool ||
-| 13 | Multi-Instance Decoding | - If the platform supports multiple decoders, open multiple instances of video decoders at the same time. <br> - Get Supported Video Decoders using `IVideoDecoderManager` class by calling `getVideoDecoderIds()`. <br> - Verify that the returned array of `IVideoDecoder.Id` objects is not null and contains valid IDs. <br> - Loop through each supported video decoder ID. <br> - Open two video decoders using `getVideoDecoder(videoDecoderId)`. <br> - Verify that the returned `IVideoDecoder` objects are not null. <br> - Register control and event listeners for both decoders. <br> - Start both decoders(e.g.HD,UHD or UHD,UHD). <br> - Provide video frames from test streams to both decoders. <br> - Verify the decoded frames, `nsPresentationTime`, `FrameMetadata` fields received from `onFrameOutput` for both decoders. <br> - After decoding all frames, `stop` and `close` both decoders. |- `IVideoDecoderManager:` getVideoDecoderIds, getVideoDecoder, getSupportedOperationalModes <br> - `IVideoDecoder:` open, getCapabilities, registerEventListener, unregisterEventListener, close <br> - `IVideoDecoderController:` start, decodeBuffer, stop, setProperty <br> - `IVideoDecoderControllerListener:` onFrameOutput <br> - `IVideoDecoderEventListener:` onDecodeError <br> - `IAVBuffer:` createVideoPool, alloc, free, getHeapMetrics, getPoolMetrics, getAllPoolMetrics,destroyPool ||
-| 14 | Signal End of Stream (`EOS`)| - Get Supported Video Decoders `IVideoDecoderManager` class by calling `getVideoDecoderIds()`. <br> - Verify that the returned array of `IVideoDecoder.Id` objects is not null and contains valid IDs. <br>- Open the video decoder <br> - Start the video decoder <br> - Signal End of Stream (EOS) <br> - Verify EOS using `FrameMetadata` <br> - Stop and Close the Decoder |- `IVideoDecoderManager:` getVideoDecoderIds, getVideoDecoder, getSupportedOperationalModes <br> - `IVideoDecoder:` open, getCapabilities, registerEventListener, unregisterEventListener, close <br> - `IVideoDecoderController:` start, decodeBuffer, stop, setProperty <br> - `IVideoDecoderControllerListener:` onFrameOutput <br> - `IVideoDecoderEventListener:` onDecodeError <br> - `IAVBuffer:` createVideoPool, alloc, free, getHeapMetrics, getPoolMetrics, getAllPoolMetrics,destroyPool ||
-| 15 | Decode after Signal `EOS` | - Get Supported Video Decoders `IVideoDecoderManager` class by calling `getVideoDecoderIds()`. <br> - Loop through supported video decoders <br> - Loop through supported video formats <br> - `open` video decoder in non-secure mode <br> - Register control and event listeners <br> - `start` the decoder <br> - Provide video frames from test streams with known frame sizes to decoder in non-tunnel mode <br> - Signal `EOS` using `signalEOS` <br> - Decoder should decode without any issue and after all frames decode `FrameMetadata.endOfStream` must be `true` <br> - Provide the video buffers after `EOS` without `flush` or `stop`->`start`, decoder should raise proper error code <br> - `stop`->`start` decoder and provide the video frames, decoder should continue decoding <br> - Signal `EOS` using `signalEOS` <br> - `flush` decoder and provide the video frames, decoder should continue decoding <br> - Verify the decoder metrics using `getProperty` <br> - After decoding all frames, `stop` and `close` the decoder <br> | - `IVideoDecoderManager:` getVideoDecoderIds, getVideoDecoder <br> - `IVideoDecoder:` open, getCapabilities, getProperty, registerEventListener, unregisterEventListener, close <br> - `IVideoDecoderController:` start, decodeBuffer, signalEOS, stop <br> - `IVideoDecoderControllerListener:` onFrameOutput <br> - `IVideoDecoderEventListener:` onDecodeError <br> - `IAVBuffer:` createVideoPool, alloc, free, getHeapMetrics, getPoolMetrics, getAllPoolMetrics,destroyPool ||
-| 16 | Verify flush functionality | - Get Supported Video Decoders `IVideoDecoderManager` class by calling `getVideoDecoderIds()`. <br> - Loop through supported video decoders <br> - Loop through supported video formats <br> - `open` video decoder in non-secure mode <br> - Register control and event listeners <br> - `start` the decoder <br> - Provide video frames from test streams with known frame sizes to decoder in non-tunnel mode <br> - Call `flush` and check if the queued frames are flushed out. Check decoder state with reset flag enabled and disabled <br> - Verify the decoder metrics using `getProperty` and check the flush timing , check `INPUT_QUEUE_DEPTH`<br> - After decoding all frames, `stop` and `close` the decoder <br> | - `IVideoDecoderManager:` getVideoDecoderIds, getVideoDecoder <br> - `IVideoDecoder:` open, getCapabilities, getProperty, registerEventListener, unregisterEventListener, close <br> - `IVideoDecoderController:` start, decodeBuffer, flush, stop <br> - `IVideoDecoderControllerListener:` onFrameOutput <br> - `IVideoDecoderEventListener:` onDecodeError <br> - `IAVBuffer:` createVideoPool, alloc, free, getHeapMetrics, getPoolMetrics, getAllPoolMetrics,destroyPool ||
-| 17 | Buffer fullness check | - Get Supported Video Decoders `IVideoDecoderManager` class by calling `getVideoDecoderIds()`. <br> - Loop through supported video decoders <br> - Loop through supported video formats <br> - `open` video decoder in non-secure mode <br> - Register control and event listeners <br> - `start` the decoder <br> - Provide back-to-back frames to the decoder; if the buffers are full, `decodeBuffer` should return `false` and verify using av buffer metrics and `INPUT_QUEUE_DEPTH` <br> - After decoding all frames, `stop` and `close` the decoder <br> | - `IVideoDecoderManager:` getVideoDecoderIds, getVideoDecoder <br> - `IVideoDecoder:` open, getCapabilities, getProperty, registerEventListener, unregisterEventListener, close <br> - `IVideoDecoderController:` start, decodeBuffer, stop <br> - `IVideoDecoderControllerListener:` onFrameOutput <br> - `IVideoDecoderEventListener:` onDecodeError <br> - `IAVBuffer:` createVideoPool, alloc, free, getHeapMetrics, getPoolMetrics, getAllPoolMetrics,destroyPool ||
-| 18 | Check the decoder behavior with or without `CSD` | - Get Supported Video Decoders `IVideoDecoderManager` class by calling `getVideoDecoderIds()`. <br> - Loop through supported video decoders <br> - Loop through supported video formats <br> - `open` video decoder in non-secure mode <br> - Register control and event listeners <br> - `start` the decoder <br> - Call `parseCodecSpecificData` with valid `CSDVideoFormat` and `codecData` <br> - Provide video frames from test streams to decoder in non-tunnel mode <br> - Verify the decoded frame, `FrameMetadata` fields received from `onFrameOutput` <br> - Call `parseCodecSpecificData` with invalid or empty `codecData` and verify the decoder behavior <br> - Provide video frames without `CSD` and verify the decoder behavior <br> - Verify the decoded frame, `FrameMetadata` fields received from `onFrameOutput` <br> - After decoding all frames, `stop` and `close` the decoder <br> | - `IVideoDecoderManager:` getVideoDecoderIds, getVideoDecoder <br> - `IVideoDecoder:` open, getCapabilities, getProperty, registerEventListener, unregisterEventListener, close <br> - `IVideoDecoderController:` start, decodeBuffer, stop, parseCodecSpecificData <br> - `IVideoDecoderControllerListener:` onFrameOutput <br> - `IVideoDecoderEventListener:` onDecodeError <br> - `IAVBuffer:` createVideoPool, alloc, free, getHeapMetrics, getPoolMetrics, getAllPoolMetrics,destroyPool ||
-| 19 | Verify onUserDataOutput Callback(e.g. cc,teletext) |- Get Supported Video Decoders `IVideoDecoderManager` class by calling `getVideoDecoderIds()`. <br> - Loop through supported video decoders <br> - Loop through supported video formats <br> - `open` video decoder in non-secure mode <br> - Register control and event listeners <br> - `start` the decoder <br> - Provide video frames from test streams with known user data to the decoder in non-tunnel mode using `IVideoDecoderController.decodeBuffer(buffer)`.<br> - Verify that onUserDataOutput is called with the correct `nsPresentationTime` and `userData`.- Verify the decoded frame, `FrameMetadata` fields received from `onFrameOutput` <br> - After decoding all frames, `stop` and `close` the decoder <br> | - `IVideoDecoderManager:` getVideoDecoderIds, getVideoDecoder <br> - `IVideoDecoder:` open, getCapabilities, getProperty, registerEventListener, unregisterEventListener, close <br> - `IVideoDecoderController:` start, decodeBuffer, stop, parseCodecSpecificData <br> - `IVideoDecoderControllerListener:` onFrameOutput <br> - `IVideoDecoderEventListener:` onDecodeError <br> - `IAVBuffer:` createVideoPool, alloc, free, getHeapMetrics, getPoolMetrics, getAllPoolMetrics,destroyPool ||
-| 20 | Verify Decoder Latency Measurement | - Get Supported Video Decoders `IVideoDecoderManager` class by calling `getVideoDecoderIds()`. <br> - Loop through supported video decoders <br> - Loop through supported video formats <br> - `open` video decoder in non-secure mode <br> - Register control and event listeners <br> - `start` the decoder <br> - Provide video frames from test streams with known frame sizes to decoder <br> - Measure the latency of decoder by measuring the time difference between `decodeBuffer` and `onFrameOutput` <br> - Verify the latency is within the accepted range <br> - After decoding all frames, `stop` and `close` the decoder <br> | - `IVideoDecoderManager:` getVideoDecoderIds, getVideoDecoder <br> - `IVideoDecoder:` open, getCapabilities, getProperty, registerEventListener, unregisterEventListener, close <br> - `IVideoDecoderController:` start, decodeBuffer, stop <br> - `IVideoDecoderControllerListener:` onFrameOutput <br> - `IVideoDecoderEventListener:` onDecodeError <br> - `IAVBuffer:` createVideoPool, alloc, free, getHeapMetrics, getPoolMetrics, getAllPoolMetrics,destroyPool ||
-| 21 | Verify Video Decoder with Adaptive Bitrate Streaming (ABR) |  - Get Supported Video Decoders `IVideoDecoderManager` class by calling `getVideoDecoderIds()`. <br> - Verify that the returned array of `IVideoDecoder.Id` objects is not null and contains valid IDs. <br> - Open the video decoder <br> - Start the video decoder <br> - Provide video frames from test streams with varying bitrates to simulate ABR (e.g., switching between 480p, 720p, 1080p, 4K) <br> - Verify that the decoder handles bitrate changes smoothly without any glitches or artifacts <br> - Verify using `FrameMetadata` <br> - After decoding all frames, `stop` and `close` the decoder <br> | - `IVideoDecoderManager:` getVideoDecoderIds, getVideoDecoder, getSupportedOperationalModes <br> - `IVideoDecoder:` open, getCapabilities, registerEventListener, unregisterEventListener, close <br> - `IVideoDecoderController:` start, decodeBuffer, stop, setProperty <br> - `IVideoDecoderControllerListener:` onFrameOutput <br> - `IVideoDecoderEventListener:` onDecodeError <br> - `IAVBuffer:` createVideoPool, alloc, free, getHeapMetrics, getPoolMetrics, getAllPoolMetrics,destroyPool ||
+#### AV Buffer
 
-### Test Stream specifications
+Video frames are supplied to the Video Decoder during testing, which necessitates a pre-validated AVBuffer module. Therefore, the AVBuffer must successfully pass VTS L1, L2, and L3 testing before being used in the Video Decoder tests
 
-List of video test streams and information [streams info](VideoDecoder_TestStreamsInfo.md)
+### Feature List
+
+VTS L3 validates all the Video Decoder features in both sequential and concurrent decoding modes (if the platform supports multiple decoders) as represented below.
+
+#### Sequential Decoding
+
+The Sequential Decoding test evaluates each video decoder individually, one after another, to ensure functional correctness across all supported features. This approach helps isolate issues and verify that every decoder instance performs as expected in a standalone environment.
+
+```mermaid
+block-beta
+    block:1
+        VideoStream("Video Stream") space AVBuffer("AVBuffer") space Decoder("Decoder_1") space Output("Output")
+        VideoStream --> AVBuffer
+        AVBuffer --> Decoder
+        Decoder --> Output
+    end
+```
+
+#### Concurrent Decoding
+
+The Concurrent Decoding test assesses the system's ability to handle multiple video decoders operating simultaneously, each configured with different supported features. This test is designed to validate the robustness, resource management, and feature compatibility of the platform under concurrent load, and is applicable only if the platform supports multiple decoder instances.
+
+```mermaid
+block-beta
+columns 1
+    block:1
+        VideoStream_1("Video Stream") space AVBuffer_1("AVBuffer") space Decoder_1("Decoder_1") space Output_1("Output")
+        VideoStream_1 --> AVBuffer_1
+        AVBuffer_1 --> Decoder_1
+        Decoder_1 --> Output_1
+    end
+    space
+    block:2
+        VideoStream_2("Video Stream") space AVBuffer_2("AVBuffer") space Decoder_2("Decoder_2") space Output_2("Output")
+        VideoStream_2 --> AVBuffer_2
+        AVBuffer_2 --> Decoder_2
+        Decoder_2 --> Output_2
+    end
+    space
+    block:N
+        VideoStream_N("Video Stream") space AVBuffer_N("AVBuffer") space Decoder_N("Decoder_N") space Output_N("Output")
+        VideoStream_N --> AVBuffer_N
+        AVBuffer_N --> Decoder_N
+        Decoder_N --> Output_N
+    end
+```
+
+The following table outlines the core features validated in the L3 test phase
+
+|#|Testing Feature|Description|
+|-|---------------|-----------|
+|1|Tunnel/Non-Tunnel|Executes the decoder in tunnel mode or in non tunnel mode based on the property OPERATION_MODE set by the user. The test validates metrics, metadata and bufferHandle.|
+|2|Secure and Non-Secure|Initializes the decoder in secure mode, ensuring all buffer operations occur in secure memory|
+|3|Error Streams|Verifies decoder behavior with error streams. Ensures appropriate events are raised and frame metadata is updated accurately|
+|4|Codecs|Tests the decoder’s ability to decode all supported codec types per its capabilities, using input streams defined in the configuration file.|
+|5|Discontinuity|This test Verifies that the discontinuity signal is processed, ensuring subsequent frames decode without errors and metadata reflects the discontinuity.|
+|6|EOS|Tests the decoder’s handling of an End-of-Stream (EOS) signal, ensuring all frames up to EOS are decoded, metadata is updated, post-EOS buffers are ignored, and decoding resumes after restart.|
+|7|Flush without reset|Test the decoder's flush functionality. The decoder should discard any buffers already queued and resume normal decoding of subsequent frames|
+|8|Flush with reset|Test the decoder’s flush functionality combined with reset. The decoder should discard all queued buffers and transition to the READY state. After restarting, the decoder should properly process incoming frames|
+|9| Resolution| Tests the decoder’s ability to decode streams with different resolutions (up to maxFrameWidth and maxFrameHeight per CodecCapability) as defined in the configuration file, validated via frame metadata|
+|10| HDR Modes |Tests the decoder’s ability to decode all supported HDR modes per its capabilities, using input streams defined in the configuration file.|
+|11| Frame Rates | Tests the decoder’s capability for supported frame rates (up to maxFrameRate per CodecCapability) and checks streams with different frame rates as defined in the configuration file, validated via frame metadata|
+|12| GOP Structure |Tests the decoder’s ability to decode various GOP structures, including single I-frame or IDR frame, single closed GOPs, multiple open GOPs, and mixed open/closed GOPs, as defined in the configuration file.|
+|13| Low Latency mode | Tests the decoder’s low latency mode, ensuring B-frames are skipped, as required for low-latency applications.|
+|14| Adaptive Bitrate Streaming | Tests the decoder’s ability to decode Adaptive Bitrate Streams (ABR) with dynamic bitrate changes, as defined in the configuration fileTests the decoder’s ability to decode Adaptive Bitrate Streams (ABR) with dynamic bitrate changes, as defined in the configuration file.|
+|15|Concurrent decoding|Tests multiple decoders simultaneously, if supported, validating decoded outputs and their respective metrics (e.g., frame timing, error rates).|
+
+|#|Test|Tunnel|Secure|Error streams|CODEC|Discontinuity|EOS|Flush|Flush+Rest|Resolutions|HDR Modes|Frame Rates|GOP|Low Latency|Concurrency|
+|-|----|------|------|-------------|----|-------------|---|-----|----------|-----------|---------|-----------|---|-----------|-----------|
+|1|Decode_Sequential_NonTunnel_NonSecure|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|
+|2|Decode_Sequential_NonTunnel_NonSecure_Error|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|
+|3|Decode_Sequential_NonTunnel_NonSecure_CODEC|✘|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|
+|4|Decode_Sequential_NonTunnel_NonSecure_Discontinuity|✘|✘|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|
+|5|Decode_Sequential_NonTunnel_NonSecure_EOS|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|
+|6|Decode_Sequential_NonTunnel_NonSecure_Flush|✘|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|
+|7|Decode_Sequential_NonTunnel_NonSecure_FlushReset|✘|✘|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✘|✘|
+|8|Decode_Sequential_NonTunnel_NonSecure_Resolutions|✘|✘|✘|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✘|
+|9|Decode_Sequential_NonTunnel_NonSecure_HDRModes|✘|✘|✘|✘|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|
+|10|Decode_Sequential_NonTunnel_NonSecure_FrameRate|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✔|✘|✘|✘|
+|11|Decode_Sequential_NonTunnel_NonSecure_GOPStructure|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✔|✘|✘|
+|12|Decode_Sequential_NonTunnel_NonSecure_LowLatency|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✔|✘|
+|13|Decode_Sequential_NonTunnel_Secure|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|
+|14|Decode_Sequential_NonTunnel_Secure_Error|✘|✔|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|
+|15|Decode_Sequential_NonTunnel_Secure_CODEC|✘|✔|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|
+|16|Decode_Sequential_NonTunnel_Secure_Discontinuity|✘|✔|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|
+|17|Decode_Sequential_NonTunnel_Secure_EOS|✘|✔|✘|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|
+|18|Decode_Sequential_NonTunnel_Secure_Flush|✘|✔|✘|✘|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|
+|19|Decode_Sequential_NonTunnel_Secure_FlushReset|✘|✔|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✘|✘|
+|20|Decode_Sequential_NonTunnel_Secure_Resolutions|✘|✔|✘|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✘|
+|21|Decode_Sequential_NonTunnel_Secure_HDRModes|✘|✔|✘|✘|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|
+|22|Decode_Sequential_NonTunnel_Secure_FrameRate|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✔|✘|✘|✘|
+|23|Decode_Sequential_NonTunnel_Secure_GOPStructure|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✔|✘|✘|
+|24|Decode_Sequential_NonTunnel_Secure_LowLatency|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✔|✘|
+|25|Decode_Sequential_Tunnel_NonSecure|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|
+|26|Decode_Sequential_Tunnel_NonSecure_Error|✔|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|
+|27|Decode_Sequential_Tunnel_NonSecure_CODEC|✔|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|
+|28|Decode_Sequential_Tunnel_NonSecure_Discontinuity|✔|✘|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|
+|29|Decode_Sequential_Tunnel_NonSecure_EOS|✔|✘|✘|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|
+|30|Decode_Sequential_Tunnel_NonSecure_Flush|✔|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|
+|31|Decode_Sequential_Tunnel_NonSecure_FlushReset|✔|✘|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✘|✘|
+|32|Decode_Sequential_Tunnel_NonSecure_Resolutions|✔|✘|✘|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✘|
+|33|Decode_Sequential_Tunnel_NonSecure_HDRModes|✔|✘|✘|✘|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|
+|34|Decode_Sequential_Tunnel_NonSecure_FrameRate|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✔|✘|✘|✘|
+|35|Decode_Sequential_Tunnel_NonSecure_GOPStructure|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✔|✘|✘|
+|36|Decode_Sequential_Tunnel_NonSecure_LowLatency|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✔|✘|
+|37|Decode_Sequential_Tunnel_Secure|✔|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|
+|38|Decode_Sequential_Tunnel_Secure_Error|✔|✔|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|
+|39|Decode_Sequential_Tunnel_Secure_CODEC|✔|✔|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|
+|40|Decode_Sequential_Tunnel_Secure_Discontinuity|✔|✔|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|
+|41|Decode_Sequential_Tunnel_Secure_EOS|✔|✔|✘|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|
+|42|Decode_Sequential_Tunnel_Secure_Flush|✔|✔|✘|✘|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|
+|43|Decode_Sequential_Tunnel_Secure_FlushReset|✔|✔|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✘|✘|
+|44|Decode_Sequential_Tunnel_Secure_Resolutions|✔|✔|✘|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✘|
+|45|Decode_Sequential_Tunnel_Secure_HDRModes|✔|✔|✘|✘|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|
+|46|Decode_Sequential_Tunnel_Secure_FrameRate|✔|✔|✘|✘|✘|✘|✘|✘|✘|✘|✔|✘|✘|✘|
+|47|Decode_Sequential_Tunnel_Secure_GOPStructure|✔|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✔|✘|✘|
+|48|Decode_Sequential_Tunnel_Secure_LowLatency|✔|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✔|✘|
+|49|Decode_Concurrent_NonTunnel_NonSecure|✘|✘|✘|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✔|
+|50|Decode_Concurrent_NonTunnel_NonSecure_Error|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✔|
+|51|Decode_Concurrent_NonTunnel_NonSecure_CODEC|✘|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✔|
+|52|Decode_Concurrent_NonTunnel_NonSecure_Discontinuity|✘|✘|✘|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✔|
+|53|Decode_Concurrent_NonTunnel_NonSecure_EOS|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✘|✘|✘|✔|
+|54|Decode_Concurrent_NonTunnel_NonSecure_Flush|✘|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✘|✘|✔|
+|55|Decode_Concurrent_NonTunnel_NonSecure_FlushReset|✘|✘|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✘|✔|
+|56|Decode_Concurrent_NonTunnel_NonSecure_Resolutions|✘|✘|✘|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✔|
+|57|Decode_Concurrent_NonTunnel_NonSecure_HDRModes|✘|✘|✘|✘|✘|✘|✘|✘|✘|✔|✘|✘|✘|✔|
+|58|Decode_Concurrent_NonTunnel_NonSecure_FrameRate|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✔|✘|✘|✔|
+|59|Decode_Concurrent_NonTunnel_NonSecure_GOPStructure|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✔|✘|✔
+|60|Decode_Concurrent_NonTunnel_NonSecure_LowLatency|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✔|✔|
+|61|Decode_Concurrent_NonTunnel_Secure|✘|✔|✘|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✔|
+|62|Decode_Concurrent_NonTunnel_Secure_Error|✘|✔|✔|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✔|
+|63|Decode_Concurrent_NonTunnel_Secure_CODEC|✘|✔|✘|✔|✘|✘|✘|✘|✔|✘|✘|✘|✘|✔|
+|64|Decode_Concurrent_NonTunnel_Secure_Discontinuity|✘|✔|✘|✘|✔|✘|✘|✘|✔|✘|✘|✘|✘|✔|
+|65|Decode_Concurrent_NonTunnel_Secure_EOS|✘|✔|✘|✘|✘|✔|✘|✘|✔|✘|✘|✘|✘|✔|
+|66|Decode_Concurrent_NonTunnel_Secure_Flush|✘|✔|✘|✘|✘|✘|✔|✘|✔|✘|✘|✘|✘|✔|
+|67|Decode_Concurrent_NonTunnel_Secure_FlushReset|✘|✔|✘|✘|✘|✘|✘|✔|✔|✘|✘|✘|✘|✔|
+|68|Decode_Concurrent_NonTunnel_Secure_Resolutions|✘|✔|✘|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✔|
+|69|Decode_Concurrent_NonTunnel_Secure_HDRModes|✘|✔|✘|✘|✘|✘|✘|✘|✘|✔|✘|✘|✘|✔|
+|70|Decode_Concurrent_NonTunnel_Secure_FrameRate|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✔|✘|✘|✔|
+|71|Decode_Concurrent_NonTunnel_Secure_GOPStructure|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✔|✘|✔
+|72|Decode_Concurrent_NonTunnel_Secure_LowLatency|✘|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✔|✔|
+|73|Decode_Concurrent_Tunnel_NonSecure|✔|✘|✘|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✔|
+|74|Decode_Concurrent_Tunnel_NonSecure_Error|✔|✘|✔|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✔|
+|75|Decode_Concurrent_Tunnel_NonSecure_CODEC|✔|✘|✘|✔|✘|✘|✘|✘|✔|✘|✘|✘|✘|✔|
+|76|Decode_Concurrent_Tunnel_NonSecure_Discontinuity|✔|✘|✘|✘|✔|✘|✘|✘|✔|✘|✘|✘|✘|✔|
+|77|Decode_Concurrent_Tunnel_NonSecure_EOS|✔|✘|✘|✘|✘|✔|✘|✘|✔|✘|✘|✘|✘|✔|
+|78|Decode_Concurrent_Tunnel_NonSecure_Flush|✔|✘|✘|✘|✘|✘|✔|✘|✔|✘|✘|✘|✘|✔|
+|79|Decode_Concurrent_Tunnel_NonSecure_FlushReset|✔|✘|✘|✘|✘|✘|✘|✔|✔|✘|✘|✘|✘|✔|
+|80|Decode_Concurrent_Tunnel_NonSecure_Resolutions|✔|✘|✘|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✔|
+|81|Decode_Concurrent_Tunnel_NonSecure_HDRModes|✔|✘|✘|✘|✘|✘|✘|✘|✘|✔|✘|✘|✘|✔|
+|82|Decode_Concurrent_Tunnel_NonSecure_FrameRate|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✔|✘|✘|✔|
+|83|Decode_Concurrent_Tunnel_NonSecure_GOPStructure|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✔|✘|✔
+|84|Decode_Concurrent_Tunnel_NonSecure_LowLatency|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✔|✔|
+|85|Decode_Concurrent_Tunnel_Secure|✔|✔|✘|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✔|
+|86|Decode_Concurrent_Tunnel_Secure_Error|✔|✔|✔|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✔|
+|87|Decode_Concurrent_Tunnel_Secure_CODEC|✔|✔|✘|✔|✘|✘|✘|✘|✔|✘|✘|✘|✘|✔|
+|88|Decode_Concurrent_Tunnel_Secure_Discontinuity|✔|✔|✘|✘|✔|✘|✘|✘|✔|✘|✘|✘|✘|✔|
+|89|Decode_Concurrent_Tunnel_Secure_EOS|✔|✔|✘|✘|✘|✔|✘|✘|✔|✘|✘|✘|✘|✔|
+|90|Decode_Concurrent_Tunnel_Secure_Flush|✔|✔|✘|✘|✘|✘|✔|✘|✔|✘|✘|✘|✘|✔|
+|91|Decode_Concurrent_Tunnel_Secure_FlushReset|✔|✔|✘|✘|✘|✘|✘|✔|✔|✘|✘|✘|✘|✔|
+|92|Decode_Concurrent_Tunnel_Secure_Resolutions|✔|✔|✘|✘|✘|✘|✘|✘|✔|✘|✘|✘|✘|✔|
+|93|Decode_Concurrent_Tunnel_Secure_HDRModes|✔|✔|✘|✘|✘|✘|✘|✘|✘|✔|✘|✘|✘|✔|
+|94|Decode_Concurrent_Tunnel_Secure_FrameRate|✔|✔|✘|✘|✘|✘|✘|✘|✘|✘|✔|✘|✘|✔|
+|95|Decode_Concurrent_Tunnel_Secure_GOPStructure|✔|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✔|✘|✔
+|96|Decode_Concurrent_Tunnel_Secure_LowLatency|✔|✔|✘|✘|✘|✘|✘|✘|✘|✘|✘|✘|✔|✔|
+

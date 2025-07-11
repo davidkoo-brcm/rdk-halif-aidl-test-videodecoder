@@ -83,9 +83,42 @@
 #include <stdexcept>
 #include <thread>
 #include <chrono>
+#include <openssl/sha.h>
+#include <cmath>
+#include <algorithm>
+#include <fstream>
+#include <filesystem>
+#include <deque>
+#include <queue>
+#include <mutex>
+#include <atomic>
+#include <chrono>
+#include <condition_variable>
+#include <unistd.h>
+#include <sys/syscall.h>
+#include <sys/types.h>
+#include <memory> // For std::unique_ptr
+
+#include "com/rdk/hal/avbuffer/IAVBuffer.h"
+#include "com/rdk/hal/avbuffer/BnAVBufferSpaceListener.h"
+//#include "com/rdk/hal/avbufferhelper.h"
+#include "IAVBufferHelper.h"
+
+
+// Undefine UT_LOG_INFO from ut_log.h to avoid redefinition conflicts
+#undef UT_LOG_INFO
+
+#ifdef ENABLE_UT_INFO_LOGGING
+// Enable INFO logging using ut_log.h's definition
+#define UT_LOG_INFO(format, ...) UT_logPrefix(__FILE__, __LINE__, UT_LOG_ASCII_CYAN "INFO  " UT_LOG_ASCII_NC, format, ## __VA_ARGS__)
+#else
+#define UT_LOG_INFO(format, ...) // Disable INFO logging by default (no-op)
+#endif
 
 
 #include "com/rdk/hal/videodecoder/IVideoDecoderManager.h"
+#include "com/rdk/hal/videodecoder/IVideoDecoderController.h"
+#include "com/rdk/hal/videodecoder/IVideoDecoderEventListener.h"
 #include "com/rdk/hal/videodecoder/BnVideoDecoderControllerListener.h"
 #include "com/rdk/hal/videodecoder/BnVideoDecoderEventListener.h"
 #include "com/rdk/hal/videodecoder/DynamicRange.h"
@@ -98,6 +131,8 @@
 
 using namespace com::rdk::hal;
 using namespace com::rdk::hal::videodecoder;
+using namespace com::rdk::hal::avbuffer;
+
 
 using android::sp;
 using android::String16;
@@ -114,13 +149,121 @@ extern std::vector<IVideoDecoder::Id>            decoderIds;
 extern std::vector<sp<IVideoDecoder>>            decoders;
 extern std::vector<sp<IVideoDecoderController>>  controllers;
 
+#define VTS_TEST_CONFIG_PATH "./test_configuration/vts_l3_test_config.yaml"
+#define VTS_STREAM_CONFIG_PATH "./test_configuration/vts_stream_list.yaml"
+#define STREAM_DOWNLOAD_PATH "IVideoDecoderManager.stream_download_path"
+#define STREAM_INPUT_PATH "IVideoDecoderManager.input_streams_path"
+#define STREAM_REF_PATH "IVideoDecoderManager.reference_streams_path"
+
+extern void *gTestConfiguration;
+
+
+typedef struct InputVideoFrame
+{
+    int64_t framePTS;
+    std::string reference;
+    double rms_threshold;
+    bool isErrorFrame;
+    std::chrono::steady_clock::time_point sendTime;
+}InputVideoFrame_t;
+
+struct CodecCapability {
+    Codec codec;
+    int32_t maxFrameRate;
+    int32_t maxFrameWidth;
+    int32_t maxFrameHeight;
+};
+
+typedef struct decoder {
+    int32_t id;
+    std::vector<CodecCapability> supportedCodecs;
+    std::vector<DynamicRange> supportedDynamicRanges;
+    std::vector<OperationalMode> supportedOperationalModes;
+    bool supportsSecure;
+}decoder_t;
+
+extern std::vector<decoder_t> gVideodecoders_hfp;
+
+struct videoFrameMetadata {
+        PixelFormat pixelFormat;
+        int32_t codedWidth;
+        int32_t codedHeight;
+        int colorDepth;
+        Codec sourceCodec;
+        int frameRateNumerator;
+	    int frameRateDenominator;
+        DynamicRange dynamicRange;
+        int bit_rate;
+        bool lowLatency;
+        bool endOfStream;
+        bool discontinuity;
+        ScanType scanType;
+        AVSource source;
+};
+
+struct DecodedVideoFrame_t {
+    std::vector<uint8_t> data;
+    int64_t framePTS;
+    std::chrono::steady_clock::time_point receiveTime;
+    bool isMetaAvailable;
+    std::unique_ptr<com::rdk::hal::videodecoder::FrameMetadata> metadata;
+    bool validationStatus; // Added for validation result
+    int64_t frameBufferHandle; // Added for output buffer handle
+};
+
+struct testConfiguration_t {
+    std::string input; // Path to input .es file
+    std::string streamName; //
+    videodecoder::Codec codec; // H264_AVC, HEVC, etc.
+    int32_t codedWidth; // Video width
+    int32_t codedHeight; // Video height
+    uint32_t frameRateNumerator; // Frame rate numerator
+    uint32_t frameRateDenominator; // Frame rate denominator
+    videodecoder::PixelFormat pixelFormat; // YUV, etc.
+    videodecoder::DynamicRange dynamicRange; // SDR, HDR, etc.
+    videodecoder::ScanType scanType;
+    uint32_t colorDepth; // Bit depth
+    uint32_t bit_rate; // Bit rate
+    uint32_t no_of_frames; // Total frames
+    uint32_t decodeErrors;
+    uint32_t framesDropped;
+    std::vector<std::tuple<int32_t, int64_t, bool>> frameDetails; // {size, PTS, isErrorFrame}
+    std::vector<int64_t> expectedPts; // Added for PTS validation
+    double rms_diff_threshold; // RMS difference threshold
+    uint32_t decoderDelay; // Delay between decode calls (ms)
+    int64_t stopPts; // Stop/restart PTS
+    int64_t discontinuityPts; // Discontinuity PTS
+    int64_t flushPts; // Flush PTS
+    int64_t flushResetPts; // Flush with reset PTS
+    int64_t eosPts; // EOS PTS
+    int64_t decode_time_threshold; // Decode time budget per frame (ns)
+    double rms_diff_threashold; // RMS difference threshold
+    bool endOfStream;
+    bool discontinuity;
+    bool lowLatency;
+};
+
 UT_status_t VTS_VideoDecoder_init();
 UT_status_t getVideoDecoderService();
+sp<IAVBuffer> getAVBufferService();
 Codec videoDecoderStringToCodec(const std::string& codecStr);
 DynamicRange videoDecoderStringToDynamicRange(const std::string& rangeStr);
 OperationalMode videoDecoderStringToOperationalMode(const std::string& modeStr);
+PixelFormat videoDecoderStringToPixelFormat(const std::string& formatStr);
 bool vts_videodecoder_helper_validatePropertyValue(int decoder_id,const std::optional<PropertyValue>& propertyValue, const Property property);
 void vts_videodecoder_helper_validateCapabilities(int32_t decoderId,const Capabilities& capabilities);
+double vts_computeVideoRMSDiff(const uint8_t* ref, const uint8_t* dec, size_t width, size_t height, PixelFormat format);
+void* vts_kvp_create_instance(char *fileName);
+void vts_kvp_destroy_instance(void *instance);
+UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, char *module, char *testGroup, char *testName, std::vector<testConfiguration_t>& testConfiguration);
+
+UT_status_t vts_videodecoder_parseVideoDecoderHFP();
+
+size_t vts_bytesPerPixel(PixelFormat format);
+void* vts_kvp_create_instance(char *fileName);
+void vts_kvp_destroy_instance(void *instance);
+void VTS_VideoDecoder_destroy();
+
 
 /* Status::Exception */
 const static ut_control_keyStringMapping_t statusException_mapTable[] =
@@ -271,9 +414,32 @@ do { \
                 UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
     UT_ASSERT_TRUE(status.isOk()) << "getProperty failed for property " << static_cast<int32_t>(property); \
     UT_ASSERT_TRUE((aidl_return).has_value()) << "No value returned for property " << static_cast<int32_t>(property); \
-    UT_ASSERT_EQUAL((aidl_return)->value->getTag(), PropertyValue::Value::intValue) \
-        << "Property " << static_cast<int32_t>(property) << " value should be an int"; \
 } while (0)
+
+#define VIDEODECODER_GET_PROPERTY_SUCCESS(videoDecoder, property, propertyValue) \
+    do { \
+        ::android::binder::Status status; \
+        ::com::rdk::hal::State state; \
+        UT_LOG_INFO("Calling getProperty(IN:property[%s], OUT:propertyValue[]", videodecoder::toString(property).c_str()); \
+        status = (videoDecoder)->getProperty(property, &propertyValue); \
+        switch (propertyValue->value.value().getTag()) \
+        { \
+            case PropertyValue::Value::Tag::intValue: \
+                UT_LOG_INFO("Result getProperty(IN:property[%s], OUT:propertyValue[%d]), status:[isOK:%s, exception:%s]", videodecoder::toString(property).c_str(), \
+                propertyValue->value->get<PropertyValue::Value::Tag::intValue>(), \
+                UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+                break; \
+            case PropertyValue::Value::Tag::stringValue: \
+                UT_LOG_INFO("Result getProperty(IN:property[%s], OUT:propertyValue[%s]), status:[isOK:%s, exception:%s]", videodecoder::toString(property).c_str(), \
+                propertyValue->value->get<PropertyValue::Value::Tag::stringValue>().string(), \
+                UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+                break; \
+        } \
+        UT_ASSERT_TRUE(status.isOk()); \
+        UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
+    } while (0)
 
 /**
  * @brief Calls getPropertyMulti and verifies the result.
@@ -365,6 +531,23 @@ do { \
         UT_ASSERT_EQUAL(currentState, expected_state) << "Expected state " << static_cast<int32_t>(expected_state) \
                                                   << ", got " << static_cast<int32_t>(currentState); \
     } while (0)
+/**
+ * @brief Waits for the video decoder to reach a target state.
+ * @param[in] videoDecoder The IVideoDecoder instance.
+ * @param[in] targetState The expected state to wait for.
+ * @param[out] lastState The final state observed.
+ */
+#define VIDEODECODER_WAIT_FOR_STATE(videoDecoder, targetState, lastState) \
+    do { \
+        int32_t sleep_time = 0; \
+        do \
+        { \
+            std::this_thread::sleep_for(std::chrono::milliseconds(MAX_TRANSITORY_STATE_WAIT_MS)); \
+            sleep_time += MAX_TRANSITORY_STATE_WAIT_MS; \
+            /* Check the state of the decoder */ \
+            VIDEODECODER_GETSTATE(videoDecoder, lastState); \
+        } while (sleep_time < MAX_FINAL_STATE_WAIT_MS && lastState != targetState); \
+    } while (0)
 
 /**
  * @brief Opens the video decoder and verifies success.
@@ -425,23 +608,6 @@ do { \
         } \
     } while (0)
 
-/**
- * @brief Waits for the video decoder to reach a target state.
- * @param[in] videoDecoder The IVideoDecoder instance.
- * @param[in] targetState The expected state to wait for.
- * @param[out] lastState The final state observed.
- */
-#define VIDEODECODER_WAIT_FOR_STATE(videoDecoder, targetState, lastState) \
-    do { \
-        int32_t sleep_time = 0; \
-        do \
-        { \
-            std::this_thread::sleep_for(std::chrono::milliseconds(MAX_TRANSITORY_STATE_WAIT_MS)); \
-            sleep_time += MAX_TRANSITORY_STATE_WAIT_MS; \
-            /* Check the state of the decoder */ \
-            VIDEODECODER_GETSTATE(videoDecoder, lastState); \
-        } while (sleep_time < MAX_FINAL_STATE_WAIT_MS && lastState != targetState); \
-    } while (0)
 
 /**
  * @brief Closes the video decoder and verifies success.
@@ -764,17 +930,14 @@ do { \
  * @param[in] reset The reset flag for flush.
  * @param[in] expectedException The expected binder exception (e.g., EX_ILLEGAL_STATE).
  */
-#define VIDEODECODER_FLUSH_SUCCESS(videoDecoderController, reset,stateCheck) \
+
+#define VIDEODECODER_FLUSH_SUCCESS(videoDecoder, videoDecoderController, reset, stateCheck) \
     do { \
-        Status status; \
-        UT_LOG_INFO("Calling flush(IN:reset:[%s])", (reset) ? "true" : "false"); \
-        status = (videoDecoderController)->flush(reset); \
-        UT_LOG_INFO("Result flush(IN:reset:[%s]), status:[isOK:%s, exception:%s]", \
-                    (reset) ? "true" : "false", \
-                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
-                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
-        UT_ASSERT_TRUE(status.isOk()); \
-        UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE);  \
+        State lastState; \
+        Status status = (videoDecoderController)->flush(reset); \
+        UT_LOG_INFO("flush(%s) status=%s", reset ? "true" : "false", UT_Control_GetMapString(bool_mapTable, status.isOk())); \
+        UT_ASSERT_TRUE(status.isOk()) << "flush(" << reset << ") failed"; \
+        VIDEODECODER_WAIT_FOR_STATE(videoDecoder, State::READY, lastState); \
         if (stateCheck) { \
             State lastState; \
             if (reset){ \
@@ -787,8 +950,6 @@ do { \
             } \
         } \
     } while (0)
-
-
 /**
  * @brief Tests that signalDiscontinuity succeeds in the STARTED state.
  * @param[in] videoDecoder The IVideoDecoder instance (for state checking).
@@ -928,6 +1089,33 @@ do { \
         UT_ASSERT_FALSE(status.isOk()); \
     } while (0)
 
+#define VIDEODECODER_DECODEBUFFER_SUCCESS(controller, pts, bufferHandle) \
+    do { \
+        bool decodeResult; \
+        Status status = controller->decodeBuffer(pts, bufferHandle, &decodeResult); \
+        UT_LOG_INFO("decodeBuffer(pts=%lld, bufferHandle=%lld) status=%s, result=%s", \
+                    static_cast<long long>(pts), static_cast<long long>(bufferHandle), \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    decodeResult ? "true" : "false"); \
+        UT_ASSERT_TRUE(status.isOk()) << "decodeBuffer failed"; \
+        UT_ASSERT_TRUE(decodeResult) << "decodeBuffer returned false"; \
+    } while (0)
+
+#define VIDEODECODER_DECODEBUFFER_FAILURE(controller, pts, bufferHandle, expectedException) \
+    do { \
+        bool decodeResult; \
+        Status status = controller->decodeBuffer(pts, bufferHandle, &decodeResult); \
+        UT_LOG_INFO("decodeBuffer(pts=%lld, bufferHandle=%lld) status=%s, result=%s", \
+                    static_cast<long long>(pts), static_cast<long long>(bufferHandle), \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    decodeResult ? "true" : "false"); \
+        UT_ASSERT_FALSE(status.isOk() || decodeResult) << "decodeBuffer unexpectedly succeeded"; \
+        if (expectedException != Status::EX_NONE) { \
+            UT_ASSERT_TRUE(status.exceptionCode() == expectedException) \
+                << "decodeBuffer returned unexpected exception"; \
+        } \
+    } while (0)
+
 /**
  * @brief Test fixture for Level 1 Video Decoder HALIF tests.
  * Inherits from UTCore to leverage ut-core's test utilities and lifecycle methods.
@@ -967,26 +1155,92 @@ class VTS_L1_VideoDecoder : public UTCore {
         }
     };
 
-/**
- * @brief Test fixture for Level 2 Video Decoder HALIF tests.
- * Inherits from UTCore to leverage ut-core's test utilities and lifecycle methods.
- */
-
 class VideoDecoderControllerListener : public BnVideoDecoderControllerListener {
-    public:
+public:
+    VideoDecoderControllerListener() {}
+    virtual ~VideoDecoderControllerListener() = default;
 
-        VideoDecoderControllerListener() {};
-        virtual ~VideoDecoderControllerListener() = default;
+    Status onFrameOutput(int64_t nsPresentationTime, int64_t frameBufferHandle, const ::std::optional<com::rdk::hal::videodecoder::FrameMetadata>& metadata) override {
+        UT_LOG_INFO("onFrameOutput received: nsPresentationTime=%lld, frameBufferHandle=0x%llx", nsPresentationTime, frameBufferHandle);
+        DecodedVideoFrame_t frame;
+        frame.framePTS = nsPresentationTime;
+        frame.receiveTime = std::chrono::steady_clock::now();
+        frame.isMetaAvailable = metadata.has_value();
+        frame.frameBufferHandle = frameBufferHandle; // Store handle
+        if (metadata.has_value()) {
+            frame.metadata = std::make_unique<com::rdk::hal::videodecoder::FrameMetadata>(metadata.value());
 
-        Status onFrameOutput(int64_t nsPresentationTime, int64_t frameBufferHandle, const ::std::optional<FrameMetadata>& metadata) override
-        {
-            return Status::ok();
+            UT_LOG_INFO("FrameMetadata: codedWidth=%d, codedHeight=%d, activeX=%d, activeY=%d, activeWidth=%d, activeHeight=%d",
+                        frame.metadata->codedWidth, frame.metadata->codedHeight,
+                        frame.metadata->activeX, frame.metadata->activeY,
+                        frame.metadata->activeWidth, frame.metadata->activeHeight);
+
+            UT_LOG_INFO("AspectRatios: PAR=%d:%d, SAR=%d:%d",
+                        frame.metadata->parX, frame.metadata->parY,
+                        frame.metadata->sarX, frame.metadata->sarY);
+
+            UT_LOG_INFO("FrameMetadata: colorDepth=%d, pixelFormat=%d, dynamicRange=%d, scanType=%d, afd=%d",
+                        frame.metadata->colorDepth,
+                        static_cast<int>(frame.metadata->pixelFormat),
+                        static_cast<int>(frame.metadata->dynamicRange),
+                        static_cast<int>(frame.metadata->scanType),
+                        frame.metadata->afd);
+
+            UT_LOG_INFO("FrameRate: %d/%d",
+                        frame.metadata->frameRateNumerator,
+                        frame.metadata->frameRateDenominator);
+
+            UT_LOG_INFO("Flags: endOfStream=%d, discontinuity=%d, lowLatency=%d",
+                        frame.metadata->endOfStream,
+                        frame.metadata->discontinuity,
+                        frame.metadata->lowLatency);
+
+            UT_LOG_INFO("Source: %d", static_cast<int>(frame.metadata->source));
+
+            // Log SHA1 if present
+            if (!frame.metadata->sha1.empty()) {
+                std::ostringstream sha1Str;
+                for (const auto& byte : frame.metadata->sha1) {
+                    sha1Str << std::hex << std::setfill('0') << std::setw(2) << static_cast<int>(byte);
+                }
+                UT_LOG_INFO("SHA1: %s", sha1Str.str().c_str());
+            } else {
+                UT_LOG_INFO("SHA1: <empty>");
+            }
+
+        } else {
+            UT_LOG_INFO("No FrameMetadata provided");
         }
-        Status onUserDataOutput(int64_t nsPresentationTime, const ::std::vector<uint8_t>& userData) override
+
+
         {
-            return Status::ok();
+            std::lock_guard<std::mutex> lock(mMutex);
+            mDecodedFrames.push_back(std::move(frame)); // Move is now possible
         }
-    };
+        mCV.notify_all();
+        return Status::ok();
+    }
+
+    Status onUserDataOutput(int64_t nsPresentationTime, const ::std::vector<uint8_t>& userData) override {
+        UT_LOG_INFO("onUserDataOutput received");
+        return Status::ok();
+    }
+
+    bool getNextFrame(DecodedVideoFrame_t& frame, std::chrono::milliseconds timeout) {
+        std::unique_lock<std::mutex> lock(mMutex);
+        if (mCV.wait_for(lock, timeout, [this]() { return !mDecodedFrames.empty(); })) {
+            frame = std::move(mDecodedFrames.front()); // Move is now possible
+            mDecodedFrames.pop_front();
+            return true;
+        }
+        return false;
+    }
+
+private:
+    std::mutex mMutex;
+    std::condition_variable mCV;
+    std::deque<DecodedVideoFrame_t> mDecodedFrames;
+};
 
 class VideoDecoderEventListener : public BnVideoDecoderEventListener {
     public:
@@ -994,66 +1248,78 @@ class VideoDecoderEventListener : public BnVideoDecoderEventListener {
     virtual ~VideoDecoderEventListener() = default;
 
     Status onDecodeError(ErrorCode errorCode, int32_t vendorErrorCode) override {
+        UT_LOG_ERROR("Decode error: errorCode=%d, vendorErrorCode=%d", static_cast<int32_t>(errorCode), vendorErrorCode);
+        {
+            std::lock_guard<std::mutex> lock(mMutex);
+            mErrors.push_back(static_cast<int32_t>(errorCode));
+        }
+        mCV.notify_all();
         return Status::ok();
     }
     Status onStateChanged(State oldState,State newState) override
+    {
+        UT_LOG("State Change received: %s -> %s", com::rdk::hal::toString(oldState).c_str(), com::rdk::hal::toString(newState).c_str());
         {
-            UT_LOG("State Change received: %s -> %s", com::rdk::hal::toString(oldState).c_str(), com::rdk::hal::toString(newState).c_str());
+            std::lock_guard<std::mutex> lock(mMutex);
+            mStateChanges.emplace_back(oldState, newState);
+            mCurrentState = newState;
+        }
+        mCV.notify_all(); // Unblock any waiting test code
+        return Status::ok();
+    }
+    bool waitForError(ErrorCode desiredError, std::chrono::milliseconds timeout) {
+        std::unique_lock<std::mutex> lock(mMutex);
+        return mCV.wait_for(lock, timeout, [this, desiredError]() {
+            return std::find(mErrors.begin(), mErrors.end(), static_cast<int32_t>(desiredError)) != mErrors.end();
+        });
+    }
+    /**
+     * Wait for the sink to reach a particular State within a given timeout.
+     *
+     * @param desiredState The state we want to observe.
+     * @param timeout      How long to wait, e.g. std::chrono::milliseconds(500).
+     * @return true if the state was reached; false if we timed out waiting.
+     */
+    bool waitForState(State desiredState, std::chrono::milliseconds timeout)
+    {
+        std::unique_lock<std::mutex> lock(mMutex);
+        // Wait until mCurrentState == desiredState or until timeout
+        return mCV.wait_for(lock, timeout, [this, desiredState]() {
+            return (mCurrentState == desiredState);
+        });
+    }
+    // Accessors for test verifications if desired
+    std::vector<std::pair<State, State>> getStateChanges() const
+    {
+        std::lock_guard<std::mutex> lock(mMutex);
+        return mStateChanges;
+    }
+
+    void resetStateChanges()
+    {
+        std::lock_guard<std::mutex> lock(mMutex);
+        mStateChanges.clear();
+    }
+
+    bool checkStateTransistion(State expOldState, State expNewState)
+    {
+        bool foundClosedToOpening = false;
+        for (const auto &[oldState, newState] : mStateChanges)
+        {
+            if (oldState == expOldState && newState == expNewState)
             {
-                std::lock_guard<std::mutex> lock(mMutex);
-                mStateChanges.emplace_back(oldState, newState);
-                mCurrentState = newState;
+                foundClosedToOpening = true;
+                break;
             }
-            mCV.notify_all(); // Unblock any waiting test code
-            return Status::ok();
         }
-        /**
-         * Wait for the sink to reach a particular State within a given timeout.
-         *
-         * @param desiredState The state we want to observe.
-         * @param timeout      How long to wait, e.g. std::chrono::milliseconds(500).
-         * @return true if the state was reached; false if we timed out waiting.
-         */
-        bool waitForState(State desiredState, std::chrono::milliseconds timeout)
-        {
-            std::unique_lock<std::mutex> lock(mMutex);
-            // Wait until mCurrentState == desiredState or until timeout
-            return mCV.wait_for(lock, timeout, [this, desiredState]() {
-                return (mCurrentState == desiredState);
-            });
-        }
-        // Accessors for test verifications if desired
-        std::vector<std::pair<State, State>> getStateChanges() const
-        {
-            std::lock_guard<std::mutex> lock(mMutex);
-            return mStateChanges;
-        }
+        return foundClosedToOpening;
+    }
 
-        void resetStateChanges()
-        {
-            std::lock_guard<std::mutex> lock(mMutex);
-            mStateChanges.clear();
-        }
-
-        bool checkStateTransistion(State expOldState, State expNewState)
-        {
-            bool foundClosedToOpening = false;
-            for (const auto &[oldState, newState] : mStateChanges)
-            {
-                if (oldState == expOldState && newState == expNewState)
-                {
-                    foundClosedToOpening = true;
-                    break;
-                }
-            }
-            return foundClosedToOpening;
-        }
-
-        std::vector<int32_t> getErrors() const
-        {
-            std::lock_guard<std::mutex> lock(mMutex);
-            return mErrors;
-        }
+    std::vector<int32_t> getErrors() const
+    {
+        std::lock_guard<std::mutex> lock(mMutex);
+        return mErrors;
+    }
     private:
         mutable std::mutex mMutex;
         std::condition_variable mCV;
@@ -1064,25 +1330,127 @@ class VideoDecoderEventListener : public BnVideoDecoderEventListener {
 };
 
 
-struct CodecCapability {
-    Codec codec;
-    int32_t maxFrameRate;
-    int32_t maxFrameWidth;
-    int32_t maxFrameHeight;
+#define AVBUFFER_CREATE_VIDEOPOOL_SUCCESS(avBufferManager, secureHeap, videoDecoderId, listener, videoPool) \
+    do { \
+        UT_LOG_INFO("Calling createVideoPool(IN:secureHeap:[%d], IN:videoDecoderId:[%d], IN:listener:[%p], OUT:videoPool)", \
+                    secureHeap, videoDecoderId.value, listener.get()); \
+        Status status = avBufferManager->createVideoPool(secureHeap, videoDecoderId, listener, &videoPool); \
+        UT_LOG_INFO("Result createVideoPool(IN:secureHeap:[%d], IN:videoDecoderId:[%d], IN:listener:[%p], OUT:videoPool.handle:[%d]), status:[isOK:%s, exception:%s]", \
+                    secureHeap, videoDecoderId.value, listener.get(), videoPool.handle, \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+        UT_ASSERT_TRUE(status.isOk()); \
+        UT_ASSERT_NOT_EQUAL(videoPool.handle, Pool::INVALID); \
+        UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
+    } while (0)
+
+#define AVBUFFER_DESTROY_POOL_SUCCESS(avBufferManager, pool) \
+    do { \
+        bool _aidl_return = false; \
+        UT_LOG_INFO("Calling destroyPool(IN:poolHandle:[%d], OUT:_aidl_return:[])", pool); \
+        Status status = avBufferManager->destroyPool(pool, &_aidl_return); \
+        UT_LOG_INFO("Result destroyPool with (IN:poolHandle:[%d], OUT:_aidl_return:[%s]), status:[isOK:%s, exception:%s]", \
+                    pool.handle, UT_Control_GetMapString(bool_mapTable, _aidl_return), \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+        UT_ASSERT_TRUE(status.isOk()); \
+        UT_ASSERT_TRUE(_aidl_return); \
+        UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
+    } while (0)
+
+#define AVBUFFER_ALLOC_SUCCESS(avBufferManager, pool, size, bufferHandle) \
+    do { \
+        UT_LOG_INFO("Calling alloc(IN:poolHandle:[%d], IN:size:[%d], OUT:bufferHandle)", pool.handle, size); \
+        Status status = avBufferManager->alloc(pool, size, &bufferHandle); \
+        UT_LOG_INFO("Result alloc(IN:poolHandle:[%d], IN:size:[%d], OUT:bufferHandle:[0x%X]), status:[isOK:%s, exception:%s]", \
+                    pool.handle, size, bufferHandle, UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+        UT_ASSERT_TRUE(status.isOk()); \
+        UT_ASSERT_NOT_EQUAL(bufferHandle, IAVBuffer::INVALID_HANDLE); \
+        UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
+    } while (0)
+
+#define AVBUFFER_FREE_SUCCESS(avBufferManager, bufferHandle) \
+    do { \
+        bool _aidl_return = false; \
+        UT_LOG_INFO("Calling free(IN:bufferHandle:[0x%X], OUT:_aidl_return)", bufferHandle); \
+        Status status = avBufferManager->free(bufferHandle, &_aidl_return); \
+        UT_LOG_INFO("Result free(IN:bufferHandle:[0x%X], OUT:_aidl_return:[%s]), status:[isOK:%s, exception:%s]", \
+                    bufferHandle, UT_Control_GetMapString(bool_mapTable, _aidl_return), \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+        UT_ASSERT_TRUE(status.isOk()); \
+        UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
+        UT_ASSERT_TRUE(_aidl_return); \
+    } while (0)
+
+#define AVBUFFER_GETMETRICS(avBufferManager, secureHeap, heapMetrics) \
+    do { \
+        UT_LOG_INFO("Calling getHeapMetrics(IN:secureHeap:[%s], OUT:heapMetrics[])", \
+                    UT_Control_GetMapString(bool_mapTable, secureHeap)); \
+        Status status = avBufferManager->getHeapMetrics(secureHeap, &heapMetrics); \
+        UT_LOG_INFO("Result getHeapMetrics(IN:secureHeap:[%s], OUT:heapMetrics[secure:%s, bytesUsed:%d, bytesTotal:%d]), status:[isOK:%s, exception:%s]", \
+                    UT_Control_GetMapString(bool_mapTable, secureHeap), \
+                    UT_Control_GetMapString(bool_mapTable, heapMetrics.secure), \
+                    heapMetrics.bytesUsed, \
+                    heapMetrics.bytesTotal, \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+        UT_ASSERT_TRUE(status.isOk()); \
+        UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
+    } while (0)
+
+// AVBufferSpaceListener declaration
+class AVBufferSpaceListener : public BnAVBufferSpaceListener {
+public:
+    AVBufferSpaceListener() {}
+    virtual ~AVBufferSpaceListener() = default;
+    Status onSpaceAvailable() override;
 };
 
-typedef struct decoder {
-    int32_t id;
-    std::vector<CodecCapability> supportedCodecs;
-    std::vector<DynamicRange> supportedDynamicRanges;
-    std::vector<OperationalMode> supportedOperationalModes;
-    bool supportsSecure;
-}decoder_t;
+// DecoderTest declaration
+class DecoderTest {
+public:
+    DecoderTest(IVideoDecoder::Id decoderId, sp<IVideoDecoder> decoderHandle,
+                sp<VideoDecoderControllerListener> controlListener,
+                sp<VideoDecoderEventListener> eventListener,
+                sp<IAVBuffer> AVBufferManager,
+                bool secureDecode, bool tunnelMode, testConfiguration_t config,IAVBufferHelper* avbufferHelper){
+                    mDecoderId = decoderId;
+                    mDecoderHandle = decoderHandle;
+                    mControlListener = controlListener;
+                    mSecureDecode = secureDecode;
+                    mEventListener = eventListener;
+                    mTestConfiguration = config;
+                    mAVBufferManager = AVBufferManager;
+                    mAVbufferHelper = avbufferHelper;
+                }
+    void run(bool concurrentDecodeConsume);
+    bool getDecoderMetrics(int32_t &framesDecoded, int32_t &decodeErrors, int32_t &framesDropped);
+    std::vector<std::tuple<uint64_t, uint32_t, int64_t>> parseFrames(
+        const std::vector<uint8_t>& inputBuffer, uint64_t fileSize, Codec codec);
 
-extern std::vector<decoder_t> gVideodecoders_hfp;
+private:
+    thread mDecoderThread, mConsumerThread;
+    IVideoDecoder::Id mDecoderId;
+    sp<IVideoDecoder> mDecoderHandle;
+    sp<VideoDecoderControllerListener> mControlListener;
+    sp<VideoDecoderEventListener> mEventListener;
+    sp<IAVBuffer> mAVBufferManager;
+    IAVBufferHelper* mAVbufferHelper;
+    bool mSecureDecode;
+    bool mTunnelMode;
+    testConfiguration_t mTestConfiguration;
+    deque<InputVideoFrame_t> mInputFrame;
+    mutex mDecodeMutex;
+    atomic<bool> mDecodingStream;
+    bool mConcurrentDecodeConsume;
+    mutex mAVbufferHelperLock;
 
-UT_status_t vts_videodecoder_parseVideoDecoderHFP();
-
+    void decoderThreadFunc();
+    void consumerThreadFunc();
+    void decodeAndConsumeVideoStreams();
+};
 
 
 #endif //__VTS_VIDEODECODER_H__

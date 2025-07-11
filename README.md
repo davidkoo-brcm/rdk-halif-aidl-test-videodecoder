@@ -30,7 +30,7 @@ git clone git@github.com:rdkcentral/rdk-halif-binder-test-videodecoder.git
 cd rdk-halif-binder-test-videodecoder
 ```
 
-Addition environment variables can be used:
+Set below environment variable:
 
 - AIDL_BIN: Path to the `AIDL` compiler (e.g., /path/to/linux_binder_idl/out/aidl).
 
@@ -49,10 +49,16 @@ export AIDL_BIN=/path/linux_binder_idl/out/aidl
 export LINUX_BINDER_OUT_DIR=/path//linux_binder_idl/local/
 ```
 
+By default, UT logs are disabled. To enable them, Set below environment variable
+
+```bash
+export ENABLE_UT_INFO_LOGGING=1
+```
+
 Run the build script:
 
 ```bash
-./build.sh
+./build.sh all
 ```
 
 The build.sh script:
@@ -68,20 +74,31 @@ Example directory structure :
 ```bash
 build/bin/
 ├── aidl
-├── EmulateVideoDecoderService
 ├── lib
+├── libaudiodecoderaidl.so
+├── libavbufferaidl.so
 ├── libbase.so
 ├── libbinder.so
 ├── libcutils.so
 ├── libcutils_sockets.so
+├── libhal_logger.so
 ├── liblog.so
 ├── libut_control.so
 ├── libutils.so
 ├── libvideodecoderaidl.so
+├── MockVideoDecoderService
 ├── profiles
+│   ├── hfp-videodecoder_ID0.yaml
+│   ├── hfp-videodecoder_ID1.yaml
 │   └── hfp-videodecoder.yaml
 ├── run.sh
 ├── servicemanager
+├── test_configuration
+│   ├── vts_l3_test_config.yaml
+│   ├── vts_video_av1_streams.yaml
+│   ├── vts_video_h264_streams.yaml
+│   ├── vts_video_hevc_streams.yaml
+│   └── vts_video_vp9_streams.yaml
 └── vts_videoDecoder
 ```
 
@@ -114,9 +131,23 @@ tar -zxf videodecoder_vts.tar.gz
 cd bin
 ```
 
+To execute `L3` test cases, elementary streams are required. Please copy all necessary test streams into the `bin/test_configuration` folder on the target device.
+
 - Run the Test:
 Execute the run.sh script as root:
 
 ```bash
 sudo ./run.sh -p profiles/hfp-videodecoder.yaml
+```
+
+To run the binary with two processes simultaneously:
+
+Open two separate SSH sessions to the target device. In each session, navigate to the `bin` directory  and execute one of the following commands:
+
+```bash
+sudo  ./run.sh -p profiles/hfp-videodecoder_ID0.yaml
+```
+
+```bash
+sudo ./run.sh -p profiles/hfp-videodecoder_ID1.yaml
 ```

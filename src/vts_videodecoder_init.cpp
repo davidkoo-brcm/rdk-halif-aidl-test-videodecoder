@@ -72,6 +72,8 @@ sp<IVideoDecoderManager> gVideoDecoderManager;
  std::vector<sp<IVideoDecoder>>            decoders;
  std::vector<sp<IVideoDecoderController>>  controllers;
 
+void *gTestConfiguration;
+
 UT_status_t VTS_VideoDecoder_init()
 {
 
@@ -85,7 +87,14 @@ UT_status_t VTS_VideoDecoder_init()
         return UT_STATUS_FAILURE;
     }
 
+    gTestConfiguration = vts_kvp_create_instance(VTS_TEST_CONFIG_PATH);
+
     return UT_STATUS_OK;
+}
+
+void VTS_VideoDecoder_destroy()
+{
+    vts_kvp_destroy_instance(gTestConfiguration);
 }
 
 /** @} */ // End of Video_Decoder_Halif_Test_Init

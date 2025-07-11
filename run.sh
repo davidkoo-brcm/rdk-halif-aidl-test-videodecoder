@@ -61,19 +61,19 @@ else
     sleep 2
 fi
 
-# Check if either EmulateVideoDecoderService or RDKVideoDecoderService is running
-if check_process "EmulateVideoDecoderService" || check_process "RDKVideoDecoderService"; then
+# Check if either MockVideoDecoderService or RDKVideoDecoderService is running
+if check_process "MockVideoDecoderService" || check_process "RDKVideoDecoderService"; then
     echo "Video decoder service is already running"
-    if check_process "EmulateVideoDecoderService"; then
-        VideoDecoderService_pid=$(pgrep -f "EmulateVideoDecoderService")
+    if check_process "MockVideoDecoderService"; then
+        VideoDecoderService_pid=$(pgrep -f "MockVideoDecoderService")
     else
         VideoDecoderService_pid=$(pgrep -f "RDKVideoDecoderService")
     fi
 else
-    # Prompt user to start EmulateVideoDecoderService
-    if prompt_yes_no "Do you want to start EmulateVideoDecoderService?"; then
-        echo "Execute [EmulateVideoDecoderService]"
-        ${RUN_DIR}/EmulateVideoDecoderService &
+    # Prompt user to start MockVideoDecoderService
+    if prompt_yes_no "Do you want to start MockVideoDecoderService?"; then
+        echo "Execute [MockVideoDecoderService]"
+        ${RUN_DIR}/MockVideoDecoderService &
         VideoDecoderService_pid=$!
         # Wait for service to be ready
         sleep 2
