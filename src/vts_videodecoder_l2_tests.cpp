@@ -158,11 +158,11 @@ class VTS_L2_VideoDecoder : public UTCore {
         {
             ::com::rdk::hal::State currentState;
 
-            eventListener->waitForState(intermediateState, std::chrono::milliseconds(MAX_TRANSITORY_STATE_WAIT_MS));
+            eventListener->waitForState(intermediateState, std::chrono::milliseconds(VIDEO_MAX_TRANSITORY_STATE_WAIT_MS));
 
             UT_ASSERT_TRUE(eventListener->checkStateTransistion(oldState, intermediateState));
 
-            eventListener->waitForState(newState, std::chrono::milliseconds(MAX_FINAL_STATE_WAIT_MS));
+            eventListener->waitForState(newState, std::chrono::milliseconds(VIDEO_MAX_FINAL_STATE_WAIT_MS));
 
             VIDEODECODER_GETSTATE(decoder, currentState);
 
@@ -205,7 +205,7 @@ UT_ADD_TEST(VTS_L2_VideoDecoder, TestGetAndSetProperties) {
     for(const auto& [videoDecoder, controlListener, eventListener, capabilities] : mVideoDecoderList)
     {
         for (const auto& _codecCaps : capabilities->supportedCodecs) {
-            Codec _codec = _codecCaps.codec;
+            videodecoder::Codec _codec = _codecCaps.codec;
 
             sp<IVideoDecoderController> controller;
             // Open to READY
@@ -259,7 +259,7 @@ UT_ADD_TEST(VTS_L2_VideoDecoder, TestGetAndSetProperties_multipleInstance) {
 
     for(const auto& [videoDecoder, controlListener, eventListener, capabilities] : mVideoDecoderList)
     {
-        Codec _codec = capabilities->supportedCodecs[0].codec;
+        videodecoder::Codec _codec = capabilities->supportedCodecs[0].codec;
         sp<IVideoDecoderController> controller;
             // Open to READY
         VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities->supportsSecure,
@@ -325,7 +325,7 @@ UT_ADD_TEST(VTS_L2_VideoDecoder, TestDecoderStateTransitions) {
     for(const auto& [videoDecoder, controlListener, eventListener, capabilities] : mVideoDecoderList)
     {
         for (const auto& _codecCaps : capabilities->supportedCodecs) {
-            Codec _codec = _codecCaps.codec;
+            videodecoder::Codec _codec = _codecCaps.codec;
 
             sp<IVideoDecoderController> controller;
             // Open to READY
@@ -368,7 +368,7 @@ UT_ADD_TEST(VTS_L2_VideoDecoder, TestDecoderStateTransitions_multipleInstance) {
 
     for(const auto& [videoDecoder, controlListener, eventListener, capabilities] : mVideoDecoderList)
     {
-        Codec _codec = capabilities->supportedCodecs[0].codec;
+        videodecoder::Codec _codec = capabilities->supportedCodecs[0].codec;
         sp<IVideoDecoderController> controller;
             // Open to READY
         VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities->supportsSecure,

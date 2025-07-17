@@ -35,7 +35,7 @@
 /**
  * @file vts_videodecoder_test.cpp
  *
- * @brief Contains the DecoderTest class implementation and frame parsing logic for video decoder testing.
+ * @brief Contains the videoDecoderTest class implementation and frame parsing logic for video decoder testing.
  */
 
 #include "vts_videodecoder.h"
@@ -59,8 +59,8 @@ Status AVBufferSpaceListener::onSpaceAvailable() {
 }
 
 
-// DecoderTest method implementations
-void DecoderTest::run(bool concurrentDecodeConsume)
+// videoDecoderTest method implementations
+void videoDecoderTest::run(bool concurrentDecodeConsume)
 {
     UT_LOG_INFO("concurrentDecodeConsume %d ",concurrentDecodeConsume);
     mConcurrentDecodeConsume = concurrentDecodeConsume;
@@ -68,9 +68,9 @@ void DecoderTest::run(bool concurrentDecodeConsume)
     if (concurrentDecodeConsume)
     {
         UT_LOG_INFO("Start decoderThreadFunc & consumerThreadFunc");
-        mDecoderThread = thread(&DecoderTest::decoderThreadFunc, this);
+        mDecoderThread = thread(&videoDecoderTest::decoderThreadFunc, this);
         this_thread::sleep_for(chrono::milliseconds(100));
-        //mConsumerThread = thread(&DecoderTest::consumerThreadFunc, this);
+        //mConsumerThread = thread(&videoDecoderTest::consumerThreadFunc, this);
 
         mDecoderThread.join();
         //mConsumerThread.join();
@@ -81,25 +81,25 @@ void DecoderTest::run(bool concurrentDecodeConsume)
     }
 }
 
-bool DecoderTest::getDecoderMetrics(int32_t &framesDecoded, int32_t &decodeErrors, int32_t &framesDropped)
+bool videoDecoderTest::getDecoderMetrics(int32_t &framesDecoded, int32_t &decodeErrors, int32_t &framesDropped)
 {
     optional<PropertyValue> propertyValue;
 
     framesDecoded = decodeErrors = framesDropped = -1;
 
-    VIDEODECODER_GET_PROPERTY_SUCCESS(mDecoderHandle, Property::METRIC_FRAMES_DECODED, propertyValue);
+    VIDEODECODER_GET_PROPERTY_SUCCESS(mDecoderHandle, videodecoder::Property::METRIC_FRAMES_DECODED, propertyValue);
     if (!propertyValue.has_value() || !propertyValue->value.has_value()) {
         return false;
     }
     framesDecoded = propertyValue->value->get<PropertyValue::Value::Tag::intValue>();
 
-    VIDEODECODER_GET_PROPERTY_SUCCESS(mDecoderHandle, Property::METRIC_DECODE_ERRORS, propertyValue);
+    VIDEODECODER_GET_PROPERTY_SUCCESS(mDecoderHandle, videodecoder::Property::METRIC_DECODE_ERRORS, propertyValue);
     if (!propertyValue.has_value() || !propertyValue->value.has_value()) {
         return false;
     }
     decodeErrors = propertyValue->value->get<PropertyValue::Value::Tag::intValue>();
 
-    VIDEODECODER_GET_PROPERTY_SUCCESS(mDecoderHandle, Property::METRIC_FRAMES_DROPPED, propertyValue);
+    VIDEODECODER_GET_PROPERTY_SUCCESS(mDecoderHandle, videodecoder::Property::METRIC_FRAMES_DROPPED, propertyValue);
     if (!propertyValue.has_value() || !propertyValue->value.has_value()) {
         return false;
     }
@@ -108,7 +108,7 @@ bool DecoderTest::getDecoderMetrics(int32_t &framesDecoded, int32_t &decodeError
     return true;
 }
 
-std::vector<std::tuple<uint64_t, uint32_t, int64_t>> DecoderTest::parseFrames(const std::vector<uint8_t>& inputBuffer, uint64_t fileSize, com::rdk::hal::videodecoder::Codec codec) {
+std::vector<std::tuple<uint64_t, uint32_t, int64_t>> videoDecoderTest::parseFrames(const std::vector<uint8_t>& inputBuffer, uint64_t fileSize, com::rdk::hal::videodecoder::Codec codec) {
     std::vector<std::tuple<uint64_t, uint32_t, int64_t>> frames; // {offset, size, pts}
 
     if (mTestConfiguration.frameDetails.empty()) {
@@ -263,7 +263,7 @@ std::vector<std::tuple<uint64_t, uint32_t, int64_t>> DecoderTest::parseFrames(co
     return frames;
 }
 
-void DecoderTest::decoderThreadFunc()
+void videoDecoderTest::decoderThreadFunc()
 {
         sp<IVideoDecoderController> videoDecoderController;
         int64_t videoBufferHandle = 0;
@@ -427,14 +427,14 @@ void DecoderTest::decoderThreadFunc()
             UT_LOG_INFO("Decoder opened, controller:%p", videoDecoderController.get());
 
             if (mTunnelMode) {
-                std::vector<std::pair<Property, int32_t>> startedIntProps = {
-                    {Property::OPERATIONAL_MODE, static_cast<int32_t>(OperationalMode::TUNNELLED)}
+                std::vector<std::pair<videodecoder::Property, int32_t>> startedIntProps = {
+                    {videodecoder::Property::OPERATIONAL_MODE, static_cast<int32_t>(OperationalMode::TUNNELLED)}
                 };
                 UT_LOG_INFO("Set properties in TUNNELLED Mode");
                 VIDEODECODER_SETPROPERTY_LIST_SUCCESS(videoDecoderController, startedIntProps, intValue);
             }
             std::optional<PropertyValue> aidl_return;
-            VIDEODECODER_GETPROPERTY(mDecoderHandle, Property::OPERATIONAL_MODE, aidl_return);
+            VIDEODECODER_GETPROPERTY(mDecoderHandle, videodecoder::Property::OPERATIONAL_MODE, aidl_return);
         }
 
         // Start Decoder
@@ -882,7 +882,7 @@ void DecoderTest::decoderThreadFunc()
         mDecodingStream = false;
 }
 
-void DecoderTest::consumerThreadFunc() {
+void videoDecoderTest::consumerThreadFunc() {
     int32_t errorCount = 0;
     UT_LOG_INFO("[PID: %d, TID: %d] consumerThreadFunc Start", getpid(), syscall(SYS_gettid));
 
@@ -953,7 +953,7 @@ void DecoderTest::consumerThreadFunc() {
     UT_LOG_INFO("[PID: %d, TID: %d] consumerThreadFunc end", getpid(), syscall(SYS_gettid));
 }
 
-void DecoderTest::decodeAndConsumeVideoStreams() {
+void videoDecoderTest::decodeAndConsumeVideoStreams() {
     sp<IVideoDecoderController> videoDecoderController;
     int64_t videoBufferHandle;
     Pool videoPool;
