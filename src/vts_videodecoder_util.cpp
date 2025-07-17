@@ -81,25 +81,14 @@ UT_status_t getVideoDecoderService() {
    return UT_STATUS_OK;
 }
 
-sp<IAVBuffer> gAVBufferManager;
 
-sp<IAVBuffer> getAVBufferService()
-{
-    return
-        android::interface_cast<IAVBuffer>(
-            android::defaultServiceManager()->getService(
-                android::String16(IAVBuffer::serviceName().c_str())
-            )
-        );
-}
-
-Codec videoDecoderStringToCodec(const std::string& codecStr) {
-    static const std::unordered_map<std::string, Codec> codecMap = {
-        {"MPEG", Codec::MPEG},
-        {"H264", Codec::H264},
-        {"H265", Codec::H265},
-        {"VP9",  Codec::VP9},
-        {"AV1",  Codec::AV1}
+videodecoder::Codec videoDecoderStringToCodec(const std::string& codecStr) {
+    static const std::unordered_map<std::string, videodecoder::Codec> codecMap = {
+        {"MPEG", videodecoder::Codec::MPEG},
+        {"H264", videodecoder::Codec::H264},
+        {"H265", videodecoder::Codec::H265},
+        {"VP9",  videodecoder::Codec::VP9},
+        {"AV1",  videodecoder::Codec::AV1}
     };
     auto it = codecMap.find(codecStr);
     if (it != codecMap.end()) {
@@ -161,7 +150,7 @@ PixelFormat videoDecoderStringToPixelFormat(const std::string& formatStr) {
     return static_cast<PixelFormat>(0); // Unknown format
 }
 
-bool vts_videodecoder_helper_validatePropertyValue(int decoder_id,const std::optional<PropertyValue>& propertyValue, const Property property) {
+bool vts_videodecoder_helper_validatePropertyValue(int decoder_id,const std::optional<PropertyValue>& propertyValue, const videodecoder::Property property) {
     // Check if the property value is present and contains a valid value
     if (!propertyValue.has_value() || !propertyValue->value.has_value()) {
         return false;
@@ -181,13 +170,13 @@ bool vts_videodecoder_helper_validatePropertyValue(int decoder_id,const std::opt
 
     // Validate based on the specific property
     switch (property) {
-        case Property::RESOURCE_ID:
+        case videodecoder::Property::RESOURCE_ID:
             return std::holds_alternative<int32_t>(val) && std::get<int32_t>(val) == decoder_id;
-        case Property::INPUT_QUEUE_DEPTH:
+        case videodecoder::Property::INPUT_QUEUE_DEPTH:
             return std::holds_alternative<int32_t>(val) && std::get<int32_t>(val) >= 0;  // Non-negative size
-        case Property::OUTPUT_FRAME_POOL_SIZE:
+        case videodecoder::Property::OUTPUT_FRAME_POOL_SIZE:
             return std::holds_alternative<int32_t>(val) && std::get<int32_t>(val) >= 0;  // Non-negative size
-        case Property::OPERATIONAL_MODE:
+        case videodecoder::Property::OPERATIONAL_MODE:
             return std::holds_alternative<int32_t>(val) &&(std::get<int32_t>(val) == static_cast<int32_t>(OperationalMode::TUNNELLED) ||
                 std::get<int32_t>(val) == static_cast<int32_t>(OperationalMode::NON_TUNNELLED) ||
                 std::get<int32_t>(val) == static_cast<int32_t>(OperationalMode::GRAPHICS_TEXTURE) ||
@@ -196,21 +185,21 @@ bool vts_videodecoder_helper_validatePropertyValue(int decoder_id,const std::opt
                 static_cast<int32_t>(OperationalMode::GRAPHICS_TEXTURE)) ||
                 std::get<int32_t>(val) == (static_cast<int32_t>(OperationalMode::NON_TUNNELLED) |
                 static_cast<int32_t>(OperationalMode::GRAPHICS_TEXTURE)));
-        case Property::LOW_LATENCY_MODE:
+        case videodecoder::Property::LOW_LATENCY_MODE:
             return std::holds_alternative<int32_t>(val) && (std::get<int32_t>(val) == 0 || std::get<int32_t>(val) == 1);
-        case Property::DECODE_ERROR_POLICY:
+        case videodecoder::Property::DECODE_ERROR_POLICY:
             return std::holds_alternative<int32_t>(val) && (std::get<int32_t>(val) == 0 || std::get<int32_t>(val) == 1);
-        case Property::AV_SOURCE:
+        case videodecoder::Property::AV_SOURCE:
             return std::holds_alternative<int32_t>(val) && std::get<int32_t>(val) >= 0;  // Assuming AVSource enum starts at 0
-        case Property::SHA1_CALC:
+        case videodecoder::Property::SHA1_CALC:
             return std::holds_alternative<int32_t>(val) && (std::get<int32_t>(val) == 0 || std::get<int32_t>(val) == 1);
-        case Property::SECURE_VIDEO:
+        case videodecoder::Property::SECURE_VIDEO:
             return std::holds_alternative<int32_t>(val) && (std::get<int32_t>(val) == 0 || std::get<int32_t>(val) == 1);
-        case Property::METRIC_FRAMES_DECODED:
+        case videodecoder::Property::METRIC_FRAMES_DECODED:
             return std::holds_alternative<int32_t>(val) && std::get<int32_t>(val) >= -1;  // -1 for not implemented
-        case Property::METRIC_DECODE_ERRORS:
+        case videodecoder::Property::METRIC_DECODE_ERRORS:
             return std::holds_alternative<int32_t>(val) && std::get<int32_t>(val) >= -1;  // -1 for not implemented
-        case Property::METRIC_FRAMES_DROPPED:
+        case videodecoder::Property::METRIC_FRAMES_DROPPED:
             return std::holds_alternative<int32_t>(val) && std::get<int32_t>(val) >= -1;  // -1 for not implemented
         default:
             return true;  // Default to true for unhandled properties (future-proofing)
@@ -475,7 +464,7 @@ double vts_computeVideoRMSDiff(const uint8_t* ref, const uint8_t* dec, size_t wi
 
 void vts_videodecoder_helper_validateCapabilities(
     int32_t decoderId,
-    const Capabilities& capabilities)
+    const videodecoder::Capabilities& capabilities)
 {
     //UT_LOG_INFO("Validating capabilities for decoder ID: %d", decoderId);
 
@@ -532,41 +521,7 @@ void vts_videodecoder_helper_validateCapabilities(
     }
 }
 
-void* vts_kvp_create_instance(char *fileName)
-{
-    ut_kvp_instance_t* instance;
-    ut_kvp_status_t result;
-
-    UT_LOG_INFO("In %s", __FUNCTION__);
-
-    instance = ut_kvp_createInstance();
-
-    if (!instance)
-    {
-        UT_LOG_ERROR("Failed to create ut kvp instance");
-        return nullptr;
-    }
-
-    result = ut_kvp_open(instance, fileName);
-
-    if (result != UT_KVP_STATUS_SUCCESS)
-    {
-        UT_LOG_ERROR("Failed to open test configuration file");
-        ut_kvp_destroyInstance(instance);
-        return nullptr;
-    }
-
-    UT_LOG_INFO("Out %s", __FUNCTION__);
-
-    return (ut_kvp_instance_t*)instance;
-}
-
-void vts_kvp_destroy_instance(void *instance)
-{
-    ut_kvp_destroyInstance((ut_kvp_instance_t*)instance);
-}
-
-UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, char *module, char *testGroup, char *testName, vector<testConfiguration_t>& testConfiguration)
+UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, const char *module, const char *testGroup, const char *testName, vector<videoDecoderTestConfiguration_t>& testConfiguration)
 {
     ut_kvp_status_t status;
     ut_kvp_instance_t* kvpTestInstance = (ut_kvp_instance_t*)pTestInstance;
@@ -611,7 +566,7 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, char *module,
     for (int32_t i = 0; i < streamCount; i++)
     {
         std::string resultKVP;
-        testConfiguration_t testDetails;
+        videoDecoderTestConfiguration_t testDetails;
         vector<int32_t> errorFrameNum;
 
         string streamName = streamList + "." + to_string(i) + ".Name";
