@@ -151,7 +151,7 @@ extern std::vector<IVideoDecoder::Id>            decoderIds;
 extern std::vector<sp<IVideoDecoder>>            decoders;
 extern std::vector<sp<IVideoDecoderController>>  controllers;
 
-#define VIDEO_DECODER_TEST_CONFIG_PATH "./test_configuration/vts_l3_test_config.yaml"
+#define VIDEO_DECODER_TEST_CONFIG_PATH "./test_configuration/vts_l3_VideoDecoder_test_config.yaml"
 #define VIDEO_DECODER_STREAM_CONFIG_PATH "./test_configuration/vts_stream_list.yaml"
 #define VIDEO_DECODER_STREAM_DOWNLOAD_PATH "IVideoDecoderManager.stream_download_path"
 #define VIDEO_DECODER_STREAM_INPUT_PATH "IVideoDecoderManager.input_streams_path"
