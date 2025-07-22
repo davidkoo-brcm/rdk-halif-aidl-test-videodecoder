@@ -874,14 +874,23 @@ do { \
         UT_ASSERT_EQUAL(status.exceptionCode(), expectedException); \
     } while (0)
 
-#define VIDEODECODER_SETPROPERTY_LIST_SUCCESS(videoDecoderController, propertyList, type) \
+    #define VIDEODECODER_SETPROPERTY_LIST_SUCCESS(videoDecoderController, propertyList, operationalmodevalue, type) \
     do { \
-        for (const auto& [property, value] : propertyList) \
-        { \
-            PropertyValue propertyValue; \
-            propertyValue.value = PropertyValue::Value::make<PropertyValue::Value::Tag::type>(value); \
-            VIDEODECODER_SETPROPERTY_SUCCESS(videoDecoderController, property, propertyValue); \
-        } \
+            if(propertyList.empty()) \
+            { \
+                PropertyValue propertyValue; \
+                propertyValue.value = PropertyValue::Value::make<PropertyValue::Value::Tag::type>(operationalmodevalue); \
+                VIDEODECODER_SETPROPERTY_SUCCESS(videoDecoderController, Property::OPERATIONAL_MODE, propertyValue); \
+            } \
+            else \
+            { \
+                for (const auto& [property, value] : propertyList) \
+                { \
+                    PropertyValue propertyValue; \
+                    propertyValue.value = PropertyValue::Value::make<PropertyValue::Value::Tag::type>(value); \
+                    VIDEODECODER_SETPROPERTY_SUCCESS(videoDecoderController, property, propertyValue); \
+                } \
+            } \
     } while (0)
 
 #define VIDEODECODER_SETPROPERTY_LIST_FAILURE(videoDecoderController, propertyList, type, exception) \
