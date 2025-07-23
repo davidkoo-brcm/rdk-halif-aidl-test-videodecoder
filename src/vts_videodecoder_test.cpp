@@ -427,12 +427,11 @@ void DecoderTest::decoderThreadFunc()
             UT_LOG_INFO("Decoder opened, controller:%p", videoDecoderController.get());
 
             if (mTunnelMode) {
-                int32_t operationmode = 0;
                 std::vector<std::pair<Property, int32_t>> startedIntProps = {
                     {Property::OPERATIONAL_MODE, static_cast<int32_t>(OperationalMode::TUNNELLED)}
                 };
                 UT_LOG_INFO("Set properties in TUNNELLED Mode");
-                VIDEODECODER_SETPROPERTY_LIST_SUCCESS(videoDecoderController, startedIntProps, operationmode, intValue);
+                VIDEODECODER_SETPROPERTY_LIST_SUCCESS(videoDecoderController, startedIntProps, intValue);
             }
             std::optional<PropertyValue> aidl_return;
             VIDEODECODER_GETPROPERTY(mDecoderHandle, Property::OPERATIONAL_MODE, aidl_return);

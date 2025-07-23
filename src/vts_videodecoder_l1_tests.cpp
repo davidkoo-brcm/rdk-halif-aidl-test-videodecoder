@@ -1491,15 +1491,6 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, setProperty_pos)
                                     controllerListener, videoDecoderController, true);
             UT_ASSERT_TRUE(videoDecoderController != nullptr);
 
-            /* Operational modes setting*/
-            std::vector<std::pair<Property, int32_t>> propEmpty;
-            int32_t operationmode = 0;
-
-            for (const auto& _supportedModes : supportedModes)
-            {
-                    VIDEODECODER_SETPROPERTY_LIST_SUCCESS(videoDecoderController, propEmpty, static_cast<int32_t>(_supportedModes) , intValue);
-            }
-
             /* Define property lists for READY state */
             std::vector<std::pair<Property, int32_t>> readyIntProps = {
                 {Property::LOW_LATENCY_MODE, 1},      // On
@@ -1507,28 +1498,6 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, setProperty_pos)
                 {Property::AV_SOURCE, 1},             // Non-zero AVSource
                 {Property::SHA1_CALC, 1}              // On
             };
-
-            /* Set properties in READY state */
-            VIDEODECODER_SETPROPERTY_LIST_SUCCESS(videoDecoderController, readyIntProps, operationmode, intValue);
-
-            /* Start the decoder */
-            VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
-
-            /* Define property list for STARTED state */
-            std::vector<std::pair<Property, int32_t>> startedIntProps = {
-                {Property::SHA1_CALC, 0}  // Off
-            };
-
-            for (const auto& _supportedModes : supportedModes)
-            {
-                    VIDEODECODER_SETPROPERTY_LIST_SUCCESS(videoDecoderController, propEmpty, static_cast<int32_t>(_supportedModes) , intValue);
-            }
-
-            /* Set properties in STARTED state */
-            VIDEODECODER_SETPROPERTY_LIST_SUCCESS(videoDecoderController, startedIntProps, operationmode, intValue);
-
-            /* Stop the decoder */
-            VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
 
             /* Define property list for READY state again */
             std::vector<std::pair<Property, int32_t>> readyIntPropsAgain = {
@@ -1538,13 +1507,33 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, setProperty_pos)
                 {Property::SHA1_CALC, 0}              // Off
             };
 
+            /* Define property list for STARTED state */
+            std::vector<std::pair<Property, int32_t>> startedIntProps = {
+                {Property::SHA1_CALC, 0}  // Off
+            };
+
+            /* Operational modes setting*/
             for (const auto& _supportedModes : supportedModes)
-            {
-                    VIDEODECODER_SETPROPERTY_LIST_SUCCESS(videoDecoderController, propEmpty, static_cast<int32_t>(_supportedModes) , intValue);
+            {      
+                   readyIntProps.push_back({Property::OPERATIONAL_MODE, static_cast<int32_t>(_supportedModes)});
+                   readyIntPropsAgain.push_back({Property::OPERATIONAL_MODE, static_cast<int32_t>(_supportedModes)});
+                   startedIntProps.push_back({Property::OPERATIONAL_MODE, static_cast<int32_t>(_supportedModes)});
             }
 
+            /* Set properties in READY state */
+            VIDEODECODER_SETPROPERTY_LIST_SUCCESS(videoDecoderController, readyIntProps, intValue);
+
+            /* Start the decoder */
+            VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
+
+            /* Set properties in STARTED state */
+            VIDEODECODER_SETPROPERTY_LIST_SUCCESS(videoDecoderController, startedIntProps, intValue);
+
+            /* Stop the decoder */
+            VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
+
             /* Set properties in READY state again */
-            VIDEODECODER_SETPROPERTY_LIST_SUCCESS(videoDecoderController, readyIntPropsAgain, operationmode, intValue);
+            VIDEODECODER_SETPROPERTY_LIST_SUCCESS(videoDecoderController, readyIntPropsAgain, intValue);
 
             /* Close the decoder */
             VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
