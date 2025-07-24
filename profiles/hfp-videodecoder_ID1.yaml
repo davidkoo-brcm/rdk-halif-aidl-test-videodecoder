@@ -8,26 +8,24 @@ IVideoDecoderManager:           # Component object begins
     - 1:                          # Resource object begins
       ID : 1
       supportedCodecs:          # Array of codec capabilities
-        - MPEG:
-            maxFrameRate: 60
-            maxFrameWidth: 1920
-            maxFrameHeight: 1080
         - H264:
             maxFrameRate: 60
             maxFrameWidth: 1920
             maxFrameHeight: 1080
         - H265:
             maxFrameRate: 60
-            maxFrameWidth: 1920
-            maxFrameHeight: 1080
+            maxFrameWidth: 3840
+            maxFrameHeight: 2160
         - VP9:
             maxFrameRate: 60
-            maxFrameWidth: 1920
-            maxFrameHeight: 1080
+            maxFrameWidth: 3840
+            maxFrameHeight: 2160
         - AV1:
             maxFrameRate: 60
-            maxFrameWidth: 1920
-            maxFrameHeight: 1080
+            maxFrameWidth: 3840
+            maxFrameHeight: 2160
       supportedDynamicRanges:
         - SDR
-      supportsSecure: true
+        - HLG
+        - HDR10
+      supportsSecure: false

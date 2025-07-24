@@ -307,8 +307,8 @@ UT_ADD_TEST(VTS_L1_VideoDecoder,getVideoDecoder_neg) {
 
 UT_ADD_TEST(VTS_L1_VideoDecoder, getCapabilities_pos)
 {
-    videodecoder::Capabilities capabilities;
-    std::vector<IVideoDecoder::Id> decoderIds;
+    videodecoder::Capabilities capabilities={};
+    std::vector<IVideoDecoder::Id> decoderIds={};
     android::sp<IVideoDecoder> videoDecoder;
 
     /* Get the Video decoder IDs */
