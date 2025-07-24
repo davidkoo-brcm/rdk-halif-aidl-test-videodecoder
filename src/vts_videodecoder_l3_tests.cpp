@@ -68,6 +68,16 @@ UT_ADD_TEST_TO_GROUP(VTS_L3_VideoDecoder, UT_TESTS_L3)
 
 static char *gTestGroup = "L3";
 
+static sp<IAVBuffer> vts_getAVBufferService()
+{
+    return
+        android::interface_cast<IAVBuffer>(
+            android::defaultServiceManager()->getService(
+                android::String16(IAVBuffer::serviceName().c_str())
+            )
+        );
+}
+
 class VTS_L3_VideoDecoder : public UTCore
 {
 public:
@@ -98,7 +108,6 @@ public:
         }
 
         mAVBufferManager = vts_getAVBufferService();
-        gVideoDecoderTestConfiguration = vts_kvp_create_instance(VIDEO_DECODER_TEST_CONFIG_PATH);
 
         mAVbufferHelper = getAVBufferHelperInstance();
 

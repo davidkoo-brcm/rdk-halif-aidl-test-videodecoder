@@ -64,15 +64,13 @@
  *
  */
 
- #include "vts_videodecoder.h"
+#include "vts_videodecoder.h"
 
-sp<IVideoDecoderManager> gVideoDecoderManager;
+std::vector<IVideoDecoder::Id>            decoderIds;
+std::vector<sp<IVideoDecoder>>            decoders;
+std::vector<sp<IVideoDecoderController>>  controllers;
 
- std::vector<IVideoDecoder::Id>            decoderIds;
- std::vector<sp<IVideoDecoder>>            decoders;
- std::vector<sp<IVideoDecoderController>>  controllers;
-
-void *gVideoDecoderTestConfiguration;
+void *gVideoDecoderTestConfiguration=nullptr;
 
 UT_status_t VTS_VideoDecoder_init()
 {
