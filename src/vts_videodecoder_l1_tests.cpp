@@ -87,49 +87,6 @@ static const int32_t intValueDecodeErrorConceal = 1;
 static const int32_t intValueAVSourceUnknown = 0;
 
 
-Codec videoDecoderStringToCodec(const std::string& codecStr) {
-    static const std::unordered_map<std::string, Codec> codecMap = {
-        {"MPEG", Codec::MPEG},
-        {"H264", Codec::H264},
-        {"H265", Codec::H265},
-        {"VP9",  Codec::VP9},
-        {"AV1",  Codec::AV1}
-    };
-
-    auto it = codecMap.find(codecStr);
-    if (it != codecMap.end()) {
-        return it->second;
-    } else {
-        throw std::invalid_argument("Unknown codec: " + codecStr);
-    }
-}
-
-DynamicRange videoDecoderStringToDynamicRange(const std::string& rangeStr) {
-    static const std::unordered_map<std::string, DynamicRange> dynamicRangeMap = {
-        {"UNKNOWN", DynamicRange::UNKNOWN}, {"SDR", DynamicRange::SDR},
-        {"HLG", DynamicRange::HLG}, {"HDR10", DynamicRange::HDR10},
-        {"HDR10PLUS", DynamicRange::HDR10PLUS}, {"DOLBY_VISION", DynamicRange::DOLBY_VISION}
-    };
-    auto it = dynamicRangeMap.find(rangeStr);
-    return (it != dynamicRangeMap.end()) ? it->second : DynamicRange::UNKNOWN;
-}
-
-OperationalMode videoDecoderStringToOperationalMode(const std::string& modeStr) {
-    static const std::unordered_map<std::string, OperationalMode> modeMap = {
-        {"TUNNELLED", OperationalMode::TUNNELLED},
-        {"NON_TUNNELLED", OperationalMode::NON_TUNNELLED},
-        {"GRAPHICS_TEXTURE", OperationalMode::GRAPHICS_TEXTURE}
-    };
-
-    auto it = modeMap.find(modeStr);
-    if (it != modeMap.end()) {
-        return it->second;  // Return the integer value instead of enum
-    } else {
-        return OperationalMode::TUNNELLED;  // Return TUNNELLED for unknown/default modes
-    }
-}
-
-
 /**
  * @brief Test the retrieval of video decoder IDs from the VideoDecoderManager service.
  *
@@ -1788,10 +1745,10 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, flush_pos) {
             VIDEODECODER_CHECK_STATE(videoDecoder, State::STARTED);
 
             // Test flush without reset
-            VIDEODECODER_FLUSH_SUCCESS(videoDecoderController,false,true);
+            VIDEODECODER_FLUSH_SUCCESS(videoDecoder,videoDecoderController,false,true);
 
             // Test flush with reset
-            VIDEODECODER_FLUSH_SUCCESS(videoDecoderController,true,true);
+            VIDEODECODER_FLUSH_SUCCESS(videoDecoder,videoDecoderController,true,true);
 
             // Close
             VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
