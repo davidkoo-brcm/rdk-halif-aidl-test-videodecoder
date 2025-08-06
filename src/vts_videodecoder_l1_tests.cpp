@@ -1507,7 +1507,6 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, setProperty_pos)
                 {videodecoder::Property::SHA1_CALC, 1}              // On
             };
 
-
             /* Define property list for STARTED state */
             std::vector<std::pair<videodecoder::Property, int32_t>> startedIntProps = {
                 {videodecoder::Property::SHA1_CALC, 0}  // Off
@@ -1540,9 +1539,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, setProperty_pos)
             VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
         }
     }
- }
-
-
+}
 
 /**
  * @brief Test the negative scenarios for setting properties in VideoDecoderController
