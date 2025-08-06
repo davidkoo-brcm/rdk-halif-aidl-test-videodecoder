@@ -5,8 +5,8 @@ include_3: videodecoder_test_configuration/vts_video_av1_streams.yaml
 
 IVideoDecoderManager:
   stream_download_path: "http://<>/streams" #`URL` path to download the video test streams
-  input_streams_path: "videodecoder_test_configuration" #Target path where input streams are stored
-  reference_streams_path: "videodecoder_test_configuration" #Target path for reference decoded streams
+  input_streams_path: "assets/streams/input" #Target path where input streams are stored
+  reference_streams_path: "assets/streams/reference" #Target path for reference decoded streams
   L3: #Test Level
     Decode_Sequential_NonTunnel_NonSecure:
       Controls:
