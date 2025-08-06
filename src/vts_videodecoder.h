@@ -874,7 +874,7 @@ do { \
         UT_ASSERT_EQUAL(status.exceptionCode(), expectedException); \
     } while (0)
 
-#define VIDEODECODER_SETPROPERTY_LIST_SUCCESS(videoDecoderController, propertyList, type) \
+    #define VIDEODECODER_SETPROPERTY_LIST_SUCCESS(videoDecoderController, propertyList, type) \
     do { \
         for (const auto& [property, value] : propertyList) \
         { \
