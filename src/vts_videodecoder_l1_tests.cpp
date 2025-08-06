@@ -1455,11 +1455,15 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, setProperty_pos)
     std::vector<IVideoDecoder::Id> decoderIds;
     android::sp<IVideoDecoder> videoDecoder;
     videodecoder::Capabilities capabilities;
+    std::vector<videodecoder::OperationalMode> supportedModes;
 
     /* Get the Video decoder IDs */
     VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
     UT_LOG_INFO("Found %zu video decoder IDs", decoderIds.size());
     UT_ASSERT_TRUE(!decoderIds.empty());
+
+    /*Get Supported Operationl Modes*/
+    VIDEODECODER_MANAGER_GETSUPPORTEDOPERATIONALMODES(supportedModes);
 
     for (const auto& _decoderId : decoderIds)
     {
@@ -1492,9 +1496,30 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, setProperty_pos)
                 {videodecoder::Property::LOW_LATENCY_MODE, 1},      // On
                 {videodecoder::Property::DECODE_ERROR_POLICY, 1},   // Conceal corrupt frames
                 {videodecoder::Property::AV_SOURCE, 1},             // Non-zero AVSource
-                {videodecoder::Property::OPERATIONAL_MODE, static_cast<int32_t>(OperationalMode::NON_TUNNELLED)},
                 {videodecoder::Property::SHA1_CALC, 1}              // On
             };
+
+            /* Define property list for READY state again */
+            std::vector<std::pair<videodecoder::Property, int32_t>> readyIntPropsAgain = {
+                {videodecoder::Property::LOW_LATENCY_MODE, 1},      // On
+                {videodecoder::Property::DECODE_ERROR_POLICY, 1},   // Conceal corrupt frames
+                {videodecoder::Property::AV_SOURCE, 1},             // Non-zero AVSource
+                {videodecoder::Property::SHA1_CALC, 1}              // On
+            };
+
+
+            /* Define property list for STARTED state */
+            std::vector<std::pair<videodecoder::Property, int32_t>> startedIntProps = {
+                {videodecoder::Property::SHA1_CALC, 0}  // Off
+            };
+
+            /* Operational modes setting*/
+            for (const auto& _supportedModes : supportedModes)
+            {
+                readyIntProps.push_back({videodecoder::Property::OPERATIONAL_MODE, static_cast<int32_t>(_supportedModes)});
+                readyIntPropsAgain.push_back({videodecoder::Property::OPERATIONAL_MODE, static_cast<int32_t>(_supportedModes)});
+                startedIntProps.push_back({videodecoder::Property::OPERATIONAL_MODE, static_cast<int32_t>(_supportedModes)});
+            }
 
             /* Set properties in READY state */
             VIDEODECODER_SETPROPERTY_LIST_SUCCESS(videoDecoderController, readyIntProps, intValue);
@@ -1502,26 +1527,11 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, setProperty_pos)
             /* Start the decoder */
             VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
 
-            /* Define property list for STARTED state */
-            std::vector<std::pair<videodecoder::Property, int32_t>> startedIntProps = {
-                {videodecoder::Property::OPERATIONAL_MODE, static_cast<int32_t>(OperationalMode::TUNNELLED)},
-                {videodecoder::Property::SHA1_CALC, 0}  // Off
-            };
-
             /* Set properties in STARTED state */
             VIDEODECODER_SETPROPERTY_LIST_SUCCESS(videoDecoderController, startedIntProps, intValue);
 
             /* Stop the decoder */
             VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
-
-            /* Define property list for READY state again */
-            std::vector<std::pair<videodecoder::Property, int32_t>> readyIntPropsAgain = {
-                {videodecoder::Property::LOW_LATENCY_MODE, 0},      // Off
-                {videodecoder::Property::DECODE_ERROR_POLICY, 0},   // Output corrupt frames
-                {videodecoder::Property::AV_SOURCE, 0},             // AVUNKNOWN
-                {videodecoder::Property::OPERATIONAL_MODE, static_cast<int32_t>(OperationalMode::NON_TUNNELLED)},
-                {videodecoder::Property::SHA1_CALC, 0}              // Off
-            };
 
             /* Set properties in READY state again */
             VIDEODECODER_SETPROPERTY_LIST_SUCCESS(videoDecoderController, readyIntPropsAgain, intValue);
