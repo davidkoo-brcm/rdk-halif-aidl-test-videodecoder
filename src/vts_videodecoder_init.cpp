@@ -64,15 +64,13 @@
  *
  */
 
- #include "vts_videodecoder.h"
+#include "vts_videodecoder.h"
 
-sp<IVideoDecoderManager> gVideoDecoderManager;
+std::vector<IVideoDecoder::Id>            decoderIds;
+std::vector<sp<IVideoDecoder>>            decoders;
+std::vector<sp<IVideoDecoderController>>  controllers;
 
- std::vector<IVideoDecoder::Id>            decoderIds;
- std::vector<sp<IVideoDecoder>>            decoders;
- std::vector<sp<IVideoDecoderController>>  controllers;
-
-void *gTestConfiguration;
+void *gVideoDecoderTestConfiguration=nullptr;
 
 UT_status_t VTS_VideoDecoder_init()
 {
@@ -87,14 +85,14 @@ UT_status_t VTS_VideoDecoder_init()
         return UT_STATUS_FAILURE;
     }
 
-    gTestConfiguration = vts_kvp_create_instance(VTS_TEST_CONFIG_PATH);
+    gVideoDecoderTestConfiguration = vts_kvp_create_instance(VIDEO_DECODER_TEST_CONFIG_PATH);
 
     return UT_STATUS_OK;
 }
 
 void VTS_VideoDecoder_destroy()
 {
-    vts_kvp_destroy_instance(gTestConfiguration);
+    vts_kvp_destroy_instance(gVideoDecoderTestConfiguration);
 }
 
 /** @} */ // End of Video_Decoder_Halif_Test_Init

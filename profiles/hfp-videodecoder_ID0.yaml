@@ -8,10 +8,6 @@ IVideoDecoderManager:           # Component object begins
     - 0:                        # Resource object begins
       ID : 0
       supportedCodecs:          # Array of codec capabilities
-        - MPEG:
-            maxFrameRate: 60
-            maxFrameWidth: 1920
-            maxFrameHeight: 1080
         - H264:
             maxFrameRate: 60
             maxFrameWidth: 1920
@@ -32,5 +28,4 @@ IVideoDecoderManager:           # Component object begins
         - SDR
         - HLG
         - HDR10
-        - DOLBY_VISION
-      supportsSecure: true
+      supportsSecure: false
