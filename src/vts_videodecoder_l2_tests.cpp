@@ -73,9 +73,6 @@ struct PropertyTestCase {
     const char* propertyName;
 };
 std::vector<PropertyTestCase> testCases_readyState = {
-    {::com::rdk::hal::videodecoder::Property::OPERATIONAL_MODE, static_cast<int32_t>(OperationalMode::NON_TUNNELLED), "OPERATIONAL_MODE"},
-    {::com::rdk::hal::videodecoder::Property::OPERATIONAL_MODE, static_cast<int32_t>(OperationalMode::TUNNELLED), "OPERATIONAL_MODE"},
-    {::com::rdk::hal::videodecoder::Property::OPERATIONAL_MODE, static_cast<int32_t>(OperationalMode::GRAPHICS_TEXTURE), "OPERATIONAL_MODE"},
     {::com::rdk::hal::videodecoder::Property::AV_SOURCE, static_cast<int32_t>(AVSource::AUTO), "AV_SOURCE"},
     {::com::rdk::hal::videodecoder::Property::AV_SOURCE, static_cast<int32_t>(AVSource::IP), "AV_SOURCE"},
     {::com::rdk::hal::videodecoder::Property::AV_SOURCE, static_cast<int32_t>(AVSource::TUNER), "AV_SOURCE"},
@@ -98,9 +95,6 @@ std::vector<PropertyTestCase> testCases_readyState = {
     {::com::rdk::hal::videodecoder::Property::SHA1_CALC  , 0, "SHA1_CALC"},
 };
 std::vector<PropertyTestCase> testCases_startedState = {
-    {::com::rdk::hal::videodecoder::Property::OPERATIONAL_MODE, static_cast<int32_t>(OperationalMode::NON_TUNNELLED), "OPERATIONAL_MODE"},
-    {::com::rdk::hal::videodecoder::Property::OPERATIONAL_MODE, static_cast<int32_t>(OperationalMode::TUNNELLED), "OPERATIONAL_MODE"},
-    {::com::rdk::hal::videodecoder::Property::OPERATIONAL_MODE, static_cast<int32_t>(OperationalMode::GRAPHICS_TEXTURE), "OPERATIONAL_MODE"},
     {::com::rdk::hal::videodecoder::Property::SHA1_CALC   , 1, "SHA1_CALC"},
     {::com::rdk::hal::videodecoder::Property::SHA1_CALC  , 0, "SHA1_CALC"},
 };
@@ -208,6 +202,18 @@ UT_ADD_TEST(VTS_L2_VideoDecoder, TestGetAndSetProperties) {
             videodecoder::Codec _codec = _codecCaps.codec;
 
             sp<IVideoDecoderController> controller;
+            std::vector<videodecoder::OperationalMode> supportedModes;
+
+            /*Get Supported Operationl Modes*/
+            VIDEODECODER_MANAGER_GETSUPPORTEDOPERATIONALMODES(supportedModes);
+
+            /* Operational modes setting*/
+            for (const auto& _supportedModes : supportedModes)
+            {
+                   testCases_readyState.push_back({Property::OPERATIONAL_MODE, static_cast<int32_t>(_supportedModes)});
+                   testCases_startedState.push_back({Property::OPERATIONAL_MODE, static_cast<int32_t>(_supportedModes)});
+            }
+
             // Open to READY
             VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities->supportsSecure,
                                       controlListener, controller, false);
@@ -271,6 +277,18 @@ UT_ADD_TEST(VTS_L2_VideoDecoder, TestGetAndSetProperties_multipleInstance) {
     {
         const auto& [videoDecoder,controlListener,eventListener,capabilities] = mVideoDecoderList[i];
         const auto& controller = videoDecoderControllersList[i];
+
+        std::vector<videodecoder::OperationalMode> supportedModes;
+
+        /*Get Supported Operationl Modes*/
+        VIDEODECODER_MANAGER_GETSUPPORTEDOPERATIONALMODES(supportedModes);
+
+        /* Operational modes setting*/
+        for (const auto& _supportedModes : supportedModes)
+        {
+                testCases_readyState.push_back({Property::OPERATIONAL_MODE, static_cast<int32_t>(_supportedModes)});
+                testCases_startedState.push_back({Property::OPERATIONAL_MODE, static_cast<int32_t>(_supportedModes)});
+        }
 
         for (const auto& testCase : testCases_readyState) {
             PropertyValue setValue;
