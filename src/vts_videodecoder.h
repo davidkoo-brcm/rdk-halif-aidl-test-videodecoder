@@ -83,7 +83,6 @@
 #include <stdexcept>
 #include <thread>
 #include <chrono>
-#include <openssl/sha.h>
 #include <cmath>
 #include <algorithm>
 #include <fstream>
@@ -1205,17 +1204,6 @@ public:
                         frame.metadata->lowLatency);
 
             UT_LOG_INFO("Source: %d", static_cast<int>(frame.metadata->source));
-
-            // Log SHA1 if present
-            if (!frame.metadata->sha1.empty()) {
-                std::ostringstream sha1Str;
-                for (const auto& byte : frame.metadata->sha1) {
-                    sha1Str << std::hex << std::setfill('0') << std::setw(2) << static_cast<int>(byte);
-                }
-                UT_LOG_INFO("SHA1: %s", sha1Str.str().c_str());
-            } else {
-                UT_LOG_INFO("SHA1: <empty>");
-            }
 
         } else {
             UT_LOG_INFO("No FrameMetadata provided");
