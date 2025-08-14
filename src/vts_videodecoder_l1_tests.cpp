@@ -67,16 +67,16 @@
 #include "vts_videodecoder.h"
 
 // Properties writable in READY only
-static const std::vector<Property> validIntPropertyReady = {
-    Property::LOW_LATENCY_MODE,
-    Property::DECODE_ERROR_POLICY,
-    Property::AV_SOURCE
+static const std::vector<videodecoder::Property> validIntPropertyReady = {
+    videodecoder::Property::LOW_LATENCY_MODE,
+    videodecoder::Property::DECODE_ERROR_POLICY,
+    videodecoder::Property::AV_SOURCE
 };
 
 // Properties writable in READY and STARTED
-static const std::vector<Property> validIntPropertyAll = {
-    Property::OPERATIONAL_MODE,
-    Property::SHA1_CALC
+static const std::vector<videodecoder::Property> validIntPropertyAll = {
+    videodecoder::Property::OPERATIONAL_MODE,
+    videodecoder::Property::SHA1_CALC
 };
 
 // Define valid property values as standalone constants
@@ -307,8 +307,8 @@ UT_ADD_TEST(VTS_L1_VideoDecoder,getVideoDecoder_neg) {
 
 UT_ADD_TEST(VTS_L1_VideoDecoder, getCapabilities_pos)
 {
-    Capabilities capabilities;
-    std::vector<IVideoDecoder::Id> decoderIds;
+    videodecoder::Capabilities capabilities={};
+    std::vector<IVideoDecoder::Id> decoderIds={};
     android::sp<IVideoDecoder> videoDecoder;
 
     /* Get the Video decoder IDs */
@@ -385,66 +385,66 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, getCapabilities_pos)
         ::std::optional<PropertyValue> aidl_return;
 
         // Fetch decoder_id dynamically
-        VIDEODECODER_GETPROPERTY(decoder, Property::RESOURCE_ID, aidl_return);
+        VIDEODECODER_GETPROPERTY(decoder, videodecoder::Property::RESOURCE_ID, aidl_return);
         // Correctly access the intValue from the union
         int decoder_id = aidl_return->value->get<PropertyValue::Value::Tag::intValue>();
         UT_ASSERT_TRUE(vts_videodecoder_helper_validatePropertyValue(decoder_id, aidl_return,
-            Property::RESOURCE_ID)) << "RESOURCE_ID validation failed";
+            videodecoder::Property::RESOURCE_ID)) << "RESOURCE_ID validation failed";
 
         // Test INPUT_QUEUE_DEPTH
-        VIDEODECODER_GETPROPERTY(decoder, Property::INPUT_QUEUE_DEPTH, aidl_return);
+        VIDEODECODER_GETPROPERTY(decoder, videodecoder::Property::INPUT_QUEUE_DEPTH, aidl_return);
         UT_ASSERT_TRUE(vts_videodecoder_helper_validatePropertyValue(decoder_id, aidl_return,
-            Property::INPUT_QUEUE_DEPTH)) << "INPUT_QUEUE_DEPTH validation failed";
+            videodecoder::Property::INPUT_QUEUE_DEPTH)) << "INPUT_QUEUE_DEPTH validation failed";
 
         // Test OUTPUT_FRAME_POOL_SIZE
-        VIDEODECODER_GETPROPERTY(decoder, Property::OUTPUT_FRAME_POOL_SIZE, aidl_return);
+        VIDEODECODER_GETPROPERTY(decoder, videodecoder::Property::OUTPUT_FRAME_POOL_SIZE, aidl_return);
         UT_ASSERT_TRUE(vts_videodecoder_helper_validatePropertyValue(decoder_id, aidl_return,
-            Property::OUTPUT_FRAME_POOL_SIZE)) << "OUTPUT_FRAME_POOL_SIZE validation failed";
+            videodecoder::Property::OUTPUT_FRAME_POOL_SIZE)) << "OUTPUT_FRAME_POOL_SIZE validation failed";
 
         // Test OPERATIONAL_MODE
-        VIDEODECODER_GETPROPERTY(decoder, Property::OPERATIONAL_MODE, aidl_return);
+        VIDEODECODER_GETPROPERTY(decoder, videodecoder::Property::OPERATIONAL_MODE, aidl_return);
         UT_ASSERT_TRUE(vts_videodecoder_helper_validatePropertyValue(decoder_id, aidl_return,
-            Property::OPERATIONAL_MODE)) << "OPERATIONAL_MODE validation failed";
+            videodecoder::Property::OPERATIONAL_MODE)) << "OPERATIONAL_MODE validation failed";
 
         // Test LOW_LATENCY_MODE
-        VIDEODECODER_GETPROPERTY(decoder, Property::LOW_LATENCY_MODE, aidl_return);
+        VIDEODECODER_GETPROPERTY(decoder, videodecoder::Property::LOW_LATENCY_MODE, aidl_return);
         UT_ASSERT_TRUE(vts_videodecoder_helper_validatePropertyValue(decoder_id, aidl_return,
-            Property::LOW_LATENCY_MODE)) << "LOW_LATENCY_MODE validation failed";
+            videodecoder::Property::LOW_LATENCY_MODE)) << "LOW_LATENCY_MODE validation failed";
 
         // Test DECODE_ERROR_POLICY
-        VIDEODECODER_GETPROPERTY(decoder, Property::DECODE_ERROR_POLICY, aidl_return);
+        VIDEODECODER_GETPROPERTY(decoder, videodecoder::Property::DECODE_ERROR_POLICY, aidl_return);
         UT_ASSERT_TRUE(vts_videodecoder_helper_validatePropertyValue(decoder_id, aidl_return,
-            Property::DECODE_ERROR_POLICY)) << "DECODE_ERROR_POLICY validation failed";
+            videodecoder::Property::DECODE_ERROR_POLICY)) << "DECODE_ERROR_POLICY validation failed";
 
         // Test AV_SOURCE
-        VIDEODECODER_GETPROPERTY(decoder, Property::AV_SOURCE, aidl_return);
+        VIDEODECODER_GETPROPERTY(decoder, videodecoder::Property::AV_SOURCE, aidl_return);
         UT_ASSERT_TRUE(vts_videodecoder_helper_validatePropertyValue(decoder_id, aidl_return,
-            Property::AV_SOURCE)) << "AV_SOURCE validation failed";
+            videodecoder::Property::AV_SOURCE)) << "AV_SOURCE validation failed";
 
         // Test SHA1_CALC
-        VIDEODECODER_GETPROPERTY(decoder, Property::SHA1_CALC, aidl_return);
+        VIDEODECODER_GETPROPERTY(decoder, videodecoder::Property::SHA1_CALC, aidl_return);
         UT_ASSERT_TRUE(vts_videodecoder_helper_validatePropertyValue(decoder_id, aidl_return,
-            Property::SHA1_CALC)) << "SHA1_CALC validation failed";
+            videodecoder::Property::SHA1_CALC)) << "SHA1_CALC validation failed";
 
         // Test SECURE_VIDEO
-        VIDEODECODER_GETPROPERTY(decoder, Property::SECURE_VIDEO, aidl_return);
+        VIDEODECODER_GETPROPERTY(decoder, videodecoder::Property::SECURE_VIDEO, aidl_return);
         UT_ASSERT_TRUE(vts_videodecoder_helper_validatePropertyValue(decoder_id, aidl_return,
-            Property::SECURE_VIDEO)) << "SECURE_VIDEO validation failed";
+            videodecoder::Property::SECURE_VIDEO)) << "SECURE_VIDEO validation failed";
 
         // Test METRIC_FRAMES_DECODED
-        VIDEODECODER_GETPROPERTY(decoder, Property::METRIC_FRAMES_DECODED, aidl_return);
+        VIDEODECODER_GETPROPERTY(decoder, videodecoder::Property::METRIC_FRAMES_DECODED, aidl_return);
         UT_ASSERT_TRUE(vts_videodecoder_helper_validatePropertyValue(decoder_id, aidl_return,
-            Property::METRIC_FRAMES_DECODED)) << "METRIC_FRAMES_DECODED validation failed";
+            videodecoder::Property::METRIC_FRAMES_DECODED)) << "METRIC_FRAMES_DECODED validation failed";
 
         // Test METRIC_DECODE_ERRORS
-        VIDEODECODER_GETPROPERTY(decoder, Property::METRIC_DECODE_ERRORS, aidl_return);
+        VIDEODECODER_GETPROPERTY(decoder, videodecoder::Property::METRIC_DECODE_ERRORS, aidl_return);
         UT_ASSERT_TRUE(vts_videodecoder_helper_validatePropertyValue(decoder_id, aidl_return,
-            Property::METRIC_DECODE_ERRORS)) << "METRIC_DECODE_ERRORS validation failed";
+            videodecoder::Property::METRIC_DECODE_ERRORS)) << "METRIC_DECODE_ERRORS validation failed";
 
         // Test METRIC_FRAMES_DROPPED
-        VIDEODECODER_GETPROPERTY(decoder, Property::METRIC_FRAMES_DROPPED, aidl_return);
+        VIDEODECODER_GETPROPERTY(decoder, videodecoder::Property::METRIC_FRAMES_DROPPED, aidl_return);
         UT_ASSERT_TRUE(vts_videodecoder_helper_validatePropertyValue(decoder_id, aidl_return,
-            Property::METRIC_FRAMES_DROPPED)) << "METRIC_FRAMES_DROPPED validation failed";
+            videodecoder::Property::METRIC_FRAMES_DROPPED)) << "METRIC_FRAMES_DROPPED validation failed";
     }
 }
 
@@ -478,7 +478,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, getProperty_neg) {
     for (const auto& decoder : decoders) {
         ::std::optional<PropertyValue> aidl_return;
         UT_LOG_INFO("Calling getProperty(IN:property:[UNKNOWN_PROPERTY], OUT:_aidl_return[])");
-        status = decoder->getProperty(static_cast<Property>(-1), &aidl_return);
+        status = decoder->getProperty(static_cast<videodecoder::Property>(-1), &aidl_return);
         UT_LOG_INFO("Result getProperty(IN:property:[UNKNOWN_PROPERTY], OUT:_aidl_return[%s]), status:[isOK:%s, exception:%s]",
                     aidl_return.has_value() ? "not null" : "null",
                     UT_Control_GetMapString(bool_mapTable, status.isOk()),
@@ -525,10 +525,10 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, getProperty_neg) {
 
         // Use RESOURCE_ID to fetch the decoder_id dynamically
         ::std::optional<PropertyValue> aidl_return_single;
-        VIDEODECODER_GETPROPERTY(decoder, Property::RESOURCE_ID, aidl_return_single);
+        VIDEODECODER_GETPROPERTY(decoder, videodecoder::Property::RESOURCE_ID, aidl_return_single);
         int decoder_id = aidl_return_single->value->get<PropertyValue::Value::Tag::intValue>();
         UT_ASSERT_TRUE(vts_videodecoder_helper_validatePropertyValue(decoder_id, aidl_return_single,
-            Property::RESOURCE_ID)) << "RESOURCE_ID validation failed";
+            videodecoder::Property::RESOURCE_ID)) << "RESOURCE_ID validation failed";
 
         // Populate propertyKVList with properties to query
         std::vector<PropertyKVPair> propertyKVList;
@@ -590,7 +590,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, getPropertyMulti_neg) {
     // Negative Test - Invalid Property Key
     std::vector<PropertyKVPair> propertyKVListInvalid;
     PropertyKVPair invalidPair;
-    invalidPair.property = static_cast<Property>(-1);
+    invalidPair.property = static_cast<videodecoder::Property>(-1);
     propertyKVListInvalid.push_back(invalidPair);
 
     bool aidlReturnInvalid = false;
@@ -598,7 +598,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, getPropertyMulti_neg) {
 
     for (const auto& kvPair : propertyKVListInvalid) {
         UT_ASSERT_FALSE(kvPair.propertyValue.value.has_value())
-            << "Property " << static_cast<int>(kvPair.property) << " should not have a value";
+            << "videodecoder::Property " << static_cast<int>(kvPair.property) << " should not have a value";
     }
 
     // Negative Test - Empty Property List
@@ -638,11 +638,11 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, getState_pos) {
         sp<IVideoDecoder> videoDecoder;
         VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(_decoderId, videoDecoder);
 
-        Capabilities capabilities;
+        videodecoder::Capabilities capabilities;
         VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
 
         for (const auto& _codecCaps : capabilities.supportedCodecs) {
-            Codec _codec = _codecCaps.codec;
+            videodecoder::Codec _codec = _codecCaps.codec;
             UT_LOG_INFO("Testing getState for codec %d, decoder ID %d",
                         static_cast<int32_t>(_codec), _decoderId.value);
 
@@ -699,7 +699,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, getState_pos) {
 UT_ADD_TEST(VTS_L1_VideoDecoder, open_pos) {
     std::vector<IVideoDecoder::Id> decoderIds;
     sp<IVideoDecoder> videoDecoder;
-    Capabilities capabilities;
+    videodecoder::Capabilities capabilities;
 
     VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
     UT_ASSERT_FALSE(decoderIds.empty()) << "No VideoDecoder instances available.";
@@ -709,7 +709,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, open_pos) {
         VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
 
         for (const auto& _codecCaps : capabilities.supportedCodecs) {
-            Codec _codec = _codecCaps.codec;
+            videodecoder::Codec _codec = _codecCaps.codec;
             sp<IVideoDecoderController> videoDecoderController;
             sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
 
@@ -754,9 +754,9 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, open_pos) {
  */
 UT_ADD_TEST(VTS_L1_VideoDecoder, open_neg) {
     std::vector<IVideoDecoder::Id> decoderIds;
-    std::vector<Codec> allCodecs = { Codec::AV1, Codec::H264, Codec::H265,Codec::MPEG, Codec::VP9 };
+    std::vector<videodecoder::Codec> allCodecs = { videodecoder::Codec::AV1, videodecoder::Codec::H264, videodecoder::Codec::H265,videodecoder::Codec::MPEG, videodecoder::Codec::VP9 };
     sp<IVideoDecoder> videoDecoder;
-    Capabilities capabilities;
+    videodecoder::Capabilities capabilities;
 
     VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
     UT_ASSERT_FALSE(decoderIds.empty()) << "No VideoDecoder instances available.";
@@ -769,8 +769,8 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, open_neg) {
         sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
 
         // Select a valid codec
-        Codec validCodec = capabilities.supportedCodecs.empty() ?
-            Codec::H264 : capabilities.supportedCodecs.front().codec;
+        videodecoder::Codec validCodec = capabilities.supportedCodecs.empty() ?
+            videodecoder::Codec::H264 : capabilities.supportedCodecs.front().codec;
 
         bool isCodecFound = false;
         for ( const auto& codecVal: allCodecs){
@@ -834,7 +834,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, open_neg) {
 UT_ADD_TEST(VTS_L1_VideoDecoder, close_pos) {
     std::vector<IVideoDecoder::Id> decoderIds;
     sp<IVideoDecoder> videoDecoder;
-    Capabilities capabilities;
+    videodecoder::Capabilities capabilities;
 
     VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
 
@@ -843,7 +843,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, close_pos) {
         VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
 
         for (const auto& _codecCaps : capabilities.supportedCodecs) {
-            Codec _codec = _codecCaps.codec; // Extract Codec from CodecCapabilities
+            videodecoder::Codec _codec = _codecCaps.codec; // Extract Codec from CodecCapabilities
             sp<IVideoDecoderController> videoDecoderController;
             sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
 
@@ -885,7 +885,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, close_pos) {
 UT_ADD_TEST(VTS_L1_VideoDecoder, close_neg) {
     std::vector<IVideoDecoder::Id> decoderIds;
     sp<IVideoDecoder> videoDecoder;
-    Capabilities capabilities;
+    videodecoder::Capabilities capabilities;
 
     VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
 
@@ -901,8 +901,8 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, close_neg) {
         VIDEODECODER_CLOSE_FAILURE(videoDecoder, nullptr,  Status::EX_NULL_POINTER);
 
         // Test 2: Close when in CLOSED state (invalid state)
-        Codec validCodec = capabilities.supportedCodecs.empty() ?
-            Codec::H264 : capabilities.supportedCodecs.front().codec;
+        videodecoder::Codec validCodec = capabilities.supportedCodecs.empty() ?
+            videodecoder::Codec::H264 : capabilities.supportedCodecs.front().codec;
         VIDEODECODER_OPEN_SUCCESS(videoDecoder, validCodec, capabilities.supportsSecure,
                                   controllerListener, videoDecoderController, true);
         VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController,  true);
@@ -1150,14 +1150,14 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, start_pos) {
 
     for (const auto& _decoderId : decoderIds) {
         sp<IVideoDecoder> videoDecoder;
-        Capabilities capabilities;
+        videodecoder::Capabilities capabilities;
 
         // Fetch decoder and capabilities
         VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(_decoderId, videoDecoder);
         VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
 
         for (const auto& _codecCaps : capabilities.supportedCodecs) {
-            Codec _codec = _codecCaps.codec;
+            videodecoder::Codec _codec = _codecCaps.codec;
             UT_LOG_INFO("Testing start for codec %d, decoder ID %d",
                         static_cast<int32_t>(_codec), _decoderId.value);
 
@@ -1216,7 +1216,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, start_neg)
 {
     std::vector<IVideoDecoder::Id> decoderIds;
     android::sp<IVideoDecoder> videoDecoder;
-    Capabilities capabilities;
+    videodecoder::Capabilities capabilities;
     Status status;
 
     /* Get the Video decoder IDs */
@@ -1296,7 +1296,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, stop_pos)
 {
     std::vector<IVideoDecoder::Id> decoderIds;
     android::sp<IVideoDecoder> videoDecoder;
-    Capabilities capabilities;
+    videodecoder::Capabilities capabilities;
     Status status;
 
     /* Get the Video decoder IDs */
@@ -1370,7 +1370,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, stop_neg)
 {
     std::vector<IVideoDecoder::Id> decoderIds;
     android::sp<IVideoDecoder> videoDecoder;
-    Capabilities capabilities;
+    videodecoder::Capabilities capabilities;
     State state;
     Status status;
 
@@ -1454,12 +1454,16 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, setProperty_pos)
 
     std::vector<IVideoDecoder::Id> decoderIds;
     android::sp<IVideoDecoder> videoDecoder;
-    Capabilities capabilities;
+    videodecoder::Capabilities capabilities;
+    std::vector<videodecoder::OperationalMode> supportedModes;
 
     /* Get the Video decoder IDs */
     VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
     UT_LOG_INFO("Found %zu video decoder IDs", decoderIds.size());
     UT_ASSERT_TRUE(!decoderIds.empty());
+
+    /*Get Supported Operationl Modes*/
+    VIDEODECODER_MANAGER_GETSUPPORTEDOPERATIONALMODES(supportedModes);
 
     for (const auto& _decoderId : decoderIds)
     {
@@ -1488,13 +1492,33 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, setProperty_pos)
             UT_ASSERT_TRUE(videoDecoderController != nullptr);
 
             /* Define property lists for READY state */
-            std::vector<std::pair<Property, int32_t>> readyIntProps = {
-                {Property::LOW_LATENCY_MODE, 1},      // On
-                {Property::DECODE_ERROR_POLICY, 1},   // Conceal corrupt frames
-                {Property::AV_SOURCE, 1},             // Non-zero AVSource
-                {Property::OPERATIONAL_MODE, static_cast<int32_t>(OperationalMode::NON_TUNNELLED)},
-                {Property::SHA1_CALC, 1}              // On
+            std::vector<std::pair<videodecoder::Property, int32_t>> readyIntProps = {
+                {videodecoder::Property::LOW_LATENCY_MODE, 1},      // On
+                {videodecoder::Property::DECODE_ERROR_POLICY, 1},   // Conceal corrupt frames
+                {videodecoder::Property::AV_SOURCE, 1},             // Non-zero AVSource
+                {videodecoder::Property::SHA1_CALC, 1}              // On
             };
+
+            /* Define property list for READY state again */
+            std::vector<std::pair<videodecoder::Property, int32_t>> readyIntPropsAgain = {
+                {videodecoder::Property::LOW_LATENCY_MODE, 1},      // On
+                {videodecoder::Property::DECODE_ERROR_POLICY, 1},   // Conceal corrupt frames
+                {videodecoder::Property::AV_SOURCE, 1},             // Non-zero AVSource
+                {videodecoder::Property::SHA1_CALC, 1}              // On
+            };
+
+            /* Define property list for STARTED state */
+            std::vector<std::pair<videodecoder::Property, int32_t>> startedIntProps = {
+                {videodecoder::Property::SHA1_CALC, 0}  // Off
+            };
+
+            /* Operational modes setting*/
+            for (const auto& _supportedModes : supportedModes)
+            {
+                readyIntProps.push_back({videodecoder::Property::OPERATIONAL_MODE, static_cast<int32_t>(_supportedModes)});
+                readyIntPropsAgain.push_back({videodecoder::Property::OPERATIONAL_MODE, static_cast<int32_t>(_supportedModes)});
+                startedIntProps.push_back({videodecoder::Property::OPERATIONAL_MODE, static_cast<int32_t>(_supportedModes)});
+            }
 
             /* Set properties in READY state */
             VIDEODECODER_SETPROPERTY_LIST_SUCCESS(videoDecoderController, readyIntProps, intValue);
@@ -1502,26 +1526,11 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, setProperty_pos)
             /* Start the decoder */
             VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
 
-            /* Define property list for STARTED state */
-            std::vector<std::pair<Property, int32_t>> startedIntProps = {
-                {Property::OPERATIONAL_MODE, static_cast<int32_t>(OperationalMode::TUNNELLED)},
-                {Property::SHA1_CALC, 0}  // Off
-            };
-
             /* Set properties in STARTED state */
             VIDEODECODER_SETPROPERTY_LIST_SUCCESS(videoDecoderController, startedIntProps, intValue);
 
             /* Stop the decoder */
             VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
-
-            /* Define property list for READY state again */
-            std::vector<std::pair<Property, int32_t>> readyIntPropsAgain = {
-                {Property::LOW_LATENCY_MODE, 0},      // Off
-                {Property::DECODE_ERROR_POLICY, 0},   // Output corrupt frames
-                {Property::AV_SOURCE, 0},             // AVUNKNOWN
-                {Property::OPERATIONAL_MODE, static_cast<int32_t>(OperationalMode::NON_TUNNELLED)},
-                {Property::SHA1_CALC, 0}              // Off
-            };
 
             /* Set properties in READY state again */
             VIDEODECODER_SETPROPERTY_LIST_SUCCESS(videoDecoderController, readyIntPropsAgain, intValue);
@@ -1530,9 +1539,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, setProperty_pos)
             VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
         }
     }
- }
-
-
+}
 
 /**
  * @brief Test the negative scenarios for setting properties in VideoDecoderController
@@ -1561,7 +1568,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, setProperty_neg)
 {
     std::vector<IVideoDecoder::Id> decoderIds;
     android::sp<IVideoDecoder> videoDecoder;
-    Capabilities capabilities;
+    videodecoder::Capabilities capabilities;
     Status status;
 
     /* Get the Video decoder IDs */
@@ -1596,16 +1603,16 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, setProperty_neg)
             UT_ASSERT_TRUE(videoDecoderController != nullptr);
 
             /* Define invalid and valid property lists */
-            std::vector<std::pair<Property, int32_t>> invalidIntPropertyAll = {
-                {static_cast<Property>(9999), 1} // Unknown property
+            std::vector<std::pair<videodecoder::Property, int32_t>> invalidIntPropertyAll = {
+                {static_cast<videodecoder::Property>(9999), 1} // Unknown property
             };
-            std::vector<std::pair<Property, int32_t>> invalidIntPropertyReady = {
-                {static_cast<Property>(10000), 0} // Another unknown property
+            std::vector<std::pair<videodecoder::Property, int32_t>> invalidIntPropertyReady = {
+                {static_cast<videodecoder::Property>(10000), 0} // Another unknown property
             };
-            std::vector<std::pair<Property, int32_t>> validIntPropertyReady = {
-                {Property::LOW_LATENCY_MODE, 1},
-                {Property::DECODE_ERROR_POLICY, 1},
-                {Property::AV_SOURCE, 1}
+            std::vector<std::pair<videodecoder::Property, int32_t>> validIntPropertyReady = {
+                {videodecoder::Property::LOW_LATENCY_MODE, 1},
+                {videodecoder::Property::DECODE_ERROR_POLICY, 1},
+                {videodecoder::Property::AV_SOURCE, 1}
             };
 
             /* Set invalid properties in READY state */
@@ -1722,13 +1729,13 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, flush_pos) {
 
     for (const auto& _decoderId : decoderIds) {
         sp<IVideoDecoder> videoDecoder;
-        Capabilities capabilities;
+        videodecoder::Capabilities capabilities;
         VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(_decoderId, videoDecoder);
         VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
         UT_ASSERT_FALSE(capabilities.supportedCodecs.empty()) << "No supported codecs for decoder ID: " << _decoderId.value;
 
         for (const auto& _codecCaps : capabilities.supportedCodecs) {
-            Codec _codec = _codecCaps.codec;
+            videodecoder::Codec _codec = _codecCaps.codec;
             UT_LOG_INFO("Testing flush for codec %d, decoder ID %d",
                         static_cast<int32_t>(_codec), _decoderId.value);
 
@@ -1793,7 +1800,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, flush_neg) {
         VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
 
         for (const auto& _codecCaps : capabilities.supportedCodecs) {
-            Codec _codec = _codecCaps.codec;
+            videodecoder::Codec _codec = _codecCaps.codec;
             UT_LOG_INFO("Testing flush for codec %d, decoder ID %d",
                         static_cast<int32_t>(_codec), _decoderId.value);
 
@@ -1885,7 +1892,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, signalDiscontinuity_pos)
 
         for (const auto& _codecCaps : capabilities.supportedCodecs)
         {
-            Codec _codec = _codecCaps.codec;
+            videodecoder::Codec _codec = _codecCaps.codec;
             UT_LOG_INFO("Testing signalDiscontinuity for codec %d, decoder ID %d",
                         static_cast<int32_t>(_codec), _decoderId.value);
 
@@ -1957,7 +1964,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, signalDiscontinuity_neg)
 
         for (const auto& _codecCaps : capabilities.supportedCodecs)
         {
-            Codec _codec = _codecCaps.codec;
+            videodecoder::Codec _codec = _codecCaps.codec;
             UT_LOG_INFO("Testing signalDiscontinuity for codec %d, decoder ID %d",
                         static_cast<int32_t>(_codec), _decoderId.value);
 
@@ -2049,7 +2056,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, signalEOS_pos)
 
         for (const auto& _codecCaps : capabilities.supportedCodecs)
         {
-            Codec _codec = _codecCaps.codec;
+            videodecoder::Codec _codec = _codecCaps.codec;
             UT_LOG_INFO("Testing signalEOS for codec %d, decoder ID %d",
                         static_cast<int32_t>(_codec), _decoderId.value);
 
@@ -2122,7 +2129,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, signalEOS_neg)
 
         for (const auto& _codecCaps : capabilities.supportedCodecs)
         {
-            Codec _codec = _codecCaps.codec;
+            videodecoder::Codec _codec = _codecCaps.codec;
             UT_LOG_INFO("Testing signalEOS for codec %d, decoder ID %d",
                         static_cast<int32_t>(_codec), _decoderId.value);
 
@@ -2202,14 +2209,14 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, parseCodecSpecificData_pos)
     Status status;
 
     // Valid codec-specific data per codec
-    std::map<Codec, std::pair<CSDVideoFormat, std::vector<uint8_t>>> codecDataMap = {
-        {Codec::H264, {CSDVideoFormat::AVC_DECODER_CONFIGURATION_RECORD,
+    std::map<videodecoder::Codec, std::pair<CSDVideoFormat, std::vector<uint8_t>>> codecDataMap = {
+        {videodecoder::Codec::H264, {CSDVideoFormat::AVC_DECODER_CONFIGURATION_RECORD,
                        {0x01, 0x4D, 0x40, 0x1E, 0xFF, 0xE1, 0x00, 0x04, 0x67, 0x4D, 0x40, 0x1E,
                         0x01, 0x00, 0x04, 0x68, 0xEE, 0x3C, 0x80}}}, // H.264 SPS/PPS
-        {Codec::H265, {CSDVideoFormat::HEVC_DECODER_CONFIGURATION_RECORD,
+        {videodecoder::Codec::H265, {CSDVideoFormat::HEVC_DECODER_CONFIGURATION_RECORD,
                        {0x01, 0x01, 0x60, 0x00, 0x00, 0x00, 0x90, 0x00, 0x00, 0x00, 0x00, 0x00,
                         0xF0, 0x00, 0xFC, 0xFD}}}, // H.265 VPS/SPS/PPS
-        {Codec::AV1, {CSDVideoFormat::AV1_DECODER_CONFIGURATION_RECORD,
+        {videodecoder::Codec::AV1, {CSDVideoFormat::AV1_DECODER_CONFIGURATION_RECORD,
                       {0x81, 0x01, 0x01, 0x00}}} // AV1 config
     };
 
@@ -2227,7 +2234,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, parseCodecSpecificData_pos)
 
         for (const auto& _codecCaps : capabilities.supportedCodecs)
         {
-            Codec _codec = _codecCaps.codec;
+            videodecoder::Codec _codec = _codecCaps.codec;
             if (codecDataMap.find(_codec) != codecDataMap.end())
             {
                 CSDVideoFormat csdVideoFormat = codecDataMap[_codec].first;
@@ -2297,14 +2304,14 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, parseCodecSpecificData_neg)
     Status status;
 
     // Valid and invalid codec-specific data per codec
-    std::map<Codec, std::pair<CSDVideoFormat, std::vector<uint8_t>>> validCodecDataMap = {
-        {Codec::H264, {CSDVideoFormat::AVC_DECODER_CONFIGURATION_RECORD,
+    std::map<videodecoder::Codec, std::pair<CSDVideoFormat, std::vector<uint8_t>>> validCodecDataMap = {
+        {videodecoder::Codec::H264, {CSDVideoFormat::AVC_DECODER_CONFIGURATION_RECORD,
                        {0x01, 0x4D, 0x40, 0x1E, 0xFF, 0xE1, 0x00, 0x04, 0x67, 0x4D, 0x40, 0x1E,
                         0x01, 0x00, 0x04, 0x68, 0xEE, 0x3C, 0x80}}}, // H.264
-        {Codec::H265, {CSDVideoFormat::HEVC_DECODER_CONFIGURATION_RECORD,
+        {videodecoder::Codec::H265, {CSDVideoFormat::HEVC_DECODER_CONFIGURATION_RECORD,
                        {0x01, 0x01, 0x60, 0x00, 0x00, 0x00, 0x90, 0x00, 0x00, 0x00, 0x00, 0x00,
                         0xF0, 0x00, 0xFC, 0xFD}}}, // H.265
-        {Codec::AV1, {CSDVideoFormat::AV1_DECODER_CONFIGURATION_RECORD,
+        {videodecoder::Codec::AV1, {CSDVideoFormat::AV1_DECODER_CONFIGURATION_RECORD,
                       {0x81, 0x01, 0x01, 0x00}}} // AV1
     };
     std::vector<uint8_t> invalidCodecData1 = {0xFF, 0xFF}; // Invalid format
@@ -2324,7 +2331,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, parseCodecSpecificData_neg)
 
         for (const auto& _codecCaps : capabilities.supportedCodecs)
         {
-            Codec _codec = _codecCaps.codec;
+            videodecoder::Codec _codec = _codecCaps.codec;
             if (validCodecDataMap.find(_codec) != validCodecDataMap.end())
             {
                 CSDVideoFormat csdVideoFormat = validCodecDataMap[_codec].first;

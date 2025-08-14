@@ -68,6 +68,16 @@ UT_ADD_TEST_TO_GROUP(VTS_L3_VideoDecoder, UT_TESTS_L3)
 
 static char *gTestGroup = "L3";
 
+static sp<IAVBuffer> vts_getAVBufferService()
+{
+    return
+        android::interface_cast<IAVBuffer>(
+            android::defaultServiceManager()->getService(
+                android::String16(IAVBuffer::serviceName().c_str())
+            )
+        );
+}
+
 class VTS_L3_VideoDecoder : public UTCore
 {
 public:
@@ -97,8 +107,7 @@ public:
             return;
         }
 
-        mAVBufferManager = getAVBufferService();
-        gTestConfiguration = vts_kvp_create_instance(VTS_TEST_CONFIG_PATH);
+        mAVBufferManager = vts_getAVBufferService();
 
         mAVbufferHelper = getAVBufferHelperInstance();
 
@@ -136,7 +145,7 @@ public:
         }
     }
 
-    void runSequentialDecode(testConfiguration_t& testConfig, bool secureDecode, bool tunnelMode, bool concurrentDecodeConsume)
+    void runSequentialDecode(videoDecoderTestConfiguration_t& testConfig, bool secureDecode, bool tunnelMode, bool concurrentDecodeConsume)
     {
         for (const auto& [_decoderId, decoderHandle, controlListener, eventListener, capabilities] : mVideoDecoderList)
         {
@@ -160,7 +169,7 @@ public:
 
             AVBUFFER_GETMETRICS(mAVBufferManager, secureDecode, beforeHeapMetrics);
 
-            DecoderTest decodeTest(_decoderId, decoderHandle, controlListener,
+            videoDecoderTest decodeTest(_decoderId, decoderHandle, controlListener,
                                    eventListener, mAVBufferManager, secureDecode, tunnelMode, testConfig,mAVbufferHelper);
 
             decodeTest.run(concurrentDecodeConsume);
@@ -173,9 +182,9 @@ public:
         }
     }
 
-    void runConcurrentDecode(testConfiguration_t& testConfig, bool secureDecode, bool tunnelMode, bool concurrentDecodeConsume)
+    void runConcurrentDecode(videoDecoderTestConfiguration_t& testConfig, bool secureDecode, bool tunnelMode, bool concurrentDecodeConsume)
     {
-        std::vector<std::unique_ptr<DecoderTest>> decoderTests;
+        std::vector<std::unique_ptr<videoDecoderTest>> decoderTests;
         std::vector<std::future<void>> futures;
         HeapMetrics beforeHeapMetrics, afterHeapMetrics;
 
@@ -210,9 +219,9 @@ public:
                 continue;
             }
 
-            auto decoderTest = std::make_unique<DecoderTest>(_decoderId, decoderHandle, controlListener, eventListener,
+            auto decoderTest = std::make_unique<videoDecoderTest>(_decoderId, decoderHandle, controlListener, eventListener,
                                                             mAVBufferManager, secureDecode, tunnelMode, testConfig,mAVbufferHelper);
-            futures.push_back(std::async(std::launch::async, &DecoderTest::run, decoderTest.get(), concurrentDecodeConsume));
+            futures.push_back(std::async(std::launch::async, &videoDecoderTest::run, decoderTest.get(), concurrentDecodeConsume));
             decoderTests.push_back(std::move(decoderTest));
             activeDecoders++;
         }
@@ -266,12 +275,12 @@ public:
         }
     }
 
-    void runTest(char *testName, bool secureMode, bool tunnelMode, bool concurrentMode)
+    void runTest(const char *testName, bool secureMode, bool tunnelMode, bool concurrentMode)
     {
-        vector<testConfiguration_t> testConfiguration;
+        vector<videoDecoderTestConfiguration_t> testConfiguration;
 
         UT_LOG_INFO("start parsing concurrentMode %d ", concurrentMode);
-        vts_videodecoder_parse_testconfig(gTestConfiguration, VIDEODECODERMGR, gTestGroup, testName, testConfiguration);
+        vts_videodecoder_parse_testconfig(gVideoDecoderTestConfiguration, VIDEODECODERMGR, gTestGroup, testName, testConfiguration);
         UT_LOG_INFO("End parsing");
 
         if (concurrentMode)
@@ -307,7 +316,7 @@ public:
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure)
 {
-    char *testName = "Decode_Sequential_NonTunnel_NonSecure";
+    const char *testName = "Decode_Sequential_NonTunnel_NonSecure";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -321,7 +330,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_Error)
 {
-    char *testName = "Decode_Sequential_NonTunnel_NonSecure_Error";
+    const char *testName = "Decode_Sequential_NonTunnel_NonSecure_Error";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -335,7 +344,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_Error)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_GOP)
 {
-    char *testName = "Decode_Sequential_NonTunnel_NonSecure_GOP";
+    const char *testName = "Decode_Sequential_NonTunnel_NonSecure_GOP";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -349,7 +358,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_GOP)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_Discontinuity)
 {
-    char *testName = "Decode_Sequential_NonTunnel_NonSecure_Discontinuity";
+    const char *testName = "Decode_Sequential_NonTunnel_NonSecure_Discontinuity";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -363,7 +372,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_Discontin
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_EOS)
 {
-    char *testName = "Decode_Sequential_NonTunnel_NonSecure_EOS";
+    const char *testName = "Decode_Sequential_NonTunnel_NonSecure_EOS";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -377,7 +386,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_EOS)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_Flush)
 {
-    char *testName = "Decode_Sequential_NonTunnel_NonSecure_Flush";
+    const char *testName = "Decode_Sequential_NonTunnel_NonSecure_Flush";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -391,7 +400,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_Flush)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_FlushReset)
 {
-    char *testName = "Decode_Sequential_NonTunnel_NonSecure_FlushReset";
+    const char *testName = "Decode_Sequential_NonTunnel_NonSecure_FlushReset";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -405,7 +414,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_FlushRese
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure)
 {
-    char *testName = "Decode_Concurrent_NonTunnel_NonSecure";
+    const char *testName = "Decode_Concurrent_NonTunnel_NonSecure";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = true;
@@ -420,7 +429,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_Secure)
 {
-    char *testName = "Decode_NonTunnel_Secure";
+    const char *testName = "Decode_NonTunnel_Secure";
     bool secureMode = true;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -434,7 +443,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_Secure)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_Secure_Error)
 {
-    char *testName = "Decode_NonTunnel_Secure_Error";
+    const char *testName = "Decode_NonTunnel_Secure_Error";
     bool secureMode = true;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -448,7 +457,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_Secure_Error)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_Secure_GOP)
 {
-    char *testName = "Decode_NonTunnel_Secure_GOP";
+    const char *testName = "Decode_NonTunnel_Secure_GOP";
     bool secureMode = true;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -462,7 +471,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_Secure_GOP)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_NonSecure_Error_Discontinuity)
 {
-    char *testName = "Decode_NonTunnel_NonSecure_Error_Discontinuity";
+    const char *testName = "Decode_NonTunnel_NonSecure_Error_Discontinuity";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -476,7 +485,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_NonSecure_Error_Discontinuity)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_NonSecure_Error_EOS)
 {
-    char *testName = "Decode_NonTunnel_NonSecure_Error_EOS";
+    const char *testName = "Decode_NonTunnel_NonSecure_Error_EOS";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -490,7 +499,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_NonSecure_Error_EOS)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_NonSecure_Discontinuity_EOS)
 {
-    char *testName = "Decode_NonTunnel_NonSecure_Discontinuity_EOS";
+    const char *testName = "Decode_NonTunnel_NonSecure_Discontinuity_EOS";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -504,7 +513,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_NonSecure_Discontinuity_EOS)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_NonSecure_Flush_Error)
 {
-    char *testName = "Decode_NonTunnel_NonSecure_Flush_Error";
+    const char *testName = "Decode_NonTunnel_NonSecure_Flush_Error";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -518,7 +527,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_NonSecure_Flush_Error)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_NonSecure_FlushReset_Error)
 {
-    char *testName = "Decode_NonTunnel_NonSecure_FlushReset_Error";
+    const char *testName = "Decode_NonTunnel_NonSecure_FlushReset_Error";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -533,7 +542,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_NonSecure_FlushReset_Error)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure)
 {
-    char *testName = "Decode_Concurrent_NonTunnel_Secure";
+    const char *testName = "Decode_Concurrent_NonTunnel_Secure";
     bool secureMode = true;
     bool tunnelMode = false;
     bool concurrentMode = true;
@@ -547,7 +556,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_Error)
 {
-    char *testName = "Decode_Concurrent_NonTunnel_NonSecure_Error";
+    const char *testName = "Decode_Concurrent_NonTunnel_NonSecure_Error";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = true;
@@ -561,7 +570,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_Error)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_Discontinuity)
 {
-    char *testName = "Decode_Concurrent_NonTunnel_NonSecure_Discontinuity";
+    const char *testName = "Decode_Concurrent_NonTunnel_NonSecure_Discontinuity";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = true;
@@ -575,7 +584,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_Discontin
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_EOS)
 {
-    char *testName = "Decode_Concurrent_NonTunnel_NonSecure_EOS";
+    const char *testName = "Decode_Concurrent_NonTunnel_NonSecure_EOS";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = true;
@@ -589,7 +598,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_EOS)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_Flush)
 {
-    char *testName = "Decode_Concurrent_NonTunnel_NonSecure_Flush";
+    const char *testName = "Decode_Concurrent_NonTunnel_NonSecure_Flush";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = true;
@@ -603,7 +612,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_Flush)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_FlushReset)
 {
-    char *testName = "Decode_Concurrent_NonTunnel_NonSecure_FlushReset";
+    const char *testName = "Decode_Concurrent_NonTunnel_NonSecure_FlushReset";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = true;
@@ -617,7 +626,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_FlushRese
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_GOPStructure)
 {
-    char *testName = "Decode_Concurrent_NonTunnel_NonSecure_GOPStructure";
+    const char *testName = "Decode_Concurrent_NonTunnel_NonSecure_GOPStructure";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = true;
@@ -632,7 +641,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_GOPStruct
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_CODEC)
 {
-    char *testName = "Decode_Sequential_NonTunnel_NonSecure_CODEC";
+    const char *testName = "Decode_Sequential_NonTunnel_NonSecure_CODEC";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -646,7 +655,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_CODEC)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_Resolutions)
 {
-    char *testName = "Decode_Sequential_NonTunnel_NonSecure_Resolutions";
+    const char *testName = "Decode_Sequential_NonTunnel_NonSecure_Resolutions";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -660,7 +669,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_Resolutio
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_HDRModes)
 {
-    char *testName = "Decode_Sequential_NonTunnel_NonSecure_HDRModes";
+    const char *testName = "Decode_Sequential_NonTunnel_NonSecure_HDRModes";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -674,7 +683,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_HDRModes)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_FrameRate)
 {
-    char *testName = "Decode_Sequential_NonTunnel_NonSecure_FrameRate";
+    const char *testName = "Decode_Sequential_NonTunnel_NonSecure_FrameRate";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -688,7 +697,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_FrameRate
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_LowLatency)
 {
-    char *testName = "Decode_Sequential_NonTunnel_NonSecure_LowLatency";
+    const char *testName = "Decode_Sequential_NonTunnel_NonSecure_LowLatency";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -702,7 +711,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_LowLatenc
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_AdaptiveBitrate)
 {
-    char *testName = "Decode_Sequential_NonTunnel_NonSecure_AdaptiveBitrate";
+    const char *testName = "Decode_Sequential_NonTunnel_NonSecure_AdaptiveBitrate";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -717,7 +726,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_AdaptiveB
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_CODEC)
 {
-    char *testName = "Decode_Sequential_NonTunnel_Secure_CODEC";
+    const char *testName = "Decode_Sequential_NonTunnel_Secure_CODEC";
     bool secureMode = true;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -731,7 +740,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_CODEC)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_Discontinuity)
 {
-    char *testName = "Decode_Sequential_NonTunnel_Secure_Discontinuity";
+    const char *testName = "Decode_Sequential_NonTunnel_Secure_Discontinuity";
     bool secureMode = true;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -745,7 +754,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_Discontinuit
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_EOS)
 {
-    char *testName = "Decode_Sequential_NonTunnel_Secure_EOS";
+    const char *testName = "Decode_Sequential_NonTunnel_Secure_EOS";
     bool secureMode = true;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -759,7 +768,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_EOS)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_Flush)
 {
-    char *testName = "Decode_Sequential_NonTunnel_Secure_Flush";
+    const char *testName = "Decode_Sequential_NonTunnel_Secure_Flush";
     bool secureMode = true;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -773,7 +782,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_Flush)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_FlushReset)
 {
-    char *testName = "Decode_Sequential_NonTunnel_Secure_FlushReset";
+    const char *testName = "Decode_Sequential_NonTunnel_Secure_FlushReset";
     bool secureMode = true;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -787,7 +796,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_FlushReset)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_Resolutions)
 {
-    char *testName = "Decode_Sequential_NonTunnel_Secure_Resolutions";
+    const char *testName = "Decode_Sequential_NonTunnel_Secure_Resolutions";
     bool secureMode = true;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -801,7 +810,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_Resolutions)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_HDRModes)
 {
-    char *testName = "Decode_Sequential_NonTunnel_Secure_HDRModes";
+    const char *testName = "Decode_Sequential_NonTunnel_Secure_HDRModes";
     bool secureMode = true;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -815,7 +824,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_HDRModes)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_FrameRate)
 {
-    char *testName = "Decode_Sequential_NonTunnel_Secure_FrameRate";
+    const char *testName = "Decode_Sequential_NonTunnel_Secure_FrameRate";
     bool secureMode = true;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -829,7 +838,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_FrameRate)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_LowLatency)
 {
-    char *testName = "Decode_Sequential_NonTunnel_Secure_LowLatency";
+    const char *testName = "Decode_Sequential_NonTunnel_Secure_LowLatency";
     bool secureMode = true;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -843,7 +852,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_LowLatency)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_CODEC)
 {
-    char *testName = "Decode_Concurrent_NonTunnel_NonSecure_CODEC";
+    const char *testName = "Decode_Concurrent_NonTunnel_NonSecure_CODEC";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = true;
@@ -857,7 +866,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_CODEC)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_Resolutions)
 {
-    char *testName = "Decode_Concurrent_NonTunnel_NonSecure_Resolutions";
+    const char *testName = "Decode_Concurrent_NonTunnel_NonSecure_Resolutions";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = true;
@@ -871,7 +880,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_Resolutio
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_HDRModes)
 {
-    char *testName = "Decode_Concurrent_NonTunnel_NonSecure_HDRModes";
+    const char *testName = "Decode_Concurrent_NonTunnel_NonSecure_HDRModes";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = true;
@@ -885,7 +894,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_HDRModes)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_FrameRate)
 {
-    char *testName = "Decode_Concurrent_NonTunnel_NonSecure_FrameRate";
+    const char *testName = "Decode_Concurrent_NonTunnel_NonSecure_FrameRate";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = true;
@@ -902,7 +911,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_FrameRate
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_LowLatency)
 {
-    char *testName = "Decode_Concurrent_NonTunnel_NonSecure_LowLatency";
+    const char *testName = "Decode_Concurrent_NonTunnel_NonSecure_LowLatency";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = true;
@@ -916,7 +925,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_LowLatenc
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_Error)
 {
-    char *testName = "Decode_Concurrent_NonTunnel_Secure_Error";
+    const char *testName = "Decode_Concurrent_NonTunnel_Secure_Error";
     bool secureMode = true;
     bool tunnelMode = false;
     bool concurrentMode = true;
@@ -930,7 +939,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_Error)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_CODEC)
 {
-    char *testName = "Decode_Concurrent_NonTunnel_Secure_CODEC";
+    const char *testName = "Decode_Concurrent_NonTunnel_Secure_CODEC";
     bool secureMode = true;
     bool tunnelMode = false;
     bool concurrentMode = true;
@@ -944,7 +953,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_CODEC)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_Discontinuity)
 {
-    char *testName = "Decode_Concurrent_NonTunnel_Secure_Discontinuity";
+    const char *testName = "Decode_Concurrent_NonTunnel_Secure_Discontinuity";
     bool secureMode = true;
     bool tunnelMode = false;
     bool concurrentMode = true;
@@ -958,7 +967,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_Discontinuit
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_EOS)
 {
-    char *testName = "Decode_Concurrent_NonTunnel_Secure_EOS";
+    const char *testName = "Decode_Concurrent_NonTunnel_Secure_EOS";
     bool secureMode = true;
     bool tunnelMode = false;
     bool concurrentMode = true;
@@ -972,7 +981,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_EOS)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_Flush)
 {
-    char *testName = "Decode_Concurrent_NonTunnel_Secure_Flush";
+    const char *testName = "Decode_Concurrent_NonTunnel_Secure_Flush";
     bool secureMode = true;
     bool tunnelMode = false;
     bool concurrentMode = true;
@@ -986,7 +995,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_Flush)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_FlushReset)
 {
-    char *testName = "Decode_Concurrent_NonTunnel_Secure_FlushReset";
+    const char *testName = "Decode_Concurrent_NonTunnel_Secure_FlushReset";
     bool secureMode = true;
     bool tunnelMode = false;
     bool concurrentMode = true;
@@ -1000,7 +1009,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_FlushReset)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_Resolutions)
 {
-    char *testName = "Decode_Concurrent_NonTunnel_Secure_Resolutions";
+    const char *testName = "Decode_Concurrent_NonTunnel_Secure_Resolutions";
     bool secureMode = true;
     bool tunnelMode = false;
     bool concurrentMode = true;
@@ -1014,7 +1023,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_Resolutions)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_HDRModes)
 {
-    char *testName = "Decode_Concurrent_NonTunnel_Secure_HDRModes";
+    const char *testName = "Decode_Concurrent_NonTunnel_Secure_HDRModes";
     bool secureMode = true;
     bool tunnelMode = false;
     bool concurrentMode = true;
@@ -1028,7 +1037,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_HDRModes)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_FrameRate)
 {
-    char *testName = "Decode_Concurrent_NonTunnel_Secure_FrameRate";
+    const char *testName = "Decode_Concurrent_NonTunnel_Secure_FrameRate";
     bool secureMode = true;
     bool tunnelMode = false;
     bool concurrentMode = true;
@@ -1042,7 +1051,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_FrameRate)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_GOPStructure)
 {
-    char *testName = "Decode_Concurrent_NonTunnel_Secure_GOPStructure";
+    const char *testName = "Decode_Concurrent_NonTunnel_Secure_GOPStructure";
     bool secureMode = true;
     bool tunnelMode = false;
     bool concurrentMode = true;
@@ -1056,7 +1065,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_GOPStructure
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_LowLatency)
 {
-    char *testName = "Decode_Concurrent_NonTunnel_Secure_LowLatency";
+    const char *testName = "Decode_Concurrent_NonTunnel_Secure_LowLatency";
     bool secureMode = true;
     bool tunnelMode = false;
     bool concurrentMode = true;
@@ -1070,7 +1079,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_LowLatency)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_LowLatency)
 {
-    char *testName = "Decode_Concurrent_NonTunnel_Secure_LowLatency";
+    const char *testName = "Decode_Concurrent_NonTunnel_Secure_LowLatency";
     bool secureMode = true;
     bool tunnelMode = false;
     bool concurrentMode = true;
@@ -1084,7 +1093,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_LowLatency)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Tunnel_NonSecure)
 {
-    char *testName = "Decode_Tunnel_NonSecure";
+    const char *testName = "Decode_Tunnel_NonSecure";
     bool secureMode = false;
     bool tunnelMode = true;
     bool concurrentMode = false;
@@ -1098,7 +1107,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Tunnel_NonSecure)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Tunnel_Secure)
 {
-    char *testName = "Decode_Tunnel_Secure";
+    const char *testName = "Decode_Tunnel_Secure";
     bool secureMode = true;
     bool tunnelMode = true;
     bool concurrentMode = false;
@@ -1112,7 +1121,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Tunnel_Secure)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Tunnel_NonSecure_Error)
 {
-    char *testName = "Decode_Tunnel_NonSecure_Error";
+    const char *testName = "Decode_Tunnel_NonSecure_Error";
     bool secureMode = false;
     bool tunnelMode = true;
     bool concurrentMode = false;
@@ -1126,7 +1135,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Tunnel_NonSecure_Error)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure)
 {
-    char *testName = "Decode_Concurrent_Tunnel_NonSecure";
+    const char *testName = "Decode_Concurrent_Tunnel_NonSecure";
     bool secureMode = false;
     bool tunnelMode = true;
     bool concurrentMode = true;
@@ -1140,7 +1149,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_CODEC)
 {
-    char *testName = "Decode_Sequential_Tunnel_NonSecure_CODEC";
+    const char *testName = "Decode_Sequential_Tunnel_NonSecure_CODEC";
     bool secureMode = false;
     bool tunnelMode = true;
     bool concurrentMode = false;
@@ -1154,7 +1163,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_CODEC)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_Discontinuity)
 {
-    char *testName = "Decode_Sequential_Tunnel_NonSecure_Discontinuity";
+    const char *testName = "Decode_Sequential_Tunnel_NonSecure_Discontinuity";
     bool secureMode = false;
     bool tunnelMode = true;
     bool concurrentMode = false;
@@ -1168,7 +1177,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_Discontinuit
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_EOS)
 {
-    char *testName = "Decode_Sequential_Tunnel_NonSecure_EOS";
+    const char *testName = "Decode_Sequential_Tunnel_NonSecure_EOS";
     bool secureMode = false;
     bool tunnelMode = true;
     bool concurrentMode = false;
@@ -1182,7 +1191,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_EOS)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_Flush)
 {
-    char *testName = "Decode_Sequential_Tunnel_NonSecure_Flush";
+    const char *testName = "Decode_Sequential_Tunnel_NonSecure_Flush";
     bool secureMode = false;
     bool tunnelMode = true;
     bool concurrentMode = false;
@@ -1196,7 +1205,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_Flush)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_FlushReset)
 {
-    char *testName = "Decode_Sequential_Tunnel_NonSecure_FlushReset";
+    const char *testName = "Decode_Sequential_Tunnel_NonSecure_FlushReset";
     bool secureMode = false;
     bool tunnelMode = true;
     bool concurrentMode = false;
@@ -1210,7 +1219,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_FlushReset)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_Resolutions)
 {
-    char *testName = "Decode_Sequential_Tunnel_NonSecure_Resolutions";
+    const char *testName = "Decode_Sequential_Tunnel_NonSecure_Resolutions";
     bool secureMode = false;
     bool tunnelMode = true;
     bool concurrentMode = false;
@@ -1224,7 +1233,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_Resolutions)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_HDRModes)
 {
-    char *testName = "Decode_Sequential_Tunnel_NonSecure_HDRModes";
+    const char *testName = "Decode_Sequential_Tunnel_NonSecure_HDRModes";
     bool secureMode = false;
     bool tunnelMode = true;
     bool concurrentMode = false;
@@ -1238,7 +1247,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_HDRModes)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_FrameRate)
 {
-    char *testName = "Decode_Sequential_Tunnel_NonSecure_FrameRate";
+    const char *testName = "Decode_Sequential_Tunnel_NonSecure_FrameRate";
     bool secureMode = false;
     bool tunnelMode = true;
     bool concurrentMode = false;
@@ -1252,7 +1261,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_FrameRate)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_GOPStructure)
 {
-    char *testName = "Decode_Sequential_Tunnel_NonSecure_GOPStructure";
+    const char *testName = "Decode_Sequential_Tunnel_NonSecure_GOPStructure";
     bool secureMode = false;
     bool tunnelMode = true;
     bool concurrentMode = false;
@@ -1266,7 +1275,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_GOPStructure
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_LowLatency)
 {
-    char *testName = "Decode_Sequential_Tunnel_NonSecure_LowLatency";
+    const char *testName = "Decode_Sequential_Tunnel_NonSecure_LowLatency";
     bool secureMode = false;
     bool tunnelMode = true;
     bool concurrentMode = false;
@@ -1280,7 +1289,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_LowLatency)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_Error)
 {
-    char *testName = "Decode_Sequential_Tunnel_Secure_Error";
+    const char *testName = "Decode_Sequential_Tunnel_Secure_Error";
     bool secureMode = true;
     bool tunnelMode = true;
     bool concurrentMode = false;
@@ -1294,7 +1303,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_Error)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_CODEC)
 {
-    char *testName = "Decode_Sequential_Tunnel_Secure_CODEC";
+    const char *testName = "Decode_Sequential_Tunnel_Secure_CODEC";
     bool secureMode = true;
     bool tunnelMode = true;
     bool concurrentMode = false;
@@ -1308,7 +1317,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_CODEC)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_Discontinuity)
 {
-    char *testName = "Decode_Sequential_Tunnel_Secure_Discontinuity";
+    const char *testName = "Decode_Sequential_Tunnel_Secure_Discontinuity";
     bool secureMode = true;
     bool tunnelMode = true;
     bool concurrentMode = false;
@@ -1322,7 +1331,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_Discontinuity)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_EOS)
 {
-    char *testName = "Decode_Sequential_Tunnel_Secure_EOS";
+    const char *testName = "Decode_Sequential_Tunnel_Secure_EOS";
     bool secureMode = true;
     bool tunnelMode = true;
     bool concurrentMode = false;
@@ -1336,7 +1345,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_EOS)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_Flush)
 {
-    char *testName = "Decode_Sequential_Tunnel_Secure_Flush";
+    const char *testName = "Decode_Sequential_Tunnel_Secure_Flush";
     bool secureMode = true;
     bool tunnelMode = true;
     bool concurrentMode = false;
@@ -1350,7 +1359,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_Flush)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_FlushReset)
 {
-    char *testName = "Decode_Sequential_Tunnel_Secure_FlushReset";
+    const char *testName = "Decode_Sequential_Tunnel_Secure_FlushReset";
     bool secureMode = true;
     bool tunnelMode = true;
     bool concurrentMode = false;
@@ -1364,7 +1373,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_FlushReset)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_Resolutions)
 {
-    char *testName = "Decode_Sequential_Tunnel_Secure_Resolutions";
+    const char *testName = "Decode_Sequential_Tunnel_Secure_Resolutions";
     bool secureMode = true;
     bool tunnelMode = true;
     bool concurrentMode = false;
@@ -1378,7 +1387,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_Resolutions)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_HDRModes)
 {
-    char *testName = "Decode_Sequential_Tunnel_Secure_HDRModes";
+    const char *testName = "Decode_Sequential_Tunnel_Secure_HDRModes";
     bool secureMode = true;
     bool tunnelMode = true;
     bool concurrentMode = false;
@@ -1392,7 +1401,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_HDRModes)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_FrameRate)
 {
-    char *testName = "Decode_Sequential_Tunnel_Secure_FrameRate";
+    const char *testName = "Decode_Sequential_Tunnel_Secure_FrameRate";
     bool secureMode = true;
     bool tunnelMode = true;
     bool concurrentMode = false;
@@ -1406,7 +1415,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_FrameRate)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_GOPStructure)
 {
-    char *testName = "Decode_Sequential_Tunnel_Secure_GOPStructure";
+    const char *testName = "Decode_Sequential_Tunnel_Secure_GOPStructure";
     bool secureMode = true;
     bool tunnelMode = true;
     bool concurrentMode = false;
@@ -1420,7 +1429,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_GOPStructure)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_LowLatency)
 {
-    char *testName = "Decode_Sequential_Tunnel_Secure_LowLatency";
+    const char *testName = "Decode_Sequential_Tunnel_Secure_LowLatency";
     bool secureMode = true;
     bool tunnelMode = true;
     bool concurrentMode = false;
@@ -1434,7 +1443,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_LowLatency)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_Error)
 {
-    char *testName = "Decode_Concurrent_Tunnel_NonSecure_Error";
+    const char *testName = "Decode_Concurrent_Tunnel_NonSecure_Error";
     bool secureMode = false;
     bool tunnelMode = true;
     bool concurrentMode = true;
@@ -1448,7 +1457,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_Error)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_CODEC)
 {
-    char *testName = "Decode_Concurrent_Tunnel_NonSecure_CODEC";
+    const char *testName = "Decode_Concurrent_Tunnel_NonSecure_CODEC";
     bool secureMode = false;
     bool tunnelMode = true;
     bool concurrentMode = true;
@@ -1462,7 +1471,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_CODEC)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_Discontinuity)
 {
-    char *testName = "Decode_Concurrent_Tunnel_NonSecure_Discontinuity";
+    const char *testName = "Decode_Concurrent_Tunnel_NonSecure_Discontinuity";
     bool secureMode = false;
     bool tunnelMode = true;
     bool concurrentMode = true;
@@ -1476,7 +1485,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_Discontinuit
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_EOS)
 {
-    char *testName = "Decode_Concurrent_Tunnel_NonSecure_EOS";
+    const char *testName = "Decode_Concurrent_Tunnel_NonSecure_EOS";
     bool secureMode = false;
     bool tunnelMode = true;
     bool concurrentMode = true;
@@ -1490,7 +1499,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_EOS)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_Flush)
 {
-    char *testName = "Decode_Concurrent_Tunnel_NonSecure_Flush";
+    const char *testName = "Decode_Concurrent_Tunnel_NonSecure_Flush";
     bool secureMode = false;
     bool tunnelMode = true;
     bool concurrentMode = true;
@@ -1504,7 +1513,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_Flush)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_FlushReset)
 {
-    char *testName = "Decode_Concurrent_Tunnel_NonSecure_FlushReset";
+    const char *testName = "Decode_Concurrent_Tunnel_NonSecure_FlushReset";
     bool secureMode = false;
     bool tunnelMode = true;
     bool concurrentMode = true;
@@ -1518,7 +1527,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_FlushReset)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_Resolutions)
 {
-    char *testName = "Decode_Concurrent_Tunnel_NonSecure_Resolutions";
+    const char *testName = "Decode_Concurrent_Tunnel_NonSecure_Resolutions";
     bool secureMode = false;
     bool tunnelMode = true;
     bool concurrentMode = true;
@@ -1532,7 +1541,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_Resolutions)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_HDRModes)
 {
-    char *testName = "Decode_Concurrent_Tunnel_NonSecure_HDRModes";
+    const char *testName = "Decode_Concurrent_Tunnel_NonSecure_HDRModes";
     bool secureMode = false;
     bool tunnelMode = true;
     bool concurrentMode = true;
@@ -1546,7 +1555,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_HDRModes)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_FrameRate)
 {
-    char *testName = "Decode_Concurrent_Tunnel_NonSecure_FrameRate";
+    const char *testName = "Decode_Concurrent_Tunnel_NonSecure_FrameRate";
     bool secureMode = false;
     bool tunnelMode = true;
     bool concurrentMode = true;
@@ -1560,7 +1569,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_FrameRate)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_GOPStructure)
 {
-    char *testName = "Decode_Concurrent_Tunnel_NonSecure_GOPStructure";
+    const char *testName = "Decode_Concurrent_Tunnel_NonSecure_GOPStructure";
     bool secureMode = false;
     bool tunnelMode = true;
     bool concurrentMode = true;
@@ -1574,7 +1583,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_GOPStructure
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_LowLatency)
 {
-    char *testName = "Decode_Concurrent_Tunnel_NonSecure_LowLatency";
+    const char *testName = "Decode_Concurrent_Tunnel_NonSecure_LowLatency";
     bool secureMode = false;
     bool tunnelMode = true;
     bool concurrentMode = true;
@@ -1588,7 +1597,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_LowLatency)
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_Secure)
 {
-    char *testName = "Decode_Concurrent_Tunnel_Secure";
+    const char *testName = "Decode_Concurrent_Tunnel_Secure";
     bool secureMode = true;
     bool tunnelMode = true;
     bool concurrentMode = true;
