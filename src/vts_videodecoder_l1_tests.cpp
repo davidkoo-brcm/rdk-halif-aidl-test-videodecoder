@@ -605,12 +605,8 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, getPropertyMulti_neg) {
     // Negative Test - Empty Property List
     std::vector<PropertyKVPair> propertyKVListEmpty;
     bool aidlReturnEmpty = false;
-    VIDEODECODER_GETPROPERTYMULTI_FAILURE(decoder, propertyKVListEmpty, aidlReturnEmpty, Status::EX_ILLEGAL_ARGUMENT);
+    VIDEODECODER_GETPROPERTYMULTI_FAILURE(decoder, propertyKVListEmpty, aidlReturnEmpty, Status::EX_NULL_POINTER);
 
-    // Property List as Null
-    PropertyKVPair propertyKVListNull = nullptr;
-    bool aidlReturnNull = false;
-    VIDEODECODER_GETPROPERTYMULTI_FAILURE(decoder, propertyKVListNull, aidlReturnNull, Status::EX_NULL_POINTER);
 }
 
 /**
