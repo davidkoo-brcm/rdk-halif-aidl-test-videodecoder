@@ -484,6 +484,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, getProperty_neg) {
                     UT_Control_GetMapString(bool_mapTable, status.isOk()),
                     UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
         UT_ASSERT_FALSE(status.isOk());
+        UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_ILLEGAL_ARGUMENT);
         UT_ASSERT_FALSE(aidl_return.has_value());
     }
 }
@@ -594,7 +595,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, getPropertyMulti_neg) {
     propertyKVListInvalid.push_back(invalidPair);
 
     bool aidlReturnInvalid = false;
-    VIDEODECODER_GETPROPERTYMULTI_FAILURE(decoder, propertyKVListInvalid, aidlReturnInvalid);
+    VIDEODECODER_GETPROPERTYMULTI_FAILURE(decoder, propertyKVListInvalid, aidlReturnInvalid, Status::EX_ILLEGAL_ARGUMENT);
 
     for (const auto& kvPair : propertyKVListInvalid) {
         UT_ASSERT_FALSE(kvPair.propertyValue.value.has_value())
@@ -604,7 +605,8 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, getPropertyMulti_neg) {
     // Negative Test - Empty Property List
     std::vector<PropertyKVPair> propertyKVListEmpty;
     bool aidlReturnEmpty = false;
-    VIDEODECODER_GETPROPERTYMULTI_FAILURE(decoder, propertyKVListEmpty, aidlReturnEmpty);
+    VIDEODECODER_GETPROPERTYMULTI_FAILURE(decoder, propertyKVListEmpty, aidlReturnEmpty, Status::EX_NULL_POINTER);
+
 }
 
 /**
@@ -857,8 +859,6 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, close_pos) {
     }
 }
 
-
-
 /**
  * @brief Test the negative scenario of closing a VideoDecoder when not in READY state.
  *
@@ -915,6 +915,10 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, close_neg) {
                                   controllerListener, videoDecoderController, true);
         videoDecoderController->start(); // Transition to STARTED
         //State currentState;
+
+        //Close with Null videoDecoderController
+        sp<IVideoDecoderController> videoDecoderController_nullptr = nullptr;
+        VIDEODECODER_CLOSE_FAILURE(videoDecoder, videoDecoderController_nullptr, Status::EX_NULL_POINTER);
 
         //VIDEODECODER_WAIT_FOR_STATE(videoDecoder,State::STARTED, currentState);
         //UT_ASSERT_EQUAL(currentState,State::STARTED) << "Decoder must be in STARTED state";
@@ -1615,6 +1619,17 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, setProperty_neg)
                 {videodecoder::Property::AV_SOURCE, 1}
             };
 
+            /* Define Read only property */
+            std::vector<std::pair<videodecoder::Property, int32_t>> readOnlyProps = {
+                {videodecoder::Property::RESOURCE_ID, 2},
+                {videodecoder::Property::INPUT_QUEUE_DEPTH, 10},
+                {videodecoder::Property::OUTPUT_FRAME_POOL_SIZE, 10},
+                {videodecoder::Property::SECURE_VIDEO, 10},
+                {videodecoder::Property::METRIC_FRAMES_DECODED, 1000},
+                {videodecoder::Property::METRIC_DECODE_ERRORS, 1001},
+                {videodecoder::Property::METRIC_FRAMES_DROPPED, 1002}
+            };
+
             /* Set invalid properties in READY state */
             VIDEODECODER_SETPROPERTY_LIST_FAILURE(videoDecoderController, invalidIntPropertyAll, intValue,
                                                   Status::EX_ILLEGAL_ARGUMENT);
@@ -1630,6 +1645,10 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, setProperty_neg)
 
             /* Stop the decoder */
             VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
+
+            /* Set read only  properties in state (READY) */
+            VIDEODECODER_SETPROPERTY_LIST_FAILURE(videoDecoderController, readOnlyProps, intValue,
+                                                  Status::EX_UNSUPPORTED_OPERATION);
 
             /* Close the decoder */
             VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
