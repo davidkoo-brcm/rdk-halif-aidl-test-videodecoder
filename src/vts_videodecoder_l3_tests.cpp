@@ -91,6 +91,15 @@ public:
 
     void SetUp() override
     {
+        mAVBufferManager = vts_getAVBufferService();
+
+        if (mAVBufferManager == nullptr) {
+            UT_FAIL_FATAL("AVBuffer Service not available");
+        }
+
+        if (gVideoDecoderManager == nullptr) {
+            UT_FAIL_FATAL("VideoDecoder Service not available");
+        }
         vector<IVideoDecoder::Id> decoderIds;
 
         // Parse HFP to populate gVideodecoders_hfp
@@ -107,9 +116,10 @@ public:
             return;
         }
 
-        mAVBufferManager = vts_getAVBufferService();
-
         mAVbufferHelper = getAVBufferHelperInstance();
+        if (mAVbufferHelper == nullptr) {
+            UT_FAIL_FATAL("AV Buffer Helper not available");
+        }
 
         VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
 
