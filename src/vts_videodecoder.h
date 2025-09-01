@@ -487,7 +487,7 @@ do { \
  * @param[in,out] propertyKVList The list of PropertyKVPair to query (invalid or empty).
  * @param[out] aidl_return The boolean result, expected to be false.
  */
-#define VIDEODECODER_GETPROPERTYMULTI_FAILURE(videoDecoder, propertyKVList, aidl_return) \
+#define VIDEODECODER_GETPROPERTYMULTI_FAILURE(videoDecoder, propertyKVList, aidl_return, exception) \
 do { \
     Status status; \
     UT_LOG_INFO("Calling getPropertyMulti(IN:propertyKVList.size:[%zu], OUT:_aidl_return)", (propertyKVList).size()); \
@@ -497,6 +497,7 @@ do { \
                 UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                 UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
     UT_ASSERT_FALSE(aidl_return) << "getPropertyMulti should return false for invalid/empty input"; \
+    UT_ASSERT_EQUAL(status.exceptionCode(), exception); \
 } while (0)
 
 /**
@@ -1148,6 +1149,10 @@ class VTS_L1_VideoDecoder : public UTCore {
          * Add custom setup logic here if needed.
          */
         void SetUp() override {
+            if (gVideoDecoderManager == nullptr) {
+                UT_FAIL_FATAL("VideoDecoder Service not available");
+            }
+
             UTCore::SetUp();  // Call base class setup (if it exists)
             // Custom setup code here, e.g., initialize decoder mocks or profiles
         }

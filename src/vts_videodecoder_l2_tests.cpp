@@ -121,6 +121,9 @@ class VTS_L2_VideoDecoder : public UTCore {
          * Add custom setup logic here if needed.
          */
         void SetUp() override {
+            if (gVideoDecoderManager == nullptr) {
+                UT_FAIL_FATAL("VideoDecoder Service not available");
+            }
             UTCore::SetUp();  // Call base class setup (if it exists)
             std::vector<IVideoDecoder::Id> decoderIds;
         /* Get the Video Sink IDs */
