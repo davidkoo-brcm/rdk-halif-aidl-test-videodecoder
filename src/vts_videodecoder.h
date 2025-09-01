@@ -1149,6 +1149,10 @@ class VTS_L1_VideoDecoder : public UTCore {
          * Add custom setup logic here if needed.
          */
         void SetUp() override {
+            if (gVideoDecoderManager == nullptr) {
+                UT_FAIL_FATAL("VideoDecoder Service not available");
+            }
+
             UTCore::SetUp();  // Call base class setup (if it exists)
             // Custom setup code here, e.g., initialize decoder mocks or profiles
         }
