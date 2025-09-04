@@ -58,6 +58,8 @@ XLDFLAGS += -lbinder -lutils
 XLDFLAGS += -lvideodecoderaidl -lavbufferaidl -laudiodecoderaidl
 XLDFLAGS += -lhal_logger -lavbufferhelper
 
+ENABLE_UT_INFO_LOGGING ?= 0
+
 # TODO: remove this once the ut-core implements runtime logging configuration
 ifeq ($(ENABLE_UT_INFO_LOGGING),1)
 CXXFLAGS += -DENABLE_UT_INFO_LOGGING
