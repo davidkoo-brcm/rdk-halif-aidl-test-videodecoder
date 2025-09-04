@@ -1146,6 +1146,10 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, unregisterEventListener_neg) {
  * | 05 | Verify the return value of the start API indicates success | status = <status_variable> | status.isOk() should be true | Should Pass |
  */
 UT_ADD_TEST(VTS_L1_VideoDecoder, start_pos) {
+
+    std::vector<IVideoDecoder::Id> decoderIds;
+    sp<IVideoDecoder> videoDecoder;
+
     // Use global decoderIds if already populated, otherwise fetch
     if (decoderIds.empty()) {
         VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
@@ -1683,36 +1687,74 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, setProperty_neg)
  * | 03 | Attempt to decode buffer with an invalid presentation time | nsPresentationTime = -1000000, bufferHandle = 1, result = false | result = false, exceptionCode = EX_ILLEGAL_ARGUMENT | Should Fail |
  */
 UT_ADD_TEST(VTS_L1_VideoDecoder, decodeBuffer_neg) {
-    for (const auto& controller : controllers) {
-        bool result = false;
-        Status status;
 
-        // Test Case 3: Invalid State - Decoder Not Started
-        UT_LOG_INFO("Calling decodeBuffer(IN:nsPresentationTime:[3000000], IN:bufferHandle:[1], OUT:_aidl_return[])");
-        status = controller->decodeBuffer(3000000, 1, &result);
-        UT_LOG_INFO("Result decodeBuffer(IN:nsPresentationTime:[3000000], IN:bufferHandle:[1], OUT:_aidl_return[%d]), status:[isOK:%s, exception:%s]", result, UT_Control_GetMapString(bool_mapTable, status.isOk()), UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
-        UT_ASSERT_FALSE(result);
-        UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_ILLEGAL_STATE);
+    std::vector<IVideoDecoder::Id> decoderIds;
+    android::sp<IVideoDecoder> videoDecoder;
+    videodecoder::Capabilities capabilities;
+    Status status;
 
-        //changing state to STARTED as prerquisite
-        status = controller->start();
+    if (decoderIds.empty()) {
+        VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
+    }
+    UT_ASSERT_FALSE(decoderIds.empty()) << "No VideoDecoder instances available.";
 
-        // Test Case 4: Invalid Buffer Handle
-        UT_LOG_INFO("Calling decodeBuffer(IN:nsPresentationTime:[4000000], IN:bufferHandle:[-1], OUT:_aidl_return[])");
-        status = controller->decodeBuffer(4000000, -1, &result);
-        UT_LOG_INFO("Result decodeBuffer(IN:nsPresentationTime:[4000000], IN:bufferHandle:[-1], OUT:_aidl_return[%d]), status:[isOK:%s, exception:%s]", result, UT_Control_GetMapString(bool_mapTable, status.isOk()), UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
-        UT_ASSERT_FALSE(result);
-        UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_ILLEGAL_ARGUMENT);
+    for (const auto& _decoderId : decoderIds) {
+        sp<IVideoDecoder> videoDecoder;
+        videodecoder::Capabilities capabilities;
 
-        // Test Case 5: Invalid nsPresentationTime
-        UT_LOG_INFO("Calling decodeBuffer(IN:nsPresentationTime:[-1000000], IN:bufferHandle:[1], OUT:_aidl_return[])");
-        status = controller->decodeBuffer(-1000000, 1, &result);
-        UT_LOG_INFO("Result decodeBuffer(IN:nsPresentationTime:[-1000000], IN:bufferHandle:[1], OUT:_aidl_return[%d]), status:[isOK:%s, exception:%s]", result, UT_Control_GetMapString(bool_mapTable, status.isOk()), UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
-        UT_ASSERT_FALSE(result);
-        UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_ILLEGAL_ARGUMENT);
+        // Fetch decoder and capabilities
+        VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(_decoderId, videoDecoder);
+        VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
 
-        //Reverting state to READY
-        status = controller->stop();
+        for (const auto& _codecCaps : capabilities.supportedCodecs) {
+            videodecoder::Codec _codec = _codecCaps.codec;
+            UT_LOG_INFO("Testing start for codec %d, decoder ID %d",
+                        static_cast<int32_t>(_codec), _decoderId.value);
+
+            sp<IVideoDecoderController> videoDecoderController;
+            sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
+
+            /* Open the Decoder */
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                          controllerListener, videoDecoderController, true);
+            VIDEODECODER_CHECK_STATE(videoDecoder, State::READY);
+
+            bool result = false;
+            Status status;
+
+            // Test Case 3: Invalid State - Decoder Not Started
+            UT_LOG_INFO("Calling decodeBuffer(IN:nsPresentationTime:[3000000], IN:bufferHandle:[1], OUT:_aidl_return[])");
+            status = videoDecoderController->decodeBuffer(3000000, 1, &result);
+            UT_LOG_INFO("Result decodeBuffer(IN:nsPresentationTime:[3000000], IN:bufferHandle:[1], OUT:_aidl_return[%d]), status:[isOK:%s, exception:%s]", result, UT_Control_GetMapString(bool_mapTable, status.isOk()), UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
+            UT_ASSERT_FALSE(result);
+            UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_ILLEGAL_STATE);
+
+            /* Start the Decoder */
+            VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
+            VIDEODECODER_CHECK_STATE(videoDecoder, State::STARTED);
+
+            // Test Case 4: Invalid Buffer Handle
+            UT_LOG_INFO("Calling decodeBuffer(IN:nsPresentationTime:[4000000], IN:bufferHandle:[-1], OUT:_aidl_return[])");
+            status = videoDecoderController->decodeBuffer(4000000, -1, &result);
+            UT_LOG_INFO("Result decodeBuffer(IN:nsPresentationTime:[4000000], IN:bufferHandle:[-1], OUT:_aidl_return[%d]), status:[isOK:%s, exception:%s]", result, UT_Control_GetMapString(bool_mapTable, status.isOk()), UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
+            UT_ASSERT_FALSE(result);
+            UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_ILLEGAL_ARGUMENT);
+
+            // Test Case 5: Invalid nsPresentationTime
+            UT_LOG_INFO("Calling decodeBuffer(IN:nsPresentationTime:[-1000000], IN:bufferHandle:[1], OUT:_aidl_return[])");
+            status = videoDecoderController ->decodeBuffer(-1000000, 1, &result);
+            UT_LOG_INFO("Result decodeBuffer(IN:nsPresentationTime:[-1000000], IN:bufferHandle:[1], OUT:_aidl_return[%d]), status:[isOK:%s, exception:%s]", result, UT_Control_GetMapString(bool_mapTable, status.isOk()), UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
+            UT_ASSERT_FALSE(result);
+            UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_ILLEGAL_ARGUMENT);
+
+            //Reverting state to READY
+            VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
+            VIDEODECODER_CHECK_STATE(videoDecoder, State::READY);
+
+            /* Close the Decoder */
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+            VIDEODECODER_CHECK_STATE(videoDecoder, State::CLOSED);
+        }
     }
 }
 

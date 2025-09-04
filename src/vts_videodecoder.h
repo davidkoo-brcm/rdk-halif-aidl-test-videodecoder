@@ -107,14 +107,10 @@
 #include "vts_avbuffer.h"
 #include "vts_helper_functions.h"
 
-// Undefine UT_LOG_INFO from ut_log.h to avoid redefinition conflicts
-#undef UT_LOG_INFO
 
-#ifdef ENABLE_UT_INFO_LOGGING
-// Enable INFO logging using ut_log.h's definition
-#define UT_LOG_INFO(format, ...) UT_logPrefix(__FILE__, __LINE__, UT_LOG_ASCII_CYAN "INFO  " UT_LOG_ASCII_NC, format, ## __VA_ARGS__)
-#else
-#define UT_LOG_INFO(format, ...) // Disable INFO logging by default (no-op)
+#ifndef ENABLE_UT_INFO_LOGGING
+#define UT_LOG_DEBUG(...)
+#define UT_LOG_INFO(...)          // Disable INFO logging by default (no-op)
 #endif
 
 
