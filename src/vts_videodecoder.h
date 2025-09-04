@@ -97,6 +97,7 @@
 #include <sys/syscall.h>
 #include <sys/types.h>
 #include <memory> // For std::unique_ptr
+#include <inttypes.h>
 
 #include "com/rdk/hal/avbuffer/IAVBuffer.h"
 #include "com/rdk/hal/avbuffer/BnAVBufferSpaceListener.h"
@@ -1102,7 +1103,7 @@ do { \
     do { \
         bool decodeResult; \
         Status status = controller->decodeBuffer(pts, bufferHandle, &decodeResult); \
-        UT_LOG_INFO("decodeBuffer(pts=%lld, bufferHandle=%lld) status=%s, result=%s", \
+        UT_LOG_INFO("decodeBuffer(pts=%lld, bufferHandle=0x%016"PRIx64") status=%s, result=%s", \
                     static_cast<long long>(pts), static_cast<long long>(bufferHandle), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                     decodeResult ? "true" : "false"); \
@@ -1114,7 +1115,7 @@ do { \
     do { \
         bool decodeResult; \
         Status status = controller->decodeBuffer(pts, bufferHandle, &decodeResult); \
-        UT_LOG_INFO("decodeBuffer(pts=%lld, bufferHandle=%lld) status=%s, result=%s", \
+        UT_LOG_INFO("decodeBuffer(pts=%lld, bufferHandle=0x%016"PRIx64") status=%s, result=%s", \
                     static_cast<long long>(pts), static_cast<long long>(bufferHandle), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                     decodeResult ? "true" : "false"); \
@@ -1174,7 +1175,7 @@ public:
     virtual ~VideoDecoderControllerListener() = default;
 
     Status onFrameOutput(int64_t nsPresentationTime, int64_t frameBufferHandle, const ::std::optional<com::rdk::hal::videodecoder::FrameMetadata>& metadata) override {
-        UT_LOG_INFO("onFrameOutput received: nsPresentationTime=%lld, frameBufferHandle=0x%llx", nsPresentationTime, frameBufferHandle);
+        UT_LOG_INFO("onFrameOutput received: nsPresentationTime=%lld, frameBufferHandle=0x%016"PRIx64"", nsPresentationTime, frameBufferHandle);
         DecodedVideoFrame_t frame;
         frame.framePTS = nsPresentationTime;
         frame.receiveTime = std::chrono::steady_clock::now();
