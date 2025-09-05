@@ -97,6 +97,7 @@
 #include <sys/syscall.h>
 #include <sys/types.h>
 #include <memory> // For std::unique_ptr
+#include <inttypes.h>
 
 #include "com/rdk/hal/avbuffer/IAVBuffer.h"
 #include "com/rdk/hal/avbuffer/BnAVBufferSpaceListener.h"
@@ -106,14 +107,10 @@
 #include "vts_avbuffer.h"
 #include "vts_helper_functions.h"
 
-// Undefine UT_LOG_INFO from ut_log.h to avoid redefinition conflicts
-#undef UT_LOG_INFO
 
-#ifdef ENABLE_UT_INFO_LOGGING
-// Enable INFO logging using ut_log.h's definition
-#define UT_LOG_INFO(format, ...) UT_logPrefix(__FILE__, __LINE__, UT_LOG_ASCII_CYAN "INFO  " UT_LOG_ASCII_NC, format, ## __VA_ARGS__)
-#else
-#define UT_LOG_INFO(format, ...) // Disable INFO logging by default (no-op)
+#ifndef ENABLE_UT_INFO_LOGGING
+#define UT_LOG_DEBUG(...)
+#define UT_LOG_INFO(...)          // Disable INFO logging by default (no-op)
 #endif
 
 
@@ -1102,7 +1099,7 @@ do { \
     do { \
         bool decodeResult; \
         Status status = controller->decodeBuffer(pts, bufferHandle, &decodeResult); \
-        UT_LOG_INFO("decodeBuffer(pts=%lld, bufferHandle=%lld) status=%s, result=%s", \
+        UT_LOG_INFO("decodeBuffer(pts=%lld, bufferHandle=0x%016"PRIx64") status=%s, result=%s", \
                     static_cast<long long>(pts), static_cast<long long>(bufferHandle), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                     decodeResult ? "true" : "false"); \
@@ -1114,7 +1111,7 @@ do { \
     do { \
         bool decodeResult; \
         Status status = controller->decodeBuffer(pts, bufferHandle, &decodeResult); \
-        UT_LOG_INFO("decodeBuffer(pts=%lld, bufferHandle=%lld) status=%s, result=%s", \
+        UT_LOG_INFO("decodeBuffer(pts=%lld, bufferHandle=0x%016"PRIx64") status=%s, result=%s", \
                     static_cast<long long>(pts), static_cast<long long>(bufferHandle), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                     decodeResult ? "true" : "false"); \
@@ -1174,7 +1171,7 @@ public:
     virtual ~VideoDecoderControllerListener() = default;
 
     Status onFrameOutput(int64_t nsPresentationTime, int64_t frameBufferHandle, const ::std::optional<com::rdk::hal::videodecoder::FrameMetadata>& metadata) override {
-        UT_LOG_INFO("onFrameOutput received: nsPresentationTime=%lld, frameBufferHandle=0x%llx", nsPresentationTime, frameBufferHandle);
+        UT_LOG_INFO("onFrameOutput received: nsPresentationTime=%lld, frameBufferHandle=0x%016"PRIx64"", nsPresentationTime, frameBufferHandle);
         DecodedVideoFrame_t frame;
         frame.framePTS = nsPresentationTime;
         frame.receiveTime = std::chrono::steady_clock::now();
