@@ -1254,7 +1254,7 @@ class VideoDecoderEventListener : public BnVideoDecoderEventListener {
     virtual ~VideoDecoderEventListener() = default;
 
     Status onDecodeError(videodecoder::ErrorCode errorCode, int32_t vendorErrorCode) override {
-        UT_LOG_ERROR("Decode error: errorCode=%d, vendorErrorCode=%d", static_cast<int32_t>(errorCode), vendorErrorCode);
+        UT_LOG_ERROR("[Video DecoderID: %d] Decode error: errorCode=%d, vendorErrorCode=%d", mDecoderID, static_cast<int32_t>(errorCode), vendorErrorCode);
         {
             std::lock_guard<std::mutex> lock(mMutex);
             mErrors.push_back(static_cast<int32_t>(errorCode));
@@ -1264,7 +1264,7 @@ class VideoDecoderEventListener : public BnVideoDecoderEventListener {
     }
     Status onStateChanged(State oldState,State newState) override
     {
-        UT_LOG("State Change received: %s -> %s", com::rdk::hal::toString(oldState).c_str(), com::rdk::hal::toString(newState).c_str());
+        UT_LOG("[Video DecoderID: %d] State Change received: %s -> %s", mDecoderID, com::rdk::hal::toString(oldState).c_str(), com::rdk::hal::toString(newState).c_str());
         {
             std::lock_guard<std::mutex> lock(mMutex);
             mStateChanges.emplace_back(oldState, newState);
@@ -1326,6 +1326,10 @@ class VideoDecoderEventListener : public BnVideoDecoderEventListener {
         std::lock_guard<std::mutex> lock(mMutex);
         return mErrors;
     }
+    void setDecoderID(int32_t id)
+    {
+        mDecoderID = id;
+    }
     private:
         mutable std::mutex mMutex;
         std::condition_variable mCV;
@@ -1333,6 +1337,7 @@ class VideoDecoderEventListener : public BnVideoDecoderEventListener {
         State mCurrentState;
         std::vector<std::pair<State, State>> mStateChanges;
         std::vector<int32_t> mErrors;
+        int32_t mDecoderID;
 };
 
 // AVBufferSpaceListener declaration
