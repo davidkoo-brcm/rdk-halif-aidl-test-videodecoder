@@ -64,6 +64,8 @@
 
 using namespace std;
 
+int32_t VideoDecoderEventListener::mUsedDecoderID = -1;
+
 UT_ADD_TEST_TO_GROUP(VTS_L3_VideoDecoder, UT_TESTS_L3)
 
 static char *gTestGroup = "L3";

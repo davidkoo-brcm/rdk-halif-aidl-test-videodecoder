@@ -124,6 +124,8 @@
 #include "com/rdk/hal/videodecoder/CodecCapabilities.h"
 #include "com/rdk/hal/videodecoder/OperationalMode.h"
 
+#include "vts_helper_functions.h"
+
 #define VIDEODECODERMGR "IVideoDecoderManager"
 #define VIDEODECODERMGR_IVIDEODECODER "IVideoDecoderManager.IVideoDecoder"
 
@@ -153,7 +155,6 @@ extern std::vector<sp<IVideoDecoderController>>  controllers;
 #define VIDEO_DECODER_STREAM_REF_PATH "IVideoDecoderManager.reference_streams_path"
 
 extern void *gVideoDecoderTestConfiguration;
-
 
 typedef struct InputVideoFrame
 {
@@ -254,32 +255,6 @@ struct videoDecoderTestConfiguration_t {
 
 
 UT_status_t getVideoDecoderService();
-
-/* Status::Exception */
-const static ut_control_keyStringMapping_t statusException_mapTable[] =
-{
-    {(char*)"EX_NONE",                  (int32_t) Status::EX_NONE},
-    {(char*)"EX_SECURITY",              (int32_t) Status::EX_SECURITY},
-    {(char*)"EX_BAD_PARCELABLE",        (int32_t) Status::EX_BAD_PARCELABLE},
-    {(char*)"EX_ILLEGAL_ARGUMENT",      (int32_t) Status::EX_ILLEGAL_ARGUMENT},
-    {(char*)"EX_NULL_POINTER",          (int32_t) Status::EX_NULL_POINTER},
-    {(char*)"EX_ILLEGAL_STATE",         (int32_t) Status::EX_ILLEGAL_STATE},
-    {(char*)"EX_NETWORK_MAIN_THREAD",   (int32_t) Status::EX_NETWORK_MAIN_THREAD},
-    {(char*)"EX_UNSUPPORTED_OPERATION", (int32_t) Status::EX_UNSUPPORTED_OPERATION},
-    {(char*)"EX_SERVICE_SPECIFIC",      (int32_t) Status::EX_SERVICE_SPECIFIC},
-    {(char*)"EX_PARCELABLE",            (int32_t) Status::EX_PARCELABLE},
-    {(char*)"EX_HAS_REPLY_HEADER",      (int32_t) Status::EX_HAS_REPLY_HEADER},
-    {(char*)"EX_TRANSACTION_FAILED",    (int32_t) Status::EX_TRANSACTION_FAILED},
-    {NULL, -1}
-};
-
-/* bool */
-const static ut_control_keyStringMapping_t bool_mapTable[] =
-{
-    {(char*)"false", (int32_t) false},
-    {(char*)"true",  (int32_t) true},
-    {NULL, -1}
-};
 
 DynamicRange videoDecoderStringToDynamicRange(const std::string& rangeStr);
 OperationalMode videoDecoderStringToOperationalMode(const std::string& modeStr);
@@ -1250,6 +1225,7 @@ private:
 
 class VideoDecoderEventListener : public BnVideoDecoderEventListener {
     public:
+    static int32_t mUsedDecoderID;
     VideoDecoderEventListener() {};
     virtual ~VideoDecoderEventListener() = default;
 
@@ -1329,6 +1305,10 @@ class VideoDecoderEventListener : public BnVideoDecoderEventListener {
     void setDecoderID(int32_t id)
     {
         mDecoderID = id;
+    }
+    static int32_t getUsedDecoder()
+    {
+        return VideoDecoderEventListener::mUsedDecoderID;
     }
     private:
         mutable std::mutex mMutex;
