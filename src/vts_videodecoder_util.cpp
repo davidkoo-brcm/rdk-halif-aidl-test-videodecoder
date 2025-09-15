@@ -395,9 +395,6 @@ double vts_computeVideoRMSDiff(const uint8_t* ref, const uint8_t* dec, size_t wi
         }
     } else if (format == PixelFormat::YCBCR422) {
         // YCBCR422: 4:2:2, 2 bytes per pixel (Y0, Y1, Cb, Cr for 2 pixels)
-        size_t pixelCount = width * height;
-        size_t yCount = pixelCount;
-        size_t chromaCount = pixelCount / 2; // One Cb/Cr per 2 Y
         size_t byteOffset = 0;
         for (size_t y = 0; y < height; ++y) {
             for (size_t x = 0; x < width; x += 2) {
@@ -615,7 +612,7 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, const char *m
     {
         videoDecoderTestConfiguration_t testDetails = {};
         std::string resultKVP;
-        vector<int32_t> errorFrameNum;
+        vector<uint32_t> errorFrameNum;
 
         string streamName = streamList + "." + to_string(i) + ".Name";
         status = ut_kvp_getStringField(kvpTestInstance, streamName.c_str(), tempBuffer, UT_KVP_MAX_ELEMENT_SIZE);
@@ -740,7 +737,7 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, const char *m
             for (int32_t j = 0; j < count; j++)
             {
                 string error = errorFrames + "." + to_string(j);
-                int32_t frameNum = ut_kvp_getUInt32Field(kvpTestInstance, error.c_str());
+                uint32_t frameNum = ut_kvp_getUInt32Field(kvpTestInstance, error.c_str());
                 if (frameNum >= 1 && frameNum <= testDetails.no_of_frames)
                 {
                     errorFrameNum.push_back(frameNum);

@@ -1381,7 +1381,6 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, stop_neg)
     std::vector<IVideoDecoder::Id> decoderIds;
     android::sp<IVideoDecoder> videoDecoder;
     videodecoder::Capabilities capabilities;
-    State state;
     Status status;
 
     /* Get the Video decoder IDs */
