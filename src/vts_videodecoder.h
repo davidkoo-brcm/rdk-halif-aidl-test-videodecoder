@@ -144,7 +144,6 @@ static constexpr int VIDEO_MAX_FINAL_STATE_WAIT_MS = 500;
 
 extern sp<IVideoDecoderManager>                  gVideoDecoderManager;
 extern std::vector<IVideoDecoder::Id>            decoderIds;
-extern std::vector<sp<IVideoDecoder>>            decoders;
 extern std::vector<sp<IVideoDecoderController>>  controllers;
 
 #define VIDEO_DECODER_TEST_CONFIG_PATH "./videodecoder_test_configuration/vts_l3_VideoDecoder_test_config.yaml"
