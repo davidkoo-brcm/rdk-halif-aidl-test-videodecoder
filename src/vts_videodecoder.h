@@ -487,8 +487,16 @@ do { \
 #define VIDEODECODER_GETPROPERTYMULTI_FAILURE(videoDecoder, propertyKVList, aidl_return, exception) \
 do { \
     Status status; \
-    UT_LOG_INFO("Calling getPropertyMulti(IN:propertyKVList.size:[%zu], OUT:_aidl_return)", (propertyKVList).size()); \
-    status = (videoDecoder)->getPropertyMulti(&(propertyKVList), &(aidl_return)); \
+    std::vector<videodecoder::PropertyKVPair>* _propertyKVList = &propertyKVList; \
+    if(exception == Status::EX_NULL_POINTER) \
+    { \
+        UT_LOG_INFO("Calling getPropertyMulti(IN:propertyKVList :NULL, OUT:_aidl_return)"); \
+        _propertyKVList = nullptr; \
+    } \
+    else { \
+        UT_LOG_INFO("Calling getPropertyMulti(IN:propertyKVList.size:[%zu], OUT:_aidl_return)", (propertyKVList).size()); \
+    } \
+    status = (videoDecoder)->getPropertyMulti(_propertyKVList, &(aidl_return)); \
     UT_LOG_INFO("Result getPropertyMulti(OUT:_aidl_return:[%s]), status:[isOK:%s, exception:%s]", \
                 UT_Control_GetMapString(bool_mapTable, (aidl_return)), \
                 UT_Control_GetMapString(bool_mapTable, status.isOk()), \
