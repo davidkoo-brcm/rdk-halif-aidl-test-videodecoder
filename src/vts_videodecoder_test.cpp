@@ -690,7 +690,7 @@ void videoDecoderTest::decoderThreadFunc()
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                     UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
                 if(isValidBuffer) {
-                    UT_LOG_ERROR("output buffer not released by decoder [handle:0x%llx]", decodedFrame.frameBufferHandle);
+                    UT_LOG_ERROR("Encoded buffer not released by decoder [handle:0x%llx]", decodedFrame.frameBufferHandle);
                 }
             } else {
                 UT_LOG_WARNING("No output frame retrieved for input PTS=%lld after 100ms", framePTS);
@@ -717,7 +717,7 @@ void videoDecoderTest::decoderThreadFunc()
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                     UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
                 if(isValidBuffer) {
-                    UT_LOG_ERROR("Input buffer not released by Decoder [handle:0x%llx]", videoBufferHandle);
+                    UT_LOG_ERROR("Encoded buffer not released by Decoder [handle:0x%llx]", videoBufferHandle);
                 }
             }
 
@@ -859,7 +859,7 @@ void videoDecoderTest::decoderThreadFunc()
                 UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                 UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
             if(isValidBuffer) {
-                UT_LOG_ERROR("Output buffer not released by decoder [handle:0x%llx]", decodedFrame.frameBufferHandle);
+                UT_LOG_ERROR("Encoded buffer not released by decoder [handle:0x%llx]", decodedFrame.frameBufferHandle);
             }
         }
 
@@ -1031,7 +1031,7 @@ void videoDecoderTest::decodeAndConsumeVideoStreams() {
             UT_Control_GetMapString(bool_mapTable, status.isOk()), \
             UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
         if(isValidBuffer) {
-            UT_LOG_ERROR("Input buffer not released by Decoder [handle:0x%llx]", videoBufferHandle);
+            UT_LOG_ERROR("Encoded buffer not released by deecoder [handle:0x%llx]", videoBufferHandle);
         }
     }
 
