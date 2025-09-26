@@ -898,7 +898,12 @@ void videoDecoderTest::decoderThreadFunc()
         // Destroy Video Pool
         {
             std::lock_guard<std::mutex> lock(mDecodeMutex);
-            UT_LOG_INFO("Destroying video pool handle:%lld", videoPool.handle);
+            PoolMetrics poolMetrics;
+            UT_LOG_INFO("Calling getPoolMetrics(IN:poolHandle:[%d], OUT:PoolMetrics[])", videoPool.handle);
+            Status status = mAVBufferManager->getPoolMetrics(videoPool, &poolMetrics);
+            UT_LOG_INFO("Result getPoolMetrics(IN:poolHandle:[%d], OUT:PoolMetrics[bytesUsed:%d, bytesTotal:%d]), status:[isOK:%s, exception:%s]", \
+                videoPool.handle, poolMetrics.bytesUsed, poolMetrics.bytesTotal, \
+                UT_Control_GetMapString(bool_mapTable, status.isOk()), UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
             AVBUFFER_DESTROY_POOL_SUCCESS(mAVBufferManager, videoPool);
         }
 
@@ -1033,6 +1038,13 @@ void videoDecoderTest::decodeAndConsumeVideoStreams() {
     VIDEODECODER_STOP_SUCCESS(mDecoderHandle, videoDecoderController, true);
 
     VIDEODECODER_CLOSE_SUCCESS(mDecoderHandle, videoDecoderController, true);
+
+    PoolMetrics poolMetrics;
+    UT_LOG_INFO("Calling getPoolMetrics(IN:poolHandle:[%d], OUT:PoolMetrics[])", videoPool.handle); \
+    Status status = mAVBufferManager->getPoolMetrics(videoPool, &poolMetrics); \
+    UT_LOG_INFO("Result getPoolMetrics(IN:poolHandle:[%d], OUT:PoolMetrics[bytesUsed:%d, bytesTotal:%d]), status:[isOK:%s, exception:%s]", \
+                videoPool.handle, poolMetrics.bytesUsed, poolMetrics.bytesTotal, \
+                UT_Control_GetMapString(bool_mapTable, status.isOk()), UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
 
     AVBUFFER_DESTROY_POOL_SUCCESS(mAVBufferManager, videoPool);
 }
