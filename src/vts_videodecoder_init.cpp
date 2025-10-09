@@ -67,7 +67,6 @@
 #include "vts_videodecoder.h"
 
 std::vector<IVideoDecoder::Id>            decoderIds;
-std::vector<sp<IVideoDecoder>>            decoders;
 std::vector<sp<IVideoDecoderController>>  controllers;
 
 void *gVideoDecoderTestConfiguration=nullptr;

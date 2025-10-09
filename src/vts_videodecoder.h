@@ -109,10 +109,15 @@
 
 
 #ifndef ENABLE_UT_INFO_LOGGING
+#ifdef UT_LOG_DEBUG
+#undef UT_LOG_DEBUG
 #define UT_LOG_DEBUG(...)
-#define UT_LOG_INFO(...)          // Disable INFO logging by default (no-op)
 #endif
-
+#ifdef UT_LOG_INFO
+#undef UT_LOG_INFO
+#define UT_LOG_INFO(...)
+#endif
+#endif
 
 #include "com/rdk/hal/videodecoder/IVideoDecoderManager.h"
 #include "com/rdk/hal/videodecoder/IVideoDecoderController.h"
@@ -123,6 +128,8 @@
 #include "com/rdk/hal/videodecoder/Codec.h"
 #include "com/rdk/hal/videodecoder/CodecCapabilities.h"
 #include "com/rdk/hal/videodecoder/OperationalMode.h"
+
+#include "vts_helper_functions.h"
 
 #define VIDEODECODERMGR "IVideoDecoderManager"
 #define VIDEODECODERMGR_IVIDEODECODER "IVideoDecoderManager.IVideoDecoder"
@@ -144,7 +151,6 @@ static constexpr int VIDEO_MAX_FINAL_STATE_WAIT_MS = 500;
 
 extern sp<IVideoDecoderManager>                  gVideoDecoderManager;
 extern std::vector<IVideoDecoder::Id>            decoderIds;
-extern std::vector<sp<IVideoDecoder>>            decoders;
 extern std::vector<sp<IVideoDecoderController>>  controllers;
 
 #define VIDEO_DECODER_TEST_CONFIG_PATH "./videodecoder_test_configuration/vts_l3_VideoDecoder_test_config.yaml"
@@ -154,7 +160,6 @@ extern std::vector<sp<IVideoDecoderController>>  controllers;
 #define VIDEO_DECODER_STREAM_REF_PATH "IVideoDecoderManager.reference_streams_path"
 
 extern void *gVideoDecoderTestConfiguration;
-
 
 typedef struct InputVideoFrame
 {
@@ -255,32 +260,6 @@ struct videoDecoderTestConfiguration_t {
 
 
 UT_status_t getVideoDecoderService();
-
-/* Status::Exception */
-const static ut_control_keyStringMapping_t statusException_mapTable[] =
-{
-    {(char*)"EX_NONE",                  (int32_t) Status::EX_NONE},
-    {(char*)"EX_SECURITY",              (int32_t) Status::EX_SECURITY},
-    {(char*)"EX_BAD_PARCELABLE",        (int32_t) Status::EX_BAD_PARCELABLE},
-    {(char*)"EX_ILLEGAL_ARGUMENT",      (int32_t) Status::EX_ILLEGAL_ARGUMENT},
-    {(char*)"EX_NULL_POINTER",          (int32_t) Status::EX_NULL_POINTER},
-    {(char*)"EX_ILLEGAL_STATE",         (int32_t) Status::EX_ILLEGAL_STATE},
-    {(char*)"EX_NETWORK_MAIN_THREAD",   (int32_t) Status::EX_NETWORK_MAIN_THREAD},
-    {(char*)"EX_UNSUPPORTED_OPERATION", (int32_t) Status::EX_UNSUPPORTED_OPERATION},
-    {(char*)"EX_SERVICE_SPECIFIC",      (int32_t) Status::EX_SERVICE_SPECIFIC},
-    {(char*)"EX_PARCELABLE",            (int32_t) Status::EX_PARCELABLE},
-    {(char*)"EX_HAS_REPLY_HEADER",      (int32_t) Status::EX_HAS_REPLY_HEADER},
-    {(char*)"EX_TRANSACTION_FAILED",    (int32_t) Status::EX_TRANSACTION_FAILED},
-    {NULL, -1}
-};
-
-/* bool */
-const static ut_control_keyStringMapping_t bool_mapTable[] =
-{
-    {(char*)"false", (int32_t) false},
-    {(char*)"true",  (int32_t) true},
-    {NULL, -1}
-};
 
 DynamicRange videoDecoderStringToDynamicRange(const std::string& rangeStr);
 OperationalMode videoDecoderStringToOperationalMode(const std::string& modeStr);
@@ -413,10 +392,33 @@ do { \
     Status status; \
     UT_LOG_INFO("Calling getProperty(IN:property:[%d], OUT:_aidl_return[]) ", static_cast<int32_t>(property)); \
     status = (videoDecoder)->getProperty((property), &(aidl_return)); \
-    UT_LOG_INFO("Result getProperty(IN:property:[%d], OUT:_aidl_return[0x%X]), status:[isOK:%s, exception:%s]", \
-                static_cast<int32_t>(property), (aidl_return).has_value(), \
+    if(aidl_return.has_value()) \
+    { \
+        switch (aidl_return->value.value().getTag()) \
+        { \
+            case PropertyValue::Value::Tag::intValue: \
+                UT_LOG_DEBUG("Result getProperty(IN:property[%s], OUT:propertyValue[%d]), status:[isOK:%s, exception:%s]", videodecoder::toString(property).c_str(), \
+                aidl_return->value->get<PropertyValue::Value::Tag::intValue>(), \
                 UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                 UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+                break; \
+            case PropertyValue::Value::Tag::stringValue: \
+                UT_LOG_DEBUG("Result getProperty(IN:property[%s], OUT:propertyValue[%s]), status:[isOK:%s, exception:%s]", videodecoder::toString(property).c_str(), \
+                aidl_return->value->get<PropertyValue::Value::Tag::stringValue>().string(), \
+                UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+                break; \
+            default: \
+                break; \
+        } \
+    } \
+    else \
+    { \
+        UT_LOG_DEBUG("Result getProperty(IN:property[%s], OUT:propertyValue[]), status:[isOK:%s, exception:%s]", videodecoder::toString(property).c_str(), \
+                UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+        UT_ASSERT_TRUE(false); \
+    } \
     UT_ASSERT_TRUE(status.isOk()) << "getProperty failed for property " << static_cast<int32_t>(property); \
     UT_ASSERT_TRUE((aidl_return).has_value()) << "No value returned for property " << static_cast<int32_t>(property); \
 } while (0)
@@ -424,7 +426,6 @@ do { \
 #define VIDEODECODER_GET_PROPERTY_SUCCESS(videoDecoder, property, propertyValue) \
     do { \
         ::android::binder::Status status; \
-        ::com::rdk::hal::State state; \
         UT_LOG_INFO("Calling getProperty(IN:property[%s], OUT:propertyValue[]", videodecoder::toString(property).c_str()); \
         status = (videoDecoder)->getProperty(property, &propertyValue); \
         switch (propertyValue->value.value().getTag()) \
@@ -440,6 +441,8 @@ do { \
                 propertyValue->value->get<PropertyValue::Value::Tag::stringValue>().string(), \
                 UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                 UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+                break; \
+            default: \
                 break; \
         } \
         UT_ASSERT_TRUE(status.isOk()); \
@@ -487,8 +490,16 @@ do { \
 #define VIDEODECODER_GETPROPERTYMULTI_FAILURE(videoDecoder, propertyKVList, aidl_return, exception) \
 do { \
     Status status; \
-    UT_LOG_INFO("Calling getPropertyMulti(IN:propertyKVList.size:[%zu], OUT:_aidl_return)", (propertyKVList).size()); \
-    status = (videoDecoder)->getPropertyMulti(&(propertyKVList), &(aidl_return)); \
+    std::vector<videodecoder::PropertyKVPair>* _propertyKVList = &propertyKVList; \
+    if(exception == Status::EX_NULL_POINTER) \
+    { \
+        UT_LOG_INFO("Calling getPropertyMulti(IN:propertyKVList :NULL, OUT:_aidl_return)"); \
+        _propertyKVList = nullptr; \
+    } \
+    else { \
+        UT_LOG_INFO("Calling getPropertyMulti(IN:propertyKVList.size:[%zu], OUT:_aidl_return)", (propertyKVList).size()); \
+    } \
+    status = (videoDecoder)->getPropertyMulti(_propertyKVList, &(aidl_return)); \
     UT_LOG_INFO("Result getPropertyMulti(OUT:_aidl_return:[%s]), status:[isOK:%s, exception:%s]", \
                 UT_Control_GetMapString(bool_mapTable, (aidl_return)), \
                 UT_Control_GetMapString(bool_mapTable, status.isOk()), \
@@ -597,12 +608,12 @@ do { \
     do { \
         Status status; \
         sp<IVideoDecoderControllerListener> tempListener = (listener); \
-        void* listenerPtr = tempListener ? tempListener.get() : nullptr; \
         UT_LOG_INFO("Calling open(IN:codec:[%d], IN:secure:[%s], IN:listener:[0x%p], OUT:controller[])", \
-                    static_cast<int32_t>(codec), UT_Control_GetMapString(bool_mapTable, (secure)), listenerPtr); \
+                    static_cast<int32_t>(codec), UT_Control_GetMapString(bool_mapTable, (secure)), tempListener ? tempListener.get() : nullptr); \
         status = (videoDecoder)->open((codec), (secure), (listener), &(controller)); \
         UT_LOG_INFO("Result open(IN:codec:[%d], IN:secure:[%s], IN:listener:[0x%p], OUT:controller:[0x%X]), status:[isOK:%s, exception:%s]", \
-                    static_cast<int32_t>(codec), UT_Control_GetMapString(bool_mapTable, (secure)), listenerPtr, (controller).get(), \
+                    static_cast<int32_t>(codec), UT_Control_GetMapString(bool_mapTable, (secure)), tempListener ? tempListener.get() : nullptr, \
+                    (controller).get(), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                     UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
         if ((exception) == Status::EX_NONE) { \
@@ -626,11 +637,10 @@ do { \
         Status status; \
         bool aidl_return; \
         sp<IVideoDecoderController> tempController = (controller); \
-        void* controllerPtr = tempController ? tempController.get() : nullptr; \
-        UT_LOG_INFO("Calling close(IN:videoDecoderController:[0x%p], OUT:_aidl_return[])", controllerPtr); \
+        UT_LOG_INFO("Calling close(IN:videoDecoderController:[0x%p], OUT:_aidl_return[])", tempController ? tempController.get() : nullptr); \
         status = (videoDecoder)->close((controller), &aidl_return); \
         UT_LOG_INFO("Result close(IN:videoDecoderController:[0x%p], OUT:_aidl_return:[%s]), status:[isOK:%s, exception:%s]", \
-                    controllerPtr, UT_Control_GetMapString(bool_mapTable, aidl_return), \
+                    tempController ? tempController.get() : nullptr, UT_Control_GetMapString(bool_mapTable, aidl_return), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                     UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
         UT_ASSERT_TRUE_FATAL(status.isOk()) << "close binder call failed"; \
@@ -654,11 +664,10 @@ do { \
         Status status; \
         bool aidl_return; \
         sp<IVideoDecoderController> tempController = (controller); \
-        void* controllerPtr = tempController ? tempController.get() : nullptr; \
-        UT_LOG_INFO("Calling close(IN:videoDecoderController:[0x%p], OUT:_aidl_return[])", controllerPtr); \
+        UT_LOG_INFO("Calling close(IN:videoDecoderController:[0x%p], OUT:_aidl_return[])", tempController ? tempController.get() : nullptr); \
         status = (videoDecoder)->close((controller), &aidl_return); \
         UT_LOG_INFO("Result close(IN:videoDecoderController:[0x%p], OUT:_aidl_return:[%s]), status:[isOK:%s, exception:%s]", \
-                    controllerPtr, UT_Control_GetMapString(bool_mapTable, aidl_return), \
+                     tempController ? tempController.get() : nullptr, UT_Control_GetMapString(bool_mapTable, aidl_return), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                     UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
         if ((exception) == Status::EX_NONE) { \
@@ -702,11 +711,10 @@ do { \
         Status status; \
         bool aidl_return; \
         sp<IVideoDecoderEventListener> tempListener = (listener); \
-        void* listenerPtr = tempListener ? tempListener.get() : nullptr; \
-        UT_LOG_INFO("Calling registerEventListener(IN:videoDecoderEventListener:[0x%p], OUT:_aidl_return[])", listenerPtr); \
+        UT_LOG_INFO("Calling registerEventListener(IN:videoDecoderEventListener:[0x%p], OUT:_aidl_return[])", tempListener ? tempListener.get() : nullptr); \
         status = (videoDecoder)->registerEventListener((listener), &aidl_return); \
         UT_LOG_INFO("Result registerEventListener(IN:videoDecoderEventListener:[0x%p], OUT:_aidl_return:[%s]), status:[isOK:%s, exception:%s]", \
-                    listenerPtr, UT_Control_GetMapString(bool_mapTable, aidl_return), \
+                    tempListener ? tempListener.get() : nullptr, UT_Control_GetMapString(bool_mapTable, aidl_return), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                     UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
         UT_ASSERT_TRUE(status.isOk()) << "registerEventListener binder call failed"; \
@@ -724,11 +732,10 @@ do { \
         Status status; \
         bool aidl_return; \
         sp<IVideoDecoderEventListener> tempListener = (listener); \
-        void* listenerPtr = tempListener ? tempListener.get() : nullptr; \
-        UT_LOG_INFO("Calling unregisterEventListener(IN:videoDecoderEventListener:[0x%p], OUT:_aidl_return[])", listenerPtr); \
+        UT_LOG_INFO("Calling unregisterEventListener(IN:videoDecoderEventListener:[0x%p], OUT:_aidl_return[])", tempListener ? tempListener.get() : nullptr); \
         status = (videoDecoder)->unregisterEventListener((listener), &aidl_return); \
         UT_LOG_INFO("Result unregisterEventListener(IN:videoDecoderEventListener:[0x%p], OUT:_aidl_return:[%s]), status:[isOK:%s, exception:%s]", \
-                    listenerPtr, UT_Control_GetMapString(bool_mapTable, aidl_return), \
+                    tempListener ? tempListener.get() : nullptr, UT_Control_GetMapString(bool_mapTable, aidl_return), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                     UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
         UT_ASSERT_TRUE(status.isOk()) << "unregisterEventListener binder call failed"; \
@@ -747,11 +754,10 @@ do { \
         Status status; \
         bool aidl_return; \
         sp<IVideoDecoderEventListener> tempListener = (listener); \
-        void* listenerPtr = tempListener ? tempListener.get() : nullptr; \
-        UT_LOG_INFO("Calling registerEventListener(IN:videoDecoderEventListener:[0x%p], OUT:_aidl_return[])", listenerPtr); \
+        UT_LOG_INFO("Calling registerEventListener(IN:videoDecoderEventListener:[0x%p], OUT:_aidl_return[])", tempListener ? tempListener.get() : nullptr); \
         status = (videoDecoder)->registerEventListener((listener), &aidl_return); \
         UT_LOG_INFO("Result registerEventListener(IN:videoDecoderEventListener:[0x%p], OUT:_aidl_return:[%s]), status:[isOK:%s, exception:%s]", \
-                    listenerPtr, UT_Control_GetMapString(bool_mapTable, aidl_return), \
+                    tempListener ? tempListener.get() : nullptr, UT_Control_GetMapString(bool_mapTable, aidl_return), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                     UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
         if ((exception) == Status::EX_NONE) { \
@@ -1099,7 +1105,7 @@ do { \
     do { \
         bool decodeResult; \
         Status status = controller->decodeBuffer(pts, bufferHandle, &decodeResult); \
-        UT_LOG_INFO("decodeBuffer(pts=%lld, bufferHandle=0x%016"PRIx64") status=%s, result=%s", \
+        UT_LOG_INFO("decodeBuffer(pts=%lld, bufferHandle=0x%016" PRIx64 ") status=%s, result=%s", \
                     static_cast<long long>(pts), static_cast<long long>(bufferHandle), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                     decodeResult ? "true" : "false"); \
@@ -1111,7 +1117,7 @@ do { \
     do { \
         bool decodeResult; \
         Status status = controller->decodeBuffer(pts, bufferHandle, &decodeResult); \
-        UT_LOG_INFO("decodeBuffer(pts=%lld, bufferHandle=0x%016"PRIx64") status=%s, result=%s", \
+        UT_LOG_INFO("decodeBuffer(pts=%lld, bufferHandle=0x%016" PRIx64 ") status=%s, result=%s", \
                     static_cast<long long>(pts), static_cast<long long>(bufferHandle), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                     decodeResult ? "true" : "false"); \
@@ -1171,7 +1177,7 @@ public:
     virtual ~VideoDecoderControllerListener() = default;
 
     Status onFrameOutput(int64_t nsPresentationTime, int64_t frameBufferHandle, const ::std::optional<com::rdk::hal::videodecoder::FrameMetadata>& metadata) override {
-        UT_LOG_INFO("onFrameOutput received: nsPresentationTime=%lld, frameBufferHandle=0x%016"PRIx64"", nsPresentationTime, frameBufferHandle);
+        UT_LOG_INFO("onFrameOutput received: nsPresentationTime=%lld, frameBufferHandle=0x%016" PRIx64 "", nsPresentationTime, frameBufferHandle);
         DecodedVideoFrame_t frame;
         frame.framePTS = nsPresentationTime;
         frame.receiveTime = std::chrono::steady_clock::now();
@@ -1243,11 +1249,12 @@ private:
 
 class VideoDecoderEventListener : public BnVideoDecoderEventListener {
     public:
+    static int32_t mUsedDecoderID;
     VideoDecoderEventListener() {};
     virtual ~VideoDecoderEventListener() = default;
 
     Status onDecodeError(videodecoder::ErrorCode errorCode, int32_t vendorErrorCode) override {
-        UT_LOG_ERROR("Decode error: errorCode=%d, vendorErrorCode=%d", static_cast<int32_t>(errorCode), vendorErrorCode);
+        UT_LOG_ERROR("[Video DecoderID: %d] Decode error: errorCode=%d, vendorErrorCode=%d", mDecoderID, static_cast<int32_t>(errorCode), vendorErrorCode);
         {
             std::lock_guard<std::mutex> lock(mMutex);
             mErrors.push_back(static_cast<int32_t>(errorCode));
@@ -1257,7 +1264,7 @@ class VideoDecoderEventListener : public BnVideoDecoderEventListener {
     }
     Status onStateChanged(State oldState,State newState) override
     {
-        UT_LOG("State Change received: %s -> %s", com::rdk::hal::toString(oldState).c_str(), com::rdk::hal::toString(newState).c_str());
+        UT_LOG("[Video DecoderID: %d] State Change received: %s -> %s", mDecoderID, com::rdk::hal::toString(oldState).c_str(), com::rdk::hal::toString(newState).c_str());
         {
             std::lock_guard<std::mutex> lock(mMutex);
             mStateChanges.emplace_back(oldState, newState);
@@ -1319,6 +1326,14 @@ class VideoDecoderEventListener : public BnVideoDecoderEventListener {
         std::lock_guard<std::mutex> lock(mMutex);
         return mErrors;
     }
+    void setDecoderID(int32_t id)
+    {
+        mDecoderID = id;
+    }
+    static int32_t getUsedDecoder()
+    {
+        return VideoDecoderEventListener::mUsedDecoderID;
+    }
     private:
         mutable std::mutex mMutex;
         std::condition_variable mCV;
@@ -1326,6 +1341,7 @@ class VideoDecoderEventListener : public BnVideoDecoderEventListener {
         State mCurrentState;
         std::vector<std::pair<State, State>> mStateChanges;
         std::vector<int32_t> mErrors;
+        int32_t mDecoderID;
 };
 
 // AVBufferSpaceListener declaration

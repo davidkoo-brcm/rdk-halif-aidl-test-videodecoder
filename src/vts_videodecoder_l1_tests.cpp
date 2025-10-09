@@ -475,7 +475,10 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, getProperty_neg) {
     std::vector<IVideoDecoder::Id> decoderIds;
     VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds); // Get IDs first
 
-    for (const auto& decoder : decoders) {
+    for (const auto& id : decoderIds) {
+        sp<IVideoDecoder> decoder;
+        VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(id, decoder);
+        UT_ASSERT_TRUE(decoder != nullptr) << "Decoder pointer is null for ID " << id.value;
         ::std::optional<PropertyValue> aidl_return;
         UT_LOG_INFO("Calling getProperty(IN:property:[UNKNOWN_PROPERTY], OUT:_aidl_return[])");
         status = decoder->getProperty(static_cast<videodecoder::Property>(-1), &aidl_return);
@@ -1190,7 +1193,6 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, start_pos) {
             VIDEODECODER_CHECK_STATE(videoDecoder, State::CLOSED);
 
             // Optionally store in global containers if needed
-            // decoders.push_back(videoDecoder);
             // controllers.push_back(videoDecoderController);
         }
     }
@@ -1379,7 +1381,6 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, stop_neg)
     std::vector<IVideoDecoder::Id> decoderIds;
     android::sp<IVideoDecoder> videoDecoder;
     videodecoder::Capabilities capabilities;
-    State state;
     Status status;
 
     /* Get the Video decoder IDs */

@@ -682,8 +682,16 @@ void videoDecoderTest::decoderThreadFunc()
                     UT_LOG_INFO("No metadata available for PTS=%lld", decodedFrame.framePTS);
                 }
                 // Release output buffer
-                UT_LOG_INFO("Releasing output buffer handle:0x%llx", decodedFrame.frameBufferHandle);
-                AVBUFFER_FREE_SUCCESS(mAVBufferManager, decodedFrame.frameBufferHandle);
+                bool isValidBuffer = false;
+                UT_LOG_INFO("Calling isValid(IN:bufferHandle:[0X%016"PRIx64"], OUT:_aidl_return[])", decodedFrame.frameBufferHandle);
+                Status status = mAVBufferManager->isValid(decodedFrame.frameBufferHandle, &isValidBuffer);
+                UT_LOG_INFO("Result isValid(IN:bufferHandle:[0X%016"PRIx64"], OUT:_aidl_return:[%s]), status:[isOK:%s, exception:%s]", \
+                    videoBufferHandle, UT_Control_GetMapString(bool_mapTable, isValidBuffer), \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
+                if(isValidBuffer) {
+                    UT_LOG_ERROR("Encoded buffer not released by decoder [handle:0x%llx]", decodedFrame.frameBufferHandle);
+                }
             } else {
                 UT_LOG_WARNING("No output frame retrieved for input PTS=%lld after 100ms", framePTS);
             }
@@ -701,8 +709,16 @@ void videoDecoderTest::decoderThreadFunc()
             // Free Input Buffer
             {
                 std::lock_guard<std::mutex> lock(mDecodeMutex);
-                UT_LOG_INFO("Freeing input buffer handle:0x%llx", videoBufferHandle);
-                AVBUFFER_FREE_SUCCESS(mAVBufferManager, videoBufferHandle);
+                bool isValidBuffer = false;
+                UT_LOG_INFO("Calling isValid(IN:bufferHandle:[0X%016"PRIx64"], OUT:_aidl_return[])", videoBufferHandle);
+                Status status = mAVBufferManager->isValid(videoBufferHandle, &isValidBuffer);
+                UT_LOG_INFO("Result isValid(IN:bufferHandle:[0X%016"PRIx64"], OUT:_aidl_return:[%s]), status:[isOK:%s, exception:%s]", \
+                    videoBufferHandle, UT_Control_GetMapString(bool_mapTable, isValidBuffer), \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
+                if(isValidBuffer) {
+                    UT_LOG_ERROR("Encoded buffer not released by Decoder [handle:0x%llx]", videoBufferHandle);
+                }
             }
 
             if (!mSecureDecode && mapBuffer) {
@@ -835,8 +851,16 @@ void videoDecoderTest::decoderThreadFunc()
                 } else {
                     UT_LOG_INFO("No metadata available for PTS=%lld", decodedFrame.framePTS);
                 }
-            UT_LOG_INFO("Releasing output buffer handle:0x%llx", decodedFrame.frameBufferHandle);
-            AVBUFFER_FREE_SUCCESS(mAVBufferManager, decodedFrame.frameBufferHandle);
+            bool isValidBuffer = false;
+            UT_LOG_INFO("Calling isValid(IN:bufferHandle:[0X%016"PRIx64"], OUT:_aidl_return[])", decodedFrame.frameBufferHandle);
+            Status status = mAVBufferManager->isValid(decodedFrame.frameBufferHandle, &isValidBuffer);
+            UT_LOG_INFO("Result isValid(IN:bufferHandle:[0X%016"PRIx64"], OUT:_aidl_return:[%s]), status:[isOK:%s, exception:%s]", \
+                videoBufferHandle, UT_Control_GetMapString(bool_mapTable, isValidBuffer), \
+                UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
+            if(isValidBuffer) {
+                UT_LOG_ERROR("Encoded buffer not released by decoder [handle:0x%llx]", decodedFrame.frameBufferHandle);
+            }
         }
 
         // Get final metrics
@@ -874,7 +898,12 @@ void videoDecoderTest::decoderThreadFunc()
         // Destroy Video Pool
         {
             std::lock_guard<std::mutex> lock(mDecodeMutex);
-            UT_LOG_INFO("Destroying video pool handle:%lld", videoPool.handle);
+            PoolMetrics poolMetrics;
+            UT_LOG_INFO("Calling getPoolMetrics(IN:poolHandle:[%d], OUT:PoolMetrics[])", videoPool.handle);
+            Status status = mAVBufferManager->getPoolMetrics(videoPool, &poolMetrics);
+            UT_LOG_INFO("Result getPoolMetrics(IN:poolHandle:[%d], OUT:PoolMetrics[bytesUsed:%d, bytesTotal:%d]), status:[isOK:%s, exception:%s]", \
+                videoPool.handle, poolMetrics.bytesUsed, poolMetrics.bytesTotal, \
+                UT_Control_GetMapString(bool_mapTable, status.isOk()), UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
             AVBUFFER_DESTROY_POOL_SUCCESS(mAVBufferManager, videoPool);
         }
 
@@ -994,12 +1023,28 @@ void videoDecoderTest::decodeAndConsumeVideoStreams() {
         auto duration = chrono::duration_cast<chrono::microseconds>(chrono::steady_clock::now() - startTime);
         UT_LOG_INFO("Decode Time [PTS: %lld]: %lld", framePTS, duration.count());
 
-        AVBUFFER_FREE_SUCCESS(mAVBufferManager, videoBufferHandle);
+        bool isValidBuffer = false;
+        UT_LOG_INFO("Calling isValid(IN:bufferHandle:[0X%016"PRIx64"], OUT:_aidl_return[])", videoBufferHandle);
+        Status status = mAVBufferManager->isValid(videoBufferHandle, &isValidBuffer);
+        UT_LOG_INFO("Result isValid(IN:bufferHandle:[0X%016"PRIx64"], OUT:_aidl_return:[%s]), status:[isOK:%s, exception:%s]", \
+            videoBufferHandle, UT_Control_GetMapString(bool_mapTable, isValidBuffer), \
+            UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+            UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
+        if(isValidBuffer) {
+            UT_LOG_ERROR("Encoded buffer not released by deecoder [handle:0x%llx]", videoBufferHandle);
+        }
     }
 
     VIDEODECODER_STOP_SUCCESS(mDecoderHandle, videoDecoderController, true);
 
     VIDEODECODER_CLOSE_SUCCESS(mDecoderHandle, videoDecoderController, true);
+
+    PoolMetrics poolMetrics;
+    UT_LOG_INFO("Calling getPoolMetrics(IN:poolHandle:[%d], OUT:PoolMetrics[])", videoPool.handle); \
+    Status status = mAVBufferManager->getPoolMetrics(videoPool, &poolMetrics); \
+    UT_LOG_INFO("Result getPoolMetrics(IN:poolHandle:[%d], OUT:PoolMetrics[bytesUsed:%d, bytesTotal:%d]), status:[isOK:%s, exception:%s]", \
+                videoPool.handle, poolMetrics.bytesUsed, poolMetrics.bytesTotal, \
+                UT_Control_GetMapString(bool_mapTable, status.isOk()), UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
 
     AVBUFFER_DESTROY_POOL_SUCCESS(mAVBufferManager, videoPool);
 }
