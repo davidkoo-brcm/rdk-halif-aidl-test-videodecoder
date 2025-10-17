@@ -119,6 +119,87 @@ OperationalMode videoDecoderStringToOperationalMode(const std::string& modeStr) 
     }
 }
 
+videodecoder::CodecProfile videoDecoderStringToCodecProfile(const std::string& profileStr) {
+    static const std::unordered_map<std::string, videodecoder::CodecProfile> profileMap = {
+        // MPEG-2 Profiles
+        {"MPEG2_SIMPLE", videodecoder::CodecProfile::MPEG2_SIMPLE},
+        {"MPEG2_MAIN", videodecoder::CodecProfile::MPEG2_MAIN},
+        // H.264/AVC Profiles
+        {"H264_BASELINE", videodecoder::CodecProfile::H264_BASELINE},
+        {"H264_MAIN", videodecoder::CodecProfile::H264_MAIN},
+        {"H264_HIGH", videodecoder::CodecProfile::H264_HIGH},
+        // H.265/HEVC Profiles
+        {"H265_MAIN", videodecoder::CodecProfile::H265_MAIN},
+        {"H265_MAIN_10", videodecoder::CodecProfile::H265_MAIN_10},
+        {"H265_MAIN_10_HDR10", videodecoder::CodecProfile::H265_MAIN_10_HDR10},
+        // VP9 Profiles
+        {"VP9_PROFILE_0", videodecoder::CodecProfile::VP9_PROFILE_0},
+        {"VP9_PROFILE_1", videodecoder::CodecProfile::VP9_PROFILE_1},
+        {"VP9_PROFILE_2", videodecoder::CodecProfile::VP9_PROFILE_2},
+        {"VP9_PROFILE_3", videodecoder::CodecProfile::VP9_PROFILE_3},
+        // AV1 Profiles
+        {"AV1_MAIN", videodecoder::CodecProfile::AV1_MAIN},
+        {"AV1_HIGH", videodecoder::CodecProfile::AV1_HIGH}
+    };
+    auto it = profileMap.find(profileStr);
+    if (it != profileMap.end()) {
+        return it->second;
+    } else {
+        UT_LOG_WARNING("Unknown codec profile: %s, using default", profileStr.c_str());
+        return static_cast<videodecoder::CodecProfile>(0);
+    }
+}
+
+videodecoder::CodecLevel videoDecoderStringToCodecLevel(const std::string& levelStr) {
+    static const std::unordered_map<std::string, videodecoder::CodecLevel> levelMap = {
+        // MPEG-2 Levels
+        {"MPEG2_LEVEL_LOW", videodecoder::CodecLevel::MPEG2_LEVEL_LOW},
+        {"MPEG2_LEVEL_MAIN", videodecoder::CodecLevel::MPEG2_LEVEL_MAIN},
+        {"MPEG2_LEVEL_HIGH", videodecoder::CodecLevel::MPEG2_LEVEL_HIGH},
+        // H.264 Levels
+        {"H264_LEVEL_3", videodecoder::CodecLevel::H264_LEVEL_3},
+        {"H264_LEVEL_3_1", videodecoder::CodecLevel::H264_LEVEL_3_1},
+        {"H264_LEVEL_4", videodecoder::CodecLevel::H264_LEVEL_4},
+        {"H264_LEVEL_4_1", videodecoder::CodecLevel::H264_LEVEL_4_1},
+        {"H264_LEVEL_5", videodecoder::CodecLevel::H264_LEVEL_5},
+        {"H264_LEVEL_5_1", videodecoder::CodecLevel::H264_LEVEL_5_1},
+        {"H264_LEVEL_5_2", videodecoder::CodecLevel::H264_LEVEL_5_2},
+        // H.265 Levels
+        {"H265_LEVEL_4", videodecoder::CodecLevel::H265_LEVEL_4},
+        {"H265_LEVEL_4_1", videodecoder::CodecLevel::H265_LEVEL_4_1},
+        {"H265_LEVEL_5", videodecoder::CodecLevel::H265_LEVEL_5},
+        {"H265_LEVEL_5_1", videodecoder::CodecLevel::H265_LEVEL_5_1},
+        {"H265_LEVEL_5_2", videodecoder::CodecLevel::H265_LEVEL_5_2},
+        {"H265_LEVEL_6", videodecoder::CodecLevel::H265_LEVEL_6},
+        {"H265_LEVEL_6_1", videodecoder::CodecLevel::H265_LEVEL_6_1},
+        {"H265_LEVEL_6_2", videodecoder::CodecLevel::H265_LEVEL_6_2},
+        // VP9 Levels
+        {"VP9_LEVEL_1", videodecoder::CodecLevel::VP9_LEVEL_1},
+        {"VP9_LEVEL_1_1", videodecoder::CodecLevel::VP9_LEVEL_1_1},
+        {"VP9_LEVEL_2", videodecoder::CodecLevel::VP9_LEVEL_2},
+        {"VP9_LEVEL_2_1", videodecoder::CodecLevel::VP9_LEVEL_2_1},
+        {"VP9_LEVEL_3", videodecoder::CodecLevel::VP9_LEVEL_3},
+        {"VP9_LEVEL_3_1", videodecoder::CodecLevel::VP9_LEVEL_3_1},
+        {"VP9_LEVEL_4", videodecoder::CodecLevel::VP9_LEVEL_4},
+        {"VP9_LEVEL_4_1", videodecoder::CodecLevel::VP9_LEVEL_4_1},
+        {"VP9_LEVEL_5", videodecoder::CodecLevel::VP9_LEVEL_5},
+        {"VP9_LEVEL_5_1", videodecoder::CodecLevel::VP9_LEVEL_5_1},
+        {"VP9_LEVEL_5_2", videodecoder::CodecLevel::VP9_LEVEL_5_2},
+        {"VP9_LEVEL_6", videodecoder::CodecLevel::VP9_LEVEL_6},
+        {"VP9_LEVEL_6_1", videodecoder::CodecLevel::VP9_LEVEL_6_1},
+        {"VP9_LEVEL_6_2", videodecoder::CodecLevel::VP9_LEVEL_6_2},
+        // AV1 Levels
+        {"AV1_LEVEL_4_0", videodecoder::CodecLevel::AV1_LEVEL_4_0},
+        {"AV1_LEVEL_4_1", videodecoder::CodecLevel::AV1_LEVEL_4_1},
+        {"AV1_LEVEL_5_0", videodecoder::CodecLevel::AV1_LEVEL_5_0},
+        {"AV1_LEVEL_5_1", videodecoder::CodecLevel::AV1_LEVEL_5_1},
+        {"AV1_LEVEL_6_0", videodecoder::CodecLevel::AV1_LEVEL_6_0},
+        {"AV1_LEVEL_6_1", videodecoder::CodecLevel::AV1_LEVEL_6_1}
+    };
+    auto it = levelMap.find(levelStr);
+    return (it != levelMap.end()) ? it->second : static_cast<videodecoder::CodecLevel>(0);
+}
+
 PixelFormat videoDecoderStringToPixelFormat(const std::string& formatStr) {
     static const std::unordered_map<std::string, PixelFormat> pixelFormatMap = {
         {"YCBCR422", PixelFormat::YCBCR422},
@@ -132,6 +213,60 @@ PixelFormat videoDecoderStringToPixelFormat(const std::string& formatStr) {
         return it->second;
     }
     return static_cast<PixelFormat>(0); // Unknown format
+}
+
+bool vts_videodecoder_helper_profileFieldPresent(const std::string& key) {
+    // Equivalent to ut_kvp_fieldPresent but for profile instance
+    // Try to get string field and check status - this is more reliable than checking return values
+    return ut_kvp_fieldPresent(ut_kvp_profile_getInstance(), key.c_str());
+}
+
+bool vts_videodecoder_helper_checkCodecAttributeExists(const std::string& attrpath, const std::string& codec_name) {
+    // Check all required fields exist (we already know maxFrameRate exists from detection phase)
+    const std::vector<std::string> requiredFields = {
+        ".maxFrameWidth",
+        ".maxFrameHeight",
+        ".profile",
+        ".level"
+    };
+
+    // Check if all required fields exist
+    for (const auto& field : requiredFields) {
+        if (!vts_videodecoder_helper_profileFieldPresent(attrpath + field)) {
+            UT_LOG_DEBUG("Codec %s missing required field: %s", codec_name.c_str(), field.c_str());
+            return false;
+        }
+    }
+
+    // All fields exist - now validate their values are reasonable
+    uint32_t maxFrameRate = UT_KVP_PROFILE_GET_UINT32((attrpath + ".maxFrameRate").c_str());
+    uint32_t maxFrameWidth = UT_KVP_PROFILE_GET_UINT32((attrpath + ".maxFrameWidth").c_str());
+    uint32_t maxFrameHeight = UT_KVP_PROFILE_GET_UINT32((attrpath + ".maxFrameHeight").c_str());
+
+    char result_kvp[UT_KVP_MAX_ELEMENT_SIZE] = {0};
+    UT_KVP_PROFILE_GET_STRING((attrpath + ".profile").c_str(), result_kvp);
+    std::string profileStr = std::string(result_kvp);
+
+    memset(result_kvp, 0, UT_KVP_MAX_ELEMENT_SIZE);
+    UT_KVP_PROFILE_GET_STRING((attrpath + ".level").c_str(), result_kvp);
+    std::string levelStr = std::string(result_kvp);
+
+    // Validate values are reasonable
+    // Note: Not requiring frameRate > 0 since 0 could be valid for special cases
+    bool isValid = (maxFrameWidth > 0 && maxFrameHeight > 0 &&
+                   !profileStr.empty() && !levelStr.empty());
+
+    if (isValid) {
+        UT_LOG_DEBUG("Codec %s has valid attributes: rate=%u, width=%u, height=%u, profile=%s, level=%s",
+                     codec_name.c_str(), maxFrameRate, maxFrameWidth, maxFrameHeight,
+                     profileStr.c_str(), levelStr.c_str());
+    } else {
+        UT_LOG_DEBUG("Codec %s has invalid attribute values: rate=%u, width=%u, height=%u, profile=%s, level=%s",
+                     codec_name.c_str(), maxFrameRate, maxFrameWidth, maxFrameHeight,
+                     profileStr.c_str(), levelStr.c_str());
+    }
+
+    return isValid;
 }
 
 bool vts_videodecoder_helper_validatePropertyValue(int decoder_id,const std::optional<PropertyValue>& propertyValue, const videodecoder::Property property) {
@@ -196,8 +331,6 @@ UT_status_t vts_videodecoder_parseVideoDecoderHFP()
     std::string videodecoderpath = VIDEODECODERMGR_IVIDEODECODER;
     std::string opmodepath = std::string(VIDEODECODERMGR) + ".supportedOperationalModes";
     int32_t number_of_videodecoders;
-    int32_t supportedcodec_count;
-    int32_t supporteddr_count;
     int32_t supportedopmode_count;
     decoder_t temporary = {};
 
@@ -239,77 +372,121 @@ UT_status_t vts_videodecoder_parseVideoDecoderHFP()
     }
     UT_LOG_INFO("Parsed %zu operational modes", temporary.supportedOperationalModes.size());
     if (temporary.supportedOperationalModes.empty()) {
-        UT_LOG_ERROR("No valid operational modes parsed for decoder");
-        return UT_STATUS_FAILURE;
+        UT_LOG_WARNING("No valid operational modes parsed for decoder");
     }
 
-    const std::vector<std::string> known_codecs = {"MPEG", "H264", "H265", "VP9", "AV1"};
+    // Get all known codec names from the centralized mapping
+    const std::vector<std::string> known_codecs = videoDecoderGetAllCodecNames();
 
     gVideodecoders_hfp.clear();
     UT_LOG_INFO("Cleared gVideodecoders_hfp, capacity: %zu", gVideodecoders_hfp.capacity());
+    UT_LOG_INFO("Will search for these codec types: %s",
+                [&known_codecs]() -> std::string {
+                    std::string result;
+                    for (size_t i = 0; i < known_codecs.size(); ++i) {
+                        if (i > 0) result += ", ";
+                        result += known_codecs[i];
+                    }
+                    return result;
+                }().c_str());
+
     for (int32_t i = 0; i < number_of_videodecoders; ++i)
     {
         std::string decoderbasepath = videodecoderpath + "." + std::to_string(i);
-        std::string id = decoderbasepath + ".ID";
         std::string supportedcodecpath = decoderbasepath + ".supportedCodecs";
         std::string supporteddrpath = decoderbasepath + ".supportedDynamicRanges";
         std::string supportsSecurepath = decoderbasepath + ".supportsSecure";
 
-        temporary.id = UT_KVP_PROFILE_GET_UINT32((decoderbasepath + ".ID").c_str());
-        temporary.supportsSecure = false;
+        temporary.id = i; // The ID is the index in the list.
+        temporary.supportsSecure = UT_KVP_PROFILE_GET_BOOL(supportsSecurepath.c_str());
         temporary.supportedCodecs.clear();
         temporary.supportedDynamicRanges.clear();
 
-        temporary.supportsSecure = UT_KVP_PROFILE_GET_BOOL(supportsSecurepath.c_str());
-        UT_LOG_INFO("Decoder %d: id=%d, supportsSecure=%d", i, temporary.id, temporary.supportsSecure);
+        UT_LOG_INFO("Parsing Decoder ID: %d, supportsSecure: %d", temporary.id, temporary.supportsSecure);
 
-        supportedcodec_count = UT_KVP_PROFILE_GET_LIST_COUNT(supportedcodecpath.c_str());
+        int supportedcodec_count = UT_KVP_PROFILE_GET_LIST_COUNT(supportedcodecpath.c_str());
         UT_LOG_INFO("Decoder %d: codec count=%d", i, supportedcodec_count);
         for (int32_t j = 0; j < supportedcodec_count; ++j)
         {
             std::string codecpath = supportedcodecpath + "." + std::to_string(j);
-            bool codec_found = false;
-            CodecCapability cap;
 
+            UT_LOG_DEBUG("Checking codec slot %d at path: %s", j, codecpath.c_str());
+
+            // First, efficiently detect which codec exists at this slot by checking for any codec-specific path
+            std::string detected_codec;
             for (const auto& codec_name : known_codecs)
             {
-                std::string attrpath = codecpath + "." + codec_name;
-                std::string frameratepath = attrpath + ".maxFrameRate";
-                uint32_t test_rate = UT_KVP_PROFILE_GET_UINT32(frameratepath.c_str());
-                if (test_rate > 0)
+                std::string test_path = codecpath + "." + codec_name + ".maxFrameRate";
+                if (vts_videodecoder_helper_profileFieldPresent(test_path))
                 {
-                    UT_LOG_INFO("Found codec at path: %s, codec: %s", codecpath.c_str(), codec_name.c_str());
-                    try {
-                        cap.codec = videoDecoderStringToCodec(codec_name);
-                    } catch (const std::invalid_argument& e) {
-                        UT_LOG_WARNING("Invalid codec: %s, error: %s, skipping", codec_name.c_str(), e.what());
-                        continue;
-                    }
-
-                    cap.maxFrameRate = test_rate;
-                    cap.maxFrameWidth = UT_KVP_PROFILE_GET_UINT32((attrpath + ".maxFrameWidth").c_str());
-                    cap.maxFrameHeight = UT_KVP_PROFILE_GET_UINT32((attrpath + ".maxFrameHeight").c_str());
-                    UT_LOG_INFO("Codec %s: rate=%d, width=%d, height=%d",
-                                codec_name.c_str(), cap.maxFrameRate, cap.maxFrameWidth, cap.maxFrameHeight);
-
-                    if (cap.maxFrameWidth == 0 || cap.maxFrameHeight == 0) {
-                        UT_LOG_WARNING("Invalid codec attributes for %s at path: %s, skipping",
-                                      codec_name.c_str(), codecpath.c_str());
-                        continue;
-                    }
-
-                    temporary.supportedCodecs.push_back(cap);
-                    codec_found = true;
-                    break;
+                    detected_codec = codec_name;
+                    break; // Found the codec type, no need to check others
                 }
             }
 
-            if (!codec_found) {
-                UT_LOG_WARNING("No valid codec found at path: %s, skipping", codecpath.c_str());
+            if (detected_codec.empty())
+            {
+                UT_LOG_DEBUG("No recognized codec found at slot %d, skipping", j);
+                continue;
             }
+
+            UT_LOG_DEBUG("Detected codec %s at slot %d", detected_codec.c_str(), j);
+
+            // Now parse the detected codec's attributes
+            std::string attrpath = codecpath + "." + detected_codec;
+
+            // Validate all required attributes exist before parsing
+            if (!vts_videodecoder_helper_checkCodecAttributeExists(attrpath, detected_codec))
+            {
+                UT_LOG_WARNING("Codec %s at slot %d missing required attributes, skipping", detected_codec.c_str(), j);
+                continue;
+            }
+
+            UT_LOG_INFO("Found valid codec at path: %s, codec: %s", codecpath.c_str(), detected_codec.c_str());
+
+            CodecCapability cap;
+            char result_kvp[UT_KVP_MAX_ELEMENT_SIZE] = {0};
+
+            try {
+                cap.codec = videoDecoderStringToCodec(detected_codec);
+            } catch (const std::invalid_argument& e) {
+                UT_LOG_WARNING("Invalid codec: %s, error: %s, skipping", detected_codec.c_str(), e.what());
+                continue;
+            }
+
+            // Profile
+            std::string profilepath = attrpath + ".profile";
+            UT_KVP_PROFILE_GET_STRING(profilepath.c_str(), result_kvp);
+            std::string profileStr = std::string(result_kvp);
+            if (!profileStr.empty()) {
+                cap.profile = videoDecoderStringToCodecProfile(profileStr);
+            } else {
+                UT_LOG_WARNING("Empty profile for codec %s", detected_codec.c_str());
+            }
+
+            // Level
+            std::string levelpath = attrpath + ".level";
+            memset(result_kvp, 0, UT_KVP_MAX_ELEMENT_SIZE);
+            UT_KVP_PROFILE_GET_STRING(levelpath.c_str(), result_kvp);
+            std::string levelStr = std::string(result_kvp);
+            if (!levelStr.empty()) {
+                cap.level = videoDecoderStringToCodecLevel(levelStr);
+            } else {
+                UT_LOG_WARNING("Empty level for codec %s", detected_codec.c_str());
+            }
+
+            cap.maxFrameRate = UT_KVP_PROFILE_GET_UINT32((attrpath + ".maxFrameRate").c_str());
+            cap.maxFrameWidth = UT_KVP_PROFILE_GET_UINT32((attrpath + ".maxFrameWidth").c_str());
+            cap.maxFrameHeight = UT_KVP_PROFILE_GET_UINT32((attrpath + ".maxFrameHeight").c_str());
+
+            UT_LOG_INFO("Codec %s: profile=%d, level=%d, rate=%d, width=%d, height=%d",
+                        detected_codec.c_str(), static_cast<int32_t>(cap.profile), static_cast<int32_t>(cap.level),
+                        cap.maxFrameRate, cap.maxFrameWidth, cap.maxFrameHeight);
+
+            temporary.supportedCodecs.push_back(cap);
         }
 
-        supporteddr_count = UT_KVP_PROFILE_GET_LIST_COUNT(supporteddrpath.c_str());
+        int supporteddr_count = UT_KVP_PROFILE_GET_LIST_COUNT(supporteddrpath.c_str());
         UT_LOG_INFO("Decoder %d: dynamic range count=%d", i, supporteddr_count);
         for (int32_t j = 0; j < supporteddr_count; ++j)
         {
@@ -486,8 +663,10 @@ void vts_videodecoder_helper_validateCapabilities(
         UT_ASSERT_TRUE(codecCap.maxFrameRate > 0);
         UT_ASSERT_TRUE(codecCap.maxFrameWidth > 0);
         UT_ASSERT_TRUE(codecCap.maxFrameHeight > 0);
-        UT_LOG_INFO("Codec %d: rate=%d, width=%d, height=%d",
+        UT_LOG_INFO("Codec %d: profile=%d, level=%d, rate=%d, width=%d, height=%d",
                     static_cast<int32_t>(codecCap.codec),
+                    static_cast<int32_t>(codecCap.profile),
+                    static_cast<int32_t>(codecCap.level),
                     codecCap.maxFrameRate,
                     codecCap.maxFrameWidth,
                     codecCap.maxFrameHeight);
@@ -539,6 +718,8 @@ void vts_videodecoder_helper_validateCapabilities(
                     continue;
                 }
                 UT_ASSERT_EQUAL(static_cast<int32_t>(cap.codec), static_cast<int32_t>(hfpCap.codec));
+                UT_ASSERT_EQUAL(static_cast<int32_t>(cap.profile), static_cast<int32_t>(hfpCap.profile));
+                UT_ASSERT_EQUAL(static_cast<int32_t>(cap.level), static_cast<int32_t>(hfpCap.level));
                 UT_ASSERT_EQUAL(cap.maxFrameRate, hfpCap.maxFrameRate);
                 UT_ASSERT_EQUAL(cap.maxFrameWidth, hfpCap.maxFrameWidth);
                 UT_ASSERT_EQUAL(cap.maxFrameHeight, hfpCap.maxFrameHeight);

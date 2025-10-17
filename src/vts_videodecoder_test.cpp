@@ -117,8 +117,8 @@ std::vector<std::tuple<uint64_t, uint32_t, int64_t>> videoDecoderTest::parseFram
     }
 
     switch (codec) {
-        case com::rdk::hal::videodecoder::Codec::H264:
-        case com::rdk::hal::videodecoder::Codec::H265: {
+        case com::rdk::hal::videodecoder::Codec::H264_AVC:
+        case com::rdk::hal::videodecoder::Codec::H265_HEVC: {
             uint64_t pos = 0;
             size_t frameIndex = 0;
             while (pos < fileSize - 4) {
@@ -161,7 +161,7 @@ std::vector<std::tuple<uint64_t, uint32_t, int64_t>> videoDecoderTest::parseFram
             }
             break;
         }
-        case com::rdk::hal::videodecoder::Codec::MPEG: {
+        case com::rdk::hal::videodecoder::Codec::MPEG2_VIDEO: {
             uint64_t pos = 0;
             size_t frameIndex = 0;
             while (pos < fileSize - 4) {
@@ -372,8 +372,8 @@ void videoDecoderTest::decoderThreadFunc()
 
         // Determine frame data based on codec
         std::vector<std::tuple<uint64_t, uint32_t, int64_t, bool>> frameData;
-        if (mTestConfiguration.codec == com::rdk::hal::videodecoder::Codec::H264 ||
-            mTestConfiguration.codec == com::rdk::hal::videodecoder::Codec::H265) {
+        if (mTestConfiguration.codec == com::rdk::hal::videodecoder::Codec::H264_AVC ||
+            mTestConfiguration.codec == com::rdk::hal::videodecoder::Codec::H265_HEVC) {
             if (mTestConfiguration.frameDetails.empty()) {
                 UT_LOG_ERROR("frameDetails is empty for H.264/H.265");
                 mDecodingStream = false;
@@ -683,7 +683,7 @@ void videoDecoderTest::decoderThreadFunc()
                 }
                 // Release output buffer
                 bool isValidBuffer = false;
-                UT_LOG_INFO("Calling isValid(IN:bufferHandle:[0X%016"PRIx64"], OUT:_aidl_return[])", decodedFrame.frameBufferHandle);
+                UT_LOG_INFO("Calling isValid(IN:bufferHandle:[0X%016" PRIx64 "], OUT:_aidl_return[])", decodedFrame.frameBufferHandle);
                 Status status = mAVBufferManager->isValid(decodedFrame.frameBufferHandle, &isValidBuffer);
                 UT_LOG_INFO("Result isValid(IN:bufferHandle:[0X%016"PRIx64"], OUT:_aidl_return:[%s]), status:[isOK:%s, exception:%s]", \
                     videoBufferHandle, UT_Control_GetMapString(bool_mapTable, isValidBuffer), \
@@ -710,9 +710,9 @@ void videoDecoderTest::decoderThreadFunc()
             {
                 std::lock_guard<std::mutex> lock(mDecodeMutex);
                 bool isValidBuffer = false;
-                UT_LOG_INFO("Calling isValid(IN:bufferHandle:[0X%016"PRIx64"], OUT:_aidl_return[])", videoBufferHandle);
+                UT_LOG_INFO("Calling isValid(IN:bufferHandle:[0X%016" PRIx64 "], OUT:_aidl_return[])", videoBufferHandle);
                 Status status = mAVBufferManager->isValid(videoBufferHandle, &isValidBuffer);
-                UT_LOG_INFO("Result isValid(IN:bufferHandle:[0X%016"PRIx64"], OUT:_aidl_return:[%s]), status:[isOK:%s, exception:%s]", \
+                UT_LOG_INFO("Result isValid(IN:bufferHandle:[0X%016" PRIx64 "], OUT:_aidl_return:[%s]), status:[isOK:%s, exception:%s]", \
                     videoBufferHandle, UT_Control_GetMapString(bool_mapTable, isValidBuffer), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                     UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));

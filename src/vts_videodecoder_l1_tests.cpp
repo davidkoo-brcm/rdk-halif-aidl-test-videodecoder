@@ -66,6 +66,8 @@
 
 #include "vts_videodecoder.h"
 
+using ::com::rdk::hal::State;
+
 // Properties writable in READY only
 static const std::vector<videodecoder::Property> validIntPropertyReady = {
     videodecoder::Property::LOW_LATENCY_MODE,
@@ -299,7 +301,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder,getVideoDecoder_neg) {
  * | 01 | Initialize the test environment and retrieve the list of video decoders. | decoders = list of video decoders | Decoders list should be initialized | Should be successful |
  * | 02 | Iterate over each decoder and call the `getCapabilities` method. | decoder[i], capabilities = OUT | Status should be OK | Should Pass |
  * | 03 | Verify the count of supported codecs against the expected count from the profile. | codecCount = expected count | Supported codecs count should match | Should Pass |
- * | 04 | For each codec, verify the codec type and its attributes like maxFrameRate, maxFrameWidth, and maxFrameHeight. | codecCapability, maxFrameRate, maxFrameWidth, maxFrameHeight | Codec type should be valid, attributes should match | Should Pass |
+ * | 04 | For each codec, verify the codec type and its attributes like profile, level, maxFrameRate, maxFrameWidth, and maxFrameHeight. | codecCapability, profile, level, maxFrameRate, maxFrameWidth, maxFrameHeight | Codec type should be valid, attributes should match | Should Pass |
  * | 05 | Verify the count of supported dynamic ranges against the expected count from the profile. | dynamicRangeCount = expected count | Supported dynamic ranges count should match | Should Pass |
  * | 06 | For each dynamic range, verify its presence in the capabilities. | dynamicRangeValue | Dynamic range should be found | Should Pass |
  * | 07 | Verify the supportsSecure flag against the expected value from the profile. | supportsSecure = expected value | SupportsSecure flag should match | Should Pass |
@@ -331,8 +333,10 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, getCapabilities_pos)
         UT_LOG_INFO("Supported Codecs: %zu", capabilities.supportedCodecs.size());
         for (const auto& codecCap : capabilities.supportedCodecs)
         {
-            UT_LOG_INFO("Codec: %d, maxFrameRate: %d, maxFrameWidth: %d, maxFrameHeight: %d",
+            UT_LOG_INFO("Codec: %d, Profile: %d, Level: %d, maxFrameRate: %d, maxFrameWidth: %d, maxFrameHeight: %d",
                         static_cast<int32_t>(codecCap.codec),
+                        static_cast<int32_t>(codecCap.profile),
+                        static_cast<int32_t>(codecCap.level),
                         codecCap.maxFrameRate,
                         codecCap.maxFrameWidth,
                         codecCap.maxFrameHeight);
@@ -657,22 +661,22 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, getState_pos) {
             // Open to READY
             VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
                                       controllerListener, videoDecoderController, true);
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::READY);
+            VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::READY);
 
             // Test getState
             //State state;
             //VIDEODECODER_GETSTATE(videoDecoder, state);
-            //UT_ASSERT_EQUAL(state, State::READY) << "State mismatch after open";
+            //UT_ASSERT_EQUAL(state, ::com::rdk::hal::State::READY) << "State mismatch after open";
 
             // Start to STARTED
             VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::STARTED);
+            VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::STARTED);
 
             // Cleanup
             VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::READY);
+            VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::READY);
             VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::CLOSED);
+            VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::CLOSED);
         }
     }
 }
@@ -718,15 +722,15 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, open_pos) {
             sp<IVideoDecoderController> videoDecoderController;
             sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
 
-            State beforeState;
+            ::com::rdk::hal::State beforeState;
             VIDEODECODER_GETSTATE(videoDecoder, beforeState);
-            UT_ASSERT_EQUAL(beforeState, State::CLOSED) << "Decoder must be in CLOSED state before open";
+            UT_ASSERT_EQUAL(beforeState, ::com::rdk::hal::State::CLOSED) << "Decoder must be in CLOSED state before open";
 
             VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
                                       controllerListener, videoDecoderController, true);
-            State currentState;
+            ::com::rdk::hal::State currentState;
             VIDEODECODER_GETSTATE(videoDecoder, currentState);
-            UT_ASSERT_EQUAL(currentState, State::READY) << "Decoder must be in READY state after open";
+            UT_ASSERT_EQUAL(currentState, ::com::rdk::hal::State::READY) << "Decoder must be in READY state after open";
 
             VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
         }
@@ -759,7 +763,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, open_pos) {
  */
 UT_ADD_TEST(VTS_L1_VideoDecoder, open_neg) {
     std::vector<IVideoDecoder::Id> decoderIds;
-    std::vector<videodecoder::Codec> allCodecs = { videodecoder::Codec::AV1, videodecoder::Codec::H264, videodecoder::Codec::H265,videodecoder::Codec::MPEG, videodecoder::Codec::VP9 };
+    std::vector<videodecoder::Codec> allCodecs = { videodecoder::Codec::AV1, videodecoder::Codec::H264_AVC, videodecoder::Codec::H265_HEVC,videodecoder::Codec::MPEG2_VIDEO,videodecoder::Codec::VP9 };
     sp<IVideoDecoder> videoDecoder;
     videodecoder::Capabilities capabilities;
 
@@ -775,7 +779,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, open_neg) {
 
         // Select a valid codec
         videodecoder::Codec validCodec = capabilities.supportedCodecs.empty() ?
-            videodecoder::Codec::H264 : capabilities.supportedCodecs.front().codec;
+            videodecoder::Codec::H264_AVC : capabilities.supportedCodecs.front().codec;
 
         bool isCodecFound = false;
         for ( const auto& codecVal: allCodecs){
@@ -905,7 +909,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, close_neg) {
 
         // Test 2: Close when in CLOSED state (invalid state)
         videodecoder::Codec validCodec = capabilities.supportedCodecs.empty() ?
-            videodecoder::Codec::H264 : capabilities.supportedCodecs.front().codec;
+            videodecoder::Codec::H264_AVC : capabilities.supportedCodecs.front().codec;
         VIDEODECODER_OPEN_SUCCESS(videoDecoder, validCodec, capabilities.supportsSecure,
                                   controllerListener, videoDecoderController, true);
         VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController,  true);
@@ -923,14 +927,14 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, close_neg) {
         sp<IVideoDecoderController> videoDecoderController_nullptr = nullptr;
         VIDEODECODER_CLOSE_FAILURE(videoDecoder, videoDecoderController_nullptr, Status::EX_NULL_POINTER);
 
-        //VIDEODECODER_WAIT_FOR_STATE(videoDecoder,State::STARTED, currentState);
-        //UT_ASSERT_EQUAL(currentState,State::STARTED) << "Decoder must be in STARTED state";
+        //VIDEODECODER_WAIT_FOR_STATE(videoDecoder,::com::rdk::hal::State::STARTED, currentState);
+        //UT_ASSERT_EQUAL(currentState,::com::rdk::hal::State::STARTED) << "Decoder must be in STARTED state";
         VIDEODECODER_CLOSE_FAILURE(videoDecoder, videoDecoderController,
             Status::EX_ILLEGAL_STATE);
 
         // Clean up
         videoDecoderController->stop(); // Back to READY
-        //VIDEODECODER_WAIT_FOR_STATE(videoDecoder,State::READY, currentState);
+        //VIDEODECODER_WAIT_FOR_STATE(videoDecoder,::com::rdk::hal::State::READY, currentState);
         VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
     }
 }
@@ -1178,19 +1182,19 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, start_pos) {
             // Open to READY
             VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
                                       controllerListener, videoDecoderController, true);
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::READY);
+            VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::READY);
 
             // Start to STARTED
             VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::STARTED);
+            VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::STARTED);
 
             // Stop to READY
             VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::READY);
+            VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::READY);
 
             // Close to CLOSED
             VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::CLOSED);
+            VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::CLOSED);
 
             // Optionally store in global containers if needed
             // controllers.push_back(videoDecoderController);
@@ -1718,7 +1722,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, decodeBuffer_neg) {
             /* Open the Decoder */
             VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
                                           controllerListener, videoDecoderController, true);
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::READY);
+            VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::READY);
 
             bool result = false;
             Status status;
@@ -1732,7 +1736,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, decodeBuffer_neg) {
 
             /* Start the Decoder */
             VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::STARTED);
+            VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::STARTED);
 
             // Test Case 4: Invalid Buffer Handle
             UT_LOG_INFO("Calling decodeBuffer(IN:nsPresentationTime:[4000000], IN:bufferHandle:[-1], OUT:_aidl_return[])");
@@ -1750,11 +1754,11 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, decodeBuffer_neg) {
 
             //Reverting state to READY
             VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::READY);
+            VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::READY);
 
             /* Close the Decoder */
             VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::CLOSED);
+            VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::CLOSED);
         }
     }
 }
@@ -1807,11 +1811,11 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, flush_pos) {
             // Open to READY
             VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
                                       controllerListener, videoDecoderController, true);
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::READY);
+            VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::READY);
 
             // Start to STARTED
             VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::STARTED);
+            VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::STARTED);
 
             // Test flush without reset
             VIDEODECODER_FLUSH_SUCCESS(videoDecoder,videoDecoderController,false,true);
@@ -1821,7 +1825,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, flush_pos) {
 
             // Close
             VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::CLOSED);
+            VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::CLOSED);
         }
     }
 }
@@ -1871,7 +1875,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, flush_neg) {
             sp<IVideoDecoderEventListener> eventListener = new VideoDecoderEventListener();
 
             /* Test flush in CLOSED state (before open) */
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::CLOSED);
+            VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::CLOSED);
             if (!videoDecoderController) {
                 UT_LOG_INFO("Controller is null, expecting failure (CLOSED state)");
                 //UT_EXPECT_TRUE(true) << "Test passes: flush not called on null controller";
@@ -1883,7 +1887,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, flush_neg) {
             /* Open the Decoder */
             VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
                                       controllerListener, videoDecoderController, true);
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::READY);
+            VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::READY);
 
             /* Test flush in READY state (after open) */
             VIDEODECODER_FLUSH_FAILURE(videoDecoderController, false, Status::EX_ILLEGAL_STATE);
@@ -1891,11 +1895,11 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, flush_neg) {
 
             /* Start the Decoder */
             VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::STARTED);
+            VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::STARTED);
 
             /* Stop the Decoder */
             VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::READY);
+            VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::READY);
 
             /* Test flush in READY state (after stop) */
             VIDEODECODER_FLUSH_FAILURE(videoDecoderController, false, Status::EX_ILLEGAL_STATE);
@@ -1903,7 +1907,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, flush_neg) {
 
             /* Close the Decoder */
             VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::CLOSED);
+            VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::CLOSED);
 
             /* Test flush in CLOSED state (after close) */
             VIDEODECODER_FLUSH_FAILURE(videoDecoderController, false, Status::EX_ILLEGAL_STATE);
@@ -1965,22 +1969,22 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, signalDiscontinuity_pos)
             /* Open the Decoder */
             VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
                                       controllerListener, videoDecoderController, true);
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::READY);
+            VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::READY);
 
             /* Start the Decoder */
             VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::STARTED);
+            VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::STARTED);
 
             /* Signal discontinuity to the decoder */
             VIDEODECODER_SIGNAL_DISCONTINUITY_SUCCESS(videoDecoder, videoDecoderController, true);
 
             /* Stop the Decoder */
             VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::READY);
+            VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::READY);
 
             /* Close the Decoder */
             VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::CLOSED);
+            VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::CLOSED);
         }
     }
 }
@@ -2035,7 +2039,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, signalDiscontinuity_neg)
             sp<IVideoDecoderEventListener> eventListener = new VideoDecoderEventListener();
 
             /* Test signalDiscontinuity in CLOSED state (before open) */
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::CLOSED);
+            VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::CLOSED);
             if (!videoDecoderController) {
                 UT_LOG_INFO("Controller is null, expecting failure (CLOSED state)");
                 //UT_EXPECT_TRUE(true) << "Test passes: flush not called on null controller";
@@ -2046,27 +2050,27 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, signalDiscontinuity_neg)
             /* Open the Decoder */
             VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
                                       controllerListener, videoDecoderController, true);
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::READY);
+            VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::READY);
 
             /* Test signalDiscontinuity in READY state (after open) */
             VIDEODECODER_SIGNAL_DISCONTINUITY_FAILURE(videoDecoderController, Status::EX_ILLEGAL_STATE);
 
             /* Start the Decoder */
             VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::STARTED);
+            VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::STARTED);
 
             /* No test in STARTED, as it's the valid state */
 
             /* Stop the Decoder */
             VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::READY);
+            VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::READY);
 
             /* Test signalDiscontinuity in READY state (after stop) */
             VIDEODECODER_SIGNAL_DISCONTINUITY_FAILURE(videoDecoderController, Status::EX_ILLEGAL_STATE);
 
             /* Close the Decoder */
             VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::CLOSED);
+            VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::CLOSED);
 
             /* Test signalDiscontinuity in CLOSED state (after close) */
             VIDEODECODER_SIGNAL_DISCONTINUITY_FAILURE(videoDecoderController, Status::EX_ILLEGAL_STATE);
@@ -2129,22 +2133,22 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, signalEOS_pos)
             /* Open the Decoder */
             VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
                                       controllerListener, videoDecoderController, true);
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::READY);
+            VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::READY);
 
             /* Start the Decoder */
             VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::STARTED);
+            VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::STARTED);
 
             /* Signal EOS to the decoder */
             VIDEODECODER_SIGNAL_EOS_SUCCESS(videoDecoder, videoDecoderController, true);
 
             /* Stop the Decoder */
             VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::READY);
+            VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::READY);
 
             /* Close the Decoder */
             VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::CLOSED);
+            VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::CLOSED);
         }
     }
 }
@@ -2200,7 +2204,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, signalEOS_neg)
             sp<IVideoDecoderEventListener> eventListener = new VideoDecoderEventListener();
 
             /* Test signalEOS in CLOSED state (before open) */
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::CLOSED);
+            VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::CLOSED);
             if (!videoDecoderController) {
                 UT_LOG_INFO("Controller is null, expecting failure (CLOSED state)");
                 //UT_EXPECT_TRUE(true) << "Test passes: flush not called on null controller";
@@ -2211,27 +2215,27 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, signalEOS_neg)
             /* Open the Decoder */
             VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
                                       controllerListener, videoDecoderController, true);
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::READY);
+            VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::READY);
 
             /* Test signalEOS in READY state (after open) */
             VIDEODECODER_SIGNAL_EOS_FAILURE(videoDecoderController, Status::EX_ILLEGAL_STATE);
 
             /* Start the Decoder */
             VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::STARTED);
+            VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::STARTED);
 
             /* No test in STARTED, as it's the valid state */
 
             /* Stop the Decoder */
             VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::READY);
+            VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::READY);
 
             /* Test signalEOS in READY state (after stop) */
             VIDEODECODER_SIGNAL_EOS_FAILURE(videoDecoderController, Status::EX_ILLEGAL_STATE);
 
             /* Close the Decoder */
             VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
-            VIDEODECODER_CHECK_STATE(videoDecoder, State::CLOSED);
+            VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::CLOSED);
 
             /* Test signalEOS in CLOSED state (after close) */
             VIDEODECODER_SIGNAL_EOS_FAILURE(videoDecoderController, Status::EX_ILLEGAL_STATE);
@@ -2272,10 +2276,10 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, parseCodecSpecificData_pos)
 
     // Valid codec-specific data per codec
     std::map<videodecoder::Codec, std::pair<CSDVideoFormat, std::vector<uint8_t>>> codecDataMap = {
-        {videodecoder::Codec::H264, {CSDVideoFormat::AVC_DECODER_CONFIGURATION_RECORD,
+        {videodecoder::Codec::H264_AVC, {CSDVideoFormat::AVC_DECODER_CONFIGURATION_RECORD,
                        {0x01, 0x4D, 0x40, 0x1E, 0xFF, 0xE1, 0x00, 0x04, 0x67, 0x4D, 0x40, 0x1E,
                         0x01, 0x00, 0x04, 0x68, 0xEE, 0x3C, 0x80}}}, // H.264 SPS/PPS
-        {videodecoder::Codec::H265, {CSDVideoFormat::HEVC_DECODER_CONFIGURATION_RECORD,
+        {videodecoder::Codec::H265_HEVC, {CSDVideoFormat::HEVC_DECODER_CONFIGURATION_RECORD,
                        {0x01, 0x01, 0x60, 0x00, 0x00, 0x00, 0x90, 0x00, 0x00, 0x00, 0x00, 0x00,
                         0xF0, 0x00, 0xFC, 0xFD}}}, // H.265 VPS/SPS/PPS
         {videodecoder::Codec::AV1, {CSDVideoFormat::AV1_DECODER_CONFIGURATION_RECORD,
@@ -2312,11 +2316,11 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, parseCodecSpecificData_pos)
                 /* Open the Decoder */
                 VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
                                           controllerListener, videoDecoderController, true);
-                VIDEODECODER_CHECK_STATE(videoDecoder, State::READY);
+                VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::READY);
 
                 /* Start the Decoder */
                 VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
-                VIDEODECODER_CHECK_STATE(videoDecoder, State::STARTED);
+                VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::STARTED);
 
                 /* Set CSD data to the decoder */
                 VIDEODECODER_PARSE_CSD_SUCCESS(videoDecoder, videoDecoderController, csdVideoFormat,
@@ -2324,11 +2328,11 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, parseCodecSpecificData_pos)
 
                 /* Stop the Decoder */
                 VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
-                VIDEODECODER_CHECK_STATE(videoDecoder, State::READY);
+                VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::READY);
 
                 /* Close the Decoder */
                 VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
-                VIDEODECODER_CHECK_STATE(videoDecoder, State::CLOSED);
+                VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::CLOSED);
             }
         }
     }
@@ -2367,10 +2371,10 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, parseCodecSpecificData_neg)
 
     // Valid and invalid codec-specific data per codec
     std::map<videodecoder::Codec, std::pair<CSDVideoFormat, std::vector<uint8_t>>> validCodecDataMap = {
-        {videodecoder::Codec::H264, {CSDVideoFormat::AVC_DECODER_CONFIGURATION_RECORD,
+        {videodecoder::Codec::H264_AVC, {CSDVideoFormat::AVC_DECODER_CONFIGURATION_RECORD,
                        {0x01, 0x4D, 0x40, 0x1E, 0xFF, 0xE1, 0x00, 0x04, 0x67, 0x4D, 0x40, 0x1E,
                         0x01, 0x00, 0x04, 0x68, 0xEE, 0x3C, 0x80}}}, // H.264
-        {videodecoder::Codec::H265, {CSDVideoFormat::HEVC_DECODER_CONFIGURATION_RECORD,
+        {videodecoder::Codec::H265_HEVC, {CSDVideoFormat::HEVC_DECODER_CONFIGURATION_RECORD,
                        {0x01, 0x01, 0x60, 0x00, 0x00, 0x00, 0x90, 0x00, 0x00, 0x00, 0x00, 0x00,
                         0xF0, 0x00, 0xFC, 0xFD}}}, // H.265
         {videodecoder::Codec::AV1, {CSDVideoFormat::AV1_DECODER_CONFIGURATION_RECORD,
@@ -2407,7 +2411,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, parseCodecSpecificData_neg)
                 sp<IVideoDecoderEventListener> eventListener = new VideoDecoderEventListener();
 
                 /* Test in CLOSED state (before open) */
-                VIDEODECODER_CHECK_STATE(videoDecoder, State::CLOSED);
+                VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::CLOSED);
                 if (!videoDecoderController) {
                     UT_LOG_INFO("Controller is null, expecting failure (CLOSED state)");
                     //UT_EXPECT_TRUE(true) << "Test passes: flush not called on null controller";
@@ -2419,7 +2423,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, parseCodecSpecificData_neg)
                 /* Open the Decoder */
                 VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
                                           controllerListener, videoDecoderController, true);
-                VIDEODECODER_CHECK_STATE(videoDecoder, State::READY);
+                VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::READY);
 
                 /* Test in READY state (after open) */
                 VIDEODECODER_PARSE_CSD_STATE_FAILURE(videoDecoderController, csdVideoFormat,
@@ -2427,7 +2431,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, parseCodecSpecificData_neg)
 
                 /* Start the Decoder */
                 VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
-                VIDEODECODER_CHECK_STATE(videoDecoder, State::STARTED);
+                VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::STARTED);
 
                 /* Test invalid codec data in STARTED */
                 VIDEODECODER_PARSE_CSD_DATA_FAILURE(videoDecoderController, csdVideoFormat,
@@ -2437,7 +2441,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, parseCodecSpecificData_neg)
 
                 /* Stop the Decoder */
                 VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
-                VIDEODECODER_CHECK_STATE(videoDecoder, State::READY);
+                VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::READY);
 
                 /* Test in READY state (after stop) */
                 VIDEODECODER_PARSE_CSD_STATE_FAILURE(videoDecoderController, csdVideoFormat,
@@ -2445,7 +2449,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, parseCodecSpecificData_neg)
 
                 /* Close the Decoder */
                 VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
-                VIDEODECODER_CHECK_STATE(videoDecoder, State::CLOSED);
+                VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::CLOSED);
 
                 /* Test in CLOSED state (after close) */
                 VIDEODECODER_PARSE_CSD_STATE_FAILURE(videoDecoderController, csdVideoFormat,

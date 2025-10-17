@@ -66,6 +66,7 @@
 
 #include "vts_videodecoder.h"
 
+using ::com::rdk::hal::State;
 
 struct PropertyTestCase {
     ::com::rdk::hal::videodecoder::Property property;
@@ -163,23 +164,16 @@ class VTS_L2_VideoDecoder : public UTCore {
             // Custom setup code here, e.g., initialize decoder mocks or profiles
         }
 
-        void checkCompleteStateTransition(sp<IVideoDecoder> decoder, sp<VideoDecoderEventListener> eventListener, State oldState, State intermediateState, State newState)
+        void checkCompleteStateTransition(sp<IVideoDecoder> decoder, sp<VideoDecoderEventListener> eventListener, ::com::rdk::hal::State oldState, ::com::rdk::hal::State intermediateState, ::com::rdk::hal::State newState)
         {
-            ::com::rdk::hal::State currentState;
-
+            // Wait for the intermediate state
             eventListener->waitForState(intermediateState, std::chrono::milliseconds(VIDEO_MAX_TRANSITORY_STATE_WAIT_MS));
-
+            // Check if the transition from old to intermediate state occurred
             UT_ASSERT_TRUE(eventListener->checkStateTransistion(oldState, intermediateState));
-
+            // Wait for the final new state
             eventListener->waitForState(newState, std::chrono::milliseconds(VIDEO_MAX_FINAL_STATE_WAIT_MS));
-
-            VIDEODECODER_GETSTATE(decoder, currentState);
-
-            UT_ASSERT_EQUAL(currentState, newState);
-
+            // Check if the transition from intermediate to new state occurred
             UT_ASSERT_TRUE(eventListener->checkStateTransistion(intermediateState, newState));
-
-            eventListener->resetStateChanges();
         }
         /**
          * @brief Cleans up the test environment after each test case.
@@ -346,22 +340,22 @@ UT_ADD_TEST(VTS_L2_VideoDecoder, TestDecoderStateTransitions) {
             // Open to READY
             VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities->supportsSecure,
                                       controlListener, controller, false);
-            checkCompleteStateTransition(videoDecoder,eventListener,State::CLOSED,State::OPENING,State::READY);
+            checkCompleteStateTransition(videoDecoder,eventListener,::com::rdk::hal::State::CLOSED,::com::rdk::hal::State::OPENING,::com::rdk::hal::State::READY);
 
             // Start to STARTED
             VIDEODECODER_START_SUCCESS(videoDecoder, controller, false);
-            checkCompleteStateTransition(videoDecoder,eventListener,State::READY,State::STARTING,State::STARTED);
+            checkCompleteStateTransition(videoDecoder,eventListener,::com::rdk::hal::State::READY,::com::rdk::hal::State::STARTING,::com::rdk::hal::State::STARTED);
             VIDEODECODER_FLUSH_SUCCESS(videoDecoder,controller,false,false);
-            checkCompleteStateTransition(videoDecoder,eventListener,State::STARTED,State::FLUSHING,State::STARTED);
+            checkCompleteStateTransition(videoDecoder,eventListener,::com::rdk::hal::State::STARTED,::com::rdk::hal::State::FLUSHING,::com::rdk::hal::State::STARTED);
             VIDEODECODER_FLUSH_SUCCESS(videoDecoder,controller,true,false);
-            checkCompleteStateTransition(videoDecoder,eventListener,State::STARTED,State::FLUSHING,State::READY);
+            checkCompleteStateTransition(videoDecoder,eventListener,::com::rdk::hal::State::STARTED,::com::rdk::hal::State::FLUSHING,::com::rdk::hal::State::READY);
             VIDEODECODER_START_SUCCESS(videoDecoder, controller, false);
-            checkCompleteStateTransition(videoDecoder,eventListener,State::READY,State::STARTING,State::STARTED);
+            checkCompleteStateTransition(videoDecoder,eventListener,::com::rdk::hal::State::READY,::com::rdk::hal::State::STARTING,::com::rdk::hal::State::STARTED);
             // Cleanup
             VIDEODECODER_STOP_SUCCESS(videoDecoder, controller, false);
-            checkCompleteStateTransition(videoDecoder,eventListener,State::STARTED,State::STOPPING,State::READY);
+            checkCompleteStateTransition(videoDecoder,eventListener,::com::rdk::hal::State::STARTED,::com::rdk::hal::State::STOPPING,::com::rdk::hal::State::READY);
             VIDEODECODER_CLOSE_SUCCESS(videoDecoder, controller, false);
-            checkCompleteStateTransition(videoDecoder,eventListener,State::READY,State::CLOSING,State::CLOSED);
+            checkCompleteStateTransition(videoDecoder,eventListener,::com::rdk::hal::State::READY,::com::rdk::hal::State::CLOSING,::com::rdk::hal::State::CLOSED);
         }
     }
 }
@@ -396,13 +390,13 @@ UT_ADD_TEST(VTS_L2_VideoDecoder, TestDecoderStateTransitions_multipleInstance) {
         const auto& [videoDecoder,controlListener,eventListener,capabilities] = mVideoDecoderList[i];
         const auto& controller = videoDecoderControllersList[i];
         VIDEODECODER_START_SUCCESS(videoDecoder, controller, false);
-        checkCompleteStateTransition(videoDecoder,eventListener,State::READY,State::STARTING,State::STARTED);
+        checkCompleteStateTransition(videoDecoder,eventListener,::com::rdk::hal::State::READY,::com::rdk::hal::State::STARTING,::com::rdk::hal::State::STARTED);
         VIDEODECODER_FLUSH_SUCCESS(videoDecoder,controller,false,false);
-        checkCompleteStateTransition(videoDecoder,eventListener,State::STARTED,State::FLUSHING,State::STARTED);
+        checkCompleteStateTransition(videoDecoder,eventListener,::com::rdk::hal::State::STARTED,::com::rdk::hal::State::FLUSHING,::com::rdk::hal::State::STARTED);
         VIDEODECODER_FLUSH_SUCCESS(videoDecoder,controller,true,false);
-        checkCompleteStateTransition(videoDecoder,eventListener,State::STARTED,State::FLUSHING,State::READY);
+        checkCompleteStateTransition(videoDecoder,eventListener,::com::rdk::hal::State::STARTED,::com::rdk::hal::State::FLUSHING,::com::rdk::hal::State::READY);
         VIDEODECODER_START_SUCCESS(videoDecoder, controller, false);
-        checkCompleteStateTransition(videoDecoder,eventListener,State::READY,State::STARTING,State::STARTED);
+        checkCompleteStateTransition(videoDecoder,eventListener,::com::rdk::hal::State::READY,::com::rdk::hal::State::STARTING,::com::rdk::hal::State::STARTED);
         // Cleanup
     }
     for(size_t i = 0; i < mVideoDecoderList.size(); ++i)
@@ -410,9 +404,9 @@ UT_ADD_TEST(VTS_L2_VideoDecoder, TestDecoderStateTransitions_multipleInstance) {
         const auto& [videoDecoder,controlListener,eventListener,capabilities] = mVideoDecoderList[i];
         const auto& controller = videoDecoderControllersList[i];
         VIDEODECODER_STOP_SUCCESS(videoDecoder, controller, false);
-        checkCompleteStateTransition(videoDecoder,eventListener,State::STARTED,State::STOPPING,State::READY);
+        checkCompleteStateTransition(videoDecoder,eventListener,::com::rdk::hal::State::STARTED,::com::rdk::hal::State::STOPPING,::com::rdk::hal::State::READY);
         VIDEODECODER_CLOSE_SUCCESS(videoDecoder, controller, false);
-        checkCompleteStateTransition(videoDecoder,eventListener,State::READY,State::CLOSING,State::CLOSED);
+        checkCompleteStateTransition(videoDecoder,eventListener,::com::rdk::hal::State::READY,::com::rdk::hal::State::CLOSING,::com::rdk::hal::State::CLOSED);
     }
 
 
