@@ -19,7 +19,6 @@
 # * limitations under the License.
 # *
 #** ******************************************************************************
-
 # HAL Feature Profile for videodecoder
 
 IVideoDecoderManager:           # Component object begins
