@@ -24,7 +24,7 @@ VideoStreams:
   H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734:
     input: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     #reference: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.yuv #reference decoder output
-    codec: H264  #Video codec information, Refer `Codec` enum
+    codec: H264_AVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
     codedHeight: 1080
     colorDepth: 8
@@ -81,7 +81,7 @@ VideoStreams:
       - 150000000
   H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_ERROR:
     input: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
-    codec: H264  #Video codec information, Refer `Codec` enum
+    codec: H264_AVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
     codedHeight: 1080
     colorDepth: 8
@@ -138,7 +138,7 @@ VideoStreams:
       - 150000000
   H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_DISCONTINUITY:
     input: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
-    codec: H264  #Video codec information, Refer `Codec` enum
+    codec: H264_AVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
     codedHeight: 1080
     colorDepth: 8
@@ -195,7 +195,7 @@ VideoStreams:
       - 150000000
   H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_EOS:
     input: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
-    codec: H264  #Video codec information, Refer `Codec` enum
+    codec: H264_AVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
     codedHeight: 1080
     colorDepth: 8
@@ -252,7 +252,7 @@ VideoStreams:
       - 150000000
   H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_FLUSH:
     input: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
-    codec: H264  #Video codec information, Refer `Codec` enum
+    codec: H264_AVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
     codedHeight: 1080
     colorDepth: 8
@@ -309,7 +309,7 @@ VideoStreams:
       - 150000000
   H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_FLUSH_RESET:
     input: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
-    codec: H264  #Video codec information, Refer `Codec` enum
+    codec: H264_AVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
     codedHeight: 1080
     colorDepth: 8
@@ -366,7 +366,7 @@ VideoStreams:
       - 150000000
   H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_GOP:
     input: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_GOP.es #Stream Name
-    codec: H264  #Video codec information, Refer `Codec` enum
+    codec: H264_AVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
     codedHeight: 1080
     colorDepth: 8
@@ -647,7 +647,7 @@ VideoStreams:
       - 4166666625
   H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_ERROR_DISCONTINUITY:
     input: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
-    codec: H264  #Video codec information, Refer `Codec` enum
+    codec: H264_AVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
     codedHeight: 1080
     colorDepth: 8
@@ -704,7 +704,7 @@ VideoStreams:
       - 150000000
   H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_ERROR_EOS:
     input: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
-    codec: H264  #Video codec information, Refer `Codec` enum
+    codec: H264_AVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
     codedHeight: 1080
     colorDepth: 8
@@ -761,7 +761,7 @@ VideoStreams:
       - 150000000
   H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_DISCONTINUITY_EOS:
     input: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
-    codec: H264  #Video codec information, Refer `Codec` enum
+    codec: H264_AVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
     codedHeight: 1080
     colorDepth: 8
@@ -818,7 +818,7 @@ VideoStreams:
       - 150000000
   H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_FLUSH_ERROR:
     input: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
-    codec: H264  #Video codec information, Refer `Codec` enum
+    codec: H264_AVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
     codedHeight: 1080
     colorDepth: 8
@@ -875,7 +875,7 @@ VideoStreams:
       - 150000000
   H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_FLUSH_RESET_ERROR:
     input: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
-    codec: H264  #Video codec information, Refer `Codec` enum
+    codec: H264_AVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
     codedHeight: 1080
     colorDepth: 8
