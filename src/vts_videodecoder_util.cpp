@@ -222,8 +222,9 @@ bool vts_videodecoder_helper_profileFieldPresent(const std::string& key) {
 }
 
 bool vts_videodecoder_helper_checkCodecAttributeExists(const std::string& attrpath, const std::string& codec_name) {
-    // Check all required fields exist (we already know maxFrameRate exists from detection phase)
+    // Check all required fields exist (we already know profile exists from detection phase)
     const std::vector<std::string> requiredFields = {
+        ".maxFrameRate",
         ".maxFrameWidth",
         ".maxFrameHeight",
         ".profile",
@@ -416,7 +417,7 @@ UT_status_t vts_videodecoder_parseVideoDecoderHFP()
             std::string detected_codec;
             for (const auto& codec_name : known_codecs)
             {
-                std::string test_path = codecpath + "." + codec_name + ".maxFrameRate";
+                std::string test_path = codecpath + "." + codec_name + ".profile";
                 if (vts_videodecoder_helper_profileFieldPresent(test_path))
                 {
                     detected_codec = codec_name;
