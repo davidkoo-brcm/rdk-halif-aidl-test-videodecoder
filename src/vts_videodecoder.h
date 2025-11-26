@@ -1234,9 +1234,8 @@ public:
                         frame.metadata->parX, frame.metadata->parY,
                         frame.metadata->sarX, frame.metadata->sarY);
 
-            UT_LOG_INFO("FrameMetadata: colorDepth=%d, pixelFormat=%d, dynamicRange=%d, scanType=%d, afd=%d",
+            UT_LOG_INFO("FrameMetadata: colorDepth=%d, dynamicRange=%d, scanType=%d, afd=%d",
                         frame.metadata->colorDepth,
-                        static_cast<int>(frame.metadata->pixelFormat),
                         static_cast<int>(frame.metadata->dynamicRange),
                         static_cast<int>(frame.metadata->scanType),
                         frame.metadata->afd);
