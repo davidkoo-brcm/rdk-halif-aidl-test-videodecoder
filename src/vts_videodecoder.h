@@ -1244,10 +1244,20 @@ public:
                         frame.metadata->frameRateNumerator,
                         frame.metadata->frameRateDenominator);
 
-            UT_LOG_INFO("Flags: endOfStream=%d, discontinuity=%d, lowLatency=%d",
-                        frame.metadata->endOfStream,
-                        frame.metadata->discontinuity,
-                        frame.metadata->lowLatency);
+            if(frame.metadata->endOfStream)
+            {
+                UT_LOG_INFO("Flags: endOfStream=%d", frame.metadata->endOfStream);
+            }
+
+            if(frame.metadata->discontinuity)
+            {
+                UT_LOG_INFO("Flags: discontinuity=%d", frame.metadata->discontinuity);
+            }
+
+            if(frame.metadata->lowLatency)
+            {
+                UT_LOG_INFO("Flags: lowLatency=%d", frame.metadata->lowLatency);
+            }
 
             UT_LOG_INFO("Source: %d", static_cast<int>(frame.metadata->source));
 
