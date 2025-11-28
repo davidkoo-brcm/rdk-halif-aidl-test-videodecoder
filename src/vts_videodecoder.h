@@ -1234,8 +1234,9 @@ public:
                         frame.metadata->parX, frame.metadata->parY,
                         frame.metadata->sarX, frame.metadata->sarY);
 
-            UT_LOG_INFO("FrameMetadata: colorDepth=%d, dynamicRange=%d, scanType=%d, afd=%d",
+            UT_LOG_INFO("FrameMetadata: colorDepth=%d, pixelFormat=%d, dynamicRange=%d, scanType=%d, afd=%d",
                         frame.metadata->colorDepth,
+                        static_cast<int>(frame.metadata->pixelFormat),
                         static_cast<int>(frame.metadata->dynamicRange),
                         static_cast<int>(frame.metadata->scanType),
                         frame.metadata->afd);
@@ -1244,20 +1245,10 @@ public:
                         frame.metadata->frameRateNumerator,
                         frame.metadata->frameRateDenominator);
 
-            if(frame.metadata->endOfStream)
-            {
-                UT_LOG_INFO("Flags: endOfStream=%d", frame.metadata->endOfStream);
-            }
-
-            if(frame.metadata->discontinuity)
-            {
-                UT_LOG_INFO("Flags: discontinuity=%d", frame.metadata->discontinuity);
-            }
-
-            if(frame.metadata->lowLatency)
-            {
-                UT_LOG_INFO("Flags: lowLatency=%d", frame.metadata->lowLatency);
-            }
+            UT_LOG_INFO("Flags: endOfStream=%d, discontinuity=%d, lowLatency=%d",
+                        frame.metadata->endOfStream,
+                        frame.metadata->discontinuity,
+                        frame.metadata->lowLatency);
 
             UT_LOG_INFO("Source: %d", static_cast<int>(frame.metadata->source));
 

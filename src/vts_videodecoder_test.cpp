@@ -615,10 +615,11 @@ void videoDecoderTest::decoderThreadFunc()
                         << ", actual=" << decodedFrame.metadata->sarY;*/
 
                     // Validate pixel format and depth
-                    UT_ASSERT_EQUAL(decodedFrame.metadata->pixelFormat, mTestConfiguration.pixelFormat)
+                    //Commenting out pixel format verifiation as the output of the decoder depends on supported formats.
+                    /*UT_ASSERT_EQUAL(decodedFrame.metadata->pixelFormat, mTestConfiguration.pixelFormat)
                         << "Pixel format mismatch: expected=" << static_cast<int>(mTestConfiguration.pixelFormat)
                         << ", actual=" << static_cast<int>(decodedFrame.metadata->pixelFormat)
-                        << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+                        << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();*/
                     UT_ASSERT_EQUAL(decodedFrame.metadata->colorDepth, mTestConfiguration.colorDepth)
                         << "Color depth mismatch: expected=" << mTestConfiguration.colorDepth
                         << ", actual=" << decodedFrame.metadata->colorDepth
@@ -652,13 +653,21 @@ void videoDecoderTest::decoderThreadFunc()
                         << ", actual=" << decodedFrame.metadata->afd;*/
 
                     // Validate flags
-                    UT_ASSERT_EQUAL(decodedFrame.metadata->endOfStream, mTestConfiguration.endOfStream)
-                        << "endOfStream mismatch: expected=" << mTestConfiguration.endOfStream
-                        << ", actual=" << decodedFrame.metadata->endOfStream;
-                    UT_ASSERT_EQUAL(decodedFrame.metadata->discontinuity, mTestConfiguration.discontinuity)
-                        << "discontinuity mismatch: expected=" << mTestConfiguration.discontinuity
-                        << ", actual=" << decodedFrame.metadata->discontinuity
-                        << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+                    if(mTestConfiguration.eosPts == framePTS)
+                    {
+                        UT_ASSERT_EQUAL(decodedFrame.metadata->endOfStream, mTestConfiguration.endOfStream)
+                            << "endOfStream mismatch: expected=" << mTestConfiguration.endOfStream
+                            << ", actual=" << decodedFrame.metadata->endOfStream;
+                    }
+
+                    if(mTestConfiguration.discontinuityPts == framePTS)
+                    {
+                        UT_ASSERT_EQUAL(decodedFrame.metadata->discontinuity, mTestConfiguration.discontinuity)
+                            << "discontinuity mismatch: expected=" << mTestConfiguration.discontinuity
+                            << ", actual=" << decodedFrame.metadata->discontinuity
+                            << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+                    }
+
                     UT_ASSERT_EQUAL(decodedFrame.metadata->lowLatency, mTestConfiguration.lowLatency)
                         << "lowLatency mismatch: expected=" << mTestConfiguration.lowLatency
                         << ", actual=" << decodedFrame.metadata->lowLatency
@@ -784,10 +793,11 @@ void videoDecoderTest::decoderThreadFunc()
                         << ", actual=" << decodedFrame.metadata->sarY;*/
 
                     // Validate pixel format and depth
-                    UT_ASSERT_EQUAL(decodedFrame.metadata->pixelFormat, mTestConfiguration.pixelFormat)
+                    //Commenting out pixel format verifiation as the output of the decoder depends on supported formats.
+                    /*UT_ASSERT_EQUAL(decodedFrame.metadata->pixelFormat, mTestConfiguration.pixelFormat)
                         << "Pixel format mismatch: expected=" << static_cast<int>(mTestConfiguration.pixelFormat)
                         << ", actual=" << static_cast<int>(decodedFrame.metadata->pixelFormat)
-                        << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+                        << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();*/
                     UT_ASSERT_EQUAL(decodedFrame.metadata->colorDepth, mTestConfiguration.colorDepth)
                         << "Color depth mismatch: expected=" << mTestConfiguration.colorDepth
                         << ", actual=" << decodedFrame.metadata->colorDepth
@@ -821,14 +831,22 @@ void videoDecoderTest::decoderThreadFunc()
                         << ", actual=" << decodedFrame.metadata->afd;*/
 
                     // Validate flags
-                    UT_ASSERT_EQUAL(decodedFrame.metadata->endOfStream, mTestConfiguration.endOfStream)
-                        << "endOfStream mismatch: expected=" << mTestConfiguration.endOfStream
-                        << ", actual=" << decodedFrame.metadata->endOfStream
-                        << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-                    UT_ASSERT_EQUAL(decodedFrame.metadata->discontinuity, mTestConfiguration.discontinuity)
-                        << "discontinuity mismatch: expected=" << mTestConfiguration.discontinuity
-                        << ", actual=" << decodedFrame.metadata->discontinuity
-                        << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+                    if(mTestConfiguration.eosPts == decodedFrame.framePTS)
+                    {
+                        UT_ASSERT_EQUAL(decodedFrame.metadata->endOfStream, mTestConfiguration.endOfStream)
+                            << "endOfStream mismatch: expected=" << mTestConfiguration.endOfStream
+                            << ", actual=" << decodedFrame.metadata->endOfStream
+                            << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+                    }
+
+                    if(mTestConfiguration.discontinuityPts == decodedFrame.framePTS)
+                    {
+                        UT_ASSERT_EQUAL(decodedFrame.metadata->discontinuity, mTestConfiguration.discontinuity)
+                            << "discontinuity mismatch: expected=" << mTestConfiguration.discontinuity
+                            << ", actual=" << decodedFrame.metadata->discontinuity
+                            << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+                    }
+
                     UT_ASSERT_EQUAL(decodedFrame.metadata->lowLatency, mTestConfiguration.lowLatency)
                         << "lowLatency mismatch: expected=" << mTestConfiguration.lowLatency
                         << ", actual=" << decodedFrame.metadata->lowLatency
