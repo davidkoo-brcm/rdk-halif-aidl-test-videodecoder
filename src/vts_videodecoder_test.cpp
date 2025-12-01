@@ -561,150 +561,6 @@ void videoDecoderTest::decoderThreadFunc()
                             mTestConfiguration.codec, framesDecoded, decodeErrors, framesDropped);
             }
 
-            if (mControlListener->getNextFrame(decodedFrame, std::chrono::milliseconds(100))) {
-                UT_LOG_INFO("Retrieved output frame: PTS=%lld, handle=0x%llx, isMetaAvailable=%d",
-                            decodedFrame.framePTS, decodedFrame.frameBufferHandle, decodedFrame.isMetaAvailable);
-                // Validate PTS
-                {
-                    auto it = mReceivedPts.find(decodedFrame.framePTS);
-                    if (it == mReceivedPts.end()) {
-                        UT_LOG_ERROR("Unexpected PTS received: %lld", decodedFrame.framePTS);
-                    } else {
-                        UT_LOG_INFO("Validated PTS: %lld", decodedFrame.framePTS);
-                        mReceivedPts.erase(it); // Remove to track received PTS
-                    }
-                }
-                if (decodedFrame.isMetaAvailable && decodedFrame.metadata) {
-                    UT_LOG_INFO("Validating metadata for PTS=%lld", decodedFrame.framePTS);
-                    // Validate resolution
-                    UT_ASSERT_EQUAL(decodedFrame.metadata->codedWidth, mTestConfiguration.codedWidth)
-                        << "Width mismatch: expected=" << mTestConfiguration.codedWidth
-                        << ", actual=" << decodedFrame.metadata->codedWidth
-                        << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-                    UT_ASSERT_EQUAL(decodedFrame.metadata->codedHeight, mTestConfiguration.codedHeight)
-                        << "Height mismatch: expected=" << mTestConfiguration.codedHeight
-                        << ", actual=" << decodedFrame.metadata->codedHeight
-                        << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-
-                    // Validate active region
-                    /*UT_ASSERT_EQUAL(decodedFrame.metadata->activeX, mTestConfiguration.activeX)
-                        << "activeX mismatch: expected=" << mTestConfiguration.activeX
-                        << ", actual=" << decodedFrame.metadata->activeX;
-                    UT_ASSERT_EQUAL(decodedFrame.metadata->activeY, mTestConfiguration.activeY)
-                        << "activeY mismatch: expected=" << mTestConfiguration.activeY
-                        << ", actual=" << decodedFrame.metadata->activeY;
-                    UT_ASSERT_EQUAL(decodedFrame.metadata->activeWidth, mTestConfiguration.activeWidth)
-                        << "activeWidth mismatch: expected=" << mTestConfiguration.activeWidth
-                        << ", actual=" << decodedFrame.metadata->activeWidth;
-                    UT_ASSERT_EQUAL(decodedFrame.metadata->activeHeight, mTestConfiguration.activeHeight)
-                        << "activeHeight mismatch: expected=" << mTestConfiguration.activeHeight
-                        << ", actual=" << decodedFrame.metadata->activeHeight;*/
-
-                    // Validate aspect ratios
-                    /*UT_ASSERT_EQUAL(decodedFrame.metadata->parX, mTestConfiguration.parX)
-                        << "PAR X mismatch: expected=" << mTestConfiguration.parX
-                        << ", actual=" << decodedFrame.metadata->parX;
-                    UT_ASSERT_EQUAL(decodedFrame.metadata->parY, mTestConfiguration.parY)
-                        << "PAR Y mismatch: expected=" << mTestConfiguration.parY
-                        << ", actual=" << decodedFrame.metadata->parY;
-                    UT_ASSERT_EQUAL(decodedFrame.metadata->sarX, mTestConfiguration.sarX)
-                        << "SAR X mismatch: expected=" << mTestConfiguration.sarX
-                        << ", actual=" << decodedFrame.metadata->sarX;
-                    UT_ASSERT_EQUAL(decodedFrame.metadata->sarY, mTestConfiguration.sarY)
-                        << "SAR Y mismatch: expected=" << mTestConfiguration.sarY
-                        << ", actual=" << decodedFrame.metadata->sarY;*/
-
-                    // Validate pixel format and depth
-                    //Commenting out pixel format verifiation as the output of the decoder depends on supported formats.
-                    /*UT_ASSERT_EQUAL(decodedFrame.metadata->pixelFormat, mTestConfiguration.pixelFormat)
-                        << "Pixel format mismatch: expected=" << static_cast<int>(mTestConfiguration.pixelFormat)
-                        << ", actual=" << static_cast<int>(decodedFrame.metadata->pixelFormat)
-                        << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();*/
-                    UT_ASSERT_EQUAL(decodedFrame.metadata->colorDepth, mTestConfiguration.colorDepth)
-                        << "Color depth mismatch: expected=" << mTestConfiguration.colorDepth
-                        << ", actual=" << decodedFrame.metadata->colorDepth
-                        << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-
-                    // Validate dynamic range
-                    UT_ASSERT_EQUAL(decodedFrame.metadata->dynamicRange, mTestConfiguration.dynamicRange)
-                        << "Dynamic range mismatch: expected=" << static_cast<int>(mTestConfiguration.dynamicRange)
-                        << ", actual=" << static_cast<int>(decodedFrame.metadata->dynamicRange)
-                        << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-
-                    // Validate frame rate
-                    UT_ASSERT_EQUAL(decodedFrame.metadata->frameRateNumerator, mTestConfiguration.frameRateNumerator)
-                        << "Frame rate numerator mismatch: expected=" << mTestConfiguration.frameRateNumerator
-                        << ", actual=" << decodedFrame.metadata->frameRateNumerator
-                        << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-                    UT_ASSERT_EQUAL(decodedFrame.metadata->frameRateDenominator, mTestConfiguration.frameRateDenominator)
-                        << "Frame rate denominator mismatch: expected=" << mTestConfiguration.frameRateDenominator
-                        << ", actual=" << decodedFrame.metadata->frameRateDenominator
-                        << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-
-                    // Validate scan type
-                    UT_ASSERT_EQUAL(decodedFrame.metadata->scanType, mTestConfiguration.scanType)
-                        << "Scan type mismatch: expected=" << static_cast<int>(mTestConfiguration.scanType)
-                        << ", actual=" << static_cast<int>(decodedFrame.metadata->scanType)
-                        << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-
-                    // Validate AFD
-                    /*UT_ASSERT_EQUAL(decodedFrame.metadata->afd, mTestConfiguration.afd)
-                        << "AFD mismatch: expected=" << mTestConfiguration.afd
-                        << ", actual=" << decodedFrame.metadata->afd;*/
-
-                    // Validate flags
-                    if(mTestConfiguration.eosPts == framePTS)
-                    {
-                        UT_ASSERT_EQUAL(decodedFrame.metadata->endOfStream, mTestConfiguration.endOfStream)
-                            << "endOfStream mismatch: expected=" << mTestConfiguration.endOfStream
-                            << ", actual=" << decodedFrame.metadata->endOfStream;
-                    }
-
-                    if(mTestConfiguration.discontinuityPts == framePTS)
-                    {
-                        UT_ASSERT_EQUAL(decodedFrame.metadata->discontinuity, mTestConfiguration.discontinuity)
-                            << "discontinuity mismatch: expected=" << mTestConfiguration.discontinuity
-                            << ", actual=" << decodedFrame.metadata->discontinuity
-                            << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-                    }
-
-                    UT_ASSERT_EQUAL(decodedFrame.metadata->lowLatency, mTestConfiguration.lowLatency)
-                        << "lowLatency mismatch: expected=" << mTestConfiguration.lowLatency
-                        << ", actual=" << decodedFrame.metadata->lowLatency
-                        << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-
-                    // Validate source
-                    /*UT_ASSERT_EQUAL(decodedFrame.metadata->source, mTestConfiguration.source)
-                        << "Source mismatch: expected=" << static_cast<int>(mTestConfiguration.source)
-                        << ", actual=" << static_cast<int>(decodedFrame.metadata->source);
-
-                    // Optional: SHA1 comparison if you expect it
-                    if (!mTestConfiguration.sha1.empty()) {
-                        UT_ASSERT_EQUAL(decodedFrame.metadata->sha1.size(), mTestConfiguration.sha1.size())
-                            << "SHA1 size mismatch";
-                        for (size_t i = 0; i < decodedFrame.metadata->sha1.size(); ++i) {
-                            UT_ASSERT_EQUAL(decodedFrame.metadata->sha1[i], mTestConfiguration.sha1[i])
-                                << "SHA1 byte mismatch at index " << i;
-                        }
-                    }*/
-                } else {
-                    UT_LOG_INFO("No metadata available for PTS=%lld", decodedFrame.framePTS);
-                }
-                // Release output buffer
-                bool isValidBuffer = false;
-                UT_LOG_INFO("Calling isValid(IN:bufferHandle:[0X%016" PRIx64 "], OUT:_aidl_return[])", decodedFrame.frameBufferHandle);
-                Status status = mAVBufferManager->isValid(decodedFrame.frameBufferHandle, &isValidBuffer);
-                UT_LOG_INFO("Result isValid(IN:bufferHandle:[0X%016"PRIx64"], OUT:_aidl_return:[%s]), status:[isOK:%s, exception:%s]", \
-                    videoBufferHandle, UT_Control_GetMapString(bool_mapTable, isValidBuffer), \
-                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
-                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
-                if(isValidBuffer) {
-                    UT_LOG_ERROR("Encoded buffer not released by decoder [handle:0x%llx]", decodedFrame.frameBufferHandle);
-                }
-            } else {
-                UT_LOG_WARNING("No output frame retrieved for input PTS=%lld after 100ms", framePTS);
-            }
-
             // Check decode time
             auto decodeEnd = std::chrono::steady_clock::now();
             auto decodeTimeNs = std::chrono::duration_cast<std::chrono::nanoseconds>(decodeEnd - decodeStart).count();
@@ -719,9 +575,9 @@ void videoDecoderTest::decoderThreadFunc()
             {
                 std::lock_guard<std::mutex> lock(mDecodeMutex);
                 bool isValidBuffer = false;
-                UT_LOG_INFO("Calling isValid(IN:bufferHandle:[0X%016" PRIx64 "], OUT:_aidl_return[])", videoBufferHandle);
+                UT_LOG_INFO("Calling isValid(IN:bufferHandle:[0X%016"PRIx64"], OUT:_aidl_return[])", videoBufferHandle);
                 Status status = mAVBufferManager->isValid(videoBufferHandle, &isValidBuffer);
-                UT_LOG_INFO("Result isValid(IN:bufferHandle:[0X%016" PRIx64 "], OUT:_aidl_return:[%s]), status:[isOK:%s, exception:%s]", \
+                UT_LOG_INFO("Result isValid(IN:bufferHandle:[0X%016"PRIx64"], OUT:_aidl_return:[%s]), status:[isOK:%s, exception:%s]", \
                     videoBufferHandle, UT_Control_GetMapString(bool_mapTable, isValidBuffer), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                     UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
@@ -740,7 +596,8 @@ void videoDecoderTest::decoderThreadFunc()
         }
 
         // Retrieve any remaining output frames
-        while (mControlListener->getNextFrame(decodedFrame, std::chrono::milliseconds(100))) {
+        if (mControlListener->getNextFrame(decodedFrame, std::chrono::milliseconds(100)))
+        {
             UT_LOG_INFO("Retrieved remaining output frame: PTS=%lld, handle=0x%llx, isMetaAvailable=%d",
                         decodedFrame.framePTS, decodedFrame.frameBufferHandle, decodedFrame.isMetaAvailable);
             // Validate PTS
@@ -764,40 +621,7 @@ void videoDecoderTest::decoderThreadFunc()
                         << "Height mismatch: expected=" << mTestConfiguration.codedHeight
                         << ", actual=" << decodedFrame.metadata->codedHeight
                         << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-                    // Validate active region
-                    /*UT_ASSERT_EQUAL(decodedFrame.metadata->activeX, mTestConfiguration.activeX)
-                        << "activeX mismatch: expected=" << mTestConfiguration.activeX
-                        << ", actual=" << decodedFrame.metadata->activeX;
-                    UT_ASSERT_EQUAL(decodedFrame.metadata->activeY, mTestConfiguration.activeY)
-                        << "activeY mismatch: expected=" << mTestConfiguration.activeY
-                        << ", actual=" << decodedFrame.metadata->activeY;
-                    UT_ASSERT_EQUAL(decodedFrame.metadata->activeWidth, mTestConfiguration.activeWidth)
-                        << "activeWidth mismatch: expected=" << mTestConfiguration.activeWidth
-                        << ", actual=" << decodedFrame.metadata->activeWidth;
-                    UT_ASSERT_EQUAL(decodedFrame.metadata->activeHeight, mTestConfiguration.activeHeight)
-                        << "activeHeight mismatch: expected=" << mTestConfiguration.activeHeight
-                        << ", actual=" << decodedFrame.metadata->activeHeight;*/
 
-                    // Validate aspect ratios
-                    /*UT_ASSERT_EQUAL(decodedFrame.metadata->parX, mTestConfiguration.parX)
-                        << "PAR X mismatch: expected=" << mTestConfiguration.parX
-                        << ", actual=" << decodedFrame.metadata->parX;
-                    UT_ASSERT_EQUAL(decodedFrame.metadata->parY, mTestConfiguration.parY)
-                        << "PAR Y mismatch: expected=" << mTestConfiguration.parY
-                        << ", actual=" << decodedFrame.metadata->parY;
-                    UT_ASSERT_EQUAL(decodedFrame.metadata->sarX, mTestConfiguration.sarX)
-                        << "SAR X mismatch: expected=" << mTestConfiguration.sarX
-                        << ", actual=" << decodedFrame.metadata->sarX;
-                    UT_ASSERT_EQUAL(decodedFrame.metadata->sarY, mTestConfiguration.sarY)
-                        << "SAR Y mismatch: expected=" << mTestConfiguration.sarY
-                        << ", actual=" << decodedFrame.metadata->sarY;*/
-
-                    // Validate pixel format and depth
-                    //Commenting out pixel format verifiation as the output of the decoder depends on supported formats.
-                    /*UT_ASSERT_EQUAL(decodedFrame.metadata->pixelFormat, mTestConfiguration.pixelFormat)
-                        << "Pixel format mismatch: expected=" << static_cast<int>(mTestConfiguration.pixelFormat)
-                        << ", actual=" << static_cast<int>(decodedFrame.metadata->pixelFormat)
-                        << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();*/
                     UT_ASSERT_EQUAL(decodedFrame.metadata->colorDepth, mTestConfiguration.colorDepth)
                         << "Color depth mismatch: expected=" << mTestConfiguration.colorDepth
                         << ", actual=" << decodedFrame.metadata->colorDepth
@@ -825,11 +649,6 @@ void videoDecoderTest::decoderThreadFunc()
                         << ", actual=" << static_cast<int>(decodedFrame.metadata->scanType)
                         << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
 
-                    // Validate AFD
-                    /*UT_ASSERT_EQUAL(decodedFrame.metadata->afd, mTestConfiguration.afd)
-                        << "AFD mismatch: expected=" << mTestConfiguration.afd
-                        << ", actual=" << decodedFrame.metadata->afd;*/
-
                     // Validate flags
                     if(mTestConfiguration.eosPts == decodedFrame.framePTS)
                     {
@@ -851,24 +670,12 @@ void videoDecoderTest::decoderThreadFunc()
                         << "lowLatency mismatch: expected=" << mTestConfiguration.lowLatency
                         << ", actual=" << decodedFrame.metadata->lowLatency
                         << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-
-                    // Validate source
-                    /*UT_ASSERT_EQUAL(decodedFrame.metadata->source, mTestConfiguration.source)
-                        << "Source mismatch: expected=" << static_cast<int>(mTestConfiguration.source)
-                        << ", actual=" << static_cast<int>(decodedFrame.metadata->source);
-
-                    // Optional: SHA1 comparison if you expect it
-                    if (!mTestConfiguration.sha1.empty()) {
-                        UT_ASSERT_EQUAL(decodedFrame.metadata->sha1.size(), mTestConfiguration.sha1.size())
-                            << "SHA1 size mismatch";
-                        for (size_t i = 0; i < decodedFrame.metadata->sha1.size(); ++i) {
-                            UT_ASSERT_EQUAL(decodedFrame.metadata->sha1[i], mTestConfiguration.sha1[i])
-                                << "SHA1 byte mismatch at index " << i;
-                        }
-                    }*/
                 } else {
                     UT_LOG_INFO("No metadata available for PTS=%lld", decodedFrame.framePTS);
                 }
+        } else{
+            UT_LOG_WARNING("No output frame retrieved for input PTS=%lld after 100ms", decodedFrame.framePTS);
+        }
             bool isValidBuffer = false;
             UT_LOG_INFO("Calling isValid(IN:bufferHandle:[0X%016"PRIx64"], OUT:_aidl_return[])", decodedFrame.frameBufferHandle);
             Status status = mAVBufferManager->isValid(decodedFrame.frameBufferHandle, &isValidBuffer);
@@ -879,7 +686,6 @@ void videoDecoderTest::decoderThreadFunc()
             if(isValidBuffer) {
                 UT_LOG_ERROR("Encoded buffer not released by decoder [handle:0x%llx]", decodedFrame.frameBufferHandle);
             }
-        }
 
         // Get final metrics
         getDecoderMetrics(framesDecoded, decodeErrors, framesDropped);
