@@ -270,6 +270,7 @@ void videoDecoderTest::decoderThreadFunc()
         Pool videoPool;
         sp<IAVBufferSpaceListener> bufferListener = new AVBufferSpaceListener();
         mDecodingStream = true;
+        bool isBufferValid = false;
 
         DecodedVideoFrame_t decodedFrame;
         // Initialize PTS tracking
@@ -585,14 +586,6 @@ void videoDecoderTest::decoderThreadFunc()
                     UT_LOG_ERROR("Encoded buffer not released by Decoder [handle:0x%llx]", videoBufferHandle);
                 }
             }
-
-            if (!mSecureDecode && mapBuffer) {
-                std::lock_guard<std::mutex> lock(mAVbufferHelperLock);
-                UT_LOG_INFO("Unmapping buffer handle:0x%llx", videoBufferHandle);
-                if (mAVbufferHelper) {
-                    mAVbufferHelper->unmapHandle(videoBufferHandle);
-                }
-            }
         }
 
         // Retrieve any remaining output frames
@@ -704,6 +697,15 @@ void videoDecoderTest::decoderThreadFunc()
                         << "Frames Decoded mismatch: expected=" << mTestConfiguration.framesDropped
                         << ", actual=" << framesDropped
                         << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+
+        if(!mIsSinkAvailable)
+        {
+            AVBUFFER_ISVALID_SUCCESS(mAVBufferManager, videoBufferHandle, isBufferValid);
+            if (isBufferValid)
+            {
+                AVBUFFER_FREE_SUCCESS(mAVBufferManager, videoBufferHandle);
+            }
+        }
 
         // Stop Decoder
         {
