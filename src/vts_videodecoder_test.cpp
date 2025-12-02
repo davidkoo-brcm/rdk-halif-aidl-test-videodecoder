@@ -700,10 +700,10 @@ void videoDecoderTest::decoderThreadFunc()
 
         if(!mIsSinkAvailable)
         {
-            AVBUFFER_ISVALID_SUCCESS(mAVBufferManager, videoBufferHandle, isBufferValid);
+            AVBUFFER_ISVALID_SUCCESS(mAVBufferManager, decodedFrame.frameBufferHandle, isBufferValid);
             if (isBufferValid)
             {
-                AVBUFFER_FREE_SUCCESS(mAVBufferManager, videoBufferHandle);
+                AVBUFFER_FREE_SUCCESS(mAVBufferManager, decodedFrame.frameBufferHandle);
             }
         }
 

@@ -140,7 +140,7 @@ public:
             sp<IVideoDecoder> videoDecoder;
             videodecoder::Capabilities *capabilities = new videodecoder::Capabilities();
             sp<VideoDecoderEventListener> eventListener = new VideoDecoderEventListener();
-            sp<VideoDecoderControllerListener> controlListener = new VideoDecoderControllerListener(mAVBufferManager);
+            sp<VideoDecoderControllerListener> controlListener = new VideoDecoderControllerListener();
 
             VIDEODECODER_MANAGER_GETVIDEODECODER(_decoderId, videoDecoder);
 
