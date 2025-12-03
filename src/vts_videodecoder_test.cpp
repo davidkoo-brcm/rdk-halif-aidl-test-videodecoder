@@ -586,9 +586,10 @@ void videoDecoderTest::decoderThreadFunc()
                     UT_LOG_ERROR("Encoded buffer not released by Decoder [handle:0x%llx]", videoBufferHandle);
                 }
             }
+        }
 
             // Retrieve any remaining output frames
-            if (mControlListener->getNextFrame(decodedFrame, std::chrono::milliseconds(100)))
+            while (mControlListener->getNextFrame(decodedFrame, std::chrono::milliseconds(100)))
             {
                 UT_LOG_INFO("Retrieved remaining output frame: PTS=%lld, handle=0x%llx, isMetaAvailable=%d",
                         decodedFrame.framePTS, decodedFrame.frameBufferHandle, decodedFrame.isMetaAvailable);
@@ -665,21 +666,16 @@ void videoDecoderTest::decoderThreadFunc()
                     } else {
                         UT_LOG_INFO("No metadata available for PTS=%lld", decodedFrame.framePTS);
                     }
-                } else{
-                    UT_LOG_WARNING("No output frame retrieved for input PTS=%lld after 100ms", decodedFrame.framePTS);
-                }
 
-                bool isValidBuffer = false;
-                UT_LOG_INFO("Calling isValid(IN:bufferHandle:[0X%016"PRIx64"], OUT:_aidl_return[])", decodedFrame.frameBufferHandle);
-                Status status = mAVBufferManager->isValid(decodedFrame.frameBufferHandle, &isValidBuffer);
-                UT_LOG_INFO("Result isValid(IN:bufferHandle:[0X%016"PRIx64"], OUT:_aidl_return:[%s]), status:[isOK:%s, exception:%s]", \
-                videoBufferHandle, UT_Control_GetMapString(bool_mapTable, isValidBuffer), \
-                UT_Control_GetMapString(bool_mapTable, status.isOk()), \
-                UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
-                if(isValidBuffer) {
-                    UT_LOG_ERROR("Encoded buffer not released by decoder [handle:0x%llx]", decodedFrame.frameBufferHandle);
-                }
-        }
+                   if(!mIsSinkAvailable)
+                   {
+                        AVBUFFER_ISVALID_SUCCESS(mAVBufferManager, decodedFrame.frameBufferHandle, isBufferValid);
+                        if (isBufferValid)
+                        {
+                            AVBUFFER_FREE_SUCCESS(mAVBufferManager, decodedFrame.frameBufferHandle);
+                        }
+                    }
+            }
 
         // Get final metrics
         getDecoderMetrics(framesDecoded, decodeErrors, framesDropped);
@@ -698,15 +694,6 @@ void videoDecoderTest::decoderThreadFunc()
                         << "Frames Decoded mismatch: expected=" << mTestConfiguration.framesDropped
                         << ", actual=" << framesDropped
                         << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-
-        if(!mIsSinkAvailable)
-        {
-            AVBUFFER_ISVALID_SUCCESS(mAVBufferManager, decodedFrame.frameBufferHandle, isBufferValid);
-            if (isBufferValid)
-            {
-                AVBUFFER_FREE_SUCCESS(mAVBufferManager, decodedFrame.frameBufferHandle);
-            }
-        }
 
         // Stop Decoder
         {
