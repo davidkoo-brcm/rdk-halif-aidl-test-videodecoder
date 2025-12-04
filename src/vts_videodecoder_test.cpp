@@ -666,15 +666,6 @@ void videoDecoderTest::decoderThreadFunc()
                     } else {
                         UT_LOG_INFO("No metadata available for PTS=%lld", decodedFrame.framePTS);
                     }
-
-                   if(!mIsSinkAvailable)
-                   {
-                        AVBUFFER_ISVALID_SUCCESS(mAVBufferManager, decodedFrame.frameBufferHandle, isBufferValid);
-                        if (isBufferValid)
-                        {
-                            AVBUFFER_FREE_SUCCESS(mAVBufferManager, decodedFrame.frameBufferHandle);
-                        }
-                    }
             }
 
         // Get final metrics
