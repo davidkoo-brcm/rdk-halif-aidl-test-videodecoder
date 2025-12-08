@@ -48,7 +48,7 @@ H265_MAIN10_3840x2160_DR_HLG_DR_BT2020_25p_PIXEL_FORMAT_YCBCR420_18000.es
 | 19 | Flushing | Check that flush call follows state machine. <br> Check that flushed frames are returned. <br> Check that flushed frames never get output. | |
 | 20 | Bad encoding (frame drops) | Check that errors, drops, metrics are updated as expected. <br> Corrupt video encoding. <br> Corrupt metadata encoding. | |
 
-## Error streams info
+## Error Streams Info
 
 AV VTS L4 includes playback of error (corrupted) streams to evaluate the error recovery capability of the product.
 
@@ -66,56 +66,35 @@ h265_2160p_hdr10_60.0f_BT2020_yuv422p_insert-noise-pframe_18M_a0_v3600_60sec.mp4
 
 |Codec|Resolution|Dynamic Range|Frame Rate|ColorSpace|Pixel Format|Error Type|Bit Rate|Audio frames|Video Frames|Duration|
 |------|----------|------------|---------|----------|-------------|--------|------|----|----|----|
-|H.265|3840x2160p | HDR10        |60|BT.2020   | YUV422p |insert-noise-pframe|18Mbps|0|3600|60sec|
+|H.265|2160p | HDR10        |60|BT.2020   | YUV422p |insert-noise-pframe|18Mbps|0|3600|60sec|
 
 **Supported Video Error Types:**
 
 Below is the list of supported video error types used for AV VTS L4 recovery validation:
 
-#### Basic / Soft Corruptions:
-
-**bitflip-slice** – Randomly flips bits within a slice; may produce visual artifacts or minor decode warnings.
-
-**overwrite-macroblock** – Replaces macroblock data with random bytes; can cause visible distortion in parts of the frame.
-
-**insert-noise-pframe** – Injects noise into P-frames; affects motion-compensated frames, may propagate artifacts.
-
-**light-fuzz-all** – Applies minor random bit modifications across the bitstream; usually produces subtle glitches.
-
-**temporal-duplication** – Duplicates frames or slices, causing repeated frames and potential decoder warnings.
-
-**drop-partial-slices** – Deletes parts of slices; may cause slice-level errors, missing blocks, or minor decoder logs.
-
-**mixed-soft-corruption** – Combines several soft corruption techniques; produces a variety of artifacts and warnings.
-
-#### NAL / Macroblock-Level Corruptions:
-
-**nal-header-corruption** – Modifies NAL unit headers; can confuse decoder about slice type or payload length.
-
-**macroblock-skipping** – Simulates skipped macroblocks within frames; results in missing blocks or distortion.
-
-**motion-vector-corruption** – Alters motion vector data in P/B frames; introduces motion artifacts or mispredicted blocks.
-
-**slice-reordering** – Changes the order of slices within a frame or GOP; may trigger “illegal reordering” warnings.
-
-**partial-frame-truncation** – Cuts off frame data mid-frame; produces decoder warnings and visual corruption.
-
-**nal-injection** – Inserts extra (fake) NAL units into the stream; may break reference frames or cause parsing errors.
-
-**cross-slice-corruption** – Spreads slice corruption across multiple frames; can affect prediction and generate warnings.
-
-#### Advanced / Structural Corruptions:
-
-**sps-pps-corruption** – Modifies SPS/PPS parameter sets; may produce resolution/parameter warnings, sometimes prevents muxing.
-
-**sei-corruption** – Corrupts SEI messages; usually parser warnings like “truncated SEI,” rarely affects playback.
-
-**entropy-bit-flip** – Flips bits in CABAC/CAVLC-encoded entropy data; can cause decoder errors or macroblock corruption.
-
-**gop-truncation-duplication** – Truncates or duplicates GOPs; may trigger reference-frame, reordering, or slice warnings.
-
-**fake-reference-frame** – Replaces reference frame data with garbage; produces reference-related decode errors.
-
-**slice-boundary-offset** – Moves slice boundaries within a frame; may break prediction chains and trigger warnings.
-
-**pts-dts-corruption** – Alters PTS/DTS timestamps; can generate muxer/decoder warnings like non-monotonous DTS or PTS < DTS.
+| **Video Error Type** | **Details** | **Impact** |
+| :--- | :--- | :--- |
+| **Basic / Soft Corruptions** | | |
+| **bitflip-slice** | Randomly flips bits within a slice. | Visual artifacts (blocking/color errors) or minor decode warnings. |
+| **overwrite-macroblock** | Replaces specific macroblock data with random bytes. | Visible distortion in localized parts of the frame. |
+| **insert-noise-pframe** | Injects noise specifically into P-frames (inter-predicted frames). | Artifacts may propagate across subsequent frames due to motion compensation. |
+| **light-fuzz-all** | Applies minor random bit modifications across the entire bitstream. | Subtle, intermittent glitches. |
+| **temporal-duplication** | Duplicates frames or slices within the stream. | Stuttering playback (repeated frames) and potential timestamp warnings. |
+| **drop-partial-slices** | Deletes portions of slice data. | Missing blocks (grey/green zones) and decoder logs regarding incomplete data. |
+| **mixed-soft-corruption** | Combines multiple soft corruption techniques listed above. | Unpredictable variety of artifacts and decoder warnings. |
+| **NAL / Macroblock-Level Corruptions** | | |
+| **nal-header-corruption** | Modifies NAL unit headers (e.g., forbidden_zero_bit, nal_ref_idc). | Can confuse the decoder regarding slice types, leading to dropped frames. |
+| **macroblock-skipping** | Simulates missing macroblocks within a coded frame. | Visual holes in the image or severe distortion. |
+| **motion-vector-corruption** | Alters motion vector data in P or B frames. | "Smearing" artifacts where objects move incorrectly or reference wrong blocks. |
+| **slice-reordering** | Changes the order of slices within a frame or GOP. | Triggers "illegal reordering" warnings; may cause decode failure for that frame. |
+| **partial-frame-truncation** | Cuts off data before the frame end. | Visual corruption at the bottom of the frame; usually triggers decoder error concealment. |
+| **nal-injection** | Inserts invalid or "garbage" NAL units into the stream. | Parsing errors; may break reference frame chains. |
+| **cross-slice-corruption** | Spreads corruption across the boundaries of multiple slices. | Affects entropy decoding context; generates significant warnings. |
+| **Advanced / Structural Corruptions** | | |
+| **sps-pps-corruption** | Modifies Sequence Parameter Set (SPS) or Picture Parameter Set (PPS). | Critical errors regarding resolution or profile; may prevent file muxing entirely. |
+| **sei-corruption** | Corrupts Supplemental Enhancement Information (SEI) messages. | Parser warnings (e.g., "truncated SEI"). Rarely affects video decoding but may break HDR/captions. |
+| **entropy-bit-flip** | Flips bits in CABAC/CAVLC encoded data. | Desynchronizes the arithmetic decoder, causing massive macroblock corruption. |
+| **gop-truncation-duplication** | Truncates or duplicates entire Groups of Pictures (GOPs). | Breaks reference chains; triggers IDR/keyframe warnings. |
+| **fake-reference-frame** | Replaces valid reference frame data with garbage data. | Valid headers pointing to invalid image data; causes severe decode artifacts. |
+| **slice-boundary-offset** | Shifts the start/end positions of slices. | Breaks prediction boundaries; triggers slice parsing errors. |
+| **pts-dts-corruption** | Alters Presentation Time Stamp (PTS) or Decoding Time Stamp (DTS). | Muxer/Decoder warnings (e.g., "Non-monotonous DTS"). Causes sync issues or playback stalls. |
