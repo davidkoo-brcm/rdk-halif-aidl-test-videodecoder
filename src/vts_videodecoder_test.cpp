@@ -520,13 +520,6 @@ void videoDecoderTest::decoderThreadFunc()
                     VIDEODECODER_FLUSH_SUCCESS(mDecoderHandle, videoDecoderController, true, true);
                     VIDEODECODER_START_SUCCESS(mDecoderHandle, videoDecoderController, true);
                 }
-                if (mTestConfiguration.eosPts == framePTS) {
-                    UT_LOG_INFO("Signaling EOS at PTS:%lld", framePTS);
-                    VIDEODECODER_SIGNAL_EOS_SUCCESS(mDecoderHandle, videoDecoderController, true);
-                    VIDEODECODER_DECODEBUFFER_FAILURE(videoDecoderController, framePTS, videoBufferHandle, Status::EX_NONE);
-                    VIDEODECODER_STOP_SUCCESS(mDecoderHandle, videoDecoderController, true);
-                    VIDEODECODER_START_SUCCESS(mDecoderHandle, videoDecoderController, true);
-                }
 
                 InputVideoFrame_t inputVideo;
                 inputVideo.sendTime = std::chrono::steady_clock::now();
@@ -561,6 +554,13 @@ void videoDecoderTest::decoderThreadFunc()
                 UT_LOG_INFO("Decoder Metrics: Codec: %d, Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
                             mTestConfiguration.codec, framesDecoded, decodeErrors, framesDropped);
             }
+
+            if (mTestConfiguration.eosPts == framePTS) {
+                   UT_LOG_INFO("Signaling EOS at PTS:%lld", framePTS);
+                    VIDEODECODER_SIGNAL_EOS_SUCCESS(mDecoderHandle, videoDecoderController, true);
+                    VIDEODECODER_STOP_SUCCESS(mDecoderHandle, videoDecoderController, true);
+                    VIDEODECODER_START_SUCCESS(mDecoderHandle, videoDecoderController, true);
+                }
 
             // Check decode time
             auto decodeEnd = std::chrono::steady_clock::now();
