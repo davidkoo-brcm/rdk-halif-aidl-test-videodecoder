@@ -545,11 +545,8 @@ void videoDecoderTest::decoderThreadFunc()
                     continue;
                 }
                 UT_LOG_INFO("Calling decodeBuffer(PTS:%lld, bufferHandle:0x%llx)", framePTS, videoBufferHandle);
-                if (isErrorFrame) {
-                    VIDEODECODER_DECODEBUFFER_FAILURE(videoDecoderController, framePTS, videoBufferHandle, Status::EX_NONE);
-                } else {
-                    VIDEODECODER_DECODEBUFFER_SUCCESS(videoDecoderController, framePTS, videoBufferHandle);
-                }
+                VIDEODECODER_DECODEBUFFER_SUCCESS(videoDecoderController, framePTS, videoBufferHandle);
+
                 getDecoderMetrics(framesDecoded, decodeErrors, framesDropped);
                 UT_LOG_INFO("Decoder Metrics: Codec: %d, Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
                             mTestConfiguration.codec, framesDecoded, decodeErrors, framesDropped);
@@ -577,11 +574,7 @@ void videoDecoderTest::decoderThreadFunc()
                 std::lock_guard<std::mutex> lock(mDecodeMutex);
                 bool isValidBuffer = false;
                 UT_LOG_INFO("Calling isValid(IN:bufferHandle:[0X%016"PRIx64"], OUT:_aidl_return[])", videoBufferHandle);
-                Status status = mAVBufferManager->isValid(videoBufferHandle, &isValidBuffer);
-                UT_LOG_INFO("Result isValid(IN:bufferHandle:[0X%016"PRIx64"], OUT:_aidl_return:[%s]), status:[isOK:%s, exception:%s]", \
-                    videoBufferHandle, UT_Control_GetMapString(bool_mapTable, isValidBuffer), \
-                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
-                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
+                AVBUFFER_ISVALID_SUCCESS(mAVBufferManager, videoBufferHandle, isValidBuffer);
                 if(isValidBuffer) {
                     UT_LOG_ERROR("Encoded buffer not released by Decoder [handle:0x%llx]", videoBufferHandle);
                 }
