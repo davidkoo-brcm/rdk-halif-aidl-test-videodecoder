@@ -1,3 +1,24 @@
+#** *****************************************************************************
+# *
+# * If not stated otherwise in this file or this component's LICENSE file the
+# * following copyright and licenses apply:
+# *
+# * Copyright 2025 RDK Management
+# *
+# * Licensed under the Apache License, Version 2.0 (the "License");
+# * you may not use this file except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *
+# * http://www.apache.org/licenses/LICENSE-2.0
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *
+#** ******************************************************************************
 # HAL Feature Profile for videodecoder
 
 IVideoDecoderManager:           # Component object begins
@@ -6,21 +27,34 @@ IVideoDecoderManager:           # Component object begins
     - NON_TUNNELLED
   IVideoDecoder:                # Resource list
     - 0:                        # Resource object begins
-      ID : 0
       supportedCodecs:          # Array of codec capabilities
-        - H264:
+        - MPEG2_VIDEO:
+            profile: MPEG2_MAIN
+            level: MPEG2_LEVEL_HIGH
             maxFrameRate: 60
             maxFrameWidth: 1920
             maxFrameHeight: 1080
-        - H265:
+        - H264_AVC:
+            profile: H264_HIGH
+            level: H264_LEVEL_4_1
+            maxFrameRate: 60
+            maxFrameWidth: 1920
+            maxFrameHeight: 1080
+        - H265_HEVC:
+            profile: H265_MAIN_10
+            level: H265_LEVEL_5_1
             maxFrameRate: 60
             maxFrameWidth: 3840
             maxFrameHeight: 2160
         - VP9:
+            profile: VP9_PROFILE_2
+            level: VP9_LEVEL_5_1
             maxFrameRate: 60
             maxFrameWidth: 3840
             maxFrameHeight: 2160
         - AV1:
+            profile: AV1_MAIN
+            level: AV1_LEVEL_5_1
             maxFrameRate: 60
             maxFrameWidth: 3840
             maxFrameHeight: 2160
@@ -28,47 +62,66 @@ IVideoDecoderManager:           # Component object begins
         - SDR
         - HLG
         - HDR10
-      supportsSecure: false
+        - DOLBY_VISION
+      supportsSecure: true
     - 1:                          # Resource object begins
-      ID : 1
       supportedCodecs:          # Array of codec capabilities
-        - H264:
+        - MPEG2_VIDEO:
+            profile: MPEG2_MAIN
+            level: MPEG2_LEVEL_HIGH
             maxFrameRate: 60
             maxFrameWidth: 1920
             maxFrameHeight: 1080
-        - H265:
+        - H264_AVC:
+            profile: H264_HIGH
+            level: H264_LEVEL_4_1
             maxFrameRate: 60
-            maxFrameWidth: 3840
-            maxFrameHeight: 2160
+            maxFrameWidth: 1920
+            maxFrameHeight: 1080
+        - H265_HEVC:
+            profile: H265_MAIN
+            level: H265_LEVEL_4_1
+            maxFrameRate: 60
+            maxFrameWidth: 1920
+            maxFrameHeight: 1080
         - VP9:
+            profile: VP9_PROFILE_0
+            level: VP9_LEVEL_4_1
             maxFrameRate: 60
-            maxFrameWidth: 3840
-            maxFrameHeight: 2160
+            maxFrameWidth: 1920
+            maxFrameHeight: 1080
         - AV1:
+            profile: AV1_MAIN
+            level: AV1_LEVEL_4_1
             maxFrameRate: 60
-            maxFrameWidth: 3840
-            maxFrameHeight: 2160
+            maxFrameWidth: 1920
+            maxFrameHeight: 1080
       supportedDynamicRanges:
         - SDR
-        - HLG
-        - HDR10
-      supportsSecure: false
-    - 2:                          # Resource object begins
-      ID : 2
-      supportedCodecs:          # Array of codec capabilities
-        - H264:
+      supportsSecure: true
+    - 2:
+      supportedCodecs:
+        - H264_AVC:
+            profile: H264_HIGH
+            level: H264_LEVEL_4_1
             maxFrameRate: 60
             maxFrameWidth: 1920
             maxFrameHeight: 1080
-        - H265:
+        - H265_HEVC:
+            profile: H265_MAIN
+            level: H265_LEVEL_5_1
             maxFrameRate: 60
             maxFrameWidth: 3840
             maxFrameHeight: 2160
         - VP9:
+            profile: VP9_PROFILE_2
+            level: VP9_LEVEL_5_1
             maxFrameRate: 60
             maxFrameWidth: 3840
             maxFrameHeight: 2160
         - AV1:
+            profile: AV1_MAIN
+            level: AV1_LEVEL_5_1
             maxFrameRate: 60
             maxFrameWidth: 3840
             maxFrameHeight: 2160

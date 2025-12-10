@@ -1,153 +1,22 @@
-# Testing Suite For Video Decoder HAL
+# VideoDecoder HAL Test Suite
+
+This repository contains the Vendor Test Suite (VTS) for the `IVideoDecoder` AIDL HAL interface. It is designed to validate the functionality of the VideoDecoder HAL implementation.
 
 ## Build Steps
 
-### 1. Build linux binder
+This test suite is part of Unified VTS for AIDL HALs. For initial setup, environment configuration, and build instructions, please refer to the Unified VTS README documentation.
 
-The test suite depends on the Linux binder with `AIDL` support. Follow these steps to build it:
+- **[Unified VTS README](https://github.com/rdkcentral/rdk-halif-aidl-unified-vts/blob/main/README.md)**
 
-For detail build instruction, please refer to [Linux Binder](https://github.com/rdk-e/linux_binder_idl/tree/main)
+## Running the VideoDecoder Tests
 
-Here outline the simplest steps are
+While the Unified VTS can run all tests at once, you can execute the `VTS_L1_VideoDecoder`, `VTS_L2_VideoDecoder` and `VTS_L3_VideoDecoder` test suite individually for targeted validation. This is useful for debugging and development of the `VideoDecoder` HAL.
 
-```bash
-git clone -b develop 'ssh://git@github.com/rdk-e/linux_binder_idl.git'
+## Reference Documents
 
-cd linux_binder_idl
+|SNo|Document Name|Document Description|Document Link|
+|---|-------------|--------------------|-------------|
+|1|High Level Test Specification Document|High Level Test Specification Documentation for this module|[VideoDecoder_High-Level_TestSpec.md](docs/pages/VideoDecoder_High-Level_TestSpec.md)|
+|2|`L2` Low Level Test Specification and Procedure Document|`L2` Test Specification and Procedure Documentation|[VideoDecoder_L2_Low-level_TestSpecification.md](docs/pages/VideoDecoder_L2_Low-level_TestSpecification.md)|
+|3|`L3` Low Level Test Specification and Procedure Document|`L3` Test Specification and Procedure Documentation|[VideoDecoder_L3_Low-level_TestSpecification.md](docs/pages/VideoDecoder_L3_Low-level_TestSpecification.md)|
 
-./build-linux-binder-aidl.sh 64
-```
-
-### 2. Build this test
-
-Clone and build the test suite:
-
-```bash
-git clone git@github.com:rdkcentral/rdk-halif-binder-test-videodecoder.git
-```
-
-```bash
-cd rdk-halif-binder-test-videodecoder
-```
-
-Set below environment variable:
-
-- AIDL_BIN: Path to the `AIDL` compiler (e.g., /path/to/linux_binder_idl/out/aidl).
-
-- LINUX_BINDER_OUT_DIR: Path to the Linux binder output directory (e.g., /path/to/linux_binder_idl/local).
-
-- UT_CORE_VERSION: Specific version of the UT-Core framework (e.g., 4.6.0). Defaults to the latest tagged version.
-
-- RDK_HALIF_AIDL_VERSION: Specific version of the AIDL HALIF Specification (e.g, 0.7.1). Defaults to the latest HEAD.
-
-Example:
-
-```bash
-export UT_CORE_VERSION=4.7.0
-export RDK_HALIF_AIDL_VERSION=0.7.1
-export AIDL_BIN=/path/linux_binder_idl/out/aidl
-export LINUX_BINDER_OUT_DIR=/path//linux_binder_idl/local/
-```
-
-By default, UT logs are disabled. To enable them, Set below environment variable
-
-```bash
-export ENABLE_UT_INFO_LOGGING=1
-```
-
-Run the build script:
-
-```bash
-./build.sh all
-```
-
-The build.sh script:
-
-- Clones the `rdk-halif-aidl` repository and UT-Core framework.
-
-- Compiles the test suite.
-
-- Generates binaries in the `build/bin` directory.
-
-Example directory structure :
-
-```bash
-build/bin/
-├── aidl
-├── lib
-├── libaudiodecoderaidl.so
-├── libavbufferaidl.so
-├── libbase.so
-├── libbinder.so
-├── libcutils.so
-├── libcutils_sockets.so
-├── libhal_logger.so
-├── liblog.so
-├── libut_control.so
-├── libutils.so
-├── libvideodecoderaidl.so
-├── MockVideoDecoderService
-├── profiles
-│   ├── hfp-videodecoder_ID0.yaml
-│   ├── hfp-videodecoder_ID1.yaml
-│   └── hfp-videodecoder.yaml
-├── run.sh
-├── servicemanager
-├── test_configuration
-│   ├── vts_l3_test_config.yaml
-│   ├── vts_video_av1_streams.yaml
-│   ├── vts_video_h264_streams.yaml
-│   ├── vts_video_hevc_streams.yaml
-│   └── vts_video_vp9_streams.yaml
-└── vts_videoDecoder
-```
-
-## Run test
-
-- Package the Binaries:
-
-```bash
-cd build
-tar -zcf videodecoder_vts.tar.gz bin
-```
-
-- Transfer to Target Device:
-
-Copy the tarball to the target device (e.g., using scp):
-
-```bash
-scp videodecoder_vts.tar.gz root@target-device:/home/root/
-
-```
-
-- Extract on Target Device:
-
-Log into the target device and extract the tarball:
-
-```bash
-ssh root@target-device
-cd /home/root
-tar -zxf videodecoder_vts.tar.gz
-cd bin
-```
-
-To execute `L3` test cases, elementary streams are required. Please copy all necessary test streams into the `bin/test_configuration` folder on the target device.
-
-- Run the Test:
-Execute the run.sh script as root:
-
-```bash
-sudo ./run.sh -p profiles/hfp-videodecoder.yaml
-```
-
-To run the binary with two processes simultaneously:
-
-Open two separate SSH sessions to the target device. In each session, navigate to the `bin` directory  and execute one of the following commands:
-
-```bash
-sudo  ./run.sh -p profiles/hfp-videodecoder_ID0.yaml
-```
-
-```bash
-sudo ./run.sh -p profiles/hfp-videodecoder_ID1.yaml
-```
