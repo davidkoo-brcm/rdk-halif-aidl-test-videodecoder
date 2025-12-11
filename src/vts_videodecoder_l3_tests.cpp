@@ -162,7 +162,7 @@ public:
         for (const auto& [_decoderId, decoderHandle, controlListener, eventListener, capabilities] : mVideoDecoderList)
         {
             HeapMetrics beforeHeapMetrics, afterHeapMetrics;
-            bool isSinkAvailable = false;
+            bool isSinkAttached = false;
 
             if (secureDecode && !capabilities->supportsSecure)
             {
@@ -183,7 +183,7 @@ public:
             AVBUFFER_GETMETRICS(mAVBufferManager, secureDecode, beforeHeapMetrics);
 
             videoDecoderTest decodeTest(_decoderId, decoderHandle, controlListener,
-                                   eventListener, mAVBufferManager, secureDecode, tunnelMode, testConfig,mAVbufferHelper, isSinkAvailable);
+                                   eventListener, mAVBufferManager, secureDecode, tunnelMode, testConfig,mAVbufferHelper, isSinkAttached);
 
             decodeTest.run(concurrentDecodeConsume);
 
@@ -200,7 +200,7 @@ public:
         std::vector<std::unique_ptr<videoDecoderTest>> decoderTests;
         std::vector<std::future<void>> futures;
         HeapMetrics beforeHeapMetrics, afterHeapMetrics;
-        bool isSinkAvailable = false;
+        bool isSinkAttached = false;
 
         AVBUFFER_GETMETRICS(mAVBufferManager, secureDecode, beforeHeapMetrics);
 
@@ -234,7 +234,7 @@ public:
             }
 
             auto decoderTest = std::make_unique<videoDecoderTest>(_decoderId, decoderHandle, controlListener, eventListener,
-                                                            mAVBufferManager, secureDecode, tunnelMode, testConfig,mAVbufferHelper, isSinkAvailable);
+                                                            mAVBufferManager, secureDecode, tunnelMode, testConfig,mAVbufferHelper, isSinkAttached);
             futures.push_back(std::async(std::launch::async, &videoDecoderTest::run, decoderTest.get(), concurrentDecodeConsume));
             decoderTests.push_back(std::move(decoderTest));
             activeDecoders++;

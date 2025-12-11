@@ -1367,7 +1367,7 @@ public:
                 sp<VideoDecoderControllerListener> controlListener,
                 sp<VideoDecoderEventListener> eventListener,
                 sp<IAVBuffer> AVBufferManager,
-                bool secureDecode, bool tunnelMode, videoDecoderTestConfiguration_t config,IAVBufferHelper* avbufferHelper, bool isSinkAvailable){
+                bool secureDecode, bool tunnelMode, videoDecoderTestConfiguration_t config,IAVBufferHelper* avbufferHelper, bool isSinkAttached){
                     mDecoderId = decoderId;
                     mDecoderHandle = decoderHandle;
                     mControlListener = controlListener;
@@ -1376,7 +1376,7 @@ public:
                     mTestConfiguration = config;
                     mAVBufferManager = AVBufferManager;
                     mAVbufferHelper = avbufferHelper;
-                    mIsSinkAvailable = isSinkAvailable;
+                    misSinkAttached = isSinkAttached;
                 }
     void run(bool concurrentDecodeConsume);
     bool getDecoderMetrics(int32_t &framesDecoded, int32_t &decodeErrors, int32_t &framesDropped);
@@ -1399,7 +1399,7 @@ private:
     atomic<bool> mDecodingStream;
     bool mConcurrentDecodeConsume;
     mutex mAVbufferHelperLock;
-    bool mIsSinkAvailable;
+    bool misSinkAttached;
 
     void decoderThreadFunc();
     void consumerThreadFunc();
