@@ -120,9 +120,9 @@ Below is the list of supported video error types used for AV VTS L4 recovery val
 | **Video Error Type** | **Details** | **Impact** |
 |----------------------|-------------|------------|
 | **vps-corruption** | Modifies the Video Parameter Set (VPS) layer ID or profile info. | Critical initialization failure; decoder may reject stream immediately. |
-| **tile-entry-point-corruption** | Corrupts entry point offsets in slice headers (Wavefront Parallel Processing). | **High Risk:** Can cause parallel decoding threads to hang or access invalid memory. |
+| **tile-entry-point-corruption** | Corrupts entry point offsets in slice headers (Wavefront Parallel Processing). | Can cause parallel decoding threads to hang or access invalid memory. |
 | **scaling-list-corruption** | Modifies quantization scaling matrices in SPS/PPS. | Mathematical overflows during inverse quantization; severe visual noise. |
-| **nal-header-corruption-h265** | Flips bits in the 2‑byte NAL header (e.g., nal_unit_type, layer ID, temporal ID) to confuse decoder about frame type or hierarchy. | High severity—often causes decode abort or severe prediction errors, leading to visual distortion or stream rejection. |
+| **nal-header-corruption-h265** | Flips bits in the 2‑byte NAL header (e.g., nal_unit_type, layer ID, temporal ID) to confuse decoder about frame type or hierarchy. | Often causes decode abort or severe prediction errors, leading to visual distortion or stream rejection. |
 
 #### MPEG2 Specific Corruptions
 
@@ -140,13 +140,13 @@ Below is the list of supported video error types used for AV VTS L4 recovery val
 | **superframe-index-corruption** | Corrupts the size/index bytes located in the footer of a Superframe. | Parser reads garbage data as the next frame; causes massive sync loss. |
 | **prob-table-desync** | Flips bits in the compressed header (probability update section). | Decoder uses wrong math for coefficients; results in neon/purple block artifacts. |
 | **loop-filter-max** | Sets loop filter strength to illegal maximum values in Frame Header. | Visual "wash out" or potential crash in the post-processing filter block. |
-| **resolution-change-stress** | Injects a header with a new resolution (DRC) but same buffer size. | **High Risk:** Stresses memory reallocation logic; common cause of driver crashes. |
+| **resolution-change-stress** | Injects a header with a new resolution (DRC) but same buffer size. | Stresses memory reallocation logic; common cause of driver crashes. |
 
 #### AV1 Specific Corruptions
 
 | **Video Error Type** | **Details** | **Impact** |
 |----------------------|-------------|------------|
 | **obu-header-fuzz** | Modifies the `obu_type` field (e.g., Frame OBU → Sequence Header OBU). | Confuses the state machine; decoder loses track of stream structure. |
-| **film-grain-param-overflow** | Sets `num_y_points` in film grain params to > 14 (illegal value). | **Critical:** Often causes hardware buffer overflows in the film grain synthesis block. |
+| **film-grain-param-overflow** | Sets `num_y_points` in film grain params to > 14 (illegal value). | Often causes hardware buffer overflows in the film grain synthesis block. |
 | **cdf-update-corruption** | Corrupts the Cumulative Distribution Function (CDF) update bits. | Desynchronizes entropy decoding; valid bitstream becomes unreadable garbage. |
 | **tile-group-size-mismatch** | Sets `tile_group_size` larger than remaining data in the OBU. | Buffer over-read; parser tries to read past the end of the input buffer. |
