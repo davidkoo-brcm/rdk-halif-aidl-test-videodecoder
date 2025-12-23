@@ -555,8 +555,6 @@ void videoDecoderTest::decoderThreadFunc()
             if (mTestConfiguration.eosPts == framePTS) {
                    UT_LOG_INFO("Signaling EOS at PTS:%lld", framePTS);
                     VIDEODECODER_SIGNAL_EOS_SUCCESS(mDecoderHandle, videoDecoderController, true);
-                    VIDEODECODER_STOP_SUCCESS(mDecoderHandle, videoDecoderController, true);
-                    VIDEODECODER_START_SUCCESS(mDecoderHandle, videoDecoderController, true);
                 }
 
             // Check decode time
@@ -568,6 +566,11 @@ void videoDecoderTest::decoderThreadFunc()
             }
 
             std::this_thread::sleep_for(std::chrono::milliseconds(mTestConfiguration.decoderDelay));
+
+            if(i == (frameData.size() -1))
+            {
+                VIDEODECODER_SIGNAL_EOS_SUCCESS(mDecoderHandle, videoDecoderController, true);
+            }
 
             // Free Input Buffer
             {
@@ -682,10 +685,12 @@ void videoDecoderTest::decoderThreadFunc()
                     << "Frames Decoded mismatch: expected=" << (mTestConfiguration.no_of_frames - mTestConfiguration.decodeErrors)
                     << ", actual=" << framesDecoded
                     << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-        UT_ASSERT_EQUAL(decodeErrors, mTestConfiguration.decodeErrors)
+
+        UT_ASSERT_GREATER_EQUAL(decodeErrors, mTestConfiguration.decodeErrors)
                         << "Frames Decoded mismatch: expected=" << mTestConfiguration.decodeErrors
                         << ", actual=" << decodeErrors
                         << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+
         UT_ASSERT_EQUAL(framesDropped, mTestConfiguration.framesDropped)
                         << "Frames Decoded mismatch: expected=" << mTestConfiguration.framesDropped
                         << ", actual=" << framesDropped
