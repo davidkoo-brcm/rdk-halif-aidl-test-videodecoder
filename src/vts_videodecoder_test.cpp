@@ -572,16 +572,6 @@ void videoDecoderTest::decoderThreadFunc()
                 VIDEODECODER_SIGNAL_EOS_SUCCESS(mDecoderHandle, videoDecoderController, true);
             }
 
-            // Free Input Buffer
-            {
-                std::lock_guard<std::mutex> lock(mDecodeMutex);
-                bool isValidBuffer = false;
-                UT_LOG_INFO("Calling isValid(IN:bufferHandle:[0X%016"PRIx64"], OUT:_aidl_return[])", videoBufferHandle);
-                AVBUFFER_ISVALID_SUCCESS(mAVBufferManager, videoBufferHandle, isValidBuffer);
-                if(isValidBuffer) {
-                    UT_LOG_ERROR("Encoded buffer not released by Decoder [handle:0x%llx]", videoBufferHandle);
-                }
-            }
         }
 
             // Retrieve any remaining output frames
@@ -701,6 +691,17 @@ void videoDecoderTest::decoderThreadFunc()
             std::lock_guard<std::mutex> lock(mDecodeMutex);
             UT_LOG_INFO("Stopping decoder");
             VIDEODECODER_STOP_SUCCESS(mDecoderHandle, videoDecoderController, true);
+        }
+
+        // Validating Encoded Buffer is released
+        {
+            std::lock_guard<std::mutex> lock(mDecodeMutex);
+            bool isValidBuffer = false;
+            UT_LOG_INFO("Calling isValid(IN:bufferHandle:[0X%016"PRIx64"], OUT:_aidl_return[])", videoBufferHandle);
+            AVBUFFER_ISVALID_SUCCESS(mAVBufferManager, videoBufferHandle, isValidBuffer);
+            if(isValidBuffer) {
+                UT_LOG_ERROR("Encoded buffer not released by Decoder [handle:0x%llx]", videoBufferHandle);
+            }
         }
 
         getDecoderMetrics(framesDecoded, decodeErrors, framesDropped);
