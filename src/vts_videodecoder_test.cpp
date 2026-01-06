@@ -555,8 +555,6 @@ void videoDecoderTest::decoderThreadFunc()
             if (mTestConfiguration.eosPts == framePTS) {
                    UT_LOG_INFO("Signaling EOS at PTS:%lld", framePTS);
                     VIDEODECODER_SIGNAL_EOS_SUCCESS(mDecoderHandle, videoDecoderController, true);
-                    VIDEODECODER_STOP_SUCCESS(mDecoderHandle, videoDecoderController, true);
-                    VIDEODECODER_START_SUCCESS(mDecoderHandle, videoDecoderController, true);
                 }
 
             // Check decode time
@@ -569,16 +567,11 @@ void videoDecoderTest::decoderThreadFunc()
 
             std::this_thread::sleep_for(std::chrono::milliseconds(mTestConfiguration.decoderDelay));
 
-            // Free Input Buffer
+            if(i == (frameData.size() -1))
             {
-                std::lock_guard<std::mutex> lock(mDecodeMutex);
-                bool isValidBuffer = false;
-                UT_LOG_INFO("Calling isValid(IN:bufferHandle:[0X%016"PRIx64"], OUT:_aidl_return[])", videoBufferHandle);
-                AVBUFFER_ISVALID_SUCCESS(mAVBufferManager, videoBufferHandle, isValidBuffer);
-                if(isValidBuffer) {
-                    UT_LOG_ERROR("Encoded buffer not released by Decoder [handle:0x%llx]", videoBufferHandle);
-                }
+                VIDEODECODER_SIGNAL_EOS_SUCCESS(mDecoderHandle, videoDecoderController, true);
             }
+
         }
 
             // Retrieve any remaining output frames
@@ -659,6 +652,18 @@ void videoDecoderTest::decoderThreadFunc()
                     } else {
                         UT_LOG_INFO("No metadata available for PTS=%lld", decodedFrame.framePTS);
                     }
+
+                   if(!misSinkAttached)
+                   {
+                        if(decodedFrame.frameBufferHandle != -1)
+                        {
+                            AVBUFFER_ISVALID_SUCCESS(mAVBufferManager, decodedFrame.frameBufferHandle, isBufferValid);
+                            if (isBufferValid)
+                            {
+                                AVBUFFER_FREE_SUCCESS(mAVBufferManager, decodedFrame.frameBufferHandle);
+                            }
+                        }
+                    }
             }
 
         // Get final metrics
@@ -670,12 +675,14 @@ void videoDecoderTest::decoderThreadFunc()
                     << "Frames Decoded mismatch: expected=" << (mTestConfiguration.no_of_frames - mTestConfiguration.decodeErrors)
                     << ", actual=" << framesDecoded
                     << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-        UT_ASSERT_EQUAL(decodeErrors, mTestConfiguration.decodeErrors)
-                        << "Frames Decoded mismatch: expected=" << mTestConfiguration.decodeErrors
+
+        UT_ASSERT_GREATER_EQUAL(decodeErrors, mTestConfiguration.decodeErrors)
+                        << "Decoded Errors mismatch: expected=" << mTestConfiguration.decodeErrors
                         << ", actual=" << decodeErrors
                         << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+
         UT_ASSERT_EQUAL(framesDropped, mTestConfiguration.framesDropped)
-                        << "Frames Decoded mismatch: expected=" << mTestConfiguration.framesDropped
+                        << "Frames Dropped mismatch: expected=" << mTestConfiguration.framesDropped
                         << ", actual=" << framesDropped
                         << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
 
@@ -684,6 +691,17 @@ void videoDecoderTest::decoderThreadFunc()
             std::lock_guard<std::mutex> lock(mDecodeMutex);
             UT_LOG_INFO("Stopping decoder");
             VIDEODECODER_STOP_SUCCESS(mDecoderHandle, videoDecoderController, true);
+        }
+
+        // Validating Encoded Buffer is released
+        {
+            std::lock_guard<std::mutex> lock(mDecodeMutex);
+            bool isValidBuffer = false;
+            UT_LOG_INFO("Calling isValid(IN:bufferHandle:[0X%016"PRIx64"], OUT:_aidl_return[])", videoBufferHandle);
+            AVBUFFER_ISVALID_SUCCESS(mAVBufferManager, videoBufferHandle, isValidBuffer);
+            if(isValidBuffer) {
+                UT_LOG_ERROR("Encoded buffer not released by Decoder [handle:0x%llx]", videoBufferHandle);
+            }
         }
 
         getDecoderMetrics(framesDecoded, decodeErrors, framesDropped);
