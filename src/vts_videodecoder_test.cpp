@@ -677,12 +677,12 @@ void videoDecoderTest::decoderThreadFunc()
                     << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
 
         UT_ASSERT_GREATER_EQUAL(decodeErrors, mTestConfiguration.decodeErrors)
-                        << "Frames Decoded mismatch: expected=" << mTestConfiguration.decodeErrors
+                        << "Decoded Errors mismatch: expected=" << mTestConfiguration.decodeErrors
                         << ", actual=" << decodeErrors
                         << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
 
         UT_ASSERT_EQUAL(framesDropped, mTestConfiguration.framesDropped)
-                        << "Frames Decoded mismatch: expected=" << mTestConfiguration.framesDropped
+                        << "Frames Dropped mismatch: expected=" << mTestConfiguration.framesDropped
                         << ", actual=" << framesDropped
                         << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
 
