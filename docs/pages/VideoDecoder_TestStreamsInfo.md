@@ -76,11 +76,11 @@ Below is the list of supported video error types used for AV VTS L4 recovery val
 
 | **Video Error Type** | **Details** | **Impact** | **Applies to Codec Type** |
 |----------------------|-------------|------------|---------------------------|
-| **light-fuzz-all** | Applies minor random bit modifications across the entire bitstream. | Subtle, intermittent glitches. | H264, H265, MPEG2, VP9, AV1 |
-| **entropy-bit-flip** | Flips bits in CABAC/CAVLC encoded data. | Desynchronizes the arithmetic decoder, causing massive macroblock corruption. | H264, H265, MPEG2, VP9, AV1 |
-| **partial-frame-truncation** | Cuts off data before the frame end. | Visual corruption at the bottom of the frame; usually triggers decoder error concealment. | H264, H265, MPEG2, VP9, AV1 |
-| **gop-truncation-duplication** | Truncates or duplicates entire Groups of Pictures (GOPs). | Breaks reference chains; triggers IDR/keyframe warnings. | H264, H265, MPEG2, VP9, AV1 |
-| **pts-dts-corruption** | Alters Presentation Time Stamp (PTS) or Decoding Time Stamp (DTS). | Muxer/Decoder warnings (e.g., "Non-monotonous DTS"). Causes sync issues or playback stalls. | H264, H265, MPEG2, VP9, AV1 |
+| **light-fuzz-all** | Applies minor random bit modifications across the entire bitstream. | Subtle, intermittent glitches. | H264, H265, MPEG2 |
+| **entropy-bit-flip** | Flips bits in CABAC/CAVLC encoded data. | Desynchronizes the arithmetic decoder, causing massive macroblock corruption. | H264, H265, MPEG2 |
+| **partial-frame-truncation** | Cuts off data before the frame end. | Visual corruption at the bottom of the frame; usually triggers decoder error concealment. | H264, H265, MPEG2 |
+| **gop-truncation-duplication** | Truncates or duplicates entire Groups of Pictures (GOPs). | Breaks reference chains; triggers IDR/keyframe warnings. | H264, H265, MPEG2 |
+| **pts-dts-corruption** | Alters Presentation Time Stamp (PTS) or Decoding Time Stamp (DTS). | Muxer/Decoder warnings (e.g., "Non-monotonous DTS"). Causes sync issues or playback stalls. | H264, H265, MPEG2 |
 
 #### H264 Specific Corruption Modes
 
