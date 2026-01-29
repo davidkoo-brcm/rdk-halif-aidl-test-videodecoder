@@ -590,7 +590,7 @@ void videoDecoderTest::decoderThreadFunc()
                     }
                 }
 
-                if(decodedFrame.framePTS != mTestConfiguration.flushResetPts)
+                if(mTestConfiguration.flushResetPts == -1 || mTestConfiguration.flushPts==-1)
                 {
                     if (decodedFrame.metadata) {
                             UT_LOG_INFO("Validating metadata for PTS=%lld", decodedFrame.framePTS);
