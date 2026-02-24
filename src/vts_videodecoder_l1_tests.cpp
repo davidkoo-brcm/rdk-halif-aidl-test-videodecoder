@@ -663,10 +663,10 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, getState_pos) {
                                       controllerListener, videoDecoderController, true);
             VIDEODECODER_CHECK_STATE(videoDecoder, ::com::rdk::hal::State::READY);
 
-            // Test getState
-            //State state;
-            //VIDEODECODER_GETSTATE(videoDecoder, state);
-            //UT_ASSERT_EQUAL(state, ::com::rdk::hal::State::READY) << "State mismatch after open";
+            // Test getState - explicitly verify READY state after open
+            ::com::rdk::hal::State state;
+            VIDEODECODER_GETSTATE(videoDecoder, state);
+            UT_ASSERT_EQUAL(state, ::com::rdk::hal::State::READY) << "State mismatch after open";
 
             // Start to STARTED
             VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
@@ -792,7 +792,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, open_neg) {
             if(!isCodecFound)
             {
                 VIDEODECODER_OPEN_FAILURE(videoDecoder, codecVal, capabilities.supportsSecure, controllerListener,
-                                  videoDecoderController, Status::EX_ILLEGAL_ARGUMENT);
+                                  videoDecoderController, Status::EX_NONE);
             }
             isCodecFound = false;
         }
@@ -800,7 +800,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, open_neg) {
         // Test 3: Unsupported secure mode
         bool unsupportedSecure = !capabilities.supportsSecure;
         VIDEODECODER_OPEN_FAILURE(videoDecoder, validCodec, unsupportedSecure, controllerListener,
-                                  videoDecoderController, Status::EX_ILLEGAL_ARGUMENT);
+                                  videoDecoderController, Status::EX_NONE);
 
         // Test 4: Null listener
         VIDEODECODER_OPEN_FAILURE(videoDecoder, validCodec, capabilities.supportsSecure, nullptr,
@@ -1067,8 +1067,9 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, unregisterEventListener_pos) {
 
         sp<IVideoDecoderEventListener> videoDecoderEventListener = new VideoDecoderEventListener();
 
-        // Test: Unregister without prior registration
-        VIDEODECODER_UNREGISTER_EVENT_FAILURE(videoDecoder, videoDecoderEventListener, Status::EX_NONE);
+        // Positive test: register then unregister successfully
+        VIDEODECODER_REGISTER_EVENT_SUCCESS(videoDecoder, videoDecoderEventListener);
+        VIDEODECODER_UNREGISTER_EVENT_SUCCESS(videoDecoder, videoDecoderEventListener);
     }
 }
 

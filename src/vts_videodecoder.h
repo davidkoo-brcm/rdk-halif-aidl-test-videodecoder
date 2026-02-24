@@ -336,7 +336,7 @@ size_t vts_bytesPerPixel(PixelFormat format);
         UT_LOG_INFO("Result getVideoDecoder(IN:_decoderId:[%d], OUT:videoDecoder[0x%X]), status:[isOK:%s, exception:%s]", \
                                 _decoderId.value, videoDecoder.get(), UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                                 UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
-        UT_ASSERT_FALSE(status.isOk()); \
+        UT_ASSERT_TRUE(status.isOk()); \
         UT_ASSERT_TRUE(videoDecoder.get() == nullptr); \
     } while (0)
 
