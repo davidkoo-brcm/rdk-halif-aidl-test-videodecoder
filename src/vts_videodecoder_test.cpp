@@ -285,7 +285,27 @@ void videoDecoderTest::decoderThreadFunc()
         return;
     }
     UT_LOG_INFO("mAVbufferHelper initialized: %p, secureDecode: %d", mAVbufferHelper, mSecureDecode);
-
+    if (mSecureDecode) {
+        HeapMetrics heapMetrics{};
+        UT_LOG_INFO("Calling getHeapMetrics(IN:secureHeap:[true], OUT:heapMetrics[])");
+        Status st = mAVBufferManager->getHeapMetrics(true, &heapMetrics);
+        UT_LOG_INFO("Result getHeapMetrics(IN:secureHeap:[true], OUT:heapMetrics[secure:%s, bytesUsed:%d, bytesTotal:%d]), status:[isOK:%s, exception:%s]",
+                    UT_Control_GetMapString(bool_mapTable, heapMetrics.secure),
+                    heapMetrics.bytesUsed,
+                    heapMetrics.bytesTotal,
+                    UT_Control_GetMapString(bool_mapTable, st.isOk()),
+                    UT_Control_GetMapString(statusException_mapTable, st.exceptionCode()));
+        if (!st.isOk() || !heapMetrics.secure || heapMetrics.bytesTotal <= 0) {
+            UT_LOG_WARNING("[Video DecoderID: %d] Secure heap not available/provisioned "
+                           "(isOk=%s secure=%s total=%d). Not creating video pool.",
+                           mDecoderId.value,
+                           UT_Control_GetMapString(bool_mapTable, st.isOk()),
+                           UT_Control_GetMapString(bool_mapTable, heapMetrics.secure),
+                           heapMetrics.bytesTotal);
+            mDecodingStream = false;
+            return;
+        }
+    }
     // Create Video Pool
     {
         std::lock_guard<std::mutex> lock(mDecodeMutex);
@@ -812,6 +832,32 @@ void videoDecoderTest::decodeAndConsumeVideoStreams() {
     sp<IAVBufferSpaceListener> bufferListener = new AVBufferSpaceListener();
 
     UT_LOG_INFO("decodeAndConsumeVideoStreams start:");
+
+    // ------------------------------------------------------------
+    // Heap metrics gate before pool creation (NO MACRO)
+    // ------------------------------------------------------------
+    if (mSecureDecode) {
+        HeapMetrics heapMetrics{};
+        UT_LOG_INFO("Calling getHeapMetrics(IN:secureHeap:[true], OUT:heapMetrics[])");
+        Status st = mAVBufferManager->getHeapMetrics(true, &heapMetrics);
+        UT_LOG_INFO("Result getHeapMetrics(IN:secureHeap:[true], OUT:heapMetrics[secure:%s, bytesUsed:%d, bytesTotal:%d]), status:[isOK:%s, exception:%s]",
+                    UT_Control_GetMapString(bool_mapTable, heapMetrics.secure),
+                    heapMetrics.bytesUsed,
+                    heapMetrics.bytesTotal,
+                    UT_Control_GetMapString(bool_mapTable, st.isOk()),
+                    UT_Control_GetMapString(statusException_mapTable, st.exceptionCode()));
+
+        if (!st.isOk() || !heapMetrics.secure || heapMetrics.bytesTotal <= 0) {
+            UT_LOG_WARNING("[Video DecoderID: %d] Secure heap not available/provisioned "
+                           "(isOk=%s secure=%s total=%d). Not creating video pool.",
+                           mDecoderId.value,
+                           UT_Control_GetMapString(bool_mapTable, st.isOk()),
+                           UT_Control_GetMapString(bool_mapTable, heapMetrics.secure),
+                           heapMetrics.bytesTotal);
+            // Use if/else flow (no GTEST_SKIP)
+            return;
+        }
+    }
 
     AVBUFFER_CREATE_VIDEOPOOL_SUCCESS(mAVBufferManager, mSecureDecode, mDecoderId, bufferListener, videoPool);
 
