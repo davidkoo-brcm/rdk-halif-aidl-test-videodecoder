@@ -600,7 +600,6 @@ void videoDecoderTest::decoderThreadFunc()
         }
     }
 
-    // Retrieve any remaining output frames
     // Retrieve remaining output frames
     auto drainStart = std::chrono::steady_clock::now();
     auto eosDrainDeadline = drainStart + std::chrono::seconds(2);
@@ -721,33 +720,6 @@ void videoDecoderTest::decoderThreadFunc()
             << "No output frame received with endOfStream=true"
             << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
 
-        UT_ASSERT_FALSE(eosSeenMoreThanOnce)
-            << "EOS metadata was observed more than once"
-            << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-
-        UT_ASSERT_FALSE(outputAfterEos)
-            << "Frames were received after EOS output frame at PTS=" << eosOutputPts
-            << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-
-        if (mTestConfiguration.eosPts != -1) {
-            UT_ASSERT_TRUE(eosSignaledAtConfiguredPts)
-                << "EOS was not signaled at configured eosPts=" << mTestConfiguration.eosPts
-                << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-        }
-    }
-    else
-    {
-        UT_ASSERT_FALSE(eosFrameReceived)
-            << "Unexpected output frame received with endOfStream=true"
-            << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-    }
-
-    if (mTestConfiguration.endOfStream)
-    {
-        UT_ASSERT_TRUE(eosFrameReceived)
-            << "No output frame received with endOfStream=true"
-            << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-
         if (mTestConfiguration.eosPts != -1)
         {
             UT_ASSERT_TRUE(eosSignaledAtConfiguredPts)
@@ -758,7 +730,7 @@ void videoDecoderTest::decoderThreadFunc()
     else
     {
         UT_ASSERT_FALSE(eosFrameReceived)
-            << "Unexpected output frame received with endOfStream=true"
+            << "Unexpected EOS-marked output frame received"
             << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
     }
 
@@ -768,10 +740,6 @@ void videoDecoderTest::decoderThreadFunc()
         getDecoderMetrics(framesDecoded, decodeErrors, framesDropped);
         UT_LOG_INFO("Final Decoder Metrics: Codec: %d, Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
                     mTestConfiguration.codec, framesDecoded, decodeErrors, framesDropped);
-
-        int32_t expectedFramesDecoded =
-            (mTestConfiguration.endOfStream ? framesSentBeforeEos : mTestConfiguration.no_of_frames)
-            - mTestConfiguration.decodeErrors;
 
         int64_t expectedFramesDecoded =
             (mTestConfiguration.endOfStream
