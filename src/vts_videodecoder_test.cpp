@@ -572,6 +572,12 @@ void videoDecoderTest::decoderThreadFunc()
             eosSignaledAtConfiguredPts = true;
         }
 
+        if (eosSignaled && eosSignaledAtConfiguredPts)
+        {
+            UT_LOG_INFO("EOS signaled at configured PTS:%lld, stopping further input", framePTS);
+            break;
+        }
+
         // Check decode time
         auto decodeEnd = std::chrono::steady_clock::now();
         auto decodeTimeNs = std::chrono::duration_cast<std::chrono::nanoseconds>(decodeEnd - decodeStart).count();
@@ -582,7 +588,8 @@ void videoDecoderTest::decoderThreadFunc()
 
         std::this_thread::sleep_for(std::chrono::milliseconds(mTestConfiguration.decoderDelay));
 
-        if ((i == (frameData.size() - 1)) && !eosSignaled)
+
+        if ((i == (frameData.size() - 1)) && !eosSignaled && mTestConfiguration.endOfStream)
         {
             UT_LOG_INFO("Signaling EOS at last frame fallback PTS:%lld", framePTS);
             VIDEODECODER_SIGNAL_EOS_SUCCESS(mDecoderHandle, videoDecoderController, true);
@@ -649,6 +656,7 @@ void videoDecoderTest::decoderThreadFunc()
             if (decodedFrame.metadata->endOfStream)
             {
                 eosFrameReceived = true;
+                UT_LOG_INFO("Received EOS metadata on output frame PTS=%lld", decodedFrame.framePTS);
             }
 
             if(mTestConfiguration.discontinuityPts == decodedFrame.framePTS)
