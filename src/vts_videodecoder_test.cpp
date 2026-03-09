@@ -569,6 +569,7 @@ void videoDecoderTest::decoderThreadFunc()
             UT_LOG_INFO("Signaling EOS at PTS:%lld", framePTS);
             VIDEODECODER_SIGNAL_EOS_SUCCESS(mDecoderHandle, videoDecoderController, true);
             eosSignaled = true;
+            eosSignaledAtConfiguredPts = true;
         }
 
         // Check decode time
@@ -693,6 +694,12 @@ void videoDecoderTest::decoderThreadFunc()
                 << "EOS was not signaled at configured eosPts=" << mTestConfiguration.eosPts
                 << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
         }
+    }
+    else
+    {
+        UT_ASSERT_FALSE(eosFrameReceived)
+            << "Unexpected output frame received with endOfStream=true"
+            << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
     }
 
     if((mTestConfiguration.flushResetPts == -1) && (mTestConfiguration.flushPts==-1))
