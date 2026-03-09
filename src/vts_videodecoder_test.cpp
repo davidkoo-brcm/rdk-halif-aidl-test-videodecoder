@@ -274,6 +274,9 @@ void videoDecoderTest::decoderThreadFunc()
     bool eosSignaled = false;
     bool eosSignaledAtConfiguredPts = false;
     bool eosFrameReceived = false;
+    bool eosSeenMoreThanOnce = false;
+    bool outputAfterEos = false;
+    int64_t eosOutputPts = -1;
     int32_t framesSentBeforeEos = 0;
 
     DecodedVideoFrame_t decodedFrame;
@@ -552,8 +555,7 @@ void videoDecoderTest::decoderThreadFunc()
 
             UT_LOG_INFO("Calling decodeBuffer(PTS:%lld, bufferHandle:0x%llx)", framePTS, videoBufferHandle);
 
-            if (!eosSignaled)
-            {
+            if (mTestConfiguration.endOfStream && !eosSignaled) {
                 framesSentBeforeEos++;
             }
 
@@ -564,18 +566,13 @@ void videoDecoderTest::decoderThreadFunc()
                         mTestConfiguration.codec, framesDecoded, decodeErrors, framesDropped);
         }
 
-        if ((mTestConfiguration.eosPts == framePTS) && !eosSignaled)
-        {
-            UT_LOG_INFO("Signaling EOS at PTS:%lld", framePTS);
+        if (mTestConfiguration.endOfStream &&
+            mTestConfiguration.eosPts == framePTS &&
+            !eosSignaled) {
+            UT_LOG_INFO("Signaling EOS at configured PTS:%lld", framePTS);
             VIDEODECODER_SIGNAL_EOS_SUCCESS(mDecoderHandle, videoDecoderController, true);
             eosSignaled = true;
             eosSignaledAtConfiguredPts = true;
-        }
-
-        if (eosSignaled && eosSignaledAtConfiguredPts)
-        {
-            UT_LOG_INFO("EOS signaled at configured PTS:%lld, stopping further input", framePTS);
-            break;
         }
 
         // Check decode time
@@ -588,9 +585,15 @@ void videoDecoderTest::decoderThreadFunc()
 
         std::this_thread::sleep_for(std::chrono::milliseconds(mTestConfiguration.decoderDelay));
 
+        if (mTestConfiguration.endOfStream &&
+            eosSignaledAtConfiguredPts) {
+            UT_LOG_INFO("Configured EOS already signaled at PTS:%lld, stopping further input", framePTS);
+            break;
+        }
 
-        if ((i == (frameData.size() - 1)) && !eosSignaled && mTestConfiguration.endOfStream)
-        {
+        if ((i == (frameData.size() - 1)) &&
+            mTestConfiguration.endOfStream &&
+            !eosSignaled) {
             UT_LOG_INFO("Signaling EOS at last frame fallback PTS:%lld", framePTS);
             VIDEODECODER_SIGNAL_EOS_SUCCESS(mDecoderHandle, videoDecoderController, true);
             eosSignaled = true;
@@ -598,10 +601,30 @@ void videoDecoderTest::decoderThreadFunc()
     }
 
     // Retrieve any remaining output frames
-    while (mControlListener->getNextFrame(decodedFrame, std::chrono::milliseconds(100)))
+    // Retrieve remaining output frames
+    auto drainStart = std::chrono::steady_clock::now();
+    auto eosDrainDeadline = drainStart + std::chrono::seconds(2);
+
+    while (true)
     {
+        bool gotFrame = mControlListener->getNextFrame(decodedFrame, std::chrono::milliseconds(100));
+
+        if (!gotFrame) {
+            if (mTestConfiguration.endOfStream && !eosFrameReceived &&
+                std::chrono::steady_clock::now() < eosDrainDeadline) {
+                continue;
+            }
+            break;
+        }
+
         UT_LOG_INFO("Retrieved remaining output frame: PTS=%lld, handle=0x%llx, isMetaAvailable=%d",
                 decodedFrame.framePTS, decodedFrame.frameBufferHandle, decodedFrame.isMetaAvailable);
+
+        if (eosFrameReceived) {
+            outputAfterEos = true;
+            UT_LOG_ERROR("Received frame after EOS frame, PTS=%lld", decodedFrame.framePTS);
+        }
+
         // Validate PTS
         {
             auto it = mReceivedPts.find(decodedFrame.framePTS);
@@ -609,13 +632,14 @@ void videoDecoderTest::decoderThreadFunc()
                 UT_LOG_ERROR("Unexpected PTS received: %lld", decodedFrame.framePTS);
             } else {
                 UT_LOG_INFO("Validated PTS: %lld", decodedFrame.framePTS);
-                mReceivedPts.erase(it); // Remove to track received PTS
+                mReceivedPts.erase(it);
             }
         }
+
         if (decodedFrame.metadata)
         {
             UT_LOG_INFO("Validating metadata for PTS=%lld", decodedFrame.framePTS);
-            // Validate resolution
+
             UT_ASSERT_EQUAL(decodedFrame.metadata->codedWidth, mTestConfiguration.codedWidth)
                 << "Width mismatch: expected=" << mTestConfiguration.codedWidth
                 << ", actual=" << decodedFrame.metadata->codedWidth
@@ -630,13 +654,11 @@ void videoDecoderTest::decoderThreadFunc()
                 << ", actual=" << decodedFrame.metadata->colorDepth
                 << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
 
-            // Validate dynamic range
             UT_ASSERT_EQUAL(decodedFrame.metadata->dynamicRange, mTestConfiguration.dynamicRange)
                 << "Dynamic range mismatch: expected=" << static_cast<int>(mTestConfiguration.dynamicRange)
                 << ", actual=" << static_cast<int>(decodedFrame.metadata->dynamicRange)
                 << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
 
-            // Validate frame rate
             UT_ASSERT_EQUAL(decodedFrame.metadata->frameRateNumerator, mTestConfiguration.frameRateNumerator)
                 << "Frame rate numerator mismatch: expected=" << mTestConfiguration.frameRateNumerator
                 << ", actual=" << decodedFrame.metadata->frameRateNumerator
@@ -646,17 +668,20 @@ void videoDecoderTest::decoderThreadFunc()
                 << ", actual=" << decodedFrame.metadata->frameRateDenominator
                 << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
 
-            // Validate scan type
             UT_ASSERT_EQUAL(decodedFrame.metadata->scanType, mTestConfiguration.scanType)
                 << "Scan type mismatch: expected=" << static_cast<int>(mTestConfiguration.scanType)
                 << ", actual=" << static_cast<int>(decodedFrame.metadata->scanType)
                 << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
 
-            // Validate flags
-            if (decodedFrame.metadata->endOfStream)
-            {
-                eosFrameReceived = true;
-                UT_LOG_INFO("Received EOS metadata on output frame PTS=%lld", decodedFrame.framePTS);
+            if (decodedFrame.metadata->endOfStream) {
+                if (eosFrameReceived) {
+                    eosSeenMoreThanOnce = true;
+                    UT_LOG_ERROR("EOS metadata seen more than once, current PTS=%lld", decodedFrame.framePTS);
+                } else {
+                    eosFrameReceived = true;
+                    eosOutputPts = decodedFrame.framePTS;
+                    UT_LOG_INFO("EOS metadata received on output frame PTS=%lld", decodedFrame.framePTS);
+                }
             }
 
             if(mTestConfiguration.discontinuityPts == decodedFrame.framePTS)
@@ -674,7 +699,7 @@ void videoDecoderTest::decoderThreadFunc()
         }
         else
         {
-                UT_LOG_INFO("No metadata available for PTS=%lld", decodedFrame.framePTS);
+            UT_LOG_INFO("No metadata available for PTS=%lld", decodedFrame.framePTS);
         }
 
         if(!misSinkAttached)
@@ -688,6 +713,33 @@ void videoDecoderTest::decoderThreadFunc()
                 }
             }
         }
+    }
+
+    if (mTestConfiguration.endOfStream)
+    {
+        UT_ASSERT_TRUE(eosFrameReceived)
+            << "No output frame received with endOfStream=true"
+            << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+
+        UT_ASSERT_FALSE(eosSeenMoreThanOnce)
+            << "EOS metadata was observed more than once"
+            << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+
+        UT_ASSERT_FALSE(outputAfterEos)
+            << "Frames were received after EOS output frame at PTS=" << eosOutputPts
+            << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+
+        if (mTestConfiguration.eosPts != -1) {
+            UT_ASSERT_TRUE(eosSignaledAtConfiguredPts)
+                << "EOS was not signaled at configured eosPts=" << mTestConfiguration.eosPts
+                << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+        }
+    }
+    else
+    {
+        UT_ASSERT_FALSE(eosFrameReceived)
+            << "Unexpected output frame received with endOfStream=true"
+            << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
     }
 
     if (mTestConfiguration.endOfStream)
@@ -721,7 +773,13 @@ void videoDecoderTest::decoderThreadFunc()
             (mTestConfiguration.endOfStream ? framesSentBeforeEos : mTestConfiguration.no_of_frames)
             - mTestConfiguration.decodeErrors;
 
-        UT_ASSERT_EQUAL(framesDecoded, expectedFramesDecoded)
+        int64_t expectedFramesDecoded =
+            (mTestConfiguration.endOfStream
+                ? static_cast<int64_t>(framesSentBeforeEos)
+                : static_cast<int64_t>(mTestConfiguration.no_of_frames))
+            - static_cast<int64_t>(mTestConfiguration.decodeErrors);
+
+        UT_ASSERT_EQUAL(static_cast<int64_t>(framesDecoded), expectedFramesDecoded)
                     << "Frames Decoded mismatch: expected=" << expectedFramesDecoded
                     << ", actual=" << framesDecoded
                     << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
