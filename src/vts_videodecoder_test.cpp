@@ -272,6 +272,7 @@ void videoDecoderTest::decoderThreadFunc()
     mDecodingStream = true;
     bool isBufferValid = false;
     bool eosSignaled = false;
+    bool eosSignaledAtConfiguredPts = false;
     bool eosFrameReceived = false;
     int32_t framesSentBeforeEos = 0;
 
@@ -580,11 +581,12 @@ void videoDecoderTest::decoderThreadFunc()
 
         std::this_thread::sleep_for(std::chrono::milliseconds(mTestConfiguration.decoderDelay));
 
-        if(i == (frameData.size() -1))
+        if ((i == (frameData.size() - 1)) && !eosSignaled)
         {
+            UT_LOG_INFO("Signaling EOS at last frame fallback PTS:%lld", framePTS);
             VIDEODECODER_SIGNAL_EOS_SUCCESS(mDecoderHandle, videoDecoderController, true);
+            eosSignaled = true;
         }
-
     }
 
     // Retrieve any remaining output frames
@@ -684,6 +686,13 @@ void videoDecoderTest::decoderThreadFunc()
         UT_ASSERT_TRUE(eosFrameReceived)
             << "No output frame received with endOfStream=true"
             << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+
+        if (mTestConfiguration.eosPts != -1)
+        {
+            UT_ASSERT_TRUE(eosSignaledAtConfiguredPts)
+                << "EOS was not signaled at configured eosPts=" << mTestConfiguration.eosPts
+                << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+        }
     }
 
     if((mTestConfiguration.flushResetPts == -1) && (mTestConfiguration.flushPts==-1))
