@@ -88,7 +88,7 @@ DynamicRange videoDecoderStringToDynamicRange(const std::string& rangeStr) {
         {"SDR", DynamicRange::SDR},
         {"HLG", DynamicRange::HLG},
         {"HDR10", DynamicRange::HDR10},
-        {"HDR10PLUS", DynamicRange::HDR10PLUS},
+        {"HDR10_PLUS", DynamicRange::HDR10_PLUS},
         {"DOLBY_VISION", DynamicRange::DOLBY_VISION}
     };
     auto it = dynamicRangeMap.find(rangeStr);
