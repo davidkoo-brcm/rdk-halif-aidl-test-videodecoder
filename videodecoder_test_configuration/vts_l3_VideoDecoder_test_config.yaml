@@ -25,7 +25,7 @@ include_1: videodecoder_test_configuration/vts_video_hevc_streams.yaml
 include_2: videodecoder_test_configuration/vts_video_vp9_streams.yaml
 include_3: videodecoder_test_configuration/vts_video_av1_streams.yaml
 
-IVideoDecoderManager:
+videodecoder:
   stream_download_path: "http://<>/streams" #`URL` path to download the video test streams
   input_streams_path: "assets/streams/input" #Target path where input streams are stored
   reference_streams_path: "assets/streams/reference" #Target path for reference decoded streams
