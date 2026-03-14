@@ -88,6 +88,43 @@ static const int32_t intValueLowLatencyOn = 1;
 static const int32_t intValueDecodeErrorConceal = 1;
 static const int32_t intValueAVSourceUnknown = 0;
 
+// Typed controller API test values
+static const int32_t intValueStreamWidth = 1920;
+static const int32_t intValueStreamHeight = 1080;
+static const int32_t intValueInvalidWidth = 0;
+static const int32_t intValueInvalidHeight = 0;
+
+static const int32_t intValueFrameRateNum = 24;
+static const int32_t intValueFrameRateDen = 1;
+static const int32_t intValueInvalidFrameRateNum = 24;
+static const int32_t intValueInvalidFrameRateDen = 0;
+
+static const Colorimetry validColorimetry = Colorimetry::BT709;
+
+static const bool dolbyVisionBLPresent = true;
+static const bool dolbyVisionELPresent = false;
+
+static MasteringDisplayInfo validMasteringDisplayInfo = [] {
+    MasteringDisplayInfo mdi{};
+    mdi.redPrimaryX = 13250;
+    mdi.redPrimaryY = 34500;
+    mdi.greenPrimaryX = 8500;
+    mdi.greenPrimaryY = 16500;
+    mdi.bluePrimaryX = 34000;
+    mdi.bluePrimaryY = 16000;
+    mdi.whitePointX = 15635;
+    mdi.whitePointY = 16450;
+    mdi.maxLuminance = 10000000;
+    mdi.minLuminance = 500;
+    return mdi;
+}();
+
+static ContentLightLevel validContentLightLevel = [] {
+    ContentLightLevel cll{};
+    cll.maxCLL = 1000;
+    cll.maxFALL = 400;
+    return cll;
+}();
 
 /**
  * @brief Test the retrieval of video decoder IDs from the VideoDecoderManager service.
@@ -2496,8 +2533,462 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, parseCodecSpecificData_neg)
     }
 }
 
+UT_ADD_TEST(VTS_L1_VideoDecoder, setStreamResolution_pos)
+{
+    std::vector<IVideoDecoder::Id> decoderIds;
+    sp<IVideoDecoder> videoDecoder;
+    videodecoder::Capabilities capabilities;
 
+    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
+    UT_ASSERT_FALSE(decoderIds.empty()) << "No VideoDecoder instances available.";
 
+    for (const auto& _decoderId : decoderIds)
+    {
+        VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(_decoderId, videoDecoder);
+        VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
+
+        for (const auto& _codecCaps : capabilities.supportedCodecs)
+        {
+            videodecoder::Codec _codec = _codecCaps.codec;
+            sp<IVideoDecoderController> videoDecoderController;
+            sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
+
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+
+            VIDEODECODER_SETSTREAMRESOLUTION_SUCCESS(videoDecoderController,
+                                                    intValueStreamWidth,
+                                                    intValueStreamHeight);
+
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+        }
+    }
+}
+
+UT_ADD_TEST(VTS_L1_VideoDecoder, setStreamResolution_neg)
+{
+    std::vector<IVideoDecoder::Id> decoderIds;
+    sp<IVideoDecoder> videoDecoder;
+    videodecoder::Capabilities capabilities;
+
+    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
+    UT_ASSERT_FALSE(decoderIds.empty()) << "No VideoDecoder instances available.";
+
+    for (const auto& _decoderId : decoderIds)
+    {
+        VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(_decoderId, videoDecoder);
+        VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
+
+        for (const auto& _codecCaps : capabilities.supportedCodecs)
+        {
+            videodecoder::Codec _codec = _codecCaps.codec;
+            sp<IVideoDecoderController> videoDecoderController;
+            sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
+
+            /* Step 1: Verify EX_ILLEGAL_STATE when API is called outside READY state */
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+            VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
+
+            VIDEODECODER_SETSTREAMRESOLUTION_FAILURE(videoDecoderController,
+                                                    intValueStreamWidth,
+                                                    intValueStreamHeight,
+                                                    Status::EX_ILLEGAL_STATE);
+
+            VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+
+            /* Step 2: Verify EX_ILLEGAL_ARGUMENT for invalid width with valid height */
+            controllerListener = new VideoDecoderControllerListener();
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+
+            VIDEODECODER_SETSTREAMRESOLUTION_FAILURE(videoDecoderController,
+                                                    intValueInvalidWidth,
+                                                    intValueStreamHeight,
+                                                    Status::EX_ILLEGAL_ARGUMENT);
+
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+
+            /* Step 3: Verify EX_ILLEGAL_ARGUMENT for valid width with invalid height */
+            controllerListener = new VideoDecoderControllerListener();
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+
+            VIDEODECODER_SETSTREAMRESOLUTION_FAILURE(videoDecoderController,
+                                                    intValueStreamWidth,
+                                                    intValueInvalidHeight,
+                                                    Status::EX_ILLEGAL_ARGUMENT);
+
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+
+            /* Step 4: Verify EX_ILLEGAL_ARGUMENT for invalid width and invalid height */
+            controllerListener = new VideoDecoderControllerListener();
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+
+            VIDEODECODER_SETSTREAMRESOLUTION_FAILURE(videoDecoderController,
+                                                    intValueInvalidWidth,
+                                                    intValueInvalidHeight,
+                                                    Status::EX_ILLEGAL_ARGUMENT);
+
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+        }
+    }
+}
+
+UT_ADD_TEST(VTS_L1_VideoDecoder, setFrameRate_pos)
+{
+    std::vector<IVideoDecoder::Id> decoderIds;
+    sp<IVideoDecoder> videoDecoder;
+    videodecoder::Capabilities capabilities;
+
+    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
+    UT_ASSERT_FALSE(decoderIds.empty()) << "No VideoDecoder instances available.";
+
+    for (const auto& _decoderId : decoderIds)
+    {
+        VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(_decoderId, videoDecoder);
+        VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
+
+        for (const auto& _codecCaps : capabilities.supportedCodecs)
+        {
+            videodecoder::Codec _codec = _codecCaps.codec;
+            sp<IVideoDecoderController> videoDecoderController;
+            sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
+
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+
+            VIDEODECODER_SETFRAMERATE_SUCCESS(videoDecoderController,
+                                             intValueFrameRateNum,
+                                             intValueFrameRateDen);
+
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+        }
+    }
+}
+
+UT_ADD_TEST(VTS_L1_VideoDecoder, setFrameRate_neg)
+{
+    std::vector<IVideoDecoder::Id> decoderIds;
+    sp<IVideoDecoder> videoDecoder;
+    videodecoder::Capabilities capabilities;
+
+    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
+    UT_ASSERT_FALSE(decoderIds.empty()) << "No VideoDecoder instances available.";
+
+    for (const auto& _decoderId : decoderIds)
+    {
+        VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(_decoderId, videoDecoder);
+        VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
+
+        for (const auto& _codecCaps : capabilities.supportedCodecs)
+        {
+            videodecoder::Codec _codec = _codecCaps.codec;
+            sp<IVideoDecoderController> videoDecoderController;
+            sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
+
+            /* Step 1: Verify EX_ILLEGAL_STATE when API is called outside READY state */
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+            VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
+
+            VIDEODECODER_SETFRAMERATE_FAILURE(videoDecoderController,
+                                             intValueFrameRateNum,
+                                             intValueFrameRateDen,
+                                             Status::EX_ILLEGAL_STATE);
+
+            VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+
+            /* Step 2: Verify EX_ILLEGAL_ARGUMENT for valid numerator with invalid denominator */
+            controllerListener = new VideoDecoderControllerListener();
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+
+            VIDEODECODER_SETFRAMERATE_FAILURE(videoDecoderController,
+                                             intValueFrameRateNum,
+                                             intValueInvalidFrameRateDen,
+                                             Status::EX_ILLEGAL_ARGUMENT);
+
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+
+            /* Step 3: Optional combined invalid case */
+            controllerListener = new VideoDecoderControllerListener();
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+
+            VIDEODECODER_SETFRAMERATE_FAILURE(videoDecoderController,
+                                             intValueInvalidFrameRateNum,
+                                             intValueInvalidFrameRateDen,
+                                             Status::EX_ILLEGAL_ARGUMENT);
+
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+        }
+    }
+}
+
+UT_ADD_TEST(VTS_L1_VideoDecoder, setColorimetry_pos)
+{
+    std::vector<IVideoDecoder::Id> decoderIds;
+    sp<IVideoDecoder> videoDecoder;
+    videodecoder::Capabilities capabilities;
+
+    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
+    UT_ASSERT_FALSE(decoderIds.empty()) << "No VideoDecoder instances available.";
+
+    for (const auto& _decoderId : decoderIds)
+    {
+        VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(_decoderId, videoDecoder);
+        VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
+
+        for (const auto& _codecCaps : capabilities.supportedCodecs)
+        {
+            videodecoder::Codec _codec = _codecCaps.codec;
+            sp<IVideoDecoderController> videoDecoderController;
+            sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
+
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+
+            VIDEODECODER_SETCOLORIMETRY_SUCCESS(videoDecoderController, validColorimetry);
+
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+        }
+    }
+}
+
+UT_ADD_TEST(VTS_L1_VideoDecoder, setColorimetry_neg)
+{
+    std::vector<IVideoDecoder::Id> decoderIds;
+    sp<IVideoDecoder> videoDecoder;
+    videodecoder::Capabilities capabilities;
+
+    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
+    UT_ASSERT_FALSE(decoderIds.empty()) << "No VideoDecoder instances available.";
+
+    for (const auto& _decoderId : decoderIds)
+    {
+        VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(_decoderId, videoDecoder);
+        VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
+
+        for (const auto& _codecCaps : capabilities.supportedCodecs)
+        {
+            videodecoder::Codec _codec = _codecCaps.codec;
+            sp<IVideoDecoderController> videoDecoderController;
+            sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
+
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+            VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
+
+            VIDEODECODER_SETCOLORIMETRY_FAILURE(videoDecoderController,
+                                                validColorimetry,
+                                                Status::EX_ILLEGAL_STATE);
+
+            VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+        }
+    }
+}
+
+UT_ADD_TEST(VTS_L1_VideoDecoder, setMasteringDisplayInfo_pos)
+{
+    std::vector<IVideoDecoder::Id> decoderIds;
+    sp<IVideoDecoder> videoDecoder;
+    videodecoder::Capabilities capabilities;
+
+    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
+    UT_ASSERT_FALSE(decoderIds.empty()) << "No VideoDecoder instances available.";
+
+    for (const auto& _decoderId : decoderIds)
+    {
+        VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(_decoderId, videoDecoder);
+        VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
+
+        for (const auto& _codecCaps : capabilities.supportedCodecs)
+        {
+            videodecoder::Codec _codec = _codecCaps.codec;
+            sp<IVideoDecoderController> videoDecoderController;
+            sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
+
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+
+            VIDEODECODER_SETMASTERINGDISPLAYINFO_SUCCESS(videoDecoderController,
+                                                         validMasteringDisplayInfo);
+
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+        }
+    }
+}
+
+UT_ADD_TEST(VTS_L1_VideoDecoder, setMasteringDisplayInfo_neg)
+{
+    std::vector<IVideoDecoder::Id> decoderIds;
+    sp<IVideoDecoder> videoDecoder;
+    videodecoder::Capabilities capabilities;
+
+    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
+    UT_ASSERT_FALSE(decoderIds.empty()) << "No VideoDecoder instances available.";
+
+    for (const auto& _decoderId : decoderIds)
+    {
+        VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(_decoderId, videoDecoder);
+        VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
+
+        for (const auto& _codecCaps : capabilities.supportedCodecs)
+        {
+            videodecoder::Codec _codec = _codecCaps.codec;
+            sp<IVideoDecoderController> videoDecoderController;
+            sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
+
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+            VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
+
+            VIDEODECODER_SETMASTERINGDISPLAYINFO_FAILURE(videoDecoderController,
+                                                         validMasteringDisplayInfo,
+                                                         Status::EX_ILLEGAL_STATE);
+
+            VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+        }
+    }
+}
+
+UT_ADD_TEST(VTS_L1_VideoDecoder, setContentLightLevel_pos)
+{
+    std::vector<IVideoDecoder::Id> decoderIds;
+    sp<IVideoDecoder> videoDecoder;
+    videodecoder::Capabilities capabilities;
+
+    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
+    UT_ASSERT_FALSE(decoderIds.empty()) << "No VideoDecoder instances available.";
+
+    for (const auto& _decoderId : decoderIds)
+    {
+        VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(_decoderId, videoDecoder);
+        VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
+
+        for (const auto& _codecCaps : capabilities.supportedCodecs)
+        {
+            videodecoder::Codec _codec = _codecCaps.codec;
+            sp<IVideoDecoderController> videoDecoderController;
+            sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
+
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+
+            VIDEODECODER_SETCONTENTLIGHTLEVEL_SUCCESS(videoDecoderController,
+                                                      validContentLightLevel);
+
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+        }
+    }
+}
+
+UT_ADD_TEST(VTS_L1_VideoDecoder, setContentLightLevel_neg)
+{
+    std::vector<IVideoDecoder::Id> decoderIds;
+    sp<IVideoDecoder> videoDecoder;
+    videodecoder::Capabilities capabilities;
+
+    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
+    UT_ASSERT_FALSE(decoderIds.empty()) << "No VideoDecoder instances available.";
+
+    for (const auto& _decoderId : decoderIds)
+    {
+        VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(_decoderId, videoDecoder);
+        VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
+
+        for (const auto& _codecCaps : capabilities.supportedCodecs)
+        {
+            videodecoder::Codec _codec = _codecCaps.codec;
+            sp<IVideoDecoderController> videoDecoderController;
+            sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
+
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+            VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
+
+            VIDEODECODER_SETCONTENTLIGHTLEVEL_FAILURE(videoDecoderController,
+                                                      validContentLightLevel,
+                                                      Status::EX_ILLEGAL_STATE);
+
+            VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+        }
+    }
+}
+
+UT_ADD_TEST(VTS_L1_VideoDecoder, setDolbyVisionLayerFlags_pos)
+{
+    std::vector<IVideoDecoder::Id> decoderIds;
+    sp<IVideoDecoder> videoDecoder;
+    videodecoder::Capabilities capabilities;
+
+    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
+    UT_ASSERT_FALSE(decoderIds.empty()) << "No VideoDecoder instances available.";
+
+    for (const auto& _decoderId : decoderIds)
+    {
+        VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(_decoderId, videoDecoder);
+        VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
+
+        for (const auto& _codecCaps : capabilities.supportedCodecs)
+        {
+            videodecoder::Codec _codec = _codecCaps.codec;
+            sp<IVideoDecoderController> videoDecoderController;
+            sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
+
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+
+            VIDEODECODER_SETDOLBYVISIONLAYERFLAGS_SUCCESS(videoDecoderController,
+                                                          dolbyVisionBLPresent,
+                                                          dolbyVisionELPresent);
+
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+        }
+    }
+}
+
+UT_ADD_TEST(VTS_L1_VideoDecoder, setDolbyVisionLayerFlags_neg)
+{
+    std::vector<IVideoDecoder::Id> decoderIds;
+    sp<IVideoDecoder> videoDecoder;
+    videodecoder::Capabilities capabilities;
+
+    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
+    UT_ASSERT_FALSE(decoderIds.empty()) << "No VideoDecoder instances available.";
+
+    for (const auto& _decoderId : decoderIds)
+    {
+        VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(_decoderId, videoDecoder);
+        VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
+
+        for (const auto& _codecCaps : capabilities.supportedCodecs)
+        {
+            videodecoder::Codec _codec = _codecCaps.codec;
+            sp<IVideoDecoderController> videoDecoderController;
+            sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
+
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+            VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
+
+            VIDEODECODER_SETDOLBYVISIONLAYERFLAGS_FAILURE(videoDecoderController,
+                                                          dolbyVisionBLPresent,
+                                                          dolbyVisionELPresent,
+                                                          Status::EX_ILLEGAL_STATE);
+
+            VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+        }
+    }
+}
 /** @} */ // End of Video_Decoder_Halif_Test_L1
 /** @} */ // End of Video_Decoder_Halif_Test
 /** @} */ // End of Video_Decoder

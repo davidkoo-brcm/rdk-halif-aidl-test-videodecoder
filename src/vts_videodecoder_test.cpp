@@ -614,6 +614,12 @@ void videoDecoderTest::decoderThreadFunc()
                 << ", actual=" << static_cast<int>(decodedFrame.metadata->dynamicRange)
                 << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
 
+            // Validate colorimetry
+            UT_ASSERT_EQUAL(decodedFrame.metadata->colorimetry, mTestConfiguration.colorimetry)
+                << "Colorimetry mismatch: expected=" << static_cast<int>(mTestConfiguration.colorimetry)
+                << ", actual=" << static_cast<int>(decodedFrame.metadata->colorimetry)
+                << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+
             // Validate frame rate
             UT_ASSERT_EQUAL(decodedFrame.metadata->frameRateNumerator, mTestConfiguration.frameRateNumerator)
                 << "Frame rate numerator mismatch: expected=" << mTestConfiguration.frameRateNumerator
@@ -629,6 +635,15 @@ void videoDecoderTest::decoderThreadFunc()
                 << "Scan type mismatch: expected=" << static_cast<int>(mTestConfiguration.scanType)
                 << ", actual=" << static_cast<int>(decodedFrame.metadata->scanType)
                 << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+
+            // Validate HDR metadata
+            UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo, mTestConfiguration.masteringDisplayInfo)
+                << "MasteringDisplayInfo mismatch for Codec "
+                << videodecoder::toString(mTestConfiguration.codec).c_str();
+
+            UT_ASSERT_EQUAL(decodedFrame.metadata->contentLightLevel, mTestConfiguration.contentLightLevel)
+                << "ContentLightLevel mismatch for Codec "
+                << videodecoder::toString(mTestConfiguration.codec).c_str();
 
             // Validate flags
             if(mTestConfiguration.eosPts == decodedFrame.framePTS)
@@ -787,6 +802,16 @@ void videoDecoderTest::consumerThreadFunc() {
             UT_ASSERT_EQUAL(decodedFrame.metadata->frameRateDenominator, mTestConfiguration.frameRateDenominator)
                 << "Frame rate denominator mismatch: expected=" << mTestConfiguration.frameRateDenominator
                 << ", actual=" << decodedFrame.metadata->frameRateDenominator;
+            UT_ASSERT_EQUAL(decodedFrame.metadata->dynamicRange, mTestConfiguration.dynamicRange)
+                << "Dynamic range mismatch: expected=" << static_cast<int>(mTestConfiguration.dynamicRange)
+                << ", actual=" << static_cast<int>(decodedFrame.metadata->dynamicRange);
+            UT_ASSERT_EQUAL(decodedFrame.metadata->colorimetry, mTestConfiguration.colorimetry)
+                << "Colorimetry mismatch: expected=" << static_cast<int>(mTestConfiguration.colorimetry)
+                << ", actual=" << static_cast<int>(decodedFrame.metadata->colorimetry);
+            UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo, mTestConfiguration.masteringDisplayInfo)
+                << "MasteringDisplayInfo mismatch";
+            UT_ASSERT_EQUAL(decodedFrame.metadata->contentLightLevel, mTestConfiguration.contentLightLevel)
+                << "ContentLightLevel mismatch";
         } else {
             UT_LOG_WARNING("No metadata available for PTS=%lld", decodedFrame.framePTS);
         }
