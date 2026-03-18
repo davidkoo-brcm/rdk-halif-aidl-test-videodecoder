@@ -127,6 +127,50 @@ static ContentLightLevel validContentLightLevel = [] {
     cll.maxFALL = 400;
     return cll;
 }();
+enum SupportedFrameRate : int32_t {
+    FRAME_RATE_24  = 24,
+    FRAME_RATE_25  = 25,
+    FRAME_RATE_30  = 30,
+    FRAME_RATE_50  = 50,
+    FRAME_RATE_60  = 60,
+    FRAME_RATE_120 = 120
+};
+
+#define RES_640_WIDTH       640
+#define RES_640_HEIGHT      480
+#define RES_720_480_WIDTH   720
+#define RES_720_480_HEIGHT  480
+#define RES_720_576_WIDTH   720
+#define RES_720_576_HEIGHT  576
+#define RES_1280_WIDTH      1280
+#define RES_1280_HEIGHT     720
+#define RES_1920_WIDTH      1920
+#define RES_1920_HEIGHT     1080
+#define RES_3840_WIDTH      3840
+#define RES_3840_HEIGHT     2160
+
+struct SupportedResolution {
+    int32_t width;
+    int32_t height;
+};
+
+static const std::vector<int32_t> kSupportedFrameRates = {
+    FRAME_RATE_24,
+    FRAME_RATE_25,
+    FRAME_RATE_30,
+    FRAME_RATE_50,
+    FRAME_RATE_60,
+    FRAME_RATE_120
+};
+
+static const std::vector<SupportedResolution> kSupportedResolutions = {
+    {RES_640_WIDTH,      RES_640_HEIGHT},
+    {RES_720_480_WIDTH,  RES_720_480_HEIGHT},
+    {RES_720_576_WIDTH,  RES_720_576_HEIGHT},
+    {RES_1280_WIDTH,     RES_1280_HEIGHT},
+    {RES_1920_WIDTH,     RES_1920_HEIGHT},
+    {RES_3840_WIDTH,     RES_3840_HEIGHT}
+};
 
 /**
  * @brief Test the retrieval of video decoder IDs from the VideoDecoderManager service.
@@ -2536,10 +2580,11 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, parseCodecSpecificData_neg)
 }
 
 /**
- * @brief Test the positive scenario for setting stream resolution in VideoDecoderController.
+ * @brief Test the positive scenarios for setting stream resolution in VideoDecoderController.
  *
  * This test verifies that setStreamResolution succeeds when called in READY state
- * with valid width and height values.
+ * with all supported candidate resolutions whose width and height are within the
+ * codec capability maximum frame width and height.
  *
  * **Test Group ID:** Basic: 01@n
  * **Test Case ID:** 034@n
@@ -2555,7 +2600,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, parseCodecSpecificData_neg)
  * | 01 | Initialize the test environment and iterate through decoder instances. | decoderIds | Should be successful | |
  * | 02 | Get decoder capabilities and iterate through supported codecs. | capabilities.supportedCodecs | Should be successful | |
  * | 03 | Open decoder and move to READY state. | codec, secure flag, listener | Controller should be valid | |
- * | 04 | Call setStreamResolution with valid width and height. | width > 0, height > 0 | status.isOk() = true | Should pass |
+ * | 04 | Loop through supported candidate resolutions and call setStreamResolution for each resolution within codec maxFrameWidth and maxFrameHeight. | 640x480, 720x480, 720x576, 1280x720, 1920x1080, 3840x2160 (filtered by capability) | status.isOk() = true | Should pass |
  * | 05 | Close decoder. | controller | status.isOk() = true | Cleanup |
  */
 UT_ADD_TEST(VTS_L1_VideoDecoder, setStreamResolution_pos)
@@ -2581,9 +2626,17 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, setStreamResolution_pos)
             VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
                                       controllerListener, videoDecoderController, true);
 
-            VIDEODECODER_SETSTREAMRESOLUTION_SUCCESS(videoDecoderController,
-                                                    intValueStreamWidth,
-                                                    intValueStreamHeight);
+            /* Verify all supported candidate resolutions within codec capability */
+            for (const auto& res : kSupportedResolutions)
+            {
+                if (res.width <= _codecCaps.maxFrameWidth &&
+                    res.height <= _codecCaps.maxFrameHeight)
+                {
+                    VIDEODECODER_SETSTREAMRESOLUTION_SUCCESS(videoDecoderController,
+                                                            res.width,
+                                                            res.height);
+                }
+            }
 
             VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
         }
@@ -2594,8 +2647,8 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, setStreamResolution_pos)
  * @brief Test the negative scenarios for setting stream resolution in VideoDecoderController.
  *
  * This test verifies that setStreamResolution fails with the correct exception
- * when called in an invalid state or when width/height values are 0 or negative.
- * are provided.
+ * when called in an invalid state, when width/height values are 0 or negative,
+ * and when width/height exceed the codec capability maximum.
  *
  * **Test Group ID:** Basic: 01@n
  * **Test Case ID:** 035@n
@@ -2615,7 +2668,10 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, setStreamResolution_pos)
  * | 05 | Reopen decoder in READY state and call setStreamResolution with width = -1. | width = -1, valid height | EX_ILLEGAL_ARGUMENT | Should fail |
  * | 06 | Reopen decoder in READY state and call setStreamResolution with height = 0. | valid width, height = 0 | EX_ILLEGAL_ARGUMENT | Should fail |
  * | 07 | Reopen decoder in READY state and call setStreamResolution with height = -1. | valid width, height = -1 | EX_ILLEGAL_ARGUMENT | Should fail |
- * | 08 | Reopen decoder in READY state and call setStreamResolution with both invalid width and height. | width <= 0, height <= 0 | EX_ILLEGAL_ARGUMENT | Should fail |
+ * | 08 | Reopen decoder in READY state and call setStreamResolution with width greater than codec maxFrameWidth. | width = maxFrameWidth + 1, valid height | EX_ILLEGAL_ARGUMENT | Should fail |
+ * | 09 | Reopen decoder in READY state and call setStreamResolution with height greater than codec maxFrameHeight. | valid width, height = maxFrameHeight + 1 | EX_ILLEGAL_ARGUMENT | Should fail |
+ * | 10 | Reopen decoder in READY state and call setStreamResolution with both width and height greater than codec capability maximum. | width = maxFrameWidth + 1, height = maxFrameHeight + 1 | EX_ILLEGAL_ARGUMENT | Should fail |
+ * | 11 | Reopen decoder in READY state and call setStreamResolution with both invalid width and height. | width <= 0, height <= 0 | EX_ILLEGAL_ARGUMENT | Should fail |
  */
 UT_ADD_TEST(VTS_L1_VideoDecoder, setStreamResolution_neg)
 {
@@ -2643,8 +2699,8 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, setStreamResolution_neg)
             VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
 
             VIDEODECODER_SETSTREAMRESOLUTION_FAILURE(videoDecoderController,
-                                                    intValueStreamWidth,
-                                                    intValueStreamHeight,
+                                                    _codecCaps.maxFrameWidth,
+                                                    _codecCaps.maxFrameHeight,
                                                     Status::EX_ILLEGAL_STATE);
 
             VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
@@ -2657,7 +2713,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, setStreamResolution_neg)
 
             VIDEODECODER_SETSTREAMRESOLUTION_FAILURE(videoDecoderController,
                                                     intValueInvalidWidthZero,
-                                                    intValueStreamHeight,
+                                                    _codecCaps.maxFrameHeight,
                                                     Status::EX_ILLEGAL_ARGUMENT);
 
             VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
@@ -2669,7 +2725,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, setStreamResolution_neg)
 
             VIDEODECODER_SETSTREAMRESOLUTION_FAILURE(videoDecoderController,
                                                     intValueInvalidWidthNegative,
-                                                    intValueStreamHeight,
+                                                    _codecCaps.maxFrameHeight,
                                                     Status::EX_ILLEGAL_ARGUMENT);
 
             VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
@@ -2680,7 +2736,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, setStreamResolution_neg)
                                       controllerListener, videoDecoderController, true);
 
             VIDEODECODER_SETSTREAMRESOLUTION_FAILURE(videoDecoderController,
-                                                    intValueStreamWidth,
+                                                    _codecCaps.maxFrameWidth,
                                                     intValueInvalidHeightZero,
                                                     Status::EX_ILLEGAL_ARGUMENT);
 
@@ -2692,13 +2748,49 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, setStreamResolution_neg)
                                       controllerListener, videoDecoderController, true);
 
             VIDEODECODER_SETSTREAMRESOLUTION_FAILURE(videoDecoderController,
-                                                    intValueStreamWidth,
+                                                    _codecCaps.maxFrameWidth,
                                                     intValueInvalidHeightNegative,
                                                     Status::EX_ILLEGAL_ARGUMENT);
 
             VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
 
-            /* Step 6: Verify EX_ILLEGAL_ARGUMENT for invalid width and invalid height */
+            /* Step 6: Verify EX_ILLEGAL_ARGUMENT for width greater than codec maxFrameWidth */
+            controllerListener = new VideoDecoderControllerListener();
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+
+            VIDEODECODER_SETSTREAMRESOLUTION_FAILURE(videoDecoderController,
+                                                    _codecCaps.maxFrameWidth + 1,
+                                                    _codecCaps.maxFrameHeight,
+                                                    Status::EX_ILLEGAL_ARGUMENT);
+
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+
+            /* Step 7: Verify EX_ILLEGAL_ARGUMENT for height greater than codec maxFrameHeight */
+            controllerListener = new VideoDecoderControllerListener();
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+
+            VIDEODECODER_SETSTREAMRESOLUTION_FAILURE(videoDecoderController,
+                                                    _codecCaps.maxFrameWidth,
+                                                    _codecCaps.maxFrameHeight + 1,
+                                                    Status::EX_ILLEGAL_ARGUMENT);
+
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+
+            /* Step 8: Verify EX_ILLEGAL_ARGUMENT for both width and height greater than codec maximum */
+            controllerListener = new VideoDecoderControllerListener();
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+
+            VIDEODECODER_SETSTREAMRESOLUTION_FAILURE(videoDecoderController,
+                                                    _codecCaps.maxFrameWidth + 1,
+                                                    _codecCaps.maxFrameHeight + 1,
+                                                    Status::EX_ILLEGAL_ARGUMENT);
+
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+
+            /* Step 9: Verify EX_ILLEGAL_ARGUMENT for invalid width and invalid height */
             controllerListener = new VideoDecoderControllerListener();
             VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
                                       controllerListener, videoDecoderController, true);
@@ -2717,7 +2809,8 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, setStreamResolution_neg)
  * @brief Test the positive scenarios for setting frame rate in VideoDecoderController.
  *
  * This test verifies that setFrameRate succeeds when called in READY state
- * with a valid frame rate value and also with 0/0 to indicate unknown frame rate.
+ * with all supported candidate frame rates up to the codec capability maximum,
+ * and also with 0/0 to indicate unknown frame rate.
  *
  * **Test Group ID:** Basic: 01@n
  * **Test Case ID:** 036@n
@@ -2732,7 +2825,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, setStreamResolution_neg)
  * | :----: | --------- | ---------- | -------------- | ----- |
  * | 01 | Initialize and iterate through decoder instances. | decoderIds | Should be successful | |
  * | 02 | Open decoder and move to READY state. | valid codec | Controller should be valid | |
- * | 03 | Call setFrameRate with valid numerator and denominator. | 24/1 | status.isOk() = true | Should pass |
+ * | 03 | Loop through supported candidate frame rates and call setFrameRate for each value less than or equal to codec maxFrameRate. | 24, 25, 30, 50, 60, 120 (filtered by maxFrameRate) | status.isOk() = true | Should pass |
  * | 04 | Call setFrameRate with 0/0 to indicate unknown frame rate. | 0/0 | status.isOk() = true | Should pass |
  * | 05 | Close decoder. | controller | status.isOk() = true | Cleanup |
  */
@@ -2759,15 +2852,17 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, setFrameRate_pos)
             VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
                                       controllerListener, videoDecoderController, true);
 
-            /* Step 1: Verify valid frame rate is accepted in READY state */
-            VIDEODECODER_SETFRAMERATE_SUCCESS(videoDecoderController,
-                                             intValueFrameRateNum,
-                                             intValueFrameRateDen);
+            /* Verify all supported candidate frame rates up to codec maxFrameRate */
+            for (auto rate : kSupportedFrameRates)
+            {
+                if (rate <= _codecCaps.maxFrameRate)
+                {
+                    VIDEODECODER_SETFRAMERATE_SUCCESS(videoDecoderController, rate, 1);
+                }
+            }
 
-            /* Step 2: Verify 0/0 is accepted for unknown frame rate */
-            VIDEODECODER_SETFRAMERATE_SUCCESS(videoDecoderController,
-                                             0,
-                                             0);
+            /* Verify 0/0 is accepted for unknown frame rate */
+            VIDEODECODER_SETFRAMERATE_SUCCESS(videoDecoderController, 0, 0);
 
             VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
         }
@@ -2778,7 +2873,8 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, setFrameRate_pos)
  * @brief Test the negative scenarios for setting frame rate in VideoDecoderController.
  *
  * This test verifies that setFrameRate fails with the correct exception
- * when called in an invalid state or when denominator is 0 while numerator is non-zero.
+ * when called in an invalid state, when denominator is 0 while numerator is non-zero,
+ * and when the requested frame rate exceeds the codec capability maximum.
  *
  * **Test Group ID:** Basic: 01@n
  * **Test Case ID:** 037@n
@@ -2795,6 +2891,8 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, setFrameRate_pos)
  * | 02 | Open decoder and move to STARTED state. | valid codec | status.isOk() = true | |
  * | 03 | Call setFrameRate outside READY state. | valid numerator, valid denominator | EX_ILLEGAL_STATE | Should fail |
  * | 04 | Reopen decoder in READY state and call setFrameRate with non-zero numerator and denominator = 0. | numerator = 24, denominator = 0 | EX_ILLEGAL_ARGUMENT | Should fail |
+ * | 05 | Reopen decoder in READY state and call setFrameRate with value greater than codec maxFrameRate. | numerator = maxFrameRate + 1, denominator = 1 | EX_ILLEGAL_ARGUMENT | Should fail |
+ * | 06 | Optional combined invalid case. | numerator < 0, denominator = 0 | EX_ILLEGAL_ARGUMENT | Optional |
  */
 UT_ADD_TEST(VTS_L1_VideoDecoder, setFrameRate_neg)
 {
@@ -2822,8 +2920,8 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, setFrameRate_neg)
             VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
 
             VIDEODECODER_SETFRAMERATE_FAILURE(videoDecoderController,
-                                             intValueFrameRateNum,
-                                             intValueFrameRateDen,
+                                             FRAME_RATE_24,
+                                             1,
                                              Status::EX_ILLEGAL_STATE);
 
             VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
@@ -2835,13 +2933,25 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, setFrameRate_neg)
                                       controllerListener, videoDecoderController, true);
 
             VIDEODECODER_SETFRAMERATE_FAILURE(videoDecoderController,
-                                             intValueFrameRateNum,
+                                             FRAME_RATE_24,
                                              intValueInvalidFrameRateDen,
                                              Status::EX_ILLEGAL_ARGUMENT);
 
             VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
 
-            /* Step 3: Optional combined invalid case */
+            /* Step 3: Verify EX_ILLEGAL_ARGUMENT for numerator greater than codec maxFrameRate */
+            controllerListener = new VideoDecoderControllerListener();
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+
+            VIDEODECODER_SETFRAMERATE_FAILURE(videoDecoderController,
+                                             _codecCaps.maxFrameRate + 1,
+                                             1,
+                                             Status::EX_ILLEGAL_ARGUMENT);
+
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+
+            /* Step 4: Optional combined invalid case */
             controllerListener = new VideoDecoderControllerListener();
             VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
                                       controllerListener, videoDecoderController, true);

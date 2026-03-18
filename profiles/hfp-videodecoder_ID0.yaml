@@ -57,4 +57,9 @@ videodecoder:           # Component object begins
         - SDR
         - HLG
         - HDR10
+      supportedColorimetries:
+        - BT601_525
+        - BT601_625
+        - BT709
+        - BT2020
       supportsSecure: false

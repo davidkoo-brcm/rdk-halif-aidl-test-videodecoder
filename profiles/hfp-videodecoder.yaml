@@ -99,4 +99,8 @@ videodecoder:           # Component object begins
             maxFrameHeight: 1080
       supportedDynamicRanges:
         - SDR
+      supportedColorimetries:
+        - BT601_525
+        - BT601_625
+        - BT709
       supportsSecure: true
