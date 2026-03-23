@@ -271,8 +271,6 @@ void videoDecoderTest::decoderThreadFunc()
     sp<IAVBufferSpaceListener> bufferListener = new AVBufferSpaceListener();
     mDecodingStream = true;
     bool isBufferValid = false;
-    bool eosSignaled = false;
-    int32_t framesExpectedBeforeEos = 0;
 
     DecodedVideoFrame_t decodedFrame;
     // Initialize PTS tracking
@@ -551,26 +549,14 @@ void videoDecoderTest::decoderThreadFunc()
             VIDEODECODER_DECODEBUFFER_SUCCESS(videoDecoderController, framePTS, videoBufferHandle);
 
             getDecoderMetrics(framesDecoded, decodeErrors, framesDropped);
-
-            if (!eosSignaled)
-            {
-                framesExpectedBeforeEos++;
-            }
-
-            bool isLastFrame = (i == (frameData.size() - 1));
-
-            if ((mTestConfiguration.eosPts >= 0 && mTestConfiguration.eosPts == framePTS) ||
-                (mTestConfiguration.eosPts < 0 && isLastFrame))
-            {
-                UT_LOG_INFO("Signaling EOS at PTS:%lld", framePTS);
-                VIDEODECODER_SIGNAL_EOS_SUCCESS(mDecoderHandle, videoDecoderController, true);
-                eosSignaled = true;
-            }
-
             UT_LOG_INFO("Decoder Metrics: Codec: %d, Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
                         mTestConfiguration.codec, framesDecoded, decodeErrors, framesDropped);
         }
 
+        if (mTestConfiguration.eosPts == framePTS) {
+                UT_LOG_INFO("Signaling EOS at PTS:%lld", framePTS);
+                VIDEODECODER_SIGNAL_EOS_SUCCESS(mDecoderHandle, videoDecoderController, true);
+            }
 
         // Check decode time
         auto decodeEnd = std::chrono::steady_clock::now();
@@ -581,6 +567,11 @@ void videoDecoderTest::decoderThreadFunc()
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(mTestConfiguration.decoderDelay));
+
+        if(i == (frameData.size() -1) &&  mTestConfiguration.eosPts == -1)
+        {
+            VIDEODECODER_SIGNAL_EOS_SUCCESS(mDecoderHandle, videoDecoderController, true);
+        }
 
     }
 
@@ -595,7 +586,7 @@ void videoDecoderTest::decoderThreadFunc()
         {
             auto it = mReceivedPts.find(decodedFrame.framePTS);
             if (it == mReceivedPts.end()) {
-                UT_LOG_ERROR("Unexpected PTS received: %lld", decodedFrame.framePTS);
+                UT_LOG_INFO("Unexpected PTS received: %lld", decodedFrame.framePTS);
             } else {
                 UT_LOG_INFO("Validated PTS: %lld", decodedFrame.framePTS);
                 mReceivedPts.erase(it); // Remove to track received PTS
@@ -641,9 +632,15 @@ void videoDecoderTest::decoderThreadFunc()
                 << ", actual=" << static_cast<int>(decodedFrame.metadata->scanType)
                 << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
 
-            if (decodedFrame.metadata->endOfStream)
+            // Validate flags
+            if (decodedFrame.metadata->endOfStream &&
+                ((framesDecoded >= (mTestConfiguration.no_of_frames - mTestConfiguration.decodeErrors)) ||
+                (decodedFrame.framePTS == -1)))
             {
-                UT_LOG_INFO("Received EOS-marked output callback");
+                UT_LOG_INFO("Received valid EOS-marked output callback. framesDecoded=%d, expected=%d, framePTS=%lld",
+                            framesDecoded,
+                            (mTestConfiguration.no_of_frames - mTestConfiguration.decodeErrors),
+                            decodedFrame.framePTS);
                 eosReceived = true;
             }
 
@@ -696,12 +693,8 @@ void videoDecoderTest::decoderThreadFunc()
         UT_LOG_INFO("Final Decoder Metrics: Codec: %d, Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
                     mTestConfiguration.codec, framesDecoded, decodeErrors, framesDropped);
 
-        int32_t expectedFramesDecoded =
-            (mTestConfiguration.endOfStream ? framesExpectedBeforeEos : mTestConfiguration.no_of_frames)
-            - mTestConfiguration.decodeErrors;
-
-        UT_ASSERT_EQUAL(framesDecoded, expectedFramesDecoded)
-                    << "Frames Decoded mismatch: expected=" << expectedFramesDecoded
+        UT_ASSERT_EQUAL(framesDecoded, mTestConfiguration.no_of_frames - mTestConfiguration.decodeErrors)
+                    << "Frames Decoded mismatch: expected=" << (mTestConfiguration.no_of_frames - mTestConfiguration.decodeErrors)
                     << ", actual=" << framesDecoded
                     << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
 
