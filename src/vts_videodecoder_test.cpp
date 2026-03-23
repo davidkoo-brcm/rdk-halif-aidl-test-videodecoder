@@ -580,78 +580,97 @@ void videoDecoderTest::decoderThreadFunc()
     {
         while (mControlListener->getNextFrame(decodedFrame, std::chrono::milliseconds(100)))
         {
-            auto it = mReceivedPts.find(decodedFrame.framePTS);
-            if (it == mReceivedPts.end()) {
-                UT_LOG_INFO("Unexpected PTS received: %lld", decodedFrame.framePTS);
-            } else {
-                UT_LOG_INFO("Validated PTS: %lld", decodedFrame.framePTS);
-                mReceivedPts.erase(it); // Remove to track received PTS
-            }
-        }
-        if (decodedFrame.metadata)
-        {
-            UT_LOG_INFO("Validating metadata for PTS=%lld", decodedFrame.framePTS);
-            // Validate resolution
-            UT_ASSERT_EQUAL(decodedFrame.metadata->codedWidth, mTestConfiguration.codedWidth)
-                << "Width mismatch: expected=" << mTestConfiguration.codedWidth
-                << ", actual=" << decodedFrame.metadata->codedWidth
-                << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-            UT_ASSERT_EQUAL(decodedFrame.metadata->codedHeight, mTestConfiguration.codedHeight)
-                << "Height mismatch: expected=" << mTestConfiguration.codedHeight
-                << ", actual=" << decodedFrame.metadata->codedHeight
-                << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-
-            UT_ASSERT_EQUAL(decodedFrame.metadata->colorDepth, mTestConfiguration.colorDepth)
-                << "Color depth mismatch: expected=" << mTestConfiguration.colorDepth
-                << ", actual=" << decodedFrame.metadata->colorDepth
-                << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-
-            // Validate dynamic range
-            UT_ASSERT_EQUAL(decodedFrame.metadata->dynamicRange, mTestConfiguration.dynamicRange)
-                << "Dynamic range mismatch: expected=" << static_cast<int>(mTestConfiguration.dynamicRange)
-                << ", actual=" << static_cast<int>(decodedFrame.metadata->dynamicRange)
-                << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-
-            // Validate colorimetry
-            UT_ASSERT_EQUAL(decodedFrame.metadata->colorimetry, mTestConfiguration.colorimetry)
-                << "Colorimetry mismatch: expected=" << static_cast<int>(mTestConfiguration.colorimetry)
-                << ", actual=" << static_cast<int>(decodedFrame.metadata->colorimetry)
-                << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-
-            // Validate frame rate
-            UT_ASSERT_EQUAL(decodedFrame.metadata->frameRateNumerator, mTestConfiguration.frameRateNumerator)
-                << "Frame rate numerator mismatch: expected=" << mTestConfiguration.frameRateNumerator
-                << ", actual=" << decodedFrame.metadata->frameRateNumerator
-                << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-            UT_ASSERT_EQUAL(decodedFrame.metadata->frameRateDenominator, mTestConfiguration.frameRateDenominator)
-                << "Frame rate denominator mismatch: expected=" << mTestConfiguration.frameRateDenominator
-                << ", actual=" << decodedFrame.metadata->frameRateDenominator
-                << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-
-            // Validate scan type
-            UT_ASSERT_EQUAL(decodedFrame.metadata->scanType, mTestConfiguration.scanType)
-                << "Scan type mismatch: expected=" << static_cast<int>(mTestConfiguration.scanType)
-                << ", actual=" << static_cast<int>(decodedFrame.metadata->scanType)
-                << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-
-            // Validate HDR metadata
-            UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo, mTestConfiguration.masteringDisplayInfo)
-                << "MasteringDisplayInfo mismatch for Codec "
-                << videodecoder::toString(mTestConfiguration.codec).c_str();
-
-            UT_ASSERT_EQUAL(decodedFrame.metadata->contentLightLevel, mTestConfiguration.contentLightLevel)
-                << "ContentLightLevel mismatch for Codec "
-                << videodecoder::toString(mTestConfiguration.codec).c_str();
-
-            // Validate flags
-            getDecoderMetrics(framesDecoded, decodeErrors, framesDropped);
-
-            if ((framesDecoded > (mTestConfiguration.no_of_frames - mTestConfiguration.decodeErrors)) ||
-                (decodedFrame.framePTS == -1))
+            UT_LOG_INFO("Retrieved remaining output frame: PTS=%lld, handle=0x%llx, isMetaAvailable=%d",
+                    decodedFrame.framePTS, decodedFrame.frameBufferHandle, decodedFrame.isMetaAvailable);
+            // Validate PTS
             {
-                UT_ASSERT_EQUAL(decodedFrame.metadata->endOfStream, true)
-                    << "endOfStream mismatch: expected=" << mTestConfiguration.endOfStream
-                    << ", actual=" << decodedFrame.metadata->endOfStream
+                auto it = mReceivedPts.find(decodedFrame.framePTS);
+                if (it == mReceivedPts.end()) {
+                    UT_LOG_INFO("Unexpected PTS received: %lld", decodedFrame.framePTS);
+                } else {
+                    UT_LOG_INFO("Validated PTS: %lld", decodedFrame.framePTS);
+                    mReceivedPts.erase(it); // Remove to track received PTS
+                }
+            }
+            if (decodedFrame.metadata)
+            {
+                UT_LOG_INFO("Validating metadata for PTS=%lld", decodedFrame.framePTS);
+                // Validate resolution
+                UT_ASSERT_EQUAL(decodedFrame.metadata->codedWidth, mTestConfiguration.codedWidth)
+                    << "Width mismatch: expected=" << mTestConfiguration.codedWidth
+                    << ", actual=" << decodedFrame.metadata->codedWidth
+                    << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+                UT_ASSERT_EQUAL(decodedFrame.metadata->codedHeight, mTestConfiguration.codedHeight)
+                    << "Height mismatch: expected=" << mTestConfiguration.codedHeight
+                    << ", actual=" << decodedFrame.metadata->codedHeight
+                    << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+
+                UT_ASSERT_EQUAL(decodedFrame.metadata->colorDepth, mTestConfiguration.colorDepth)
+                    << "Color depth mismatch: expected=" << mTestConfiguration.colorDepth
+                    << ", actual=" << decodedFrame.metadata->colorDepth
+                    << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+
+                // Validate dynamic range
+                UT_ASSERT_EQUAL(decodedFrame.metadata->dynamicRange, mTestConfiguration.dynamicRange)
+                    << "Dynamic range mismatch: expected=" << static_cast<int>(mTestConfiguration.dynamicRange)
+                    << ", actual=" << static_cast<int>(decodedFrame.metadata->dynamicRange)
+                    << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+
+                // Validate colorimetry
+                UT_ASSERT_EQUAL(decodedFrame.metadata->colorimetry, mTestConfiguration.colorimetry)
+                    << "Colorimetry mismatch: expected=" << static_cast<int>(mTestConfiguration.colorimetry)
+                    << ", actual=" << static_cast<int>(decodedFrame.metadata->colorimetry)
+                    << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+
+                // Validate frame rate
+                UT_ASSERT_EQUAL(decodedFrame.metadata->frameRateNumerator, mTestConfiguration.frameRateNumerator)
+                    << "Frame rate numerator mismatch: expected=" << mTestConfiguration.frameRateNumerator
+                    << ", actual=" << decodedFrame.metadata->frameRateNumerator
+                    << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+                UT_ASSERT_EQUAL(decodedFrame.metadata->frameRateDenominator, mTestConfiguration.frameRateDenominator)
+                    << "Frame rate denominator mismatch: expected=" << mTestConfiguration.frameRateDenominator
+                    << ", actual=" << decodedFrame.metadata->frameRateDenominator
+                    << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+
+                // Validate scan type
+                UT_ASSERT_EQUAL(decodedFrame.metadata->scanType, mTestConfiguration.scanType)
+                    << "Scan type mismatch: expected=" << static_cast<int>(mTestConfiguration.scanType)
+                    << ", actual=" << static_cast<int>(decodedFrame.metadata->scanType)
+                    << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+
+                // Validate HDR metadata
+                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo, mTestConfiguration.masteringDisplayInfo)
+                    << "MasteringDisplayInfo mismatch for Codec "
+                    << videodecoder::toString(mTestConfiguration.codec).c_str();
+
+                UT_ASSERT_EQUAL(decodedFrame.metadata->contentLightLevel, mTestConfiguration.contentLightLevel)
+                    << "ContentLightLevel mismatch for Codec "
+                    << videodecoder::toString(mTestConfiguration.codec).c_str();
+
+                // Validate flags
+                getDecoderMetrics(framesDecoded, decodeErrors, framesDropped);
+
+                if ((framesDecoded > (mTestConfiguration.no_of_frames - mTestConfiguration.decodeErrors)) ||
+                    (decodedFrame.framePTS == -1))
+                {
+
+                    UT_ASSERT_EQUAL(decodedFrame.metadata->endOfStream, true)
+                        << "endOfStream mismatch: expected=" << mTestConfiguration.endOfStream
+                        << ", actual=" << decodedFrame.metadata->endOfStream
+                        << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+                }
+
+                if(mTestConfiguration.discontinuityPts == decodedFrame.framePTS)
+                {
+                    UT_ASSERT_EQUAL(decodedFrame.metadata->discontinuity, mTestConfiguration.discontinuity)
+                        << "discontinuity mismatch: expected=" << mTestConfiguration.discontinuity
+                        << ", actual=" << decodedFrame.metadata->discontinuity
+                        << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+                }
+
+                UT_ASSERT_EQUAL(decodedFrame.metadata->lowLatency, mTestConfiguration.lowLatency)
+                    << "lowLatency mismatch: expected=" << mTestConfiguration.lowLatency
+                    << ", actual=" << decodedFrame.metadata->lowLatency
                     << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
             }
             else
