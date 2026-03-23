@@ -575,8 +575,6 @@ void videoDecoderTest::decoderThreadFunc()
 
     }
 
-    bool eosReceived = false;
-
     // Retrieve any remaining output frames
     while (mControlListener->getNextFrame(decodedFrame, std::chrono::milliseconds(100)))
     {
@@ -633,15 +631,15 @@ void videoDecoderTest::decoderThreadFunc()
                 << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
 
             // Validate flags
-            if (decodedFrame.metadata->endOfStream &&
-                ((framesDecoded >= (mTestConfiguration.no_of_frames - mTestConfiguration.decodeErrors)) ||
-                (decodedFrame.framePTS == -1)))
+            getDecoderMetrics(framesDecoded, decodeErrors, framesDropped);
+
+            if (decodedFrame.metadata->endOfStream && (framesDecoded >= (mTestConfiguration.no_of_frames - mTestConfiguration.decodeErrors)) ||
+                (decodedFrame.framePTS == -1))
             {
-                UT_LOG_INFO("Received valid EOS-marked output callback. framesDecoded=%d, expected=%d, framePTS=%lld",
-                            framesDecoded,
-                            (mTestConfiguration.no_of_frames - mTestConfiguration.decodeErrors),
-                            decodedFrame.framePTS);
-                eosReceived = true;
+                UT_ASSERT_EQUAL(decodedFrame.metadata->endOfStream, mTestConfiguration.endOfStream)
+                    << "endOfStream mismatch: expected=" << mTestConfiguration.endOfStream
+                    << ", actual=" << decodedFrame.metadata->endOfStream
+                    << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
             }
 
             if(mTestConfiguration.discontinuityPts == decodedFrame.framePTS)
@@ -673,17 +671,6 @@ void videoDecoderTest::decoderThreadFunc()
                 }
             }
         }
-    }
-
-    if (mTestConfiguration.endOfStream)
-    {
-        UT_ASSERT_TRUE(eosReceived)
-            << "Expected EOS-marked output callback was not received";
-    }
-    else
-    {
-        UT_ASSERT_FALSE(eosReceived)
-            << "Received EOS-marked output callback when EOS was not expected";
     }
 
     if((mTestConfiguration.flushResetPts == -1) && (mTestConfiguration.flushPts==-1))
