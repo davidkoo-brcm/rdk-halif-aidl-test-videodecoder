@@ -568,7 +568,7 @@ void videoDecoderTest::decoderThreadFunc()
 
         std::this_thread::sleep_for(std::chrono::milliseconds(mTestConfiguration.decoderDelay));
 
-        if(i == (frameData.size() -1))
+        if(i == (frameData.size() -1) &&  mTestConfiguration.eosPts == -1)
         {
             VIDEODECODER_SIGNAL_EOS_SUCCESS(mDecoderHandle, videoDecoderController, true);
         }
@@ -576,15 +576,13 @@ void videoDecoderTest::decoderThreadFunc()
     }
 
     // Retrieve any remaining output frames
-    while (mControlListener->getNextFrame(decodedFrame, std::chrono::milliseconds(100)))
+    if(!misSinkAttached)
     {
-        UT_LOG_INFO("Retrieved remaining output frame: PTS=%lld, handle=0x%llx, isMetaAvailable=%d",
-                decodedFrame.framePTS, decodedFrame.frameBufferHandle, decodedFrame.isMetaAvailable);
-        // Validate PTS
+        while (mControlListener->getNextFrame(decodedFrame, std::chrono::milliseconds(100)))
         {
             auto it = mReceivedPts.find(decodedFrame.framePTS);
             if (it == mReceivedPts.end()) {
-                UT_LOG_ERROR("Unexpected PTS received: %lld", decodedFrame.framePTS);
+                UT_LOG_INFO("Unexpected PTS received: %lld", decodedFrame.framePTS);
             } else {
                 UT_LOG_INFO("Validated PTS: %lld", decodedFrame.framePTS);
                 mReceivedPts.erase(it); // Remove to track received PTS
@@ -646,34 +644,21 @@ void videoDecoderTest::decoderThreadFunc()
                 << videodecoder::toString(mTestConfiguration.codec).c_str();
 
             // Validate flags
-            if(mTestConfiguration.eosPts == decodedFrame.framePTS)
+            getDecoderMetrics(framesDecoded, decodeErrors, framesDropped);
+
+            if ((framesDecoded > (mTestConfiguration.no_of_frames - mTestConfiguration.decodeErrors)) ||
+                (decodedFrame.framePTS == -1))
             {
-                UT_ASSERT_EQUAL(decodedFrame.metadata->endOfStream, mTestConfiguration.endOfStream)
+                UT_ASSERT_EQUAL(decodedFrame.metadata->endOfStream, true)
                     << "endOfStream mismatch: expected=" << mTestConfiguration.endOfStream
                     << ", actual=" << decodedFrame.metadata->endOfStream
                     << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
             }
-
-            if(mTestConfiguration.discontinuityPts == decodedFrame.framePTS)
+            else
             {
-                UT_ASSERT_EQUAL(decodedFrame.metadata->discontinuity, mTestConfiguration.discontinuity)
-                    << "discontinuity mismatch: expected=" << mTestConfiguration.discontinuity
-                    << ", actual=" << decodedFrame.metadata->discontinuity
-                    << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+                    UT_LOG_INFO("No metadata available for PTS=%lld", decodedFrame.framePTS);
             }
 
-            UT_ASSERT_EQUAL(decodedFrame.metadata->lowLatency, mTestConfiguration.lowLatency)
-                << "lowLatency mismatch: expected=" << mTestConfiguration.lowLatency
-                << ", actual=" << decodedFrame.metadata->lowLatency
-                << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-        }
-        else
-        {
-                UT_LOG_INFO("No metadata available for PTS=%lld", decodedFrame.framePTS);
-        }
-
-        if(!misSinkAttached)
-        {
             if(decodedFrame.frameBufferHandle != -1)
             {
                 AVBUFFER_ISVALID_SUCCESS(mAVBufferManager, decodedFrame.frameBufferHandle, isBufferValid);

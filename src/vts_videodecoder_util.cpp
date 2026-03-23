@@ -829,7 +829,7 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, const char *m
 
     // Get input and reference paths
     char tempBuffer[UT_KVP_MAX_ELEMENT_SIZE] = {0};
-    status = ut_kvp_getStringField(kvpTestInstance, "VIDEO_DECODER_STREAM_INPUT_PATH", tempBuffer, UT_KVP_MAX_ELEMENT_SIZE);
+    status = ut_kvp_getStringField(kvpTestInstance, VIDEO_DECODER_STREAM_INPUT_PATH, tempBuffer, UT_KVP_MAX_ELEMENT_SIZE);
     if (status != UT_KVP_STATUS_SUCCESS)
     {
         UT_LOG_ERROR("Failed to get input_streams_path, status: %d", status);
@@ -838,7 +838,7 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, const char *m
     streamInputPath = tempBuffer;
     UT_LOG_INFO("streamInputPath: %s", streamInputPath.c_str());
 
-    status = ut_kvp_getStringField(kvpTestInstance, "VIDEO_DECODER_STREAM_REF_PATH", tempBuffer, UT_KVP_MAX_ELEMENT_SIZE);
+    status = ut_kvp_getStringField(kvpTestInstance, VIDEO_DECODER_STREAM_REF_PATH, tempBuffer, UT_KVP_MAX_ELEMENT_SIZE);
     if (status != UT_KVP_STATUS_SUCCESS)
     {
         UT_LOG_ERROR("Failed to get reference_streams_path, status: %d", status);
