@@ -633,10 +633,10 @@ void videoDecoderTest::decoderThreadFunc()
             // Validate flags
             getDecoderMetrics(framesDecoded, decodeErrors, framesDropped);
 
-            if (decodedFrame.metadata->endOfStream && (framesDecoded >= (mTestConfiguration.no_of_frames - mTestConfiguration.decodeErrors)) ||
+            if ((framesDecoded > (mTestConfiguration.no_of_frames - mTestConfiguration.decodeErrors)) ||
                 (decodedFrame.framePTS == -1))
             {
-                UT_ASSERT_EQUAL(decodedFrame.metadata->endOfStream, mTestConfiguration.endOfStream)
+                UT_ASSERT_EQUAL(decodedFrame.metadata->endOfStream, true)
                     << "endOfStream mismatch: expected=" << mTestConfiguration.endOfStream
                     << ", actual=" << decodedFrame.metadata->endOfStream
                     << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
