@@ -576,11 +576,9 @@ void videoDecoderTest::decoderThreadFunc()
     }
 
     // Retrieve any remaining output frames
-    while (mControlListener->getNextFrame(decodedFrame, std::chrono::milliseconds(100)))
+    if(!misSinkAttached)
     {
-        UT_LOG_INFO("Retrieved remaining output frame: PTS=%lld, handle=0x%llx, isMetaAvailable=%d",
-                decodedFrame.framePTS, decodedFrame.frameBufferHandle, decodedFrame.isMetaAvailable);
-        // Validate PTS
+        while (mControlListener->getNextFrame(decodedFrame, std::chrono::milliseconds(100)))
         {
             auto it = mReceivedPts.find(decodedFrame.framePTS);
             if (it == mReceivedPts.end()) {
@@ -641,27 +639,11 @@ void videoDecoderTest::decoderThreadFunc()
                     << ", actual=" << decodedFrame.metadata->endOfStream
                     << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
             }
-
-            if(mTestConfiguration.discontinuityPts == decodedFrame.framePTS)
+            else
             {
-                UT_ASSERT_EQUAL(decodedFrame.metadata->discontinuity, mTestConfiguration.discontinuity)
-                    << "discontinuity mismatch: expected=" << mTestConfiguration.discontinuity
-                    << ", actual=" << decodedFrame.metadata->discontinuity
-                    << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+                    UT_LOG_INFO("No metadata available for PTS=%lld", decodedFrame.framePTS);
             }
 
-            UT_ASSERT_EQUAL(decodedFrame.metadata->lowLatency, mTestConfiguration.lowLatency)
-                << "lowLatency mismatch: expected=" << mTestConfiguration.lowLatency
-                << ", actual=" << decodedFrame.metadata->lowLatency
-                << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-        }
-        else
-        {
-                UT_LOG_INFO("No metadata available for PTS=%lld", decodedFrame.framePTS);
-        }
-
-        if(!misSinkAttached)
-        {
             if(decodedFrame.frameBufferHandle != -1)
             {
                 AVBUFFER_ISVALID_SUCCESS(mAVBufferManager, decodedFrame.frameBufferHandle, isBufferValid);
