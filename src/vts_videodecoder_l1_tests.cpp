@@ -88,6 +88,89 @@ static const int32_t intValueLowLatencyOn = 1;
 static const int32_t intValueDecodeErrorConceal = 1;
 static const int32_t intValueAVSourceUnknown = 0;
 
+// Typed controller API test values
+static const int32_t intValueStreamWidth = 1920;
+static const int32_t intValueStreamHeight = 1080;
+static const int32_t intValueInvalidWidthZero = 0;
+static const int32_t intValueInvalidHeightZero = 0;
+static const int32_t intValueInvalidWidthNegative = -1;
+static const int32_t intValueInvalidHeightNegative = -1;
+
+static const int32_t intValueFrameRateNum = 24;
+static const int32_t intValueFrameRateDen = 1;
+static const int32_t intValueInvalidFrameRateNum = -1;
+static const int32_t intValueInvalidFrameRateDen = 0;
+
+static const Colorimetry validColorimetry = Colorimetry::BT709;
+
+static const bool dolbyVisionBLPresent = true;
+static const bool dolbyVisionELPresent = false;
+
+static MasteringDisplayInfo validMasteringDisplayInfo = [] {
+    MasteringDisplayInfo mdi{};
+    mdi.redPrimaryX = 13250;
+    mdi.redPrimaryY = 34500;
+    mdi.greenPrimaryX = 8500;
+    mdi.greenPrimaryY = 16500;
+    mdi.bluePrimaryX = 34000;
+    mdi.bluePrimaryY = 16000;
+    mdi.whitePointX = 15635;
+    mdi.whitePointY = 16450;
+    mdi.maxLuminance = 10000000;
+    mdi.minLuminance = 500;
+    return mdi;
+}();
+
+static ContentLightLevel validContentLightLevel = [] {
+    ContentLightLevel cll{};
+    cll.maxCLL = 1000;
+    cll.maxFALL = 400;
+    return cll;
+}();
+enum SupportedFrameRate : int32_t {
+    FRAME_RATE_24  = 24,
+    FRAME_RATE_25  = 25,
+    FRAME_RATE_30  = 30,
+    FRAME_RATE_50  = 50,
+    FRAME_RATE_60  = 60,
+    FRAME_RATE_120 = 120
+};
+
+#define RES_640_WIDTH       640
+#define RES_640_HEIGHT      480
+#define RES_720_480_WIDTH   720
+#define RES_720_480_HEIGHT  480
+#define RES_720_576_WIDTH   720
+#define RES_720_576_HEIGHT  576
+#define RES_1280_WIDTH      1280
+#define RES_1280_HEIGHT     720
+#define RES_1920_WIDTH      1920
+#define RES_1920_HEIGHT     1080
+#define RES_3840_WIDTH      3840
+#define RES_3840_HEIGHT     2160
+
+struct SupportedResolution {
+    int32_t width;
+    int32_t height;
+};
+
+static const std::vector<int32_t> kSupportedFrameRates = {
+    FRAME_RATE_24,
+    FRAME_RATE_25,
+    FRAME_RATE_30,
+    FRAME_RATE_50,
+    FRAME_RATE_60,
+    FRAME_RATE_120
+};
+
+static const std::vector<SupportedResolution> kSupportedResolutions = {
+    {RES_640_WIDTH,      RES_640_HEIGHT},
+    {RES_720_480_WIDTH,  RES_720_480_HEIGHT},
+    {RES_720_576_WIDTH,  RES_720_576_HEIGHT},
+    {RES_1280_WIDTH,     RES_1280_HEIGHT},
+    {RES_1920_WIDTH,     RES_1920_HEIGHT},
+    {RES_3840_WIDTH,     RES_3840_HEIGHT}
+};
 
 /**
  * @brief Test the retrieval of video decoder IDs from the VideoDecoderManager service.
@@ -113,30 +196,42 @@ static const int32_t intValueAVSourceUnknown = 0;
  * | 03 | Log the result of getVideoDecoderIds call. | decoderIds.size(), status | Log should show size and status | Should be successful |
  * | 04 | Assert that the status is OK. | status.isOk() | Assertion should pass | Should Pass |
  * | 05 | Assert that decoderIds is not empty. | decoderIds | Assertion should pass | Should Pass |
- * | 06 | Retrieve expected count of video decoder IDs. | expectedCount = UT_KVP_PROFILE_GET_LIST_COUNT("IVideoDecoderManager.IVideoDecoder") | Should be successful | |
+ * | 06 | Retrieve expected count of video decoder IDs. | expectedCount = UT_KVP_PROFILE_GET_LIST_COUNT("videodecoder.IVideoDecoder") | Should be successful | |
  * | 07 | Assert that the size of decoderIds matches expected count. | decoderIds.size(), expectedCount | Assertion should pass | Should Pass |
  * | 08 | Iterate over expected IDs and verify each is present in decoderIds. | expectedId, decoderIds | Assertion should pass for each ID | Should Pass |
  */
 UT_ADD_TEST(VTS_L1_VideoDecoder,getVideoDecoderIds_pos) {
-    std::vector<videodecoder::IVideoDecoder::Id> decoderIds;
-    size_t expectedCount = 0;
+    std::vector<videodecoder::IVideoDecoder::Id> initialDecoderIds;
+    std::vector<videodecoder::IVideoDecoder::Id> secondDecoderIds;
 
-    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
+    /* Get the Video decoder IDs */
+    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(initialDecoderIds);
 
-    std::string videodecoder_count_path = "IVideoDecoderManager.IVideoDecoder";
-    expectedCount = UT_KVP_PROFILE_GET_LIST_COUNT(videodecoder_count_path.c_str());
-    UT_LOG_INFO("Expected count from profile: %zu", expectedCount);
-    UT_ASSERT_TRUE(expectedCount > 0) << "Profile returned invalid count.";
-    UT_ASSERT_EQUAL(decoderIds.size(), expectedCount) << "Decoder ID count mismatch.";
+    /* Get the Video decoder IDs second time */
+    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(secondDecoderIds);
 
-    for (size_t i = 0; i < expectedCount; ++i) {
-        std::string videodecoderidpath = "IVideoDecoderManager.IVideoDecoder." + std::to_string(i) + ".id";
-        int32_t expectedId = UT_KVP_PROFILE_GET_UINT32(videodecoderidpath.c_str());
-        UT_LOG_INFO("Checking ID at %s: %d", videodecoderidpath.c_str(), expectedId);
-        auto it = std::find_if(decoderIds.begin(), decoderIds.end(), [expectedId](const auto& id) {
-            return id.value == expectedId;
-        });
-        UT_ASSERT_TRUE(it != decoderIds.end()) << "Expected VideoDecoder ID not found: " << expectedId;
+    /* Verify both retrievals return same size and values */
+    UT_ASSERT_EQUAL(initialDecoderIds.size(), secondDecoderIds.size()) << "Decoder ID count mismatch between retrievals.";
+
+    for (size_t i = 0; i < initialDecoderIds.size(); ++i) {
+        UT_ASSERT_EQUAL(initialDecoderIds[i].value, secondDecoderIds[i].value)
+            << "Decoder ID value mismatch at index " << i;
+    }
+
+    /* Verify the count matches the HFP profile */
+    UT_ASSERT_EQUAL(initialDecoderIds.size(), gVideodecoders_hfp.size())
+        << "Decoder ID count mismatch with HFP profile.";
+
+    /* Build set of IDs from HFP profile */
+    std::unordered_set<int32_t> decoderId_from_profile;
+    for (const auto& obj : gVideodecoders_hfp) {
+        decoderId_from_profile.insert(obj.id);
+    }
+
+    /* Verify each retrieved decoder ID is listed in the HFP profile */
+    for (const auto& decoderId : initialDecoderIds) {
+        UT_ASSERT_NOT_EQUAL(decoderId_from_profile.find(decoderId.value), decoderId_from_profile.end())
+            << "VideoDecoder ID " << decoderId.value << " not found in HFP profile.";
     }
 }
 
@@ -169,27 +264,22 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, getSupportedOperationalModes_pos) {
 
     VIDEODECODER_MANAGER_GETSUPPORTEDOPERATIONALMODES(supportedModes);
 
-    std::string operationalmode_count_path = "IVideoDecoderManager.supportedOperationalModes";
-    size_t expectedCount = UT_KVP_PROFILE_GET_LIST_COUNT(operationalmode_count_path.c_str());
-
-    UT_ASSERT_EQUAL(supportedModes.size(), expectedCount) << "Mismatch in number of supported operational modes.";
-
-    for (size_t i = 0; i < expectedCount; ++i) {
-        char pszReturnedString[UT_KVP_MAX_ELEMENT_SIZE];
-        std::string operationalmode_path = "IVideoDecoderManager.supportedOperationalModes." + std::to_string(i);
-        UT_KVP_PROFILE_GET_STRING(operationalmode_path.c_str(), pszReturnedString);
-        OperationalMode expectedMode;
-        if (strcmp(pszReturnedString, "TUNNELLED") == 0) {
-            expectedMode = OperationalMode::TUNNELLED;
-        } else if (strcmp(pszReturnedString, "NON_TUNNELLED") == 0) {
-            expectedMode = OperationalMode::NON_TUNNELLED;
-        } else if (strcmp(pszReturnedString, "GRAPHICS_TEXTURE") == 0) {
-            expectedMode = OperationalMode::GRAPHICS_TEXTURE;
-        } else {
-            UT_FAIL("Unsupported operational mode in YAML configuration.");
+    /* Build set of all operational modes from HFP profile */
+    std::unordered_set<videodecoder::OperationalMode> modesFromProfile;
+    for (const auto& decoder : gVideodecoders_hfp) {
+        for (const auto& mode : decoder.supportedOperationalModes) {
+            modesFromProfile.insert(mode);
         }
-        UT_ASSERT_TRUE(std::find(supportedModes.begin(), supportedModes.end(), expectedMode) != supportedModes.end())
-            << "Operational mode " << pszReturnedString << " not found in supported modes.";
+    }
+
+    /* Verify the size matches */
+    UT_ASSERT_EQUAL(supportedModes.size(), modesFromProfile.size())
+        << "Mismatch in number of supported operational modes.";
+
+    /* Verify each mode from API is present in HFP profile */
+    for (const auto& mode : supportedModes) {
+        UT_ASSERT_NOT_EQUAL(modesFromProfile.find(mode), modesFromProfile.end())
+            << "Operational mode " << static_cast<int>(mode) << " not found in HFP profile.";
     }
 }
 
@@ -218,17 +308,32 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, getSupportedOperationalModes_pos) {
  */
 UT_ADD_TEST(VTS_L1_VideoDecoder,getVideoDecoder_pos) {
     std::vector<IVideoDecoder::Id> decoderIds;
-    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds); // Get IDs first
+    std::optional<PropertyValue> resource_id_1;
+    std::optional<PropertyValue> resource_id_2;
+    videodecoder::Property property = videodecoder::Property::RESOURCE_ID;
 
-    int i = 0;
-    for (const auto& id : decoderIds) {
-        IVideoDecoder::Id videoDecoderId;
-        std::string decoder_id_path = "IVideoDecoderManager.IVideoDecoder." + std::to_string(i) + ".id";
-        videoDecoderId.value = UT_KVP_PROFILE_GET_UINT32(decoder_id_path.c_str());
-        i++;
+    /* Get the Video decoder IDs */
+    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
 
-        sp<IVideoDecoder> videoDecoder;
-        VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(videoDecoderId, videoDecoder); // Macro replaces the call and checks
+    for (const auto& _decoderId : decoderIds) {
+        sp<IVideoDecoder> videoDecoder_1;
+        sp<IVideoDecoder> videoDecoder_2;
+
+        /* Get Video decoder handle */
+        VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(_decoderId, videoDecoder_1);
+        /* Get the resource ID */
+        VIDEODECODER_GET_PROPERTY_SUCCESS(videoDecoder_1, property, resource_id_1);
+
+        /* Get Video decoder handle again with same ID */
+        VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(_decoderId, videoDecoder_2);
+        /* Get the resource ID */
+        VIDEODECODER_GET_PROPERTY_SUCCESS(videoDecoder_2, property, resource_id_2);
+
+        int32_t _resource_id_1 = resource_id_1->value->get<PropertyValue::Value::Tag::intValue>();
+        int32_t _resource_id_2 = resource_id_2->value->get<PropertyValue::Value::Tag::intValue>();
+
+        UT_ASSERT_EQUAL(_resource_id_1, _resource_id_2)
+            << "Resource IDs don't match for decoder ID " << _decoderId.value;
     }
 }
 
@@ -538,27 +643,33 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, getProperty_neg) {
         UT_ASSERT_TRUE(vts_videodecoder_helper_validatePropertyValue(decoder_id, aidl_return_single,
             videodecoder::Property::RESOURCE_ID)) << "RESOURCE_ID validation failed";
 
-        // Populate propertyKVList with properties to query
-        std::vector<PropertyKVPair> propertyKVList;
-        VIDEODECODER_ADD_PROPERTYKVPAIR(propertyKVList, RESOURCE_ID);
-        VIDEODECODER_ADD_PROPERTYKVPAIR(propertyKVList, INPUT_QUEUE_DEPTH);
-        VIDEODECODER_ADD_PROPERTYKVPAIR(propertyKVList, OUTPUT_FRAME_POOL_SIZE);
-        VIDEODECODER_ADD_PROPERTYKVPAIR(propertyKVList, OPERATIONAL_MODE);
-        VIDEODECODER_ADD_PROPERTYKVPAIR(propertyKVList, SECURE_VIDEO);
-        VIDEODECODER_ADD_PROPERTYKVPAIR(propertyKVList, METRIC_FRAMES_DECODED);
-        VIDEODECODER_ADD_PROPERTYKVPAIR(propertyKVList, METRIC_DECODE_ERRORS);
-        VIDEODECODER_ADD_PROPERTYKVPAIR(propertyKVList, METRIC_FRAMES_DROPPED);
+        // Populate properties list with properties to query
+        std::vector<videodecoder::Property> properties;
+        VIDEODECODER_ADD_PROPERTY(properties, RESOURCE_ID);
+        VIDEODECODER_ADD_PROPERTY(properties, INPUT_QUEUE_DEPTH);
+        VIDEODECODER_ADD_PROPERTY(properties, OUTPUT_FRAME_POOL_SIZE);
+        VIDEODECODER_ADD_PROPERTY(properties, OPERATIONAL_MODE);
+        VIDEODECODER_ADD_PROPERTY(properties, SECURE_VIDEO);
+        VIDEODECODER_ADD_PROPERTY(properties, METRIC_FRAMES_DECODED);
+        VIDEODECODER_ADD_PROPERTY(properties, METRIC_DECODE_ERRORS);
+        VIDEODECODER_ADD_PROPERTY(properties, METRIC_FRAMES_DROPPED);
 
         // Call getPropertyMulti and validate result
+        std::vector<PropertyKVPair> propertyKVList;
         bool aidl_return = false;
-        VIDEODECODER_GETPROPERTYMULTI(decoder, propertyKVList, aidl_return);
+        VIDEODECODER_GETPROPERTYMULTI(decoder, properties, propertyKVList, aidl_return);
 
         // Validate each returned PropertyKVPair
-        for (const auto& kvPair : propertyKVList) {
-            UT_ASSERT_TRUE(kvPair.propertyValue.value.has_value())
-                << "Property " << static_cast<int>(kvPair.property) << " has no value.";
-            UT_ASSERT_TRUE(vts_videodecoder_helper_validatePropertyValue(decoder_id, kvPair.propertyValue, kvPair.property))
-                << "Validation failed for property " << static_cast<int>(kvPair.property);
+        UT_ASSERT_EQUAL(propertyKVList.size(), properties.size())
+            << "Returned propertyKVList size does not match input properties size.";
+
+        for (size_t i = 0; i < propertyKVList.size(); i++) {
+            UT_ASSERT_EQUAL(propertyKVList[i].property, properties[i])
+                << "Property mismatch at index " << i;
+            UT_ASSERT_TRUE(propertyKVList[i].propertyValue.value.has_value())
+                << "Property " << static_cast<int>(propertyKVList[i].property) << " has no value.";
+            UT_ASSERT_TRUE(vts_videodecoder_helper_validatePropertyValue(decoder_id, propertyKVList[i].propertyValue, propertyKVList[i].property))
+                << "Validation failed for property " << static_cast<int>(propertyKVList[i].property);
         }
     }
 }
@@ -568,7 +679,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, getProperty_neg) {
 /**
  * @brief Test the behavior of the VideoDecoder when invalid or empty property keys are provided.
  *
- * This test checks the VideoDecoder's response to invalid property keys and empty property lists. It ensures that the decoder handles these scenarios gracefully without crashing and returns expected results.
+ * This test checks the VideoDecoder's response to invalid property keys, empty property lists, and null out-parameters. It ensures that the decoder handles these error scenarios gracefully and returns appropriate error codes per the API specification.
  *
  * **Test Group ID:** Basic: 01@n
  * **Test Case ID:** 009@n
@@ -581,10 +692,12 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, getProperty_neg) {
  * **Test Procedure:**@n
  * | Variation / Step | Description | Test Data | Expected Result | Notes |
  * | :----: | --------- | ---------- |-------------- | ----- |
- * | 01 | Initialize invalid property key pair and add to list | invalidPair.property = -1 | aidlReturnInvalid = false, kvPair.propertyValue.value.has_value() = false | Should Fail |
- * | 02 | Call getPropertyMulti with invalid property list | propertyKVListInvalid, aidlReturnInvalid | statusInvalid.isOk() = false, statusInvalid.exceptionCode() = expected exception | Should Fail |
- * | 03 | Initialize empty property list | propertyKVListEmpty | aidlReturnEmpty = false | Should Fail |
- * | 04 | Call getPropertyMulti with empty property list | propertyKVListEmpty, aidlReturnEmpty | statusEmpty.isOk() = false, statusEmpty.exceptionCode() = expected exception | Should Fail |
+ * | 01 | Initialize invalid property key and add to list | propertiesInvalid = [-1] | Invalid property key initialized | Should Fail |
+ * | 02 | Call getPropertyMulti with invalid property list | propertiesInvalid, propertyKVListInvalid, aidlReturnInvalid | statusInvalid.isOk() = false, statusInvalid.exceptionCode() = EX_ILLEGAL_ARGUMENT | Should Fail |
+ * | 03 | Initialize empty property list | propertiesEmpty = [] | Empty property list initialized | Should Fail |
+ * | 04 | Call getPropertyMulti with empty property list | propertiesEmpty, propertyKVListEmpty, aidlReturnEmpty | statusEmpty.isOk() = false, statusEmpty.exceptionCode() = EX_ILLEGAL_ARGUMENT | Should Fail |
+ * | 05 | Initialize valid properties list | propertiesValid = [RESOURCE_ID, INPUT_QUEUE_DEPTH] | Valid properties list initialized | Should be successful |
+ * | 06 | Call getPropertyMulti with null out-parameter (propertyKVList) | propertiesValid, NULL, aidlReturnNull | statusNull.isOk() = false, statusNull.exceptionCode() = EX_NULL_POINTER | Should Fail |
  */
 UT_ADD_TEST(VTS_L1_VideoDecoder, getPropertyMulti_neg) {
     std::vector<IVideoDecoder::Id> decoderIds;
@@ -595,24 +708,31 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, getPropertyMulti_neg) {
     VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(decoderIds[0], decoder);
     UT_ASSERT_TRUE(decoder != nullptr) << "Decoder pointer is null";
 
-    // Negative Test - Invalid Property Key
+    // Negative Test 1 - Invalid Property Key
+    std::vector<videodecoder::Property> propertiesInvalid;
+    propertiesInvalid.push_back(static_cast<videodecoder::Property>(-1));
+
     std::vector<PropertyKVPair> propertyKVListInvalid;
-    PropertyKVPair invalidPair;
-    invalidPair.property = static_cast<videodecoder::Property>(-1);
-    propertyKVListInvalid.push_back(invalidPair);
-
     bool aidlReturnInvalid = false;
-    VIDEODECODER_GETPROPERTYMULTI_FAILURE(decoder, propertyKVListInvalid, aidlReturnInvalid, Status::EX_ILLEGAL_ARGUMENT);
+    VIDEODECODER_GETPROPERTYMULTI_FAILURE(decoder, propertiesInvalid, propertyKVListInvalid, aidlReturnInvalid, Status::EX_ILLEGAL_ARGUMENT);
 
-    for (const auto& kvPair : propertyKVListInvalid) {
-        UT_ASSERT_FALSE(kvPair.propertyValue.value.has_value())
-            << "videodecoder::Property " << static_cast<int>(kvPair.property) << " should not have a value";
-    }
-
-    // Negative Test - Empty Property List
+    // Negative Test 2 - Empty Property List
+    // Per API spec: "Passing an empty `properties` array is an error" with EX_ILLEGAL_ARGUMENT
+    std::vector<videodecoder::Property> propertiesEmpty;
     std::vector<PropertyKVPair> propertyKVListEmpty;
     bool aidlReturnEmpty = false;
-    VIDEODECODER_GETPROPERTYMULTI_FAILURE(decoder, propertyKVListEmpty, aidlReturnEmpty, Status::EX_NULL_POINTER);
+    VIDEODECODER_GETPROPERTYMULTI_FAILURE(decoder, propertiesEmpty, propertyKVListEmpty, aidlReturnEmpty, Status::EX_ILLEGAL_ARGUMENT);
+
+    // TODO: Verify AIDL CPP proxy null out-parameter handling. Passing nullptr causes binder client-side crash before EX_NULL_POINTER
+    // Negative Test 3 - Null out-parameter (propertyKVList)
+    // Per API spec: "If a required out-parameter is null (e.g. `propertyKVList`), the call fails with `EX_NULL_POINTER`"
+    // std::vector<videodecoder::Property> propertiesValid;
+    // VIDEODECODER_ADD_PROPERTY(propertiesValid, RESOURCE_ID);
+    // VIDEODECODER_ADD_PROPERTY(propertiesValid, INPUT_QUEUE_DEPTH);
+
+    // std::vector<PropertyKVPair> propertyKVListNull;
+    // bool aidlReturnNull = false;
+    // VIDEODECODER_GETPROPERTYMULTI_FAILURE(decoder, propertiesValid, propertyKVListNull, aidlReturnNull, Status::EX_NULL_POINTER);
 
 }
 
@@ -698,9 +818,9 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, getState_pos) {
  * | Variation / Step | Description | Test Data | Expected Result | Notes |
  * | :----: | --------- | ---------- |-------------- | ----- |
  * | 01 | Initialize listener for video decoder controller. | listener = new VideoDecoderControllerListener() | Listener should be initialized successfully. | Should be successful |
- * | 02 | Retrieve secure mode from YAML configuration. | securePathKey = "IVideoDecoderManager.IVideoDecoder.i.supportsSecure" | Secure mode should be retrieved successfully. | Should be successful |
- * | 03 | Retrieve supported codecs count from YAML configuration. | codecCountKey = "IVideoDecoderManager.IVideoDecoder.i.supportedCodecs" | Codec count should be retrieved successfully. | Should be successful |
- * | 04 | Loop through each supported codec and retrieve codec name. | codecPathKey = "IVideoDecoderManager.IVideoDecoder.i.supportedCodecs.j" | Codec name should be retrieved successfully. | Should be successful |
+ * | 02 | Retrieve secure mode from YAML configuration. | securePathKey = "videodecoder.IVideoDecoder.i.supportsSecure" | Secure mode should be retrieved successfully. | Should be successful |
+ * | 03 | Retrieve supported codecs count from YAML configuration. | codecCountKey = "videodecoder.IVideoDecoder.i.supportedCodecs" | Codec count should be retrieved successfully. | Should be successful |
+ * | 04 | Loop through each supported codec and retrieve codec name. | codecPathKey = "videodecoder.IVideoDecoder.i.supportedCodecs.j" | Codec name should be retrieved successfully. | Should be successful |
  * | 05 | Map codec name to Codec enum. | codecName = "MPEG"/"H264"/"H265"/"VP9"/"AV1" | Codec should be mapped successfully. | Should be successful |
  * | 06 | Call open function with codec, secure mode, and listener. | codec = Codec::MPEG/H264/H265/VP9/AV1, secure = true/false, listener = VideoDecoderControllerListener | Decoder should open successfully, controller should not be null. | Should Pass |
  * | 07 | Assert that the status is OK and controller is not null. | status.isOk() = true, controller != nullptr | Assertions should pass. | Should Pass |
@@ -754,10 +874,10 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, open_pos) {
  * **Test Procedure:**@n
  * | Variation / Step | Description | Test Data | Expected Result | Notes |
  * | :----: | --------- | ---------- |-------------- | ----- |
- * | 01 | Retrieve secure mode from YAML configuration | securePathKey = "IVideoDecoderManager.IVideoDecoder.i.supportsSecure" | Secure mode value retrieved | Should be successful |
- * | 02 | Retrieve supported codecs from YAML configuration | codecCountKey = "IVideoDecoderManager.IVideoDecoder.i.supportedCodecs" | Supported codecs count retrieved | Should be successful |
+ * | 01 | Retrieve secure mode from YAML configuration | securePathKey = "videodecoder.IVideoDecoder.i.supportsSecure" | Secure mode value retrieved | Should be successful |
+ * | 02 | Retrieve supported codecs from YAML configuration | codecCountKey = "videodecoder.IVideoDecoder.i.supportedCodecs" | Supported codecs count retrieved | Should be successful |
  * | 03 | Test with unsupported codec | codec = 999, secure = secure, listener = listener, controller = nullptr | status.isOk() = true, controller = nullptr | Should Pass |
- * | 04 | Retrieve valid codec from YAML configuration | codecPathKey = "IVideoDecoderManager.IVideoDecoder.i.supportedCodecs.0", codecName = codecName | Valid codec value retrieved | Should be successful |
+ * | 04 | Retrieve valid codec from YAML configuration | codecPathKey = "videodecoder.IVideoDecoder.i.supportedCodecs.0", codecName = codecName | Valid codec value retrieved | Should be successful |
  * | 05 | Test with unsupported secure mode | codec = validCodec, secure = !secure, listener = listener, controller = nullptr | status.isOk() = true, controller = nullptr | Should Pass |
  * | 06 | Test without meeting precondition (not in CLOSED state) | codec = validCodec, secure = secure, listener = listener, controller = nullptr | status.isOk() = false, status.exceptionCode() = EX_ILLEGAL_STATE | Should Fail |
  */
@@ -2460,8 +2580,853 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, parseCodecSpecificData_neg)
     }
 }
 
+/**
+ * @brief Test the positive scenarios for setting stream resolution in VideoDecoderController.
+ *
+ * This test verifies that setStreamResolution succeeds when called in READY state
+ * with all supported candidate resolutions whose width and height are within the
+ * codec capability maximum frame width and height.
+ *
+ * **Test Group ID:** Basic: 01@n
+ * **Test Case ID:** 034@n
+ * **Priority:** High@n
+ * @n
+ * **Pre-Conditions:** None@n
+ * **Dependencies:** None@n
+ * **User Interaction:** None@n
+ * @n
+ * **Test Procedure:**@n
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |
+ * | :----: | --------- | ---------- | -------------- | ----- |
+ * | 01 | Initialize the test environment and iterate through decoder instances. | decoderIds | Should be successful | |
+ * | 02 | Get decoder capabilities and iterate through supported codecs. | capabilities.supportedCodecs | Should be successful | |
+ * | 03 | Open decoder and move to READY state. | codec, secure flag, listener | Controller should be valid | |
+ * | 04 | Loop through supported candidate resolutions and call setStreamResolution for each resolution within codec maxFrameWidth and maxFrameHeight. | 640x480, 720x480, 720x576, 1280x720, 1920x1080, 3840x2160 (filtered by capability) | status.isOk() = true | Should pass |
+ * | 05 | Close decoder. | controller | status.isOk() = true | Cleanup |
+ */
+UT_ADD_TEST(VTS_L1_VideoDecoder, setStreamResolution_pos)
+{
+    std::vector<IVideoDecoder::Id> decoderIds;
+    sp<IVideoDecoder> videoDecoder;
+    videodecoder::Capabilities capabilities;
 
+    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
+    UT_ASSERT_FALSE(decoderIds.empty()) << "No VideoDecoder instances available.";
 
+    for (const auto& _decoderId : decoderIds)
+    {
+        VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(_decoderId, videoDecoder);
+        VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
+
+        for (const auto& _codecCaps : capabilities.supportedCodecs)
+        {
+            videodecoder::Codec _codec = _codecCaps.codec;
+            sp<IVideoDecoderController> videoDecoderController;
+            sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
+
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+
+            /* Verify all supported candidate resolutions within codec capability */
+            for (const auto& res : kSupportedResolutions)
+            {
+                if (res.width <= _codecCaps.maxFrameWidth &&
+                    res.height <= _codecCaps.maxFrameHeight)
+                {
+                    VIDEODECODER_SETSTREAMRESOLUTION_SUCCESS(videoDecoderController,
+                                                            res.width,
+                                                            res.height);
+                }
+            }
+
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+        }
+    }
+}
+
+/**
+ * @brief Test the negative scenarios for setting stream resolution in VideoDecoderController.
+ *
+ * This test verifies that setStreamResolution fails with the correct exception
+ * when called in an invalid state, when width/height values are 0 or negative,
+ * and when width/height exceed the codec capability maximum.
+ *
+ * **Test Group ID:** Basic: 01@n
+ * **Test Case ID:** 035@n
+ * **Priority:** High@n
+ * @n
+ * **Pre-Conditions:** None@n
+ * **Dependencies:** None@n
+ * **User Interaction:** None@n
+ * @n
+ * **Test Procedure:**@n
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |
+ * | :----: | --------- | ---------- | -------------- | ----- |
+ * | 01 | Initialize the test environment and iterate through decoder instances. | decoderIds | Should be successful | |
+ * | 02 | Open decoder and move to STARTED state. | valid codec | status.isOk() = true | |
+ * | 03 | Call setStreamResolution outside READY state. | valid width, valid height | EX_ILLEGAL_STATE | Should fail |
+ * | 04 | Reopen decoder in READY state and call setStreamResolution with width = 0. | width = 0, valid height | EX_ILLEGAL_ARGUMENT | Should fail |
+ * | 05 | Reopen decoder in READY state and call setStreamResolution with width = -1. | width = -1, valid height | EX_ILLEGAL_ARGUMENT | Should fail |
+ * | 06 | Reopen decoder in READY state and call setStreamResolution with height = 0. | valid width, height = 0 | EX_ILLEGAL_ARGUMENT | Should fail |
+ * | 07 | Reopen decoder in READY state and call setStreamResolution with height = -1. | valid width, height = -1 | EX_ILLEGAL_ARGUMENT | Should fail |
+ * | 08 | Reopen decoder in READY state and call setStreamResolution with width greater than codec maxFrameWidth. | width = maxFrameWidth + 1, valid height | EX_ILLEGAL_ARGUMENT | Should fail |
+ * | 09 | Reopen decoder in READY state and call setStreamResolution with height greater than codec maxFrameHeight. | valid width, height = maxFrameHeight + 1 | EX_ILLEGAL_ARGUMENT | Should fail |
+ * | 10 | Reopen decoder in READY state and call setStreamResolution with both width and height greater than codec capability maximum. | width = maxFrameWidth + 1, height = maxFrameHeight + 1 | EX_ILLEGAL_ARGUMENT | Should fail |
+ * | 11 | Reopen decoder in READY state and call setStreamResolution with both invalid width and height. | width <= 0, height <= 0 | EX_ILLEGAL_ARGUMENT | Should fail |
+ */
+UT_ADD_TEST(VTS_L1_VideoDecoder, setStreamResolution_neg)
+{
+    std::vector<IVideoDecoder::Id> decoderIds;
+    sp<IVideoDecoder> videoDecoder;
+    videodecoder::Capabilities capabilities;
+
+    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
+    UT_ASSERT_FALSE(decoderIds.empty()) << "No VideoDecoder instances available.";
+
+    for (const auto& _decoderId : decoderIds)
+    {
+        VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(_decoderId, videoDecoder);
+        VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
+
+        for (const auto& _codecCaps : capabilities.supportedCodecs)
+        {
+            videodecoder::Codec _codec = _codecCaps.codec;
+            sp<IVideoDecoderController> videoDecoderController;
+            sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
+
+            /* Step 1: Verify EX_ILLEGAL_STATE when API is called outside READY state */
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+            VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
+
+            VIDEODECODER_SETSTREAMRESOLUTION_FAILURE(videoDecoderController,
+                                                    _codecCaps.maxFrameWidth,
+                                                    _codecCaps.maxFrameHeight,
+                                                    Status::EX_ILLEGAL_STATE);
+
+            VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+
+            /* Step 2: Verify EX_ILLEGAL_ARGUMENT for width = 0 with valid height */
+            controllerListener = new VideoDecoderControllerListener();
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+
+            VIDEODECODER_SETSTREAMRESOLUTION_FAILURE(videoDecoderController,
+                                                    intValueInvalidWidthZero,
+                                                    _codecCaps.maxFrameHeight,
+                                                    Status::EX_ILLEGAL_ARGUMENT);
+
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+
+            /* Step 3: Verify EX_ILLEGAL_ARGUMENT for width = -1 with valid height */
+            controllerListener = new VideoDecoderControllerListener();
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+
+            VIDEODECODER_SETSTREAMRESOLUTION_FAILURE(videoDecoderController,
+                                                    intValueInvalidWidthNegative,
+                                                    _codecCaps.maxFrameHeight,
+                                                    Status::EX_ILLEGAL_ARGUMENT);
+
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+
+            /* Step 4: Verify EX_ILLEGAL_ARGUMENT for valid width with height = 0 */
+            controllerListener = new VideoDecoderControllerListener();
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+
+            VIDEODECODER_SETSTREAMRESOLUTION_FAILURE(videoDecoderController,
+                                                    _codecCaps.maxFrameWidth,
+                                                    intValueInvalidHeightZero,
+                                                    Status::EX_ILLEGAL_ARGUMENT);
+
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+
+            /* Step 5: Verify EX_ILLEGAL_ARGUMENT for valid width with height = -1 */
+            controllerListener = new VideoDecoderControllerListener();
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+
+            VIDEODECODER_SETSTREAMRESOLUTION_FAILURE(videoDecoderController,
+                                                    _codecCaps.maxFrameWidth,
+                                                    intValueInvalidHeightNegative,
+                                                    Status::EX_ILLEGAL_ARGUMENT);
+
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+
+            /* Step 6: Verify EX_ILLEGAL_ARGUMENT for width greater than codec maxFrameWidth */
+            controllerListener = new VideoDecoderControllerListener();
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+
+            VIDEODECODER_SETSTREAMRESOLUTION_FAILURE(videoDecoderController,
+                                                    _codecCaps.maxFrameWidth + 1,
+                                                    _codecCaps.maxFrameHeight,
+                                                    Status::EX_ILLEGAL_ARGUMENT);
+
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+
+            /* Step 7: Verify EX_ILLEGAL_ARGUMENT for height greater than codec maxFrameHeight */
+            controllerListener = new VideoDecoderControllerListener();
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+
+            VIDEODECODER_SETSTREAMRESOLUTION_FAILURE(videoDecoderController,
+                                                    _codecCaps.maxFrameWidth,
+                                                    _codecCaps.maxFrameHeight + 1,
+                                                    Status::EX_ILLEGAL_ARGUMENT);
+
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+
+            /* Step 8: Verify EX_ILLEGAL_ARGUMENT for both width and height greater than codec maximum */
+            controllerListener = new VideoDecoderControllerListener();
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+
+            VIDEODECODER_SETSTREAMRESOLUTION_FAILURE(videoDecoderController,
+                                                    _codecCaps.maxFrameWidth + 1,
+                                                    _codecCaps.maxFrameHeight + 1,
+                                                    Status::EX_ILLEGAL_ARGUMENT);
+
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+
+            /* Step 9: Verify EX_ILLEGAL_ARGUMENT for invalid width and invalid height */
+            controllerListener = new VideoDecoderControllerListener();
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+
+            VIDEODECODER_SETSTREAMRESOLUTION_FAILURE(videoDecoderController,
+                                                    intValueInvalidWidthZero,
+                                                    intValueInvalidHeightNegative,
+                                                    Status::EX_ILLEGAL_ARGUMENT);
+
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+        }
+    }
+}
+
+/**
+ * @brief Test the positive scenarios for setting frame rate in VideoDecoderController.
+ *
+ * This test verifies that setFrameRate succeeds when called in READY state
+ * with all supported candidate frame rates up to the codec capability maximum,
+ * and also with 0/0 to indicate unknown frame rate.
+ *
+ * **Test Group ID:** Basic: 01@n
+ * **Test Case ID:** 036@n
+ * **Priority:** High@n
+ * @n
+ * **Pre-Conditions:** None@n
+ * **Dependencies:** None@n
+ * **User Interaction:** None@n
+ * @n
+ * **Test Procedure:**@n
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |
+ * | :----: | --------- | ---------- | -------------- | ----- |
+ * | 01 | Initialize and iterate through decoder instances. | decoderIds | Should be successful | |
+ * | 02 | Open decoder and move to READY state. | valid codec | Controller should be valid | |
+ * | 03 | Loop through supported candidate frame rates and call setFrameRate for each value less than or equal to codec maxFrameRate. | 24, 25, 30, 50, 60, 120 (filtered by maxFrameRate) | status.isOk() = true | Should pass |
+ * | 04 | Call setFrameRate with 0/0 to indicate unknown frame rate. | 0/0 | status.isOk() = true | Should pass |
+ * | 05 | Close decoder. | controller | status.isOk() = true | Cleanup |
+ */
+UT_ADD_TEST(VTS_L1_VideoDecoder, setFrameRate_pos)
+{
+    std::vector<IVideoDecoder::Id> decoderIds;
+    sp<IVideoDecoder> videoDecoder;
+    videodecoder::Capabilities capabilities;
+
+    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
+    UT_ASSERT_FALSE(decoderIds.empty()) << "No VideoDecoder instances available.";
+
+    for (const auto& _decoderId : decoderIds)
+    {
+        VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(_decoderId, videoDecoder);
+        VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
+
+        for (const auto& _codecCaps : capabilities.supportedCodecs)
+        {
+            videodecoder::Codec _codec = _codecCaps.codec;
+            sp<IVideoDecoderController> videoDecoderController;
+            sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
+
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+
+            /* Verify all supported candidate frame rates up to codec maxFrameRate */
+            for (auto rate : kSupportedFrameRates)
+            {
+                if (rate <= _codecCaps.maxFrameRate)
+                {
+                    VIDEODECODER_SETFRAMERATE_SUCCESS(videoDecoderController, rate, 1);
+                }
+            }
+
+            /* Verify 0/0 is accepted for unknown frame rate */
+            VIDEODECODER_SETFRAMERATE_SUCCESS(videoDecoderController, 0, 0);
+
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+        }
+    }
+}
+
+/**
+ * @brief Test the negative scenarios for setting frame rate in VideoDecoderController.
+ *
+ * This test verifies that setFrameRate fails with the correct exception
+ * when called in an invalid state, when denominator is 0 while numerator is non-zero,
+ * and when the requested frame rate exceeds the codec capability maximum.
+ *
+ * **Test Group ID:** Basic: 01@n
+ * **Test Case ID:** 037@n
+ * **Priority:** High@n
+ * @n
+ * **Pre-Conditions:** None@n
+ * **Dependencies:** None@n
+ * **User Interaction:** None@n
+ * @n
+ * **Test Procedure:**@n
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |
+ * | :----: | --------- | ---------- | -------------- | ----- |
+ * | 01 | Initialize and iterate through decoder instances. | decoderIds | Should be successful | |
+ * | 02 | Open decoder and move to STARTED state. | valid codec | status.isOk() = true | |
+ * | 03 | Call setFrameRate outside READY state. | valid numerator, valid denominator | EX_ILLEGAL_STATE | Should fail |
+ * | 04 | Reopen decoder in READY state and call setFrameRate with non-zero numerator and denominator = 0. | numerator = 24, denominator = 0 | EX_ILLEGAL_ARGUMENT | Should fail |
+ * | 05 | Reopen decoder in READY state and call setFrameRate with value greater than codec maxFrameRate. | numerator = maxFrameRate + 1, denominator = 1 | EX_ILLEGAL_ARGUMENT | Should fail |
+ * | 06 | Optional combined invalid case. | numerator < 0, denominator = 0 | EX_ILLEGAL_ARGUMENT | Optional |
+ */
+UT_ADD_TEST(VTS_L1_VideoDecoder, setFrameRate_neg)
+{
+    std::vector<IVideoDecoder::Id> decoderIds;
+    sp<IVideoDecoder> videoDecoder;
+    videodecoder::Capabilities capabilities;
+
+    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
+    UT_ASSERT_FALSE(decoderIds.empty()) << "No VideoDecoder instances available.";
+
+    for (const auto& _decoderId : decoderIds)
+    {
+        VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(_decoderId, videoDecoder);
+        VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
+
+        for (const auto& _codecCaps : capabilities.supportedCodecs)
+        {
+            videodecoder::Codec _codec = _codecCaps.codec;
+            sp<IVideoDecoderController> videoDecoderController;
+            sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
+
+            /* Step 1: Verify EX_ILLEGAL_STATE when API is called outside READY state */
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+            VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
+
+            VIDEODECODER_SETFRAMERATE_FAILURE(videoDecoderController,
+                                             FRAME_RATE_24,
+                                             1,
+                                             Status::EX_ILLEGAL_STATE);
+
+            VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+
+            /* Step 2: Verify EX_ILLEGAL_ARGUMENT for non-zero numerator with denominator = 0 */
+            controllerListener = new VideoDecoderControllerListener();
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+
+            VIDEODECODER_SETFRAMERATE_FAILURE(videoDecoderController,
+                                             FRAME_RATE_24,
+                                             intValueInvalidFrameRateDen,
+                                             Status::EX_ILLEGAL_ARGUMENT);
+
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+
+            /* Step 3: Verify EX_ILLEGAL_ARGUMENT for numerator greater than codec maxFrameRate */
+            controllerListener = new VideoDecoderControllerListener();
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+
+            VIDEODECODER_SETFRAMERATE_FAILURE(videoDecoderController,
+                                             _codecCaps.maxFrameRate + 1,
+                                             1,
+                                             Status::EX_ILLEGAL_ARGUMENT);
+
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+
+            /* Step 4: Optional combined invalid case */
+            controllerListener = new VideoDecoderControllerListener();
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+
+            VIDEODECODER_SETFRAMERATE_FAILURE(videoDecoderController,
+                                             intValueInvalidFrameRateNum,
+                                             intValueInvalidFrameRateDen,
+                                             Status::EX_ILLEGAL_ARGUMENT);
+
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+        }
+    }
+}
+
+/**
+ * @brief Test the positive scenarios for setting colorimetry in VideoDecoderController.
+ *
+ * This test verifies that setColorimetry succeeds when called in READY state
+ * with a valid colorimetry enum value and with Colorimetry::UNKNOWN when
+ * colorimetry is not signalled.
+ *
+ * **Test Group ID:** Basic: 01@n
+ * **Test Case ID:** 038@n
+ * **Priority:** High@n
+ * @n
+ * **Pre-Conditions:** None@n
+ * **Dependencies:** None@n
+ * **User Interaction:** None@n
+ * @n
+ * **Test Procedure:**@n
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |
+ * | :----: | --------- | ---------- | -------------- | ----- |
+ * | 01 | Initialize and iterate through decoder instances. | decoderIds | Should be successful | |
+ * | 02 | Open decoder and move to READY state. | valid codec | Controller should be valid | |
+ * | 03 | Call setColorimetry with a valid colorimetry value. | BT709 or equivalent | status.isOk() = true | Should pass |
+ * | 04 | Call setColorimetry with Colorimetry::UNKNOWN. | Colorimetry::UNKNOWN | status.isOk() = true | Should pass |
+ * | 05 | Close decoder. | controller | status.isOk() = true | Cleanup |
+ */
+UT_ADD_TEST(VTS_L1_VideoDecoder, setColorimetry_pos)
+{
+    std::vector<IVideoDecoder::Id> decoderIds;
+    sp<IVideoDecoder> videoDecoder;
+    videodecoder::Capabilities capabilities;
+
+    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
+    UT_ASSERT_FALSE(decoderIds.empty()) << "No VideoDecoder instances available.";
+
+    for (const auto& _decoderId : decoderIds)
+    {
+        VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(_decoderId, videoDecoder);
+        VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
+
+        for (const auto& _codecCaps : capabilities.supportedCodecs)
+        {
+            videodecoder::Codec _codec = _codecCaps.codec;
+            sp<IVideoDecoderController> videoDecoderController;
+            sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
+
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+
+            /* Step 1: Verify valid colorimetry is accepted in READY state */
+            VIDEODECODER_SETCOLORIMETRY_SUCCESS(videoDecoderController, validColorimetry);
+
+            /* Step 2: Verify UNKNOWN is accepted when colorimetry is not signalled */
+            VIDEODECODER_SETCOLORIMETRY_SUCCESS(videoDecoderController, Colorimetry::UNKNOWN);
+
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+        }
+    }
+}
+
+/**
+ * @brief Test the negative scenario for setting colorimetry in VideoDecoderController.
+ *
+ * This test verifies that setColorimetry fails with EX_ILLEGAL_STATE when
+ * called outside READY state.
+ *
+ * **Test Group ID:** Basic: 01@n
+ * **Test Case ID:** 039@n
+ * **Priority:** High@n
+ * @n
+ * **Pre-Conditions:** None@n
+ * **Dependencies:** None@n
+ * **User Interaction:** None@n
+ * @n
+ * **Test Procedure:**@n
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |
+ * | :----: | --------- | ---------- | -------------- | ----- |
+ * | 01 | Initialize and iterate through decoder instances. | decoderIds | Should be successful | |
+ * | 02 | Open decoder and move to STARTED state. | valid codec | status.isOk() = true | |
+ * | 03 | Call setColorimetry outside READY state. | valid colorimetry | EX_ILLEGAL_STATE | Should fail |
+ * | 04 | Stop and close decoder. | controller | status.isOk() = true | Cleanup |
+ */
+UT_ADD_TEST(VTS_L1_VideoDecoder, setColorimetry_neg)
+{
+    std::vector<IVideoDecoder::Id> decoderIds;
+    sp<IVideoDecoder> videoDecoder;
+    videodecoder::Capabilities capabilities;
+
+    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
+    UT_ASSERT_FALSE(decoderIds.empty()) << "No VideoDecoder instances available.";
+
+    for (const auto& _decoderId : decoderIds)
+    {
+        VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(_decoderId, videoDecoder);
+        VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
+
+        for (const auto& _codecCaps : capabilities.supportedCodecs)
+        {
+            videodecoder::Codec _codec = _codecCaps.codec;
+            sp<IVideoDecoderController> videoDecoderController;
+            sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
+
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+            VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
+
+            VIDEODECODER_SETCOLORIMETRY_FAILURE(videoDecoderController,
+                                                validColorimetry,
+                                                Status::EX_ILLEGAL_STATE);
+
+            VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+        }
+    }
+}
+
+/**
+ * @brief Test the positive scenarios for setting mastering display info in VideoDecoderController.
+ *
+ * This test verifies that setMasteringDisplayInfo succeeds when called in READY state
+ * with a valid MasteringDisplayInfo object and with null to clear previously set metadata.
+ *
+ * **Test Group ID:** Basic: 01@n
+ * **Test Case ID:** 040@n
+ * **Priority:** High@n
+ * @n
+ * **Pre-Conditions:** None@n
+ * **Dependencies:** None@n
+ * **User Interaction:** None@n
+ * @n
+ * **Test Procedure:**@n
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |
+ * | :----: | --------- | ---------- | -------------- | ----- |
+ * | 01 | Initialize and iterate through decoder instances. | decoderIds | Should be successful | |
+ * | 02 | Open decoder and move to READY state. | valid codec | Controller should be valid | |
+ * | 03 | Call setMasteringDisplayInfo with valid metadata. | validMasteringDisplayInfo | status.isOk() = true | Should pass |
+ * | 04 | Call setMasteringDisplayInfo with null to clear previously set metadata. | std::nullopt | status.isOk() = true | Should pass |
+ * | 05 | Close decoder. | controller | status.isOk() = true | Cleanup |
+ */
+UT_ADD_TEST(VTS_L1_VideoDecoder, setMasteringDisplayInfo_pos)
+{
+    std::vector<IVideoDecoder::Id> decoderIds;
+    sp<IVideoDecoder> videoDecoder;
+    videodecoder::Capabilities capabilities;
+
+    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
+    UT_ASSERT_FALSE(decoderIds.empty()) << "No VideoDecoder instances available.";
+
+    for (const auto& _decoderId : decoderIds)
+    {
+        VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(_decoderId, videoDecoder);
+        VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
+
+        for (const auto& _codecCaps : capabilities.supportedCodecs)
+        {
+            videodecoder::Codec _codec = _codecCaps.codec;
+            sp<IVideoDecoderController> videoDecoderController;
+            sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
+
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+
+            /* Step 1: Verify valid mastering display info is accepted in READY state */
+            VIDEODECODER_SETMASTERINGDISPLAYINFO_SUCCESS(videoDecoderController,
+                                                         validMasteringDisplayInfo);
+
+            /* Step 2: Verify null is accepted to clear previously set mastering display info */
+            VIDEODECODER_SETMASTERINGDISPLAYINFO_SUCCESS(videoDecoderController,
+                                                         std::nullopt);
+
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+        }
+    }
+}
+
+/**
+ * @brief Test the negative scenario for setting mastering display info in VideoDecoderController.
+ *
+ * This test verifies that setMasteringDisplayInfo fails with EX_ILLEGAL_STATE
+ * when called outside READY state.
+ *
+ * **Test Group ID:** Basic: 01@n
+ * **Test Case ID:** 041@n
+ * **Priority:** High@n
+ * @n
+ * **Pre-Conditions:** None@n
+ * **Dependencies:** None@n
+ * **User Interaction:** None@n
+ * @n
+ * **Test Procedure:**@n
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |
+ * | :----: | --------- | ---------- | -------------- | ----- |
+ * | 01 | Initialize and iterate through decoder instances. | decoderIds | Should be successful | |
+ * | 02 | Open decoder and move to STARTED state. | valid codec | status.isOk() = true | |
+ * | 03 | Call setMasteringDisplayInfo outside READY state. | validMasteringDisplayInfo | EX_ILLEGAL_STATE | Should fail |
+ * | 04 | Stop and close decoder. | controller | status.isOk() = true | Cleanup |
+ */
+UT_ADD_TEST(VTS_L1_VideoDecoder, setMasteringDisplayInfo_neg)
+{
+    std::vector<IVideoDecoder::Id> decoderIds;
+    sp<IVideoDecoder> videoDecoder;
+    videodecoder::Capabilities capabilities;
+
+    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
+    UT_ASSERT_FALSE(decoderIds.empty()) << "No VideoDecoder instances available.";
+
+    for (const auto& _decoderId : decoderIds)
+    {
+        VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(_decoderId, videoDecoder);
+        VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
+
+        for (const auto& _codecCaps : capabilities.supportedCodecs)
+        {
+            videodecoder::Codec _codec = _codecCaps.codec;
+            sp<IVideoDecoderController> videoDecoderController;
+            sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
+
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+            VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
+
+            VIDEODECODER_SETMASTERINGDISPLAYINFO_FAILURE(videoDecoderController,
+                                                         validMasteringDisplayInfo,
+                                                         Status::EX_ILLEGAL_STATE);
+
+            VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+        }
+    }
+}
+
+/**
+ * @brief Test the positive scenarios for setting content light level in VideoDecoderController.
+ *
+ * This test verifies that setContentLightLevel succeeds when called in READY state
+ * with a valid ContentLightLevel object and with null to clear previously set metadata.
+ *
+ * **Test Group ID:** Basic: 01@n
+ * **Test Case ID:** 042@n
+ * **Priority:** High@n
+ * @n
+ * **Pre-Conditions:** None@n
+ * **Dependencies:** None@n
+ * **User Interaction:** None@n
+ * @n
+ * **Test Procedure:**@n
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |
+ * | :----: | --------- | ---------- | -------------- | ----- |
+ * | 01 | Initialize and iterate through decoder instances. | decoderIds | Should be successful | |
+ * | 02 | Open decoder and move to READY state. | valid codec | Controller should be valid | |
+ * | 03 | Call setContentLightLevel with valid metadata. | validContentLightLevel | status.isOk() = true | Should pass |
+ * | 04 | Call setContentLightLevel with null to clear previously set metadata. | std::nullopt | status.isOk() = true | Should pass |
+ * | 05 | Close decoder. | controller | status.isOk() = true | Cleanup |
+ */
+UT_ADD_TEST(VTS_L1_VideoDecoder, setContentLightLevel_pos)
+{
+    std::vector<IVideoDecoder::Id> decoderIds;
+    sp<IVideoDecoder> videoDecoder;
+    videodecoder::Capabilities capabilities;
+
+    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
+    UT_ASSERT_FALSE(decoderIds.empty()) << "No VideoDecoder instances available.";
+
+    for (const auto& _decoderId : decoderIds)
+    {
+        VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(_decoderId, videoDecoder);
+        VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
+
+        for (const auto& _codecCaps : capabilities.supportedCodecs)
+        {
+            videodecoder::Codec _codec = _codecCaps.codec;
+            sp<IVideoDecoderController> videoDecoderController;
+            sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
+
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+
+            /* Step 1: Verify valid content light level is accepted in READY state */
+            VIDEODECODER_SETCONTENTLIGHTLEVEL_SUCCESS(videoDecoderController,
+                                                      validContentLightLevel);
+
+            /* Step 2: Verify null is accepted to clear previously set content light level */
+            VIDEODECODER_SETCONTENTLIGHTLEVEL_SUCCESS(videoDecoderController,
+                                                      std::nullopt);
+
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+        }
+    }
+}
+/**
+ * @brief Test the negative scenario for setting content light level in VideoDecoderController.
+ *
+ * This test verifies that setContentLightLevel fails with EX_ILLEGAL_STATE
+ * when called outside READY state.
+ *
+ * **Test Group ID:** Basic: 01@n
+ * **Test Case ID:** 043@n
+ * **Priority:** High@n
+ * @n
+ * **Pre-Conditions:** None@n
+ * **Dependencies:** None@n
+ * **User Interaction:** None@n
+ * @n
+ * **Test Procedure:**@n
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |
+ * | :----: | --------- | ---------- | -------------- | ----- |
+ * | 01 | Initialize and iterate through decoder instances. | decoderIds | Should be successful | |
+ * | 02 | Open decoder and move to STARTED state. | valid codec | status.isOk() = true | |
+ * | 03 | Call setContentLightLevel outside READY state. | validContentLightLevel | EX_ILLEGAL_STATE | Should fail |
+ * | 04 | Stop and close decoder. | controller | status.isOk() = true | Cleanup |
+ */
+UT_ADD_TEST(VTS_L1_VideoDecoder, setContentLightLevel_neg)
+{
+    std::vector<IVideoDecoder::Id> decoderIds;
+    sp<IVideoDecoder> videoDecoder;
+    videodecoder::Capabilities capabilities;
+
+    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
+    UT_ASSERT_FALSE(decoderIds.empty()) << "No VideoDecoder instances available.";
+
+    for (const auto& _decoderId : decoderIds)
+    {
+        VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(_decoderId, videoDecoder);
+        VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
+
+        for (const auto& _codecCaps : capabilities.supportedCodecs)
+        {
+            videodecoder::Codec _codec = _codecCaps.codec;
+            sp<IVideoDecoderController> videoDecoderController;
+            sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
+
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+            VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
+
+            VIDEODECODER_SETCONTENTLIGHTLEVEL_FAILURE(videoDecoderController,
+                                                      validContentLightLevel,
+                                                      Status::EX_ILLEGAL_STATE);
+
+            VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+        }
+    }
+}
+
+/**
+ * @brief Test the positive scenarios for setting Dolby Vision layer flags in VideoDecoderController.
+ *
+ * This test verifies that setDolbyVisionLayerFlags succeeds when called in READY state
+ * with valid Dolby Vision Base Layer only and Base Layer + Enhancement Layer combinations.
+ *
+ * **Test Group ID:** Basic: 01@n
+ * **Test Case ID:** 044@n
+ * **Priority:** High@n
+ * @n
+ * **Pre-Conditions:** None@n
+ * **Dependencies:** None@n
+ * **User Interaction:** None@n
+ * @n
+ * **Test Procedure:**@n
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |
+ * | :----: | --------- | ---------- | -------------- | ----- |
+ * | 01 | Initialize and iterate through decoder instances. | decoderIds | Should be successful | |
+ * | 02 | Open decoder and move to READY state. | valid codec | Controller should be valid | |
+ * | 03 | Call setDolbyVisionLayerFlags for BL-only stream. | blPresent=true, elPresent=false | status.isOk() = true | Should pass |
+ * | 04 | Call setDolbyVisionLayerFlags for BL+EL stream. | blPresent=true, elPresent=true | status.isOk() = true | Should pass |
+ * | 05 | Close decoder. | controller | status.isOk() = true | Cleanup |
+ */
+UT_ADD_TEST(VTS_L1_VideoDecoder, setDolbyVisionLayerFlags_pos)
+{
+    std::vector<IVideoDecoder::Id> decoderIds;
+    sp<IVideoDecoder> videoDecoder;
+    videodecoder::Capabilities capabilities;
+
+    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
+    UT_ASSERT_FALSE(decoderIds.empty()) << "No VideoDecoder instances available.";
+
+    for (const auto& _decoderId : decoderIds)
+    {
+        VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(_decoderId, videoDecoder);
+        VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
+
+        for (const auto& _codecCaps : capabilities.supportedCodecs)
+        {
+            videodecoder::Codec _codec = _codecCaps.codec;
+            sp<IVideoDecoderController> videoDecoderController;
+            sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
+
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+
+            /* Step 1: Verify BL-only configuration is accepted in READY state */
+            VIDEODECODER_SETDOLBYVISIONLAYERFLAGS_SUCCESS(videoDecoderController,
+                                                          true,
+                                                          false);
+
+            /* Step 2: Verify BL+EL configuration is accepted in READY state */
+            VIDEODECODER_SETDOLBYVISIONLAYERFLAGS_SUCCESS(videoDecoderController,
+                                                          true,
+                                                          true);
+
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+        }
+    }
+}
+
+/**
+ * @brief Test the negative scenario for setting Dolby Vision layer flags in VideoDecoderController.
+ *
+ * This test verifies that setDolbyVisionLayerFlags fails with EX_ILLEGAL_STATE
+ * when called outside READY state.
+ *
+ * **Test Group ID:** Basic: 01@n
+ * **Test Case ID:** 045@n
+ * **Priority:** High@n
+ * @n
+ * **Pre-Conditions:** None@n
+ * **Dependencies:** None@n
+ * **User Interaction:** None@n
+ * @n
+ * **Test Procedure:**@n
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |
+ * | :----: | --------- | ---------- | -------------- | ----- |
+ * | 01 | Initialize and iterate through decoder instances. | decoderIds | Should be successful | |
+ * | 02 | Open decoder and move to STARTED state. | valid codec | status.isOk() = true | |
+ * | 03 | Call setDolbyVisionLayerFlags outside READY state. | blPresent = true, elPresent = true | EX_ILLEGAL_STATE | Should fail |
+ * | 04 | Stop and close decoder. | controller | status.isOk() = true | Cleanup |
+ */
+UT_ADD_TEST(VTS_L1_VideoDecoder, setDolbyVisionLayerFlags_neg)
+{
+    std::vector<IVideoDecoder::Id> decoderIds;
+    sp<IVideoDecoder> videoDecoder;
+    videodecoder::Capabilities capabilities;
+
+    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
+    UT_ASSERT_FALSE(decoderIds.empty()) << "No VideoDecoder instances available.";
+
+    for (const auto& _decoderId : decoderIds)
+    {
+        VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(_decoderId, videoDecoder);
+        VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
+
+        for (const auto& _codecCaps : capabilities.supportedCodecs)
+        {
+            videodecoder::Codec _codec = _codecCaps.codec;
+            sp<IVideoDecoderController> videoDecoderController;
+            sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
+
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+            VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
+
+            VIDEODECODER_SETDOLBYVISIONLAYERFLAGS_FAILURE(videoDecoderController,
+                                                          dolbyVisionBLPresent,
+                                                          dolbyVisionELPresent,
+                                                          Status::EX_ILLEGAL_STATE);
+
+            VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+        }
+    }
+}
 /** @} */ // End of Video_Decoder_Halif_Test_L1
 /** @} */ // End of Video_Decoder_Halif_Test
 /** @} */ // End of Video_Decoder
