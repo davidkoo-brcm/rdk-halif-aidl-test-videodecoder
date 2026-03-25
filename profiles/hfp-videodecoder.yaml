@@ -64,6 +64,10 @@ videodecoder:           # Component object begins
         - HLG
         - HDR10
         - DOLBY_VISION
+      supportedColorimetries:
+        - BT601_525
+        - BT601_625
+        - BT709
       supportsSecure: true
     - 1:                          # Resource object begins
       supportedCodecs:          # Array of codec capabilities
