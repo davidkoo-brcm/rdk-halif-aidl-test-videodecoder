@@ -130,11 +130,15 @@
 #include "com/rdk/hal/videodecoder/CodecProfile.h"
 #include "com/rdk/hal/videodecoder/CodecLevel.h"
 #include "com/rdk/hal/videodecoder/OperationalMode.h"
+#include "com/rdk/hal/videodecoder/Colorimetry.h"
+#include "com/rdk/hal/videodecoder/MasteringDisplayInfo.h"
+#include "com/rdk/hal/videodecoder/ContentLightLevel.h"
 
 #include "vts_helper_functions.h"
 
-#define VIDEODECODERMGR "IVideoDecoderManager"
-#define VIDEODECODERMGR_IVIDEODECODER "IVideoDecoderManager.IVideoDecoder"
+#define VIDEODECODERMGR "videodecoder"
+#define VIDEODECODERMGR_IVIDEODECODER "videodecoder.IVideoDecoder"
+#define VIDEODECODERMGR_SUPPORTED_OPERATIONAL_MODES "videodecoder.supportedOperationalModes"
 
 using namespace com::rdk::hal;
 using namespace com::rdk::hal::videodecoder;
@@ -157,9 +161,9 @@ extern std::vector<sp<IVideoDecoderController>>  controllers;
 
 #define VIDEO_DECODER_TEST_CONFIG_PATH "./videodecoder_test_configuration/vts_l3_VideoDecoder_test_config.yaml"
 #define VIDEO_DECODER_STREAM_CONFIG_PATH "./videodecoder_test_configuration/vts_stream_list.yaml"
-#define VIDEO_DECODER_STREAM_DOWNLOAD_PATH "IVideoDecoderManager.stream_download_path"
-#define VIDEO_DECODER_STREAM_INPUT_PATH "IVideoDecoderManager.input_streams_path"
-#define VIDEO_DECODER_STREAM_REF_PATH "IVideoDecoderManager.reference_streams_path"
+#define VIDEO_DECODER_STREAM_DOWNLOAD_PATH "videodecoder.stream_download_path"
+#define VIDEO_DECODER_STREAM_INPUT_PATH "videodecoder.input_streams_path"
+#define VIDEO_DECODER_STREAM_REF_PATH "videodecoder.reference_streams_path"
 
 extern void *gVideoDecoderTestConfiguration;
 
@@ -185,6 +189,7 @@ typedef struct decoder {
     int32_t id;
     std::vector<CodecCapability> supportedCodecs;
     std::vector<DynamicRange> supportedDynamicRanges;
+    std::vector<Colorimetry> supportedColorimetries;
     std::vector<OperationalMode> supportedOperationalModes;
     bool supportsSecure;
 }decoder_t;
@@ -200,6 +205,9 @@ struct videoFrameMetadata {
         int frameRateNumerator;
 	    int frameRateDenominator;
         DynamicRange dynamicRange;
+        Colorimetry colorimetry;
+        std::optional<MasteringDisplayInfo> masteringDisplayInfo;
+        std::optional<ContentLightLevel> contentLightLevel;
         int bit_rate;
         bool lowLatency;
         bool endOfStream;
@@ -228,6 +236,9 @@ struct videoDecoderTestConfiguration_t {
     uint32_t frameRateDenominator; // Frame rate denominator
     videodecoder::PixelFormat pixelFormat; // YUV, etc.
     videodecoder::DynamicRange dynamicRange; // SDR, HDR, etc.
+    videodecoder::Colorimetry colorimetry;
+    std::optional<MasteringDisplayInfo> masteringDisplayInfo;
+    std::optional<ContentLightLevel> contentLightLevel;
     videodecoder::ScanType scanType;
     uint32_t colorDepth; // Bit depth
     uint32_t bit_rate; // Bit rate
@@ -268,6 +279,7 @@ UT_status_t getVideoDecoderService();
 DynamicRange videoDecoderStringToDynamicRange(const std::string& rangeStr);
 OperationalMode videoDecoderStringToOperationalMode(const std::string& modeStr);
 PixelFormat videoDecoderStringToPixelFormat(const std::string& formatStr);
+Colorimetry videoDecoderStringToColorimetry(const std::string& colorimetryStr);
 videodecoder::CodecProfile videoDecoderStringToCodecProfile(const std::string& profileStr);
 videodecoder::CodecLevel videoDecoderStringToCodecLevel(const std::string& levelStr);
 bool vts_videodecoder_helper_validatePropertyValue(int decoder_id,const std::optional<PropertyValue>& propertyValue, const videodecoder::Property property);
@@ -336,7 +348,7 @@ size_t vts_bytesPerPixel(PixelFormat format);
         UT_LOG_INFO("Result getVideoDecoder(IN:_decoderId:[%d], OUT:videoDecoder[0x%X]), status:[isOK:%s, exception:%s]", \
                                 _decoderId.value, videoDecoder.get(), UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                                 UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
-        UT_ASSERT_FALSE(status.isOk()); \
+        UT_ASSERT_TRUE(status.isOk()); \
         UT_ASSERT_TRUE(videoDecoder.get() == nullptr); \
     } while (0)
 
@@ -460,20 +472,32 @@ do { \
 /**
  * @brief Calls getPropertyMulti and verifies the result.
  * @param[in] videoDecoder The IVideoDecoder instance.
- * @param[in,out] propertyKVList The list of PropertyKVPair to query and populate.
+ * @param[in] properties The list of Property enum values to query.
+ * @param[out] propertyKVList The list of PropertyKVPair to populate.
  * @param[out] aidl_return The boolean result of the operation.
  */
-#define VIDEODECODER_GETPROPERTYMULTI(videoDecoder, propertyKVList, aidl_return) \
+#define VIDEODECODER_GETPROPERTYMULTI(videoDecoder, properties, propertyKVList, aidl_return) \
     do { \
         Status status; \
-        UT_LOG_INFO("Calling getPropertyMulti(IN:propertyKVList.size:[%zu], OUT:_aidl_return)", (propertyKVList).size()); \
-        status = (videoDecoder)->getPropertyMulti(&(propertyKVList), &(aidl_return)); \
-        UT_LOG_INFO("Result getPropertyMulti(OUT:_aidl_return:[%s]), status:[isOK:%s, exception:%s]", \
+        UT_LOG_INFO("Calling getPropertyMulti(IN:properties.size:[%zu], OUT:propertyKVList[], OUT:_aidl_return)", (properties).size()); \
+        status = (videoDecoder)->getPropertyMulti((properties), &(propertyKVList), &(aidl_return)); \
+        UT_LOG_INFO("Result getPropertyMulti(OUT:propertyKVList.size:[%zu], OUT:_aidl_return:[%s]), status:[isOK:%s, exception:%s]", \
+                    (propertyKVList).size(), \
                     UT_Control_GetMapString(bool_mapTable, (aidl_return)), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                     UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
         UT_ASSERT_TRUE(status.isOk()) << "Binder call failed: " << status.exceptionMessage().c_str(); \
         UT_ASSERT_TRUE(aidl_return) << "getPropertyMulti returned false."; \
+    } while (0)
+
+/**
+ * @brief Adds a Property enum value to a properties vector for getPropertyMulti input.
+ * @param[in,out] properties The vector to append to.
+ * @param[in] prop The Property enum value to add.
+ */
+#define VIDEODECODER_ADD_PROPERTY(properties, prop) \
+    do { \
+        (properties).push_back(videodecoder::Property::prop); \
     } while (0)
 
 /**
@@ -492,22 +516,24 @@ do { \
     /**
  * @brief Calls getPropertyMulti for a negative test and verifies failure.
  * @param[in] videoDecoder The IVideoDecoder instance.
- * @param[in,out] propertyKVList The list of PropertyKVPair to query (invalid or empty).
+ * @param[in] properties The list of Property enum values to query (may be invalid or empty).
+ * @param[in,out] propertyKVList The list of PropertyKVPair output.
  * @param[out] aidl_return The boolean result, expected to be false.
+ * @param[in] exception The expected exception code.
  */
-#define VIDEODECODER_GETPROPERTYMULTI_FAILURE(videoDecoder, propertyKVList, aidl_return, exception) \
+#define VIDEODECODER_GETPROPERTYMULTI_FAILURE(videoDecoder, properties, propertyKVList, aidl_return, exception) \
 do { \
     Status status; \
     std::vector<videodecoder::PropertyKVPair>* _propertyKVList = &propertyKVList; \
     if(exception == Status::EX_NULL_POINTER) \
     { \
-        UT_LOG_INFO("Calling getPropertyMulti(IN:propertyKVList :NULL, OUT:_aidl_return)"); \
+        UT_LOG_INFO("Calling getPropertyMulti(IN:properties.size:[%zu], OUT:propertyKVList:NULL, OUT:_aidl_return)", (properties).size()); \
         _propertyKVList = nullptr; \
     } \
     else { \
-        UT_LOG_INFO("Calling getPropertyMulti(IN:propertyKVList.size:[%zu], OUT:_aidl_return)", (propertyKVList).size()); \
+        UT_LOG_INFO("Calling getPropertyMulti(IN:properties.size:[%zu], OUT:propertyKVList[], OUT:_aidl_return)", (properties).size()); \
     } \
-    status = (videoDecoder)->getPropertyMulti(_propertyKVList, &(aidl_return)); \
+    status = (videoDecoder)->getPropertyMulti((properties), _propertyKVList, &(aidl_return)); \
     UT_LOG_INFO("Result getPropertyMulti(), status:[isOK:%s, exception:%s]", \
                 UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                 UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
@@ -1177,6 +1203,169 @@ do { \
                 << "decodeBuffer returned unexpected exception"; \
         } \
     } while (0)
+
+#define VIDEODECODER_SETSTREAMRESOLUTION_SUCCESS(videoDecoderController, width, height) \
+    do { \
+        Status status; \
+        UT_LOG_INFO("Calling setStreamResolution(IN:width[%d], IN:height[%d])", \
+                    static_cast<int32_t>(width), static_cast<int32_t>(height)); \
+        status = (videoDecoderController)->setStreamResolution((width), (height)); \
+        UT_LOG_INFO("Result setStreamResolution(IN:width[%d], IN:height[%d]), status:[isOK:%s, exception:%s]", \
+                    static_cast<int32_t>(width), static_cast<int32_t>(height), \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+        UT_ASSERT_TRUE(status.isOk()); \
+        UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
+    } while (0)
+
+#define VIDEODECODER_SETSTREAMRESOLUTION_FAILURE(videoDecoderController, width, height, expectedException) \
+    do { \
+        Status status; \
+        UT_LOG_INFO("Calling setStreamResolution(IN:width[%d], IN:height[%d]) expecting failure", \
+                    static_cast<int32_t>(width), static_cast<int32_t>(height)); \
+        status = (videoDecoderController)->setStreamResolution((width), (height)); \
+        UT_LOG_INFO("Result setStreamResolution(IN:width[%d], IN:height[%d]), status:[isOK:%s, exception:%s]", \
+                    static_cast<int32_t>(width), static_cast<int32_t>(height), \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+        UT_ASSERT_FALSE(status.isOk()); \
+        UT_ASSERT_EQUAL(status.exceptionCode(), (expectedException)); \
+    } while (0)
+
+#define VIDEODECODER_SETFRAMERATE_SUCCESS(videoDecoderController, numerator, denominator) \
+    do { \
+        Status status; \
+        UT_LOG_INFO("Calling setFrameRate(IN:numerator[%d], IN:denominator[%d])", \
+                    static_cast<int32_t>(numerator), static_cast<int32_t>(denominator)); \
+        status = (videoDecoderController)->setFrameRate((numerator), (denominator)); \
+        UT_LOG_INFO("Result setFrameRate(IN:numerator[%d], IN:denominator[%d]), status:[isOK:%s, exception:%s]", \
+                    static_cast<int32_t>(numerator), static_cast<int32_t>(denominator), \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+        UT_ASSERT_TRUE(status.isOk()); \
+        UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
+    } while (0)
+
+#define VIDEODECODER_SETFRAMERATE_FAILURE(videoDecoderController, numerator, denominator, expectedException) \
+    do { \
+        Status status; \
+        UT_LOG_INFO("Calling setFrameRate(IN:numerator[%d], IN:denominator[%d]) expecting failure", \
+                    static_cast<int32_t>(numerator), static_cast<int32_t>(denominator)); \
+        status = (videoDecoderController)->setFrameRate((numerator), (denominator)); \
+        UT_LOG_INFO("Result setFrameRate(IN:numerator[%d], IN:denominator[%d]), status:[isOK:%s, exception:%s]", \
+                    static_cast<int32_t>(numerator), static_cast<int32_t>(denominator), \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+        UT_ASSERT_FALSE(status.isOk()); \
+        UT_ASSERT_EQUAL(status.exceptionCode(), (expectedException)); \
+    } while (0)
+
+#define VIDEODECODER_SETCOLORIMETRY_SUCCESS(videoDecoderController, colorimetry) \
+    do { \
+        Status status; \
+        UT_LOG_INFO("Calling setColorimetry(IN:colorimetry[%d])", static_cast<int32_t>(colorimetry)); \
+        status = (videoDecoderController)->setColorimetry((colorimetry)); \
+        UT_LOG_INFO("Result setColorimetry(IN:colorimetry[%d]), status:[isOK:%s, exception:%s]", \
+                    static_cast<int32_t>(colorimetry), \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+        UT_ASSERT_TRUE(status.isOk()); \
+        UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
+    } while (0)
+
+#define VIDEODECODER_SETCOLORIMETRY_FAILURE(videoDecoderController, colorimetry, expectedException) \
+    do { \
+        Status status; \
+        UT_LOG_INFO("Calling setColorimetry(IN:colorimetry[%d]) expecting failure", static_cast<int32_t>(colorimetry)); \
+        status = (videoDecoderController)->setColorimetry((colorimetry)); \
+        UT_LOG_INFO("Result setColorimetry(IN:colorimetry[%d]), status:[isOK:%s, exception:%s]", \
+                    static_cast<int32_t>(colorimetry), \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+        UT_ASSERT_FALSE(status.isOk()); \
+        UT_ASSERT_EQUAL(status.exceptionCode(), (expectedException)); \
+    } while (0)
+
+#define VIDEODECODER_SETMASTERINGDISPLAYINFO_SUCCESS(videoDecoderController, masteringDisplayInfo) \
+    do { \
+        Status status; \
+        UT_LOG_INFO("Calling setMasteringDisplayInfo(...)"); \
+        status = (videoDecoderController)->setMasteringDisplayInfo((masteringDisplayInfo)); \
+        UT_LOG_INFO("Result setMasteringDisplayInfo(...), status:[isOK:%s, exception:%s]", \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+        UT_ASSERT_TRUE(status.isOk()); \
+        UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
+    } while (0)
+
+#define VIDEODECODER_SETMASTERINGDISPLAYINFO_FAILURE(videoDecoderController, masteringDisplayInfo, expectedException) \
+    do { \
+        Status status; \
+        UT_LOG_INFO("Calling setMasteringDisplayInfo(...) expecting failure"); \
+        status = (videoDecoderController)->setMasteringDisplayInfo((masteringDisplayInfo)); \
+        UT_LOG_INFO("Result setMasteringDisplayInfo(...), status:[isOK:%s, exception:%s]", \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+        UT_ASSERT_FALSE(status.isOk()); \
+        UT_ASSERT_EQUAL(status.exceptionCode(), (expectedException)); \
+    } while (0)
+
+#define VIDEODECODER_SETCONTENTLIGHTLEVEL_SUCCESS(videoDecoderController, contentLightLevel) \
+    do { \
+        Status status; \
+        UT_LOG_INFO("Calling setContentLightLevel(...)"); \
+        status = (videoDecoderController)->setContentLightLevel((contentLightLevel)); \
+        UT_LOG_INFO("Result setContentLightLevel(...), status:[isOK:%s, exception:%s]", \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+        UT_ASSERT_TRUE(status.isOk()); \
+        UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
+    } while (0)
+
+#define VIDEODECODER_SETCONTENTLIGHTLEVEL_FAILURE(videoDecoderController, contentLightLevel, expectedException) \
+    do { \
+        Status status; \
+        UT_LOG_INFO("Calling setContentLightLevel(...) expecting failure"); \
+        status = (videoDecoderController)->setContentLightLevel((contentLightLevel)); \
+        UT_LOG_INFO("Result setContentLightLevel(...), status:[isOK:%s, exception:%s]", \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+        UT_ASSERT_FALSE(status.isOk()); \
+        UT_ASSERT_EQUAL(status.exceptionCode(), (expectedException)); \
+    } while (0)
+
+#define VIDEODECODER_SETDOLBYVISIONLAYERFLAGS_SUCCESS(videoDecoderController, blPresent, elPresent) \
+    do { \
+        Status status; \
+        UT_LOG_INFO("Calling setDolbyVisionLayerFlags(IN:blPresent[%s], IN:elPresent[%s])", \
+                    UT_Control_GetMapString(bool_mapTable, (blPresent)), \
+                    UT_Control_GetMapString(bool_mapTable, (elPresent))); \
+        status = (videoDecoderController)->setDolbyVisionLayerFlags((blPresent), (elPresent)); \
+        UT_LOG_INFO("Result setDolbyVisionLayerFlags(IN:blPresent[%s], IN:elPresent[%s]), status:[isOK:%s, exception:%s]", \
+                    UT_Control_GetMapString(bool_mapTable, (blPresent)), \
+                    UT_Control_GetMapString(bool_mapTable, (elPresent)), \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+        UT_ASSERT_TRUE(status.isOk()); \
+        UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
+    } while (0)
+
+#define VIDEODECODER_SETDOLBYVISIONLAYERFLAGS_FAILURE(videoDecoderController, blPresent, elPresent, expectedException) \
+    do { \
+        Status status; \
+        UT_LOG_INFO("Calling setDolbyVisionLayerFlags(IN:blPresent[%s], IN:elPresent[%s]) expecting failure", \
+                    UT_Control_GetMapString(bool_mapTable, (blPresent)), \
+                    UT_Control_GetMapString(bool_mapTable, (elPresent))); \
+        status = (videoDecoderController)->setDolbyVisionLayerFlags((blPresent), (elPresent)); \
+        UT_LOG_INFO("Result setDolbyVisionLayerFlags(IN:blPresent[%s], IN:elPresent[%s]), status:[isOK:%s, exception:%s]", \
+                    UT_Control_GetMapString(bool_mapTable, (blPresent)), \
+                    UT_Control_GetMapString(bool_mapTable, (elPresent)), \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+        UT_ASSERT_FALSE(status.isOk()); \
+        UT_ASSERT_EQUAL(status.exceptionCode(), (expectedException)); \
+    } while (0)
+
 
 /**
  * @brief Test fixture for Level 1 Video Decoder HALIF tests.

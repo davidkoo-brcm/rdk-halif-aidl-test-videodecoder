@@ -21,7 +21,7 @@
 #** ******************************************************************************
 # HAL Feature Profile for videodecoder
 
-IVideoDecoderManager:           # Component object begins
+videodecoder:           # Component object begins
   interfaceVersion: current
   supportedOperationalModes:
     - NON_TUNNELLED
@@ -63,6 +63,10 @@ IVideoDecoderManager:           # Component object begins
         - HLG
         - HDR10
         - DOLBY_VISION
+      supportedColorimetries:
+        - BT601_525
+        - BT601_625
+        - BT709
       supportsSecure: true
     - 1:                          # Resource object begins
       supportedCodecs:          # Array of codec capabilities
@@ -98,6 +102,10 @@ IVideoDecoderManager:           # Component object begins
             maxFrameHeight: 1080
       supportedDynamicRanges:
         - SDR
+      supportedColorimetries:
+        - BT601_525
+        - BT601_625
+        - BT709
       supportsSecure: true
     - 2:
       supportedCodecs:
@@ -129,4 +137,8 @@ IVideoDecoderManager:           # Component object begins
         - SDR
         - HLG
         - HDR10
+      supportedColorimetries:
+        - BT601_525
+        - BT601_625
+        - BT709
       supportsSecure: false

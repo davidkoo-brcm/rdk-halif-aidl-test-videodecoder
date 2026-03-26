@@ -213,7 +213,7 @@ VideoStreams:
     discontinuity: 0
     lowLatency: 0
     bit_rate: 837
-    no_of_frames: 12
+    no_of_frames: 9
     decodeErrors: 0
     framesDropped: 0
     frame_size:
@@ -722,7 +722,7 @@ VideoStreams:
     discontinuity: 0
     lowLatency: 0
     bit_rate: 837
-    no_of_frames: 12
+    no_of_frames: 9
     decodeErrors: 3
     framesDropped: 0
     frame_size:

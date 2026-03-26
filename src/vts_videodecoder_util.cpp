@@ -88,11 +88,27 @@ DynamicRange videoDecoderStringToDynamicRange(const std::string& rangeStr) {
         {"SDR", DynamicRange::SDR},
         {"HLG", DynamicRange::HLG},
         {"HDR10", DynamicRange::HDR10},
-        {"HDR10PLUS", DynamicRange::HDR10PLUS},
+        {"HDR10_PLUS", DynamicRange::HDR10_PLUS},
         {"DOLBY_VISION", DynamicRange::DOLBY_VISION}
     };
     auto it = dynamicRangeMap.find(rangeStr);
     return (it != dynamicRangeMap.end()) ? it->second : DynamicRange::UNKNOWN;
+}
+
+Colorimetry videoDecoderStringToColorimetry(const std::string& colorimetryStr) {
+    static const std::unordered_map<std::string, Colorimetry> colorimetryMap = {
+        {"UNKNOWN", Colorimetry::UNKNOWN},
+        {"BT601_525", Colorimetry::BT601_525},
+        {"BT601_625", Colorimetry::BT601_625},
+        {"BT709", Colorimetry::BT709},
+        {"BT2020", Colorimetry::BT2020},
+        {"BT2020_CL", Colorimetry::BT2020_CL},
+        {"DCI_P3_D65", Colorimetry::DCI_P3_D65},
+        {"DCI_P3_D60", Colorimetry::DCI_P3_D60}
+    };
+
+    auto it = colorimetryMap.find(colorimetryStr);
+    return (it != colorimetryMap.end()) ? it->second : Colorimetry::UNKNOWN;
 }
 
 ScanType videoDecoderStringToScanType(const std::string& scanTypeStr) {
@@ -330,7 +346,7 @@ bool vts_videodecoder_helper_validatePropertyValue(int decoder_id,const std::opt
 UT_status_t vts_videodecoder_parseVideoDecoderHFP()
 {
     std::string videodecoderpath = VIDEODECODERMGR_IVIDEODECODER;
-    std::string opmodepath = std::string(VIDEODECODERMGR) + ".supportedOperationalModes";
+    std::string opmodepath = VIDEODECODERMGR_SUPPORTED_OPERATIONAL_MODES;
     int32_t number_of_videodecoders;
     int32_t supportedopmode_count;
     decoder_t temporary = {};
@@ -396,12 +412,14 @@ UT_status_t vts_videodecoder_parseVideoDecoderHFP()
         std::string decoderbasepath = videodecoderpath + "." + std::to_string(i);
         std::string supportedcodecpath = decoderbasepath + ".supportedCodecs";
         std::string supporteddrpath = decoderbasepath + ".supportedDynamicRanges";
+        std::string supportedcolorpath = decoderbasepath + ".supportedColorimetries";
         std::string supportsSecurepath = decoderbasepath + ".supportsSecure";
 
         temporary.id = i; // The ID is the index in the list.
         temporary.supportsSecure = UT_KVP_PROFILE_GET_BOOL(supportsSecurepath.c_str());
         temporary.supportedCodecs.clear();
         temporary.supportedDynamicRanges.clear();
+        temporary.supportedColorimetries.clear();
 
         UT_LOG_INFO("Parsing Decoder ID: %d, supportsSecure: %d", temporary.id, temporary.supportsSecure);
 
@@ -508,9 +526,32 @@ UT_status_t vts_videodecoder_parseVideoDecoderHFP()
             }
         }
 
-        UT_LOG_INFO("Decoder %d: id=%d, %zu codecs, %zu dynamic ranges, %zu opmodes",
+        int supportedcolor_count = UT_KVP_PROFILE_GET_LIST_COUNT(supportedcolorpath.c_str());
+        UT_LOG_INFO("Decoder %d: colorimetry count=%d", i, supportedcolor_count);
+        for (int32_t j = 0; j < supportedcolor_count; ++j)
+        {
+            char result_kvp[UT_KVP_MAX_ELEMENT_SIZE] = {0};
+            std::string colorpath = supportedcolorpath + "." + std::to_string(j);
+            UT_KVP_PROFILE_GET_STRING(colorpath.c_str(), result_kvp);
+            std::string colorStr = std::string(result_kvp);
+            UT_LOG_INFO("Reading colorimetry path: %s, value: %s", colorpath.c_str(), colorStr.c_str());
+            if (!colorStr.empty()) {
+                try {
+                    temporary.supportedColorimetries.push_back(videoDecoderStringToColorimetry(colorStr));
+                } catch (const std::invalid_argument& e) {
+                    UT_LOG_WARNING("Invalid colorimetry at path: %s, value: %s, error: %s",
+                                   colorpath.c_str(), colorStr.c_str(), e.what());
+                }
+            } else {
+                UT_LOG_WARNING("Empty colorimetry at path: %s", colorpath.c_str());
+            }
+        }
+
+        UT_LOG_INFO("Decoder %d: id=%d, %zu codecs, %zu dynamic ranges, %zu colorimetries, %zu opmodes",
                     i, temporary.id, temporary.supportedCodecs.size(),
-                    temporary.supportedDynamicRanges.size(), temporary.supportedOperationalModes.size());
+                    temporary.supportedDynamicRanges.size(),
+                    temporary.supportedColorimetries.size(),
+                    temporary.supportedOperationalModes.size());
 
         if (temporary.supportedCodecs.empty()) {
             UT_LOG_WARNING("Decoder %d has no valid codecs, skipping", i);
@@ -518,6 +559,11 @@ UT_status_t vts_videodecoder_parseVideoDecoderHFP()
         }
         if (temporary.supportedDynamicRanges.empty()) {
             UT_LOG_WARNING("Decoder %d has no valid dynamic ranges, skipping", i);
+            continue;
+        }
+
+        if (temporary.supportedColorimetries.empty()) {
+            UT_LOG_WARNING("Decoder %d has no valid colorimetries, skipping", i);
             continue;
         }
 
@@ -531,8 +577,9 @@ UT_status_t vts_videodecoder_parseVideoDecoderHFP()
 
     UT_LOG_INFO("Successfully parsed %zu decoders", gVideodecoders_hfp.size());
     for (const auto& dec : gVideodecoders_hfp) {
-        UT_LOG_INFO("HFP Decoder ID: %d, codecs: %zu, dynamic ranges: %zu, opmodes: %zu",
+        UT_LOG_INFO("HFP Decoder ID: %d, codecs: %zu, dynamic ranges: %zu, colorimetries: %zu, opmodes: %zu",
                     dec.id, dec.supportedCodecs.size(), dec.supportedDynamicRanges.size(),
+                    dec.supportedColorimetries.size(),
                     dec.supportedOperationalModes.size());
     }
     return UT_STATUS_OK;
@@ -727,6 +774,8 @@ void vts_videodecoder_helper_validateCapabilities(
             }
 
             // Validate dynamic ranges
+            UT_ASSERT_EQUAL(capabilities.supportedDynamicRanges.size(),
+                            hfpDecoder.supportedDynamicRanges.size());
             for (size_t i = 0; i < capabilities.supportedDynamicRanges.size(); ++i)
             {
                 UT_LOG_INFO("Validating dynamic range index %zu", i);
@@ -740,8 +789,24 @@ void vts_videodecoder_helper_validateCapabilities(
                 UT_ASSERT_EQUAL(static_cast<int32_t>(capabilities.supportedDynamicRanges[i]),
                                 static_cast<int32_t>(hfpDecoder.supportedDynamicRanges[i]));
             }
-            break;
-        }
+
+            // Validate colorimetries
+            UT_ASSERT_EQUAL(capabilities.supportedColorimetries.size(),
+                            hfpDecoder.supportedColorimetries.size());
+            for (size_t i = 0; i < capabilities.supportedColorimetries.size(); ++i)
+            {
+                UT_LOG_INFO("Validating colorimetry index %zu", i);
+                if (static_cast<int32_t>(capabilities.supportedColorimetries[i]) !=
+                    static_cast<int32_t>(hfpDecoder.supportedColorimetries[i])) {
+                    UT_LOG_ERROR("Colorimetry mismatch at index %zu: capabilities=%d, hfpDecoder=%d",
+                                 i, static_cast<int32_t>(capabilities.supportedColorimetries[i]),
+                                 static_cast<int32_t>(hfpDecoder.supportedColorimetries[i]));
+                    continue;
+                }
+                UT_ASSERT_EQUAL(static_cast<int32_t>(capabilities.supportedColorimetries[i]),
+                                static_cast<int32_t>(hfpDecoder.supportedColorimetries[i]));
+            }
+            break;        }
     }
     UT_LOG_INFO("Completed validation for decoder ID: %d", decoderId);
 }
@@ -764,7 +829,7 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, const char *m
 
     // Get input and reference paths
     char tempBuffer[UT_KVP_MAX_ELEMENT_SIZE] = {0};
-    status = ut_kvp_getStringField(kvpTestInstance, "IVideoDecoderManager.input_streams_path", tempBuffer, UT_KVP_MAX_ELEMENT_SIZE);
+    status = ut_kvp_getStringField(kvpTestInstance, VIDEO_DECODER_STREAM_INPUT_PATH, tempBuffer, UT_KVP_MAX_ELEMENT_SIZE);
     if (status != UT_KVP_STATUS_SUCCESS)
     {
         UT_LOG_ERROR("Failed to get input_streams_path, status: %d", status);
@@ -773,7 +838,7 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, const char *m
     streamInputPath = tempBuffer;
     UT_LOG_INFO("streamInputPath: %s", streamInputPath.c_str());
 
-    status = ut_kvp_getStringField(kvpTestInstance, "IVideoDecoderManager.reference_streams_path", tempBuffer, UT_KVP_MAX_ELEMENT_SIZE);
+    status = ut_kvp_getStringField(kvpTestInstance, VIDEO_DECODER_STREAM_REF_PATH, tempBuffer, UT_KVP_MAX_ELEMENT_SIZE);
     if (status != UT_KVP_STATUS_SUCCESS)
     {
         UT_LOG_ERROR("Failed to get reference_streams_path, status: %d", status);
@@ -796,6 +861,10 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, const char *m
         std::string resultKVP;
         vector<uint32_t> errorFrameNum;
 
+        testDetails.colorimetry = Colorimetry::UNKNOWN;
+        testDetails.masteringDisplayInfo.reset();
+        testDetails.contentLightLevel.reset();
+
         string streamName = streamList + "." + to_string(i) + ".Name";
         status = ut_kvp_getStringField(kvpTestInstance, streamName.c_str(), tempBuffer, UT_KVP_MAX_ELEMENT_SIZE);
         if (status != UT_KVP_STATUS_SUCCESS)
@@ -817,7 +886,10 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, const char *m
         string frameRateDenominator = prefix + "frameRateDenominator";
         string pixelFormat = prefix + "pixelFormat";
         string dynamicRange = prefix + "dynamic_range";
-        string scanType = prefix + "dynamic_range";
+        string colorimetry = prefix + "colorimetry";
+        string masteringDisplayInfo = prefix + "masteringDisplayInfo";
+        string contentLightLevel = prefix + "contentLightLevel";
+        string scanType = prefix + "scanType";
         string colorDepth = prefix + "colorDepth";
         string bit_rate = prefix + "bit_rate";
         string noOfFrames = prefix + "no_of_frames";
@@ -888,6 +960,59 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, const char *m
         if (status == UT_KVP_STATUS_SUCCESS)
         {
             testDetails.dynamicRange = videoDecoderStringToDynamicRange(string(tempBuffer));
+        }
+
+        // Colorimetry
+        status = ut_kvp_getStringField(kvpTestInstance, colorimetry.c_str(), tempBuffer, UT_KVP_MAX_ELEMENT_SIZE);
+        if (status == UT_KVP_STATUS_SUCCESS)
+        {
+            testDetails.colorimetry = videoDecoderStringToColorimetry(string(tempBuffer));
+        }
+
+        // Mastering display info
+        if (ut_kvp_fieldPresent(kvpTestInstance, (masteringDisplayInfo + ".whitePointX").c_str()))
+        {
+            MasteringDisplayInfo mdi{};
+
+            mdi.redPrimaryX = ut_kvp_getUInt32Field(
+                kvpTestInstance, (masteringDisplayInfo + ".redPrimaryX").c_str());
+            mdi.redPrimaryY = ut_kvp_getUInt32Field(
+                kvpTestInstance, (masteringDisplayInfo + ".redPrimaryY").c_str());
+
+            mdi.greenPrimaryX = ut_kvp_getUInt32Field(
+                kvpTestInstance, (masteringDisplayInfo + ".greenPrimaryX").c_str());
+            mdi.greenPrimaryY = ut_kvp_getUInt32Field(
+                kvpTestInstance, (masteringDisplayInfo + ".greenPrimaryY").c_str());
+
+            mdi.bluePrimaryX = ut_kvp_getUInt32Field(
+                kvpTestInstance, (masteringDisplayInfo + ".bluePrimaryX").c_str());
+            mdi.bluePrimaryY = ut_kvp_getUInt32Field(
+                kvpTestInstance, (masteringDisplayInfo + ".bluePrimaryY").c_str());
+
+            mdi.whitePointX = ut_kvp_getUInt32Field(
+                kvpTestInstance, (masteringDisplayInfo + ".whitePointX").c_str());
+            mdi.whitePointY = ut_kvp_getUInt32Field(
+                kvpTestInstance, (masteringDisplayInfo + ".whitePointY").c_str());
+
+            mdi.maxLuminance = ut_kvp_getUInt32Field(
+                kvpTestInstance, (masteringDisplayInfo + ".maxLuminance").c_str());
+            mdi.minLuminance = ut_kvp_getUInt32Field(
+                kvpTestInstance, (masteringDisplayInfo + ".minLuminance").c_str());
+
+            testDetails.masteringDisplayInfo = mdi;
+        }
+
+        // Content light level
+        if (ut_kvp_fieldPresent(kvpTestInstance, (contentLightLevel + ".maxCLL").c_str()))
+        {
+            ContentLightLevel cll{};
+
+            cll.maxCLL = ut_kvp_getUInt32Field(
+                kvpTestInstance, (contentLightLevel + ".maxCLL").c_str());
+            cll.maxFALL = ut_kvp_getUInt32Field(
+                kvpTestInstance, (contentLightLevel + ".maxFALL").c_str());
+
+            testDetails.contentLightLevel = cll;
         }
 
         // scanType
