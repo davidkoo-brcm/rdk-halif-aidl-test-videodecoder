@@ -1619,6 +1619,96 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_Secure)
 }
 #endif
 
+/**
+ * @brief Test that setColorimetry correctly propagates BT2020_ST2084 colorimetry
+ *        to decoded frame metadata when an HDR10 HEVC stream is decoded.
+ *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 092
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_SetColorimetry)
+{
+    const char *testName = "Decode_SetColorimetry";
+    bool secureMode = false;
+    bool tunnelMode = false;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test that when setColorimetry is not called (colorimetry=UNKNOWN),
+ *        decoded frame metadata reports UNKNOWN colorimetry.
+ *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 093
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_SetColorimetry_NoSet)
+{
+    const char *testName = "Decode_SetColorimetry_NoSet";
+    bool secureMode = false;
+    bool tunnelMode = false;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test that setMasteringDisplayInfo correctly propagates HDR10 mastering
+ *        display metadata to decoded frame metadata when an HDR10 HEVC stream is decoded.
+ *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 094
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_SetMasteringDisplayInfo)
+{
+    const char *testName = "Decode_SetMasteringDisplayInfo";
+    bool secureMode = false;
+    bool tunnelMode = false;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test that when setMasteringDisplayInfo is not called,
+ *        decoded frame metadata reports nullopt for masteringDisplayInfo.
+ *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 095
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_SetMasteringDisplayInfo_NoSet)
+{
+    const char *testName = "Decode_SetMasteringDisplayInfo_NoSet";
+    bool secureMode = false;
+    bool tunnelMode = false;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test that setContentLightLevel correctly propagates MaxCLL/MaxFALL
+ *        to decoded frame metadata when an HDR10 HEVC stream is decoded.
+ *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 096
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_SetContentLightLevel)
+{
+    const char *testName = "Decode_SetContentLightLevel";
+    bool secureMode = false;
+    bool tunnelMode = false;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test that when setContentLightLevel is not called,
+ *        decoded frame metadata reports nullopt for contentLightLevel.
+ *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 097
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_SetContentLightLevel_NoSet)
+{
+    const char *testName = "Decode_SetContentLightLevel_NoSet";
+    bool secureMode = false;
+    bool tunnelMode = false;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
 /** @} */ // End of VIDEO_DECODER_HALTEST_L3 File
 /** @} */ // End of VIDEO_DECODER_HALTEST
 /** @} */ // End of VIDEO_DECODER Module
