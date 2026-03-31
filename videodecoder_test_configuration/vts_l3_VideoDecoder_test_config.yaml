@@ -507,7 +507,7 @@ videodecoder:
             Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_GOP
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
-    Decode_SetColorimetry:
+    Decode_Sequential_NonTunnel_NonSecure_SetColorimetry:
       Controls:
         delay_between_decode_calls: 5
       Inputs:
@@ -516,7 +516,7 @@ videodecoder:
             Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_ST2084_30p_PIXEL_FORMAT_YCBCR420_COLORIMETRY
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
-    Decode_SetColorimetry_NoSet:
+    Decode_Sequential_NonTunnel_NonSecure_SetColorimetry_NoSet:
       Controls:
         delay_between_decode_calls: 5
       Inputs:
@@ -525,7 +525,7 @@ videodecoder:
             Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_ST2084_30p_PIXEL_FORMAT_YCBCR420_COLORIMETRY_NOSET
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
-    Decode_SetMasteringDisplayInfo:
+    Decode_Sequential_NonTunnel_NonSecure_SetMasteringDisplayInfo:
       Controls:
         delay_between_decode_calls: 5
       Inputs:
@@ -534,7 +534,7 @@ videodecoder:
             Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_ST2084_30p_PIXEL_FORMAT_YCBCR420_MDI
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
-    Decode_SetMasteringDisplayInfo_NoSet:
+    Decode_Sequential_NonTunnel_NonSecure_SetMasteringDisplayInfo_NoSet:
       Controls:
         delay_between_decode_calls: 5
       Inputs:
@@ -543,7 +543,7 @@ videodecoder:
             Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_ST2084_30p_PIXEL_FORMAT_YCBCR420_MDI_NOSET
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
-    Decode_SetContentLightLevel:
+    Decode_Sequential_NonTunnel_NonSecure_SetContentLightLevel:
       Controls:
         delay_between_decode_calls: 5
       Inputs:
@@ -552,7 +552,7 @@ videodecoder:
             Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_ST2084_30p_PIXEL_FORMAT_YCBCR420_CLL
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
-    Decode_SetContentLightLevel_NoSet:
+    Decode_Sequential_NonTunnel_NonSecure_SetContentLightLevel_NoSet:
       Controls:
         delay_between_decode_calls: 5
       Inputs:
