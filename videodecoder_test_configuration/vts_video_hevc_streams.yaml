@@ -845,7 +845,7 @@ VideoStreams:
     input: masterdisplayinfo_bt2020.es
     codec: H265_HEVC
     codedWidth: 1920
-    codedHeight: 1080
+    codedHeight: 1088
     colorDepth: 10
     pixelFormat: YCBCR420
     dynamic_range: HDR10
@@ -906,7 +906,7 @@ VideoStreams:
     input: contentlightlevel_bt2020.es
     codec: H265_HEVC
     codedWidth: 1920
-    codedHeight: 1080
+    codedHeight: 1088
     colorDepth: 10
     pixelFormat: YCBCR420
     dynamic_range: HDR10
@@ -967,7 +967,7 @@ VideoStreams:
     input: contentlightlevel_bt2020.es
     codec: H265_HEVC
     codedWidth: 1920
-    codedHeight: 1080
+    codedHeight: 1088
     colorDepth: 10
     pixelFormat: YCBCR420
     dynamic_range: HDR10
