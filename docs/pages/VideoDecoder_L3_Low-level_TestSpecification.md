@@ -752,12 +752,12 @@ This validation ensures that metadata for each decoded frame matches the expecte
 | 89  | Decode_Concurrent_Tunnel_NonSecure_GOPStructure  | runConcurrentDecode     | secureMode = false<br>tunnelMode = true<br>concurrentMode = true   | Inputs.Streams<br>Controls.gop_structure         |
 | 90  | Decode_Concurrent_Tunnel_NonSecure_LowLatency    | runConcurrentDecode     | secureMode = false<br>tunnelMode = true<br>concurrentMode = true   | Inputs.Streams<br>Controls.lowLatency            |
 | 91  | Decode_Concurrent_Tunnel_Secure                  | runConcurrentDecode     | secureMode = true<br>tunnelMode = true<br>concurrentMode = true    | Inputs.Streams                                   |
-| 92  | Decode_Sequential_NonTunnel_NonSecure_SetColorimetry          | runSingleProcessTest    | secureMode = false<br>tunnelMode = false<br>concurrentMode = false | Inputs.Streams<br>Controls.setColorimetry        |
-| 93  | Decode_Sequential_NonTunnel_NonSecure_SetColorimetry_NoSet    | runSingleProcessTest    | secureMode = false<br>tunnelMode = false<br>concurrentMode = false | Inputs.Streams                                   |
-| 94  | Decode_Sequential_NonTunnel_NonSecure_SetMasteringDisplayInfo | runSingleProcessTest    | secureMode = false<br>tunnelMode = false<br>concurrentMode = false | Inputs.Streams<br>Controls.setMasteringDisplayInfo |
-| 95  | Decode_Sequential_NonTunnel_NonSecure_SetMasteringDisplayInfo_NoSet | runSingleProcessTest | secureMode = false<br>tunnelMode = false<br>concurrentMode = false | Inputs.Streams                                   |
-| 96  | Decode_Sequential_NonTunnel_NonSecure_SetContentLightLevel    | runSingleProcessTest    | secureMode = false<br>tunnelMode = false<br>concurrentMode = false | Inputs.Streams<br>Controls.setContentLightLevel  |
-| 97  | Decode_Sequential_NonTunnel_NonSecure_SetContentLightLevel_NoSet | runSingleProcessTest  | secureMode = false<br>tunnelMode = false<br>concurrentMode = false | Inputs.Streams                                   |
+| 92  | Decode_Sequential_NonTunnel_NonSecure_Clrmty                  | runSingleProcessTest    | secureMode = false<br>tunnelMode = false<br>concurrentMode = false | Inputs.Streams<br>Controls.setColorimetry        |
+| 93  | Decode_Sequential_NonTunnel_NonSecure_ClrmtyNoSet             | runSingleProcessTest    | secureMode = false<br>tunnelMode = false<br>concurrentMode = false | Inputs.Streams                                   |
+| 94  | Decode_Sequential_NonTunnel_NonSecure_MstrDisplay             | runSingleProcessTest    | secureMode = false<br>tunnelMode = false<br>concurrentMode = false | Inputs.Streams<br>Controls.setMasteringDisplayInfo |
+| 95  | Decode_Sequential_NonTunnel_NonSecure_MstrDisplayNoSet        | runSingleProcessTest    | secureMode = false<br>tunnelMode = false<br>concurrentMode = false | Inputs.Streams                                   |
+| 96  | Decode_Sequential_NonTunnel_NonSecure_CntntLight              | runSingleProcessTest    | secureMode = false<br>tunnelMode = false<br>concurrentMode = false | Inputs.Streams<br>Controls.setContentLightLevel  |
+| 97  | Decode_Sequential_NonTunnel_NonSecure_CntntLightNoSet         | runSingleProcessTest    | secureMode = false<br>tunnelMode = false<br>concurrentMode = false | Inputs.Streams                                   |
 
 
 - **Test Execution**:
