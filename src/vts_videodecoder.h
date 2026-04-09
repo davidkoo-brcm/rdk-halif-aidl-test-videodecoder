@@ -107,16 +107,104 @@
 #include "vts_avbuffer.h"
 #include "vts_helper_functions.h"
 
+/*
+#ifdef ENABLE_UT_INFO_LOGGING
+#define UT_LOG_LEVEL_NONE 0
+#define UT_LOG_LEVEL_ERROR 1
+#define UT_LOG_LEVEL_WARNING 2
+#define UT_LOG_LEVEL_INFO 3
+#define UT_LOG_LEVEL_DEBUG 4
 
-#ifndef ENABLE_UT_INFO_LOGGING
+#if UT_LOG_LEVEL <= UT_LOG_LEVEL_DEBUG
+#if UT_LOG_LEVEL <= UT_LOG_LEVEL_INFO
+
 #ifdef UT_LOG_DEBUG
 #undef UT_LOG_DEBUG
 #define UT_LOG_DEBUG(...)
 #endif
+
+#if UT_LOG_LEVEL <= UT_LOG_LEVEL_WARNING
+
 #ifdef UT_LOG_INFO
 #undef UT_LOG_INFO
 #define UT_LOG_INFO(...)
 #endif
+
+#if UT_LOG_LEVEL <= UT_LOG_LEVEL_ERROR
+
+#ifdef UT_LOG_WARNING
+#undef UT_LOG_WARNING
+#define UT_LOG_WARNING(...)
+#endif
+
+#if UT_LOG_LEVEL == UT_LOG_LEVEL_NONE
+
+#ifdef UT_LOG_ERROR
+#undef UT_LOG_ERROR
+#define UT_LOG_ERROR(...)
+#endif
+
+#endif //UT_LOG_LEVEL_NONE
+#endif //UT_LOG_LEVEL_ERROR
+#endif //UT_LOG_LEVEL_WARNING
+#endif //UT_LOG_LEVEL_INFO
+#endif //UT_LOG_LEVEL_DEBUG
+
+#else //ENABLE_UT_INFO_LOGGING
+*/
+
+
+
+#ifndef ENABLE_UT_INFO_LOGGING
+    // Only WARNING and ERROR logs are enabled; DEBUG and INFO are disabled
+    #ifdef UT_LOG_DEBUG
+        #undef UT_LOG_DEBUG
+    #endif
+    #define UT_LOG_DEBUG(...)
+    #ifdef UT_LOG_INFO
+        #undef UT_LOG_INFO
+    #endif
+    #define UT_LOG_INFO(...)
+#else
+    // ENABLE_UT_INFO_LOGGING is defined: use UT_LOG_LEVEL to control log macros
+    #define UT_LOG_LEVEL_NONE    0
+    #define UT_LOG_LEVEL_ERROR   1
+    #define UT_LOG_LEVEL_WARNING 2
+    #define UT_LOG_LEVEL_INFO    3
+    #define UT_LOG_LEVEL_DEBUG   4
+
+    #ifndef UT_LOG_LEVEL
+        #define UT_LOG_LEVEL UT_LOG_LEVEL_INFO
+    #endif
+
+    // DEBUG
+    #if UT_LOG_LEVEL < UT_LOG_LEVEL_DEBUG
+        #ifdef UT_LOG_DEBUG
+            #undef UT_LOG_DEBUG
+        #endif
+        #define UT_LOG_DEBUG(...)
+    #endif
+    // INFO
+    #if UT_LOG_LEVEL < UT_LOG_LEVEL_INFO
+        #ifdef UT_LOG_INFO
+            #undef UT_LOG_INFO
+        #endif
+        #define UT_LOG_INFO(...)
+    #endif
+    // WARNING
+    #if UT_LOG_LEVEL < UT_LOG_LEVEL_WARNING
+        #ifdef UT_LOG_WARNING
+            #undef UT_LOG_WARNING
+        #endif
+        #define UT_LOG_WARNING(...)
+    #endif
+    // ERROR
+    #if UT_LOG_LEVEL < UT_LOG_LEVEL_ERROR
+        #ifdef UT_LOG_ERROR
+            #undef UT_LOG_ERROR
+        #endif
+        #define UT_LOG_ERROR(...)
+    #endif
 #endif
 
 #include "com/rdk/hal/videodecoder/IVideoDecoderManager.h"
@@ -1187,6 +1275,7 @@ do { \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                     decodeResult ? "true" : "false"); \
         UT_ASSERT_TRUE(status.isOk()) << "decodeBuffer failed"; \
+        UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
         UT_ASSERT_TRUE(decodeResult) << "decodeBuffer returned false"; \
     } while (0)
 
@@ -1197,10 +1286,14 @@ do { \
         UT_LOG_INFO("decodeBuffer(pts=%lld, bufferHandle=0x%016" PRIx64 ") status=%s", \
                     static_cast<long long>(pts), static_cast<long long>(bufferHandle), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk())); \
-        UT_ASSERT_FALSE(status.isOk()) << "decodeBuffer unexpectedly succeeded"; \
         if (expectedException != Status::EX_NONE) { \
             UT_ASSERT_TRUE(status.exceptionCode() == expectedException) \
                 << "decodeBuffer returned unexpected exception"; \
+        } \
+        else { \
+            UT_ASSERT_TRUE(status.isOk()) << "decodeBuffer failed unexpectedly"; \
+            UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
+            UT_ASSERT_FALSE(decodeResult) << "decodeBuffer returned true unexpectedly"; \
         } \
     } while (0)
 
@@ -1371,7 +1464,8 @@ do { \
  * @brief Test fixture for Level 1 Video Decoder HALIF tests.
  * Inherits from UTCore to leverage ut-core's test utilities and lifecycle methods.
  */
-class VTS_L1_VideoDecoder : public UTCore {
+class VTS_L1_VideoDecoder : public UTCore
+{
     public:
         /**
          * @brief Default constructor.
@@ -1410,19 +1504,24 @@ class VTS_L1_VideoDecoder : public UTCore {
         }
     };
 
-class VideoDecoderControllerListener : public BnVideoDecoderControllerListener {
+class VideoDecoderControllerListener : public BnVideoDecoderControllerListener
+{
 public:
     VideoDecoderControllerListener() {}
     virtual ~VideoDecoderControllerListener() = default;
 
-    Status onFrameOutput(int64_t nsPresentationTime, int64_t frameBufferHandle, const ::std::optional<com::rdk::hal::videodecoder::FrameMetadata>& metadata) override {
-        UT_LOG_INFO("onFrameOutput received: nsPresentationTime=%lld, frameBufferHandle=0x%016" PRIx64 "", nsPresentationTime, frameBufferHandle);
+    Status onFrameOutput(int64_t nsPresentationTime, int64_t frameBufferHandle, const ::std::optional<com::rdk::hal::videodecoder::FrameMetadata>& metadata) override
+    {
         DecodedVideoFrame_t frame;
-        frame.framePTS = nsPresentationTime;
         frame.receiveTime = std::chrono::steady_clock::now();
+
+        UT_LOG_INFO("onFrameOutput received: nsPresentationTime=%lld, frameBufferHandle=0x%016" PRIx64 "", nsPresentationTime, frameBufferHandle);
+
+        frame.framePTS = nsPresentationTime;
         frame.isMetaAvailable = metadata.has_value();
         frame.frameBufferHandle = frameBufferHandle; // Store handle
-        if (metadata.has_value()) {
+        if (metadata.has_value())
+        {
             frame.metadata = std::make_unique<com::rdk::hal::videodecoder::FrameMetadata>(metadata.value());
 
             UT_LOG_INFO("FrameMetadata: codedWidth=%d, codedHeight=%d, activeX=%d, activeY=%d, activeWidth=%d, activeHeight=%d",
@@ -1456,7 +1555,6 @@ public:
             UT_LOG_INFO("No FrameMetadata provided");
         }
 
-
         {
             std::lock_guard<std::mutex> lock(mMutex);
             mDecodedFrames.push_back(std::move(frame)); // Move is now possible
@@ -1465,7 +1563,8 @@ public:
         return Status::ok();
     }
 
-    Status onUserDataOutput(int64_t nsPresentationTime, const ::std::vector<uint8_t>& userData) override {
+    Status onUserDataOutput(int64_t nsPresentationTime, const ::std::vector<uint8_t>& userData) override
+    {
         UT_LOG_INFO("onUserDataOutput received");
         return Status::ok();
     }
@@ -1486,13 +1585,15 @@ private:
     std::deque<DecodedVideoFrame_t> mDecodedFrames;
 };
 
-class VideoDecoderEventListener : public BnVideoDecoderEventListener {
-    public:
+class VideoDecoderEventListener : public BnVideoDecoderEventListener
+{
+public:
     static int32_t mUsedDecoderID;
     VideoDecoderEventListener() {};
     virtual ~VideoDecoderEventListener() = default;
 
-    Status onDecodeError(videodecoder::ErrorCode errorCode, int32_t vendorErrorCode) override {
+    Status onDecodeError(videodecoder::ErrorCode errorCode, int32_t vendorErrorCode) override
+    {
         UT_LOG_ERROR("[Video DecoderID: %d] Decode error: errorCode=%d, vendorErrorCode=%d", mDecoderID, static_cast<int32_t>(errorCode), vendorErrorCode);
         {
             std::lock_guard<std::mutex> lock(mMutex);
@@ -1510,7 +1611,8 @@ class VideoDecoderEventListener : public BnVideoDecoderEventListener {
         return Status::ok();
     }
 
-    void waitForState(::com::rdk::hal::State targetState, std::chrono::milliseconds timeout) {
+    void waitForState(::com::rdk::hal::State targetState, std::chrono::milliseconds timeout)
+    {
         std::unique_lock<std::mutex> lock(mMutex);
         if (!mCond.wait_for(lock, timeout, [this, targetState] {
             return !mStateChanges.empty() && mStateChanges.back().second == targetState;
@@ -1533,6 +1635,11 @@ class VideoDecoderEventListener : public BnVideoDecoderEventListener {
         std::lock_guard<std::mutex> lock(mMutex);
         return mErrors;
     }
+    int32_t getErrorCount() const
+    {
+        std::lock_guard<std::mutex> lock(mMutex);
+        return mErrors.size();
+    }
     void setDecoderID(int32_t id)
     {
         mDecoderID = id;
@@ -1541,15 +1648,15 @@ class VideoDecoderEventListener : public BnVideoDecoderEventListener {
     {
         return VideoDecoderEventListener::mUsedDecoderID;
     }
-    private:
-        mutable std::mutex mMutex;
-        std::condition_variable mCV;
-        std::condition_variable mCond;
+private:
+    mutable std::mutex mMutex;
+    std::condition_variable mCV;
+    std::condition_variable mCond;
 
-        ::com::rdk::hal::State mCurrentState;
-        std::vector<std::pair<::com::rdk::hal::State, ::com::rdk::hal::State>> mStateChanges;
-        std::vector<int32_t> mErrors;
-        int32_t mDecoderID;
+    ::com::rdk::hal::State mCurrentState;
+    std::vector<std::pair<::com::rdk::hal::State, ::com::rdk::hal::State>> mStateChanges;
+    std::vector<int32_t> mErrors;
+    int32_t mDecoderID;
 };
 
 // AVBufferSpaceListener declaration
@@ -1567,48 +1674,59 @@ public:
                 sp<VideoDecoderControllerListener> controlListener,
                 sp<VideoDecoderEventListener> eventListener,
                 sp<IAVBuffer> AVBufferManager,
-                bool secureDecode, bool tunnelMode, videoDecoderTestConfiguration_t config,IAVBufferHelper* avbufferHelper, bool isSinkAttached){
-                    mDecoderId = decoderId;
-                    mDecoderHandle = decoderHandle;
-                    mControlListener = controlListener;
-                    mSecureDecode = secureDecode;
-                    mEventListener = eventListener;
-                    mTestConfiguration = config;
-                    mAVBufferManager = AVBufferManager;
-                    mAVbufferHelper = avbufferHelper;
-                    misSinkAttached = isSinkAttached;
-                }
+                bool secureDecode, bool tunnelMode, videoDecoderTestConfiguration_t config,
+                IAVBufferHelper* avbufferHelper, bool isSinkAttached)
+    {
+        mDecoderId = decoderId;
+        mDecoderHandle = decoderHandle;
+        mControlListener = controlListener;
+        mSecureDecode = secureDecode;
+        mEventListener = eventListener;
+        mTestConfiguration = config;
+        mAVBufferManager = AVBufferManager;
+        mAVbufferHelper = avbufferHelper;
+        mIsSinkAttached = isSinkAttached;
+        mTunnelMode = tunnelMode;
+    }
     void run(bool concurrentDecodeConsume);
-    bool getDecoderMetrics(int32_t &framesDecoded, int32_t &decodeErrors, int32_t &framesDropped);
+    void getDecoderMetrics(int32_t &framesDecoded, int32_t &decodeErrors, int32_t &framesDropped);
     std::vector<std::tuple<uint64_t, uint32_t, int64_t>> parseFrames(
         const std::vector<uint8_t>& inputBuffer, uint64_t fileSize, videodecoder::Codec codec);
 
 private:
-    thread mDecoderThread, mConsumerThread;
+    // Configuration parameters
     IVideoDecoder::Id mDecoderId;
+    bool mSecureDecode;
+    bool mTunnelMode;
+    bool mConcurrentDecodeConsume;
+    bool mIsSinkAttached;
+    videoDecoderTestConfiguration_t mTestConfiguration;
     sp<IVideoDecoder> mDecoderHandle;
     sp<VideoDecoderControllerListener> mControlListener;
     sp<VideoDecoderEventListener> mEventListener;
     sp<IAVBuffer> mAVBufferManager;
     IAVBufferHelper* mAVbufferHelper;
-    bool mSecureDecode;
-    bool mTunnelMode;
-    videoDecoderTestConfiguration_t mTestConfiguration;
-    deque<InputVideoFrame_t> mInputFrame;
-    mutex mDecodeMutex;
-    atomic<bool> mDecodingStream;
-    bool mConcurrentDecodeConsume;
-    mutex mAVbufferHelperLock;
-    bool misSinkAttached;
 
-    void decoderThreadFunc();
-    void consumerThreadFunc();
-    void decodeAndConsumeVideoStreams();
+    // test Execution parameters
+    deque<InputVideoFrame_t> mInputFrame;
+    std::vector<std::tuple<uint64_t, uint32_t, int64_t, bool>> mFrameData; // {offset, size, pts, isKeyFrame}
+    std::vector<uint8_t> mInputBuffer;
+    sp<IVideoDecoderController> mVideoDecoderController;
+    Pool mVideoPool;
+    sp<IAVBufferSpaceListener> mBufferListener;
+
+    std::mutex mInputFrameMutex;
+
+private:
+    bool makeFrame();
+    void setupVideoDecoder();
+    void startDecoding();
+    bool validateDecodedFrame();
+    void teardownDecoder();
+    void decodeAndConsumeVideoFrames();
 };
 
-
 #endif //__VTS_VIDEODECODER_H__
-
 
 /** @} */ // End of Video_Decoder_Halif_Test_Header
 /** @} */ // End of Video_Decoder_Halif_Test

@@ -693,7 +693,8 @@ void vts_videodecoder_helper_validateCapabilities(
     UT_LOG_INFO("Validating capabilities for decoder ID: %d", decoderId);
 
     // Basic validation: non-empty codecs and dynamic ranges
-    if (capabilities.supportedCodecs.empty()) {
+    if (capabilities.supportedCodecs.empty())
+    {
         UT_LOG_ERROR("No codecs in capabilities for decoder ID: %d", decoderId);
         return; // Avoid crash
     }
@@ -721,7 +722,8 @@ void vts_videodecoder_helper_validateCapabilities(
     }
 
     // Validate supportedDynamicRanges
-    if (capabilities.supportedDynamicRanges.empty()) {
+    if (capabilities.supportedDynamicRanges.empty())
+    {
         UT_LOG_ERROR("No dynamic ranges in capabilities for decoder ID: %d", decoderId);
         return; // Avoid crash
     }
@@ -729,7 +731,8 @@ void vts_videodecoder_helper_validateCapabilities(
     UT_LOG_INFO("Capabilities has %zu dynamic ranges", capabilities.supportedDynamicRanges.size());
 
     // Optional: Validate against gVideodecoders_hfp (if populated)
-    if (gVideodecoders_hfp.empty()) {
+    if (gVideodecoders_hfp.empty())
+    {
         UT_LOG_ERROR("gVideodecoders_hfp is empty for decoder ID: %d", decoderId);
         return; // Avoid crash
     }
@@ -738,14 +741,16 @@ void vts_videodecoder_helper_validateCapabilities(
         if (hfpDecoder.id == decoderId)
         {
             UT_LOG_INFO("Found HFP entry for decoder ID: %d", decoderId);
-            if (capabilities.supportedCodecs.size() != hfpDecoder.supportedCodecs.size()) {
+            if (capabilities.supportedCodecs.size() != hfpDecoder.supportedCodecs.size())
+            {
                 UT_LOG_ERROR("Codec size mismatch: capabilities=%zu, hfpDecoder=%zu",
                              capabilities.supportedCodecs.size(), hfpDecoder.supportedCodecs.size());
                 return; // Avoid out-of-bounds
             }
             UT_ASSERT_EQUAL(capabilities.supportedCodecs.size(), hfpDecoder.supportedCodecs.size());
 
-            if (capabilities.supportedDynamicRanges.size() != hfpDecoder.supportedDynamicRanges.size()) {
+            if (capabilities.supportedDynamicRanges.size() != hfpDecoder.supportedDynamicRanges.size())
+            {
                 UT_LOG_ERROR("Dynamic range size mismatch: capabilities=%zu, hfpDecoder=%zu",
                              capabilities.supportedDynamicRanges.size(), hfpDecoder.supportedDynamicRanges.size());
                 return; // Avoid out-of-bounds
@@ -755,16 +760,22 @@ void vts_videodecoder_helper_validateCapabilities(
             UT_ASSERT_EQUAL(capabilities.supportsSecure, hfpDecoder.supportsSecure);
 
             // Validate codecs
-            for (size_t i = 0; i < capabilities.supportedCodecs.size(); ++i)
+            for (const auto& cap : capabilities.supportedCodecs)
             {
-                UT_LOG_INFO("Validating codec index %zu", i);
-                const auto& cap = capabilities.supportedCodecs[i];
-                const auto& hfpCap = hfpDecoder.supportedCodecs[i];
-                if (static_cast<int32_t>(cap.codec) != static_cast<int32_t>(hfpCap.codec)) {
-                    UT_LOG_ERROR("Codec mismatch at index %zu: capabilities=%d, hfpDecoder=%d",
-                                 i, static_cast<int32_t>(cap.codec), static_cast<int32_t>(hfpCap.codec));
+                // Search for matching codec in hfpDecoder.supportedCodecs
+                auto it = std::find_if(
+                    hfpDecoder.supportedCodecs.begin(),
+                    hfpDecoder.supportedCodecs.end(),
+                    [&cap](const CodecCapability& hfpCap) {
+                        return static_cast<int32_t>(cap.codec) == static_cast<int32_t>(hfpCap.codec);
+                    });
+                if (it == hfpDecoder.supportedCodecs.end())
+                {
+                    UT_LOG_ERROR("Codec %d not found in hfpDecoder for decoder ID: %d", static_cast<int32_t>(cap.codec), decoderId);
                     continue;
                 }
+                const auto& hfpCap = *it;
+                UT_LOG_INFO("Validating codec: %d", static_cast<int32_t>(cap.codec));
                 UT_ASSERT_EQUAL(static_cast<int32_t>(cap.codec), static_cast<int32_t>(hfpCap.codec));
                 UT_ASSERT_EQUAL(static_cast<int32_t>(cap.profile), static_cast<int32_t>(hfpCap.profile));
                 UT_ASSERT_EQUAL(static_cast<int32_t>(cap.level), static_cast<int32_t>(hfpCap.level));
@@ -773,40 +784,45 @@ void vts_videodecoder_helper_validateCapabilities(
                 UT_ASSERT_EQUAL(cap.maxFrameHeight, hfpCap.maxFrameHeight);
             }
 
-            // Validate dynamic ranges
-            UT_ASSERT_EQUAL(capabilities.supportedDynamicRanges.size(),
-                            hfpDecoder.supportedDynamicRanges.size());
-            for (size_t i = 0; i < capabilities.supportedDynamicRanges.size(); ++i)
+            // Validate dynamic ranges (order-independent)
+            UT_ASSERT_EQUAL(capabilities.supportedDynamicRanges.size(), hfpDecoder.supportedDynamicRanges.size());
+            for (const auto& dynRange : capabilities.supportedDynamicRanges)
             {
-                UT_LOG_INFO("Validating dynamic range index %zu", i);
-                if (static_cast<int32_t>(capabilities.supportedDynamicRanges[i]) !=
-                    static_cast<int32_t>(hfpDecoder.supportedDynamicRanges[i])) {
-                    UT_LOG_ERROR("Dynamic range mismatch at index %zu: capabilities=%d, hfpDecoder=%d",
-                                 i, static_cast<int32_t>(capabilities.supportedDynamicRanges[i]),
-                                 static_cast<int32_t>(hfpDecoder.supportedDynamicRanges[i]));
+                auto it = std::find_if(
+                    hfpDecoder.supportedDynamicRanges.begin(),
+                    hfpDecoder.supportedDynamicRanges.end(),
+                    [&dynRange](const auto& hfpDynRange) {
+                        return static_cast<int32_t>(dynRange) == static_cast<int32_t>(hfpDynRange);
+                    });
+                if (it == hfpDecoder.supportedDynamicRanges.end())
+                {
+                    UT_LOG_ERROR("Dynamic range %d not found in hfpDecoder for decoder ID: %d", static_cast<int32_t>(dynRange), decoderId);
                     continue;
                 }
-                UT_ASSERT_EQUAL(static_cast<int32_t>(capabilities.supportedDynamicRanges[i]),
-                                static_cast<int32_t>(hfpDecoder.supportedDynamicRanges[i]));
+                UT_LOG_INFO("Validated dynamic range: %d", static_cast<int32_t>(dynRange));
+                UT_ASSERT_EQUAL(static_cast<int32_t>(dynRange), static_cast<int32_t>(*it));
             }
 
-            // Validate colorimetries
-            UT_ASSERT_EQUAL(capabilities.supportedColorimetries.size(),
-                            hfpDecoder.supportedColorimetries.size());
-            for (size_t i = 0; i < capabilities.supportedColorimetries.size(); ++i)
+            // Validate colorimetries (order-independent)
+            UT_ASSERT_EQUAL(capabilities.supportedColorimetries.size(), hfpDecoder.supportedColorimetries.size());
+            for (const auto& colorimetry : capabilities.supportedColorimetries)
             {
-                UT_LOG_INFO("Validating colorimetry index %zu", i);
-                if (static_cast<int32_t>(capabilities.supportedColorimetries[i]) !=
-                    static_cast<int32_t>(hfpDecoder.supportedColorimetries[i])) {
-                    UT_LOG_ERROR("Colorimetry mismatch at index %zu: capabilities=%d, hfpDecoder=%d",
-                                 i, static_cast<int32_t>(capabilities.supportedColorimetries[i]),
-                                 static_cast<int32_t>(hfpDecoder.supportedColorimetries[i]));
+                auto it = std::find_if(
+                    hfpDecoder.supportedColorimetries.begin(),
+                    hfpDecoder.supportedColorimetries.end(),
+                    [&colorimetry](const auto& hfpColorimetry) {
+                        return static_cast<int32_t>(colorimetry) == static_cast<int32_t>(hfpColorimetry);
+                    });
+                if (it == hfpDecoder.supportedColorimetries.end())
+                {
+                    UT_LOG_ERROR("Colorimetry %d not found in hfpDecoder for decoder ID: %d", static_cast<int32_t>(colorimetry), decoderId);
                     continue;
                 }
-                UT_ASSERT_EQUAL(static_cast<int32_t>(capabilities.supportedColorimetries[i]),
-                                static_cast<int32_t>(hfpDecoder.supportedColorimetries[i]));
+                UT_LOG_INFO("Validated colorimetry: %d", static_cast<int32_t>(colorimetry));
+                UT_ASSERT_EQUAL(static_cast<int32_t>(colorimetry), static_cast<int32_t>(*it));
             }
-            break;        }
+            break;
+        }
     }
     UT_LOG_INFO("Completed validation for decoder ID: %d", decoderId);
 }
