@@ -107,106 +107,6 @@
 #include "vts_avbuffer.h"
 #include "vts_helper_functions.h"
 
-/*
-#ifdef ENABLE_UT_INFO_LOGGING
-#define UT_LOG_LEVEL_NONE 0
-#define UT_LOG_LEVEL_ERROR 1
-#define UT_LOG_LEVEL_WARNING 2
-#define UT_LOG_LEVEL_INFO 3
-#define UT_LOG_LEVEL_DEBUG 4
-
-#if UT_LOG_LEVEL <= UT_LOG_LEVEL_DEBUG
-#if UT_LOG_LEVEL <= UT_LOG_LEVEL_INFO
-
-#ifdef UT_LOG_DEBUG
-#undef UT_LOG_DEBUG
-#define UT_LOG_DEBUG(...)
-#endif
-
-#if UT_LOG_LEVEL <= UT_LOG_LEVEL_WARNING
-
-#ifdef UT_LOG_INFO
-#undef UT_LOG_INFO
-#define UT_LOG_INFO(...)
-#endif
-
-#if UT_LOG_LEVEL <= UT_LOG_LEVEL_ERROR
-
-#ifdef UT_LOG_WARNING
-#undef UT_LOG_WARNING
-#define UT_LOG_WARNING(...)
-#endif
-
-#if UT_LOG_LEVEL == UT_LOG_LEVEL_NONE
-
-#ifdef UT_LOG_ERROR
-#undef UT_LOG_ERROR
-#define UT_LOG_ERROR(...)
-#endif
-
-#endif //UT_LOG_LEVEL_NONE
-#endif //UT_LOG_LEVEL_ERROR
-#endif //UT_LOG_LEVEL_WARNING
-#endif //UT_LOG_LEVEL_INFO
-#endif //UT_LOG_LEVEL_DEBUG
-
-#else //ENABLE_UT_INFO_LOGGING
-*/
-
-
-
-#ifndef ENABLE_UT_INFO_LOGGING
-    // Only WARNING and ERROR logs are enabled; DEBUG and INFO are disabled
-    #ifdef UT_LOG_DEBUG
-        #undef UT_LOG_DEBUG
-    #endif
-    #define UT_LOG_DEBUG(...)
-    #ifdef UT_LOG_INFO
-        #undef UT_LOG_INFO
-    #endif
-    #define UT_LOG_INFO(...)
-#else
-    // ENABLE_UT_INFO_LOGGING is defined: use UT_LOG_LEVEL to control log macros
-    #define UT_LOG_LEVEL_NONE    0
-    #define UT_LOG_LEVEL_ERROR   1
-    #define UT_LOG_LEVEL_WARNING 2
-    #define UT_LOG_LEVEL_INFO    3
-    #define UT_LOG_LEVEL_DEBUG   4
-
-    #ifndef UT_LOG_LEVEL
-        #define UT_LOG_LEVEL UT_LOG_LEVEL_INFO
-    #endif
-
-    // DEBUG
-    #if UT_LOG_LEVEL < UT_LOG_LEVEL_DEBUG
-        #ifdef UT_LOG_DEBUG
-            #undef UT_LOG_DEBUG
-        #endif
-        #define UT_LOG_DEBUG(...)
-    #endif
-    // INFO
-    #if UT_LOG_LEVEL < UT_LOG_LEVEL_INFO
-        #ifdef UT_LOG_INFO
-            #undef UT_LOG_INFO
-        #endif
-        #define UT_LOG_INFO(...)
-    #endif
-    // WARNING
-    #if UT_LOG_LEVEL < UT_LOG_LEVEL_WARNING
-        #ifdef UT_LOG_WARNING
-            #undef UT_LOG_WARNING
-        #endif
-        #define UT_LOG_WARNING(...)
-    #endif
-    // ERROR
-    #if UT_LOG_LEVEL < UT_LOG_LEVEL_ERROR
-        #ifdef UT_LOG_ERROR
-            #undef UT_LOG_ERROR
-        #endif
-        #define UT_LOG_ERROR(...)
-    #endif
-#endif
-
 #include "com/rdk/hal/videodecoder/IVideoDecoderManager.h"
 #include "com/rdk/hal/videodecoder/IVideoDecoderController.h"
 #include "com/rdk/hal/videodecoder/IVideoDecoderEventListener.h"
@@ -246,6 +146,58 @@ static constexpr int VIDEO_MAX_FINAL_STATE_WAIT_MS = 500;
 extern sp<IVideoDecoderManager>                  gVideoDecoderManager;
 extern std::vector<IVideoDecoder::Id>            decoderIds;
 extern std::vector<sp<IVideoDecoderController>>  controllers;
+
+#ifndef ENABLE_UT_INFO_LOGGING
+    // Only WARNING and ERROR logs are enabled; DEBUG and INFO are disabled
+    #ifdef UT_LOG_DEBUG
+        #undef UT_LOG_DEBUG
+    #endif
+    #define UT_LOG_DEBUG(...)
+    #ifdef UT_LOG_INFO
+        #undef UT_LOG_INFO
+    #endif
+    #define UT_LOG_INFO(...)
+#else //ENABLE_UT_INFO_LOGGING
+    // ENABLE_UT_INFO_LOGGING is defined: use UT_LOG_LEVEL to control log macros
+    #define UT_LOG_LEVEL_NONE    0
+    #define UT_LOG_LEVEL_ERROR   1
+    #define UT_LOG_LEVEL_WARNING 2
+    #define UT_LOG_LEVEL_INFO    3
+    #define UT_LOG_LEVEL_DEBUG   4
+
+    #ifndef UT_LOG_LEVEL
+        #define UT_LOG_LEVEL UT_LOG_LEVEL_INFO
+    #endif
+
+    // DEBUG
+    #if UT_LOG_LEVEL < UT_LOG_LEVEL_DEBUG
+        #ifdef UT_LOG_DEBUG
+            #undef UT_LOG_DEBUG
+        #endif
+        #define UT_LOG_DEBUG(...)
+    #endif
+    // INFO
+    #if UT_LOG_LEVEL < UT_LOG_LEVEL_INFO
+        #ifdef UT_LOG_INFO
+            #undef UT_LOG_INFO
+        #endif
+        #define UT_LOG_INFO(...)
+    #endif
+    // WARNING
+    #if UT_LOG_LEVEL < UT_LOG_LEVEL_WARNING
+        #ifdef UT_LOG_WARNING
+            #undef UT_LOG_WARNING
+        #endif
+        #define UT_LOG_WARNING(...)
+    #endif
+    // ERROR
+    #if UT_LOG_LEVEL < UT_LOG_LEVEL_ERROR
+        #ifdef UT_LOG_ERROR
+            #undef UT_LOG_ERROR
+        #endif
+        #define UT_LOG_ERROR(...)
+    #endif
+#endif //ENABLE_UT_INFO_LOGGING
 
 #define VIDEO_DECODER_TEST_CONFIG_PATH "./videodecoder_test_configuration/vts_l3_VideoDecoder_test_config.yaml"
 #define VIDEO_DECODER_STREAM_CONFIG_PATH "./videodecoder_test_configuration/vts_stream_list.yaml"
@@ -1515,7 +1467,7 @@ public:
         DecodedVideoFrame_t frame;
         frame.receiveTime = std::chrono::steady_clock::now();
 
-        UT_LOG_INFO("onFrameOutput received: nsPresentationTime=%lld, frameBufferHandle=0x%016" PRIx64 "", nsPresentationTime, frameBufferHandle);
+        UT_LOG_INFO("[Video DecoderID: %d] onFrameOutput received: nsPresentationTime=%lld, frameBufferHandle=0x%016" PRIx64 "", mDecoderID, nsPresentationTime, frameBufferHandle);
 
         frame.framePTS = nsPresentationTime;
         frame.isMetaAvailable = metadata.has_value();
@@ -1563,13 +1515,18 @@ public:
         return Status::ok();
     }
 
+    void setDecoderID(int32_t id)
+    {
+        mDecoderID = id;
+    }
     Status onUserDataOutput(int64_t nsPresentationTime, const ::std::vector<uint8_t>& userData) override
     {
-        UT_LOG_INFO("onUserDataOutput received");
+        UT_LOG_INFO("[Video DecoderID: %d] onUserDataOutput received", mDecoderID);
         return Status::ok();
     }
 
-    bool getNextFrame(DecodedVideoFrame_t& frame, std::chrono::milliseconds timeout) {
+    bool getNextFrame(DecodedVideoFrame_t& frame, std::chrono::milliseconds timeout)
+    {
         std::unique_lock<std::mutex> lock(mMutex);
         if (mCV.wait_for(lock, timeout, [this]() { return !mDecodedFrames.empty(); })) {
             frame = std::move(mDecodedFrames.front()); // Move is now possible
@@ -1580,6 +1537,7 @@ public:
     }
 
 private:
+    int32_t mDecoderID = -1;
     std::mutex mMutex;
     std::condition_variable mCV;
     std::deque<DecodedVideoFrame_t> mDecodedFrames;
@@ -1604,7 +1562,7 @@ public:
     }
     Status onStateChanged(::com::rdk::hal::State oldState, ::com::rdk::hal::State newState) override
     {
-        UT_LOG("[Video DecoderID: %d] State Change received: %s -> %s", mDecoderID, ::com::rdk::hal::toString(oldState).c_str(), ::com::rdk::hal::toString(newState).c_str());
+        UT_LOG_INFO("[Video DecoderID: %d] State Change received: %s -> %s", mDecoderID, ::com::rdk::hal::toString(oldState).c_str(), ::com::rdk::hal::toString(newState).c_str());
         std::lock_guard<std::mutex> lock(mMutex);
         mStateChanges.push_back({oldState, newState});
         mCond.notify_one();
@@ -1656,7 +1614,7 @@ private:
     ::com::rdk::hal::State mCurrentState;
     std::vector<std::pair<::com::rdk::hal::State, ::com::rdk::hal::State>> mStateChanges;
     std::vector<int32_t> mErrors;
-    int32_t mDecoderID;
+    int32_t mDecoderID = -1;
 };
 
 // AVBufferSpaceListener declaration
@@ -1687,6 +1645,8 @@ public:
         mAVbufferHelper = avbufferHelper;
         mIsSinkAttached = isSinkAttached;
         mTunnelMode = tunnelMode;
+        mEventListener->setDecoderID(decoderId.value);
+        mControlListener->setDecoderID(decoderId.value);
     }
     void run(bool concurrentDecodeConsume);
     void getDecoderMetrics(int32_t &framesDecoded, int32_t &decodeErrors, int32_t &framesDropped);

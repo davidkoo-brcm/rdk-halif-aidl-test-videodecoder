@@ -1861,9 +1861,6 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, decodeBuffer_neg)
             VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
                                           controllerListener, videoDecoderController, true);
 
-            bool result = false;
-            Status status;
-
             // Test Case 3: Invalid State - Decoder Not Started
             VIDEODECODER_DECODEBUFFER_FAILURE(videoDecoderController, 3000000, 1, Status::EX_ILLEGAL_STATE);
 

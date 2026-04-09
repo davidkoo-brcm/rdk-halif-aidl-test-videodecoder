@@ -159,6 +159,9 @@ class VTS_L2_VideoDecoder : public UTCore {
 
                 VIDEODECODER_GETCAPABILITIES(videoDecoder,capabilities);
 
+                eventListener->setDecoderID(_decoderId.value);
+                controlListener->setDecoderID(_decoderId.value);
+
                 mVideoDecoderList.push_back({videoDecoder, controlListener, eventListener, capabilities});
             }
             // Custom setup code here, e.g., initialize decoder mocks or profiles

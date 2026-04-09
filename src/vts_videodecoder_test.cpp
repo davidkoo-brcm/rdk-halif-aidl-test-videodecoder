@@ -64,6 +64,8 @@ void videoDecoderTest::run(bool concurrentDecodeConsume)
 {
     UT_LOG_DEBUG("concurrentDecodeConsume %d ",concurrentDecodeConsume);
 
+    thread consumerThread;
+
     mFrameData.clear();
     mInputBuffer.clear();
 
@@ -77,14 +79,21 @@ void videoDecoderTest::run(bool concurrentDecodeConsume)
     if (concurrentDecodeConsume)
     {
         UT_LOG_DEBUG("Start decoderThreadFunc & consumerThreadFunc");
+
+        if(!mIsSinkAttached)
+        {
+            // If sink is not attached, we need to validate decoded frames in a separate thread
+            consumerThread = thread(&videoDecoderTest::validateDecodedFrame, this);
+        }
         setupVideoDecoder();
 
         startDecoding();
 
-        if(!mIsSinkAttached)
+        if(!mIsSinkAttached && consumerThread.joinable())
         {
             // If sink is not attached, we need to validate decoded frames here
-            validateDecodedFrame();
+            //validateDecodedFrame();
+            consumerThread.join();
         }
 
         teardownDecoder();
