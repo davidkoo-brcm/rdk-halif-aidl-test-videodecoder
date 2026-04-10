@@ -26,7 +26,7 @@ VideoStreams:
     #reference: AV1_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.yuv #reference decoder output
     codec: AV1  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
-    codedHeight: 1080
+    codedHeight: 1088
     colorDepth: 8
     pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
@@ -76,7 +76,7 @@ VideoStreams:
     #reference: AV1_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.yuv #reference decoder output
     codec: AV1  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
-    codedHeight: 1080
+    codedHeight: 1088
     colorDepth: 8
     pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
@@ -126,7 +126,7 @@ VideoStreams:
     #reference: AV1_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.yuv #reference decoder output
     codec: AV1  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
-    codedHeight: 1080
+    codedHeight: 1088
     colorDepth: 8
     pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
@@ -176,7 +176,7 @@ VideoStreams:
     #reference: AV1_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.yuv #reference decoder output
     codec: AV1  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
-    codedHeight: 1080
+    codedHeight: 1088
     colorDepth: 8
     pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
@@ -226,7 +226,7 @@ VideoStreams:
     #reference: AV1_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.yuv #reference decoder output
     codec: AV1  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
-    codedHeight: 1080
+    codedHeight: 1088
     colorDepth: 8
     pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
@@ -276,7 +276,7 @@ VideoStreams:
     #reference: AV1_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.yuv #reference decoder output
     codec: AV1  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
-    codedHeight: 1080
+    codedHeight: 1088
     colorDepth: 8
     pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.

@@ -170,11 +170,11 @@ class VTS_L2_VideoDecoder : public UTCore {
         void checkCompleteStateTransition(sp<IVideoDecoder> decoder, sp<VideoDecoderEventListener> eventListener, ::com::rdk::hal::State oldState, ::com::rdk::hal::State intermediateState, ::com::rdk::hal::State newState)
         {
             // Wait for the intermediate state
-            eventListener->waitForState(intermediateState, std::chrono::milliseconds(VIDEO_MAX_TRANSITORY_STATE_WAIT_MS));
+            std::this_thread::sleep_for(std::chrono::milliseconds(VIDEO_MAX_TRANSITORY_STATE_WAIT_MS));
+
             // Check if the transition from old to intermediate state occurred
             UT_ASSERT_TRUE(eventListener->checkStateTransistion(oldState, intermediateState));
-            // Wait for the final new state
-            eventListener->waitForState(newState, std::chrono::milliseconds(VIDEO_MAX_FINAL_STATE_WAIT_MS));
+
             // Check if the transition from intermediate to new state occurred
             UT_ASSERT_TRUE(eventListener->checkStateTransistion(intermediateState, newState));
         }

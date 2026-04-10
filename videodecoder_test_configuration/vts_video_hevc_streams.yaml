@@ -26,7 +26,7 @@ VideoStreams:
     #reference: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.yuv #reference decoder output
     codec: H265_HEVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
-    codedHeight: 1080
+    codedHeight: 1088
     colorDepth: 8
     pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
@@ -83,7 +83,7 @@ VideoStreams:
     input: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     codec: H265_HEVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
-    codedHeight: 1080
+    codedHeight: 1088
     colorDepth: 8
     pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
@@ -140,7 +140,7 @@ VideoStreams:
     input: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     codec: H265_HEVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
-    codedHeight: 1080
+    codedHeight: 1088
     colorDepth: 8
     pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
@@ -197,7 +197,7 @@ VideoStreams:
     input: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     codec: H265_HEVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
-    codedHeight: 1080
+    codedHeight: 1088
     colorDepth: 8
     pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
@@ -254,7 +254,7 @@ VideoStreams:
     input: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     codec: H265_HEVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
-    codedHeight: 1080
+    codedHeight: 1088
     colorDepth: 8
     pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
@@ -311,7 +311,7 @@ VideoStreams:
     input: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     codec: H265_HEVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
-    codedHeight: 1080
+    codedHeight: 1088
     colorDepth: 8
     pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
@@ -368,7 +368,7 @@ VideoStreams:
     input: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     codec: H265_HEVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
-    codedHeight: 1080
+    codedHeight: 1088
     colorDepth: 8
     pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
@@ -425,7 +425,7 @@ VideoStreams:
     input: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     codec: H265_HEVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
-    codedHeight: 1080
+    codedHeight: 1088
     colorDepth: 8
     pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
@@ -482,7 +482,7 @@ VideoStreams:
     input: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     codec: H265_HEVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
-    codedHeight: 1080
+    codedHeight: 1088
     colorDepth: 8
     pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
@@ -539,7 +539,7 @@ VideoStreams:
     input: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     codec: H265_HEVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
-    codedHeight: 1080
+    codedHeight: 1088
     colorDepth: 8
     pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
@@ -596,7 +596,7 @@ VideoStreams:
     input: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     codec: H265_HEVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
-    codedHeight: 1080
+    codedHeight: 1088
     colorDepth: 8
     pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.

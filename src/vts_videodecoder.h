@@ -1569,16 +1569,6 @@ public:
         return Status::ok();
     }
 
-    void waitForState(::com::rdk::hal::State targetState, std::chrono::milliseconds timeout)
-    {
-        std::unique_lock<std::mutex> lock(mMutex);
-        if (!mCond.wait_for(lock, timeout, [this, targetState] {
-            return !mStateChanges.empty() && mStateChanges.back().second == targetState;
-        })) {
-            UT_LOG_ERROR("Timeout waiting for state change to %s", ::com::rdk::hal::toString(targetState).c_str());
-        }
-    }
-
     bool checkStateTransistion(::com::rdk::hal::State oldState, ::com::rdk::hal::State newState)
     {
         for(const auto& statePair : mStateChanges)

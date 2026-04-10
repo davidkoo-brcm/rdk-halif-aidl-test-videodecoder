@@ -331,7 +331,6 @@ bool videoDecoderTest::validateDecodedFrame()
                 }
             }
 
-
             if(decodedFrame.frameBufferHandle != -1)
             {
                 //TODO: Need to validate buffer content as well. Currently just checking if buffer handle is valid and freeing it.
@@ -419,6 +418,19 @@ bool videoDecoderTest::validateDecodedFrame()
         }
 
     }
+
+    int32_t exptectedEOSFrames = 1;
+    int32_t expectedDiscontinuityFrames = 0;
+    if((mTestConfiguration.eosPts != -1) ||(mTestConfiguration.flushPts !=-1))
+    {
+        exptectedEOSFrames++; // If EOS is not signaled, we should not receive any EOS frames
+    }
+    if(mTestConfiguration.discontinuityPts != -1)
+    {
+        expectedDiscontinuityFrames++; // If discontinuity is not signaled, we should not receive any discontinuity frames
+    }
+    UT_ASSERT_EQUAL(eosFramesReceived, exptectedEOSFrames);
+    UT_ASSERT_EQUAL(discontinuityFramesReceived, expectedDiscontinuityFrames);
 
     totalOnErrorsReceived = mEventListener->getErrorCount();
     if((mTestConfiguration.flushResetPts == -1) && (mTestConfiguration.flushPts==-1))
