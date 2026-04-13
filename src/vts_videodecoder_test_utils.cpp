@@ -239,7 +239,7 @@ bool videoDecoderTest::makeFrame()
                     fileSize, std::numeric_limits<uint32_t>::max());
         return false;
     }
-    UT_LOG_INFO("Input file size: %llu bytes", fileSize);
+    UT_LOG_DEBUG("Input file size: %llu bytes", fileSize);
 
     mInputBuffer.clear();
     mInputBuffer.resize(fileSize);
@@ -284,7 +284,7 @@ bool videoDecoderTest::makeFrame()
                 return false;
             }
             mFrameData.emplace_back(offset, size, pts, isErrorFrame);
-            UT_LOG_INFO("Codec:%d Frame from frameDetails: offset=%llu, size=%u, pts=%lld, errorFrame=%d",
+            UT_LOG_DEBUG("Codec:%d Frame from frameDetails: offset=%llu, size=%u, pts=%lld, errorFrame=%d",
                         mTestConfiguration.codec, offset, size, pts, isErrorFrame);
             offset += size;
         }
@@ -303,8 +303,8 @@ bool videoDecoderTest::makeFrame()
             bool isErrorFrame = (i < mTestConfiguration.frameDetails.size()) ?
                                 std::get<2>(mTestConfiguration.frameDetails[i]) : false;
             mFrameData.emplace_back(offset, size, pts, isErrorFrame);
-            UT_LOG_INFO("Parsed frame: Codec:%d offset=%llu, size=%u, pts=%lld, errorFrame=%d",
-                        mTestConfiguration.codec, offset, size, pts, isErrorFrame);
+            UT_LOG_DEBUG("Parsed frame: Codec:%d offset=%llu, size=%u, pts=%lld, errorFrame=%d",
+                          mTestConfiguration.codec, offset, size, pts, isErrorFrame);
         }
     }
 

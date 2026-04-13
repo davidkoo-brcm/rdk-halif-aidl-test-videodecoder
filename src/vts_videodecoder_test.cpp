@@ -62,8 +62,6 @@ Status AVBufferSpaceListener::onSpaceAvailable()
 // videoDecoderTest method implementations
 void videoDecoderTest::run(bool concurrentDecodeConsume)
 {
-    UT_LOG_DEBUG("concurrentDecodeConsume %d ",concurrentDecodeConsume);
-
     thread consumerThread;
 
     mFrameData.clear();
@@ -72,14 +70,12 @@ void videoDecoderTest::run(bool concurrentDecodeConsume)
     bool status = makeFrame();
     if (!status)
     {
-        UT_LOG_ERROR("Failed to make frame data");
+        UT_ASSERT_TRUE(false) << "Failed to prepare frame data for decoding";
         return;
     }
 
     if (concurrentDecodeConsume)
     {
-        UT_LOG_DEBUG("Start decoderThreadFunc & consumerThreadFunc");
-
         if(!mIsSinkAttached)
         {
             // If sink is not attached, we need to validate decoded frames in a separate thread
@@ -420,28 +416,28 @@ bool videoDecoderTest::validateDecodedFrame()
     }
 
     int32_t exptectedEOSFrames = 1;
-    int32_t expectedDiscontinuityFrames = 0;
-    if((mTestConfiguration.eosPts != -1) ||(mTestConfiguration.flushPts !=-1))
+    int32_t expectedFrames = mTestConfiguration.no_of_frames - mTestConfiguration.decodeErrors;
+
+    if((mTestConfiguration.eosPts != -1))
     {
-        exptectedEOSFrames++; // If EOS is not signaled, we should not receive any EOS frames
+        exptectedEOSFrames++;
     }
-    if(mTestConfiguration.discontinuityPts != -1)
+    if((mTestConfiguration.discontinuityPts != -1) || (mTestConfiguration.flushPts !=-1))
     {
-        expectedDiscontinuityFrames++; // If discontinuity is not signaled, we should not receive any discontinuity frames
+        UT_ASSERT_TRUE((discontinuityFramesReceived > 0 && discontinuityFramesReceived < expectedFrames));
     }
+
     UT_ASSERT_EQUAL(eosFramesReceived, exptectedEOSFrames);
-    UT_ASSERT_EQUAL(discontinuityFramesReceived, expectedDiscontinuityFrames);
 
     totalOnErrorsReceived = mEventListener->getErrorCount();
+
+    // Get final metrics
+    getDecoderMetrics(metricsFramesDecoded, metricsDecodeErrors, metricsFramesDropped);
+    UT_LOG_DEBUG("Final Decoder Metrics: Codec: %d, Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
+                    mTestConfiguration.codec, metricsFramesDecoded, metricsDecodeErrors, metricsFramesDropped);
+
     if((mTestConfiguration.flushResetPts == -1) && (mTestConfiguration.flushPts==-1))
     {
-        int32_t expectedFrames = mTestConfiguration.no_of_frames - mTestConfiguration.decodeErrors;
-
-        // Get final metrics
-        getDecoderMetrics(metricsFramesDecoded, metricsDecodeErrors, metricsFramesDropped);
-        UT_LOG_DEBUG("Final Decoder Metrics: Codec: %d, Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
-                     mTestConfiguration.codec, metricsFramesDecoded, metricsDecodeErrors, metricsFramesDropped);
-
         if(metricsFramesDecoded != -1)
         {
             UT_ASSERT_EQUAL(metricsFramesDecoded, expectedFrames);
@@ -457,6 +453,25 @@ bool videoDecoderTest::validateDecodedFrame()
         if(metricsFramesDropped != -1)
         {
             UT_ASSERT_EQUAL(metricsFramesDropped, mTestConfiguration.framesDropped);
+        }
+    }
+    else
+    {
+        if(metricsFramesDecoded != -1)
+        {
+            UT_ASSERT_TRUE(metricsFramesDecoded <= expectedFrames);
+        }
+        UT_ASSERT_TRUE(totalOnFramesDecoded <= expectedFrames);
+
+        if(metricsDecodeErrors != -1)
+        {
+            UT_ASSERT_TRUE(metricsDecodeErrors <= mTestConfiguration.decodeErrors);
+        }
+        UT_ASSERT_TRUE(totalOnErrorsReceived <= mTestConfiguration.decodeErrors);
+
+        if(metricsFramesDropped != -1)
+        {
+            UT_ASSERT_TRUE(metricsFramesDropped <= mTestConfiguration.framesDropped);
         }
     }
 

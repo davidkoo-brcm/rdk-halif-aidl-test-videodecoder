@@ -1221,10 +1221,13 @@ do { \
 #define VIDEODECODER_DECODEBUFFER_SUCCESS(controller, pts, bufferHandle) \
     do { \
         bool decodeResult; \
+        UT_LOG_INFO("Calling decodeBuffer(IN:pts=[%lld], IN:bufferHandle=[0x%016" PRIx64 "])", \
+                    static_cast<long long>(pts), static_cast<long long>(bufferHandle)); \
         Status status = controller->decodeBuffer(pts, bufferHandle, &decodeResult); \
-        UT_LOG_INFO("decodeBuffer(pts=%lld, bufferHandle=0x%016" PRIx64 ") status=%s, result=%s", \
+        UT_LOG_INFO("Result decodeBuffer(IN:pts=[%lld], IN:bufferHandle=[0x%016" PRIx64 "]) status=[isOK:%s, exception:%s], result=%s", \
                     static_cast<long long>(pts), static_cast<long long>(bufferHandle), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()), \
                     decodeResult ? "true" : "false"); \
         UT_ASSERT_TRUE(status.isOk()) << "decodeBuffer failed"; \
         UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
@@ -1234,10 +1237,14 @@ do { \
 #define VIDEODECODER_DECODEBUFFER_FAILURE(controller, pts, bufferHandle, expectedException) \
     do { \
         bool decodeResult; \
+        UT_LOG_INFO("Calling decodeBuffer(IN:pts=[%lld], IN:bufferHandle=[0x%016" PRIx64 "])", \
+                    static_cast<long long>(pts), static_cast<long long>(bufferHandle)); \
         Status status = controller->decodeBuffer(pts, bufferHandle, &decodeResult); \
-        UT_LOG_INFO("decodeBuffer(pts=%lld, bufferHandle=0x%016" PRIx64 ") status=%s", \
+        UT_LOG_INFO("Result decodeBuffer(IN:pts=[%lld], IN:bufferHandle=[0x%016" PRIx64 "]) status=[isOK:%s, exception:%s], result=%s", \
                     static_cast<long long>(pts), static_cast<long long>(bufferHandle), \
-                    UT_Control_GetMapString(bool_mapTable, status.isOk())); \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()), \
+                    decodeResult ? "true" : "false"); \
         if (expectedException != Status::EX_NONE) { \
             UT_ASSERT_TRUE(status.exceptionCode() == expectedException) \
                 << "decodeBuffer returned unexpected exception"; \

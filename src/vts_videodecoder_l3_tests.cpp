@@ -157,33 +157,53 @@ public:
         }
     }
 
+    bool checkDecoderSupportsConfig(const IVideoDecoder::Id& decoderId, const videodecoder::Capabilities* capabilities,
+                                    const videoDecoderTestConfiguration_t& testConfig, bool secureDecode)
+    {
+        auto it = std::find_if(gVideodecoders_hfp.begin(), gVideodecoders_hfp.end(),
+            [&decoderId](const decoder& item) { return item.id == decoderId.value; });
+        if (it == gVideodecoders_hfp.end())
+        {
+            UT_LOG_WARNING("[DecoderID: %d] Not available", decoderId.value);
+            return false;
+        }
+
+        if (secureDecode && !capabilities->supportsSecure)
+        {
+            UT_LOG_WARNING("Decoder doesn't support secure decoding");
+            return false;
+        }
+
+        auto result = std::find_if(capabilities->supportedCodecs.begin(), capabilities->supportedCodecs.end(),
+                                    [&testConfig](const videodecoder::CodecCapabilities& cap) { return cap.codec == testConfig.codec; });
+        if (result == capabilities->supportedCodecs.end())
+        {
+            UT_LOG_WARNING("Decoder doesn't support Codec [%s]", videodecoder::toString(testConfig.codec).c_str());
+            return false;
+        }
+        return true;
+    }
+
     void runSequentialDecode(videoDecoderTestConfiguration_t& testConfig, bool secureDecode, bool tunnelMode, bool concurrentDecodeConsume)
     {
+        int32_t activeDecoders = 0;
+
         for (const auto& [_decoderId, decoderHandle, controlListener, eventListener, capabilities] : mVideoDecoderList)
         {
             HeapMetrics beforeHeapMetrics, afterHeapMetrics;
             bool isSinkAttached = false;
 
-            if (secureDecode && !capabilities->supportsSecure)
+            if (!checkDecoderSupportsConfig(_decoderId, capabilities, testConfig, secureDecode))
             {
-                UT_LOG_INFO("Decoder [%d] doesn't support secure decoding", _decoderId);
-                continue;
-            }
-
-            auto result = std::find_if(capabilities->supportedCodecs.begin(), capabilities->supportedCodecs.end(),
-                [&testConfig](const com::rdk::hal::videodecoder::CodecCapabilities& cap) {
-                    return cap.codec == testConfig.codec;
-                });
-            if (result == capabilities->supportedCodecs.end())
-            {
-                UT_LOG_INFO("Decoder [%d] doesn't support Codec [%s]", _decoderId, videodecoder::toString(testConfig.codec).c_str());
+                UT_LOG_WARNING("Decoder [%d] doesn't support the required configuration", _decoderId.value);
                 continue;
             }
 
             AVBUFFER_GETMETRICS(mAVBufferManager, secureDecode, beforeHeapMetrics);
 
             videoDecoderTest decodeTest(_decoderId, decoderHandle, controlListener,
-                                   eventListener, mAVBufferManager, secureDecode, tunnelMode, testConfig,mAVbufferHelper, isSinkAttached);
+                                        eventListener, mAVBufferManager, secureDecode,
+                                        tunnelMode, testConfig,mAVbufferHelper, isSinkAttached);
 
             decodeTest.run(concurrentDecodeConsume);
 
@@ -192,7 +212,11 @@ public:
             UT_ASSERT_TRUE(beforeHeapMetrics.secure == afterHeapMetrics.secure);
             UT_ASSERT_TRUE(beforeHeapMetrics.bytesUsed == afterHeapMetrics.bytesUsed);
             UT_ASSERT_TRUE(beforeHeapMetrics.bytesTotal == afterHeapMetrics.bytesTotal);
+
+            activeDecoders++;
         }
+
+        UT_ASSERT_TRUE(activeDecoders > 0) << "No decoders support the requested configuration";
     }
 
     void runConcurrentDecode(videoDecoderTestConfiguration_t& testConfig, bool secureDecode, bool tunnelMode, bool concurrentDecodeConsume)
@@ -201,39 +225,18 @@ public:
         std::vector<std::future<void>> futures;
         HeapMetrics beforeHeapMetrics, afterHeapMetrics;
         bool isSinkAttached = false;
+        int32_t activeDecoders = 0;
 
         AVBUFFER_GETMETRICS(mAVBufferManager, secureDecode, beforeHeapMetrics);
 
-        size_t activeDecoders = 0;
         decoderTests.reserve(mVideoDecoderList.size());
         futures.reserve(mVideoDecoderList.size());
 
-        UT_LOG_INFO("Launching decoding for codec: %s, secure: %d, tunnel: %d, concurrentDecodeConsume: %d",
-                    videodecoder::toString(testConfig.codec).c_str(),
-                    secureDecode, tunnelMode, concurrentDecodeConsume);
-
         for (const auto& [_decoderId, decoderHandle, controlListener, eventListener, capabilities] : mVideoDecoderList)
         {
-            auto it = std::find_if(gVideodecoders_hfp.begin(), gVideodecoders_hfp.end(),
-                [_decoderId](const decoder& item) { return item.id == _decoderId.value; });
-            if (it == gVideodecoders_hfp.end())
+            if (!checkDecoderSupportsConfig(_decoderId, capabilities, testConfig, secureDecode))
             {
-                UT_LOG_INFO("[DecoderID: %d] Not available", _decoderId.value);
-                continue;
-            }
-
-            if (secureDecode && !capabilities->supportsSecure)
-            {
-                UT_LOG_INFO("[DecoderID: %d] Doesn't support secure decoding", _decoderId.value);
-                continue;
-            }
-
-            auto result = std::find_if(capabilities->supportedCodecs.begin(), capabilities->supportedCodecs.end(),
-                                    [&testConfig](const CodecCapabilities& cap) { return cap.codec == testConfig.codec; });
-            if (result == capabilities->supportedCodecs.end())
-            {
-                UT_LOG_INFO("[DecoderID: %d] Doesn't support Codec [%s]", _decoderId.value,
-                            videodecoder::toString(testConfig.codec).c_str());
+                UT_LOG_WARNING("[DecoderID: %d] Doesn't support the required configuration", _decoderId.value);
                 continue;
             }
 
@@ -244,12 +247,7 @@ public:
             activeDecoders++;
         }
 
-        if (activeDecoders == 0)
-        {
-            UT_LOG("ERROR", "No decoders support the requested configuration (codec: %s, secure: %d)",
-                videodecoder::toString(testConfig.codec).c_str(), secureDecode);
-            UT_ASSERT_TRUE(false) << "No valid decoders found";
-        }
+        UT_ASSERT_TRUE(activeDecoders > 0) << "No decoders support the requested configuration";
 
         for (auto& f : futures)
         {
@@ -261,48 +259,24 @@ public:
             }
         }
 
-        for (const auto& decoderTest : decoderTests)
-        {
-            int32_t framesDecoded, decodeErrors, framesDropped;
-            decoderTest->getDecoderMetrics(framesDecoded, decodeErrors, framesDropped);
-            UT_LOG_INFO("Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
-                        framesDecoded, decodeErrors, framesDropped);
-
-            size_t expectedFrames = testConfig.frameDetails.size();
-            UT_ASSERT_TRUE(framesDecoded == static_cast<int32_t>(expectedFrames))
-                << "Frame count mismatch: expected=" << expectedFrames << ", actual=" << framesDecoded;
-
-            int32_t expectedErrorFrames = std::count_if(testConfig.frameDetails.begin(),
-                                                        testConfig.frameDetails.end(),
-                                                        [](const auto& frame) { return std::get<2>(frame); });
-            UT_ASSERT_TRUE(decodeErrors == expectedErrorFrames)
-                << "Decode errors mismatch: expected=" << expectedErrorFrames << ", actual=" << decodeErrors;
-
-            UT_ASSERT_TRUE(framesDropped == 0) << "Unexpected frames dropped: " << framesDropped;
-        }
-
         AVBUFFER_GETMETRICS(mAVBufferManager, secureDecode, afterHeapMetrics);
 
-        if (beforeHeapMetrics.secure != afterHeapMetrics.secure ||
-            beforeHeapMetrics.bytesUsed != afterHeapMetrics.bytesUsed ||
-            beforeHeapMetrics.bytesTotal != afterHeapMetrics.bytesTotal)
-        {
-            UT_LOG("ERROR", "Heap metrics mismatch: "
-                "secure(before=%d, after=%d), bytesUsed(before=%zu, after=%zu), bytesTotal(before=%zu, after=%zu)",
-                beforeHeapMetrics.secure, afterHeapMetrics.secure,
-                beforeHeapMetrics.bytesUsed, afterHeapMetrics.bytesUsed,
-                beforeHeapMetrics.bytesTotal, afterHeapMetrics.bytesTotal);
-            UT_ASSERT_TRUE(false) << "Heap metrics mismatch";
-        }
+        UT_ASSERT_TRUE(beforeHeapMetrics.secure == afterHeapMetrics.secure);
+        UT_ASSERT_TRUE(beforeHeapMetrics.bytesUsed == afterHeapMetrics.bytesUsed);
+        UT_ASSERT_TRUE(beforeHeapMetrics.bytesTotal == afterHeapMetrics.bytesTotal);
     }
 
     void runTest(const char *testName, bool secureMode, bool tunnelMode, bool concurrentMode)
     {
         vector<videoDecoderTestConfiguration_t> testConfiguration;
 
-        UT_LOG_INFO("start parsing concurrentMode %d ", concurrentMode);
-        vts_videodecoder_parse_testconfig(gVideoDecoderTestConfiguration, VIDEODECODERMGR, gTestGroup, testName, testConfiguration);
-        UT_LOG_INFO("End parsing");
+        UT_status_t status = vts_videodecoder_parse_testconfig(gVideoDecoderTestConfiguration, VIDEODECODERMGR, gTestGroup, testName, testConfiguration);
+        if (status != UT_STATUS_OK || testConfiguration.empty())
+        {
+            UT_LOG_ERROR("Failed to parse test configuration for test: %s", testName);
+            UT_ASSERT_TRUE(false) << "Test configuration parsing failed";
+            return;
+        }
 
         if (concurrentMode)
         {
