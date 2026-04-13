@@ -1543,6 +1543,12 @@ public:
         return false;
     }
 
+    void resetQueues()
+    {
+        std::lock_guard<std::mutex> lock(mMutex);
+        mDecodedFrames.clear();
+    }
+
 private:
     int32_t mDecoderID = -1;
     std::mutex mMutex;
@@ -1585,24 +1591,36 @@ public:
         }
         return false;
     }
+
     std::vector<int32_t> getErrors() const
     {
         std::lock_guard<std::mutex> lock(mMutex);
         return mErrors;
     }
+
     int32_t getErrorCount() const
     {
         std::lock_guard<std::mutex> lock(mMutex);
         return mErrors.size();
     }
+
     void setDecoderID(int32_t id)
     {
         mDecoderID = id;
     }
+
     static int32_t getUsedDecoder()
     {
         return VideoDecoderEventListener::mUsedDecoderID;
     }
+
+    void resetQueues()
+    {
+        std::lock_guard<std::mutex> lock(mMutex);
+        mStateChanges.clear();
+        mErrors.clear();
+    }
+
 private:
     mutable std::mutex mMutex;
     std::condition_variable mCV;

@@ -193,6 +193,9 @@ public:
             HeapMetrics beforeHeapMetrics, afterHeapMetrics;
             bool isSinkAttached = false;
 
+            eventListener->resetQueues();
+            controlListener->resetQueues();
+
             if (!checkDecoderSupportsConfig(_decoderId, capabilities, testConfig, secureDecode))
             {
                 UT_LOG_WARNING("Decoder [%d] doesn't support the required configuration", _decoderId.value);
@@ -234,6 +237,9 @@ public:
 
         for (const auto& [_decoderId, decoderHandle, controlListener, eventListener, capabilities] : mVideoDecoderList)
         {
+            eventListener->resetQueues();
+            controlListener->resetQueues();
+
             if (!checkDecoderSupportsConfig(_decoderId, capabilities, testConfig, secureDecode))
             {
                 UT_LOG_WARNING("[DecoderID: %d] Doesn't support the required configuration", _decoderId.value);

@@ -108,19 +108,19 @@ void videoDecoderTest::getDecoderMetrics(int32_t &framesDecoded, int32_t &decode
     framesDecoded = decodeErrors = framesDropped = -1;
 
     VIDEODECODER_GET_PROPERTY_SUCCESS(mDecoderHandle, videodecoder::Property::METRIC_FRAMES_DECODED, propertyValue);
-    if (!propertyValue.has_value() || !propertyValue->value.has_value())
+    if (propertyValue.has_value() && propertyValue->value.has_value())
     {
         framesDecoded = propertyValue->value->get<PropertyValue::Value::Tag::intValue>();
     }
 
     VIDEODECODER_GET_PROPERTY_SUCCESS(mDecoderHandle, videodecoder::Property::METRIC_DECODE_ERRORS, propertyValue);
-    if (!propertyValue.has_value() || !propertyValue->value.has_value())
+    if (propertyValue.has_value() && propertyValue->value.has_value())
     {
         decodeErrors = propertyValue->value->get<PropertyValue::Value::Tag::intValue>();
     }
 
     VIDEODECODER_GET_PROPERTY_SUCCESS(mDecoderHandle, videodecoder::Property::METRIC_FRAMES_DROPPED, propertyValue);
-    if (!propertyValue.has_value() || !propertyValue->value.has_value())
+    if (propertyValue.has_value() && propertyValue->value.has_value())
     {
         framesDropped = propertyValue->value->get<PropertyValue::Value::Tag::intValue>();
     }
