@@ -797,10 +797,10 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, getState_pos)
             UT_LOG_INFO("Testing getState for codec %d, decoder ID %d",
                         static_cast<int32_t>(_codec), _decoderId.value);
 
-            // Test getState - explicitly verify READY state after open
+            // Test getState - explicitly verify READY state before open
             ::com::rdk::hal::State state;
             VIDEODECODER_GETSTATE(videoDecoder, state);
-            UT_ASSERT_EQUAL(state, ::com::rdk::hal::State::CLOSED) << "State mismatch after open";
+            UT_ASSERT_EQUAL(state, ::com::rdk::hal::State::CLOSED) << "State mismatch before open";
         }
     }
 }

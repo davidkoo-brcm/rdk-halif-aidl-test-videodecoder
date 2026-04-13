@@ -96,6 +96,7 @@ void videoDecoderTest::run(bool concurrentDecodeConsume)
     }
     else
     {
+        //TODO: Not used currently, update implementation if required in future
         decodeAndConsumeVideoFrames();
     }
 }
@@ -415,19 +416,19 @@ bool videoDecoderTest::validateDecodedFrame()
 
     }
 
-    int32_t exptectedEOSFrames = 1;
+    int32_t expectedEOSFrames = 1;
     int32_t expectedFrames = mTestConfiguration.no_of_frames - mTestConfiguration.decodeErrors;
 
     if((mTestConfiguration.eosPts != -1))
     {
-        exptectedEOSFrames++;
+        expectedEOSFrames++;
     }
     if((mTestConfiguration.discontinuityPts != -1) || (mTestConfiguration.flushPts !=-1))
     {
         UT_ASSERT_TRUE((discontinuityFramesReceived > 0 && discontinuityFramesReceived < expectedFrames));
     }
 
-    UT_ASSERT_EQUAL(eosFramesReceived, exptectedEOSFrames);
+    UT_ASSERT_EQUAL(eosFramesReceived, expectedEOSFrames);
 
     totalOnErrorsReceived = mEventListener->getErrorCount();
 
@@ -544,7 +545,7 @@ void videoDecoderTest::decodeAndConsumeVideoFrames()
             UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
         if(isValidBuffer)
         {
-            UT_LOG_ERROR(" Encoded buffer not released by deecoder [handle:0x%llx]", videoBufferHandle);
+            UT_LOG_ERROR(" Encoded buffer not released by decoder [handle:0x%llx]", videoBufferHandle);
         }
     }
 

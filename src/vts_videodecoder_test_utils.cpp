@@ -33,9 +33,9 @@
  */
 
 /**
- * @file vts_videodecoder_test.cpp
+ * @file vts_videodecoder_test_utils.cpp
  *
- * @brief Contains the videoDecoderTest class implementation and frame parsing logic for video decoder testing.
+ * @brief Contains frame parsing and frame data preparation utilities for video decoder testing.
  */
 
 #include "vts_videodecoder.h"
@@ -47,6 +47,7 @@
 #include <deque>
 #include <chrono>
 #include <filesystem>
+#include <limits>
 #include <unistd.h> // For getpid()
 #include <sys/syscall.h> // For syscall(SYS_gettid)
 
