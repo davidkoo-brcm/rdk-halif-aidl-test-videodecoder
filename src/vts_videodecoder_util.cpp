@@ -772,6 +772,7 @@ void vts_videodecoder_helper_validateCapabilities(
                 if (it == hfpDecoder.supportedCodecs.end())
                 {
                     UT_LOG_ERROR("Codec %d not found in hfpDecoder for decoder ID: %d", static_cast<int32_t>(cap.codec), decoderId);
+                    UT_ASSERT_TRUE(false) << "Codec not found in hfpDecoder";
                     continue;
                 }
                 const auto& hfpCap = *it;
@@ -797,6 +798,7 @@ void vts_videodecoder_helper_validateCapabilities(
                 if (it == hfpDecoder.supportedDynamicRanges.end())
                 {
                     UT_LOG_ERROR("Dynamic range %d not found in hfpDecoder for decoder ID: %d", static_cast<int32_t>(dynRange), decoderId);
+                    UT_ASSERT_TRUE(false) << "Dynamic range not found in hfpDecoder";
                     continue;
                 }
                 UT_LOG_INFO("Validated dynamic range: %d", static_cast<int32_t>(dynRange));
@@ -816,6 +818,7 @@ void vts_videodecoder_helper_validateCapabilities(
                 if (it == hfpDecoder.supportedColorimetries.end())
                 {
                     UT_LOG_ERROR("Colorimetry %d not found in hfpDecoder for decoder ID: %d", static_cast<int32_t>(colorimetry), decoderId);
+                    UT_ASSERT_TRUE(false) << "Colorimetry not found in hfpDecoder";
                     continue;
                 }
                 UT_LOG_INFO("Validated colorimetry: %d", static_cast<int32_t>(colorimetry));
@@ -965,23 +968,23 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, const char *m
         testDetails.frameRateDenominator = ut_kvp_getUInt32Field(kvpTestInstance, frameRateDenominator.c_str());
 
         // Pixel format
-        status = ut_kvp_getStringField(kvpTestInstance, pixelFormat.c_str(), tempBuffer, UT_KVP_MAX_ELEMENT_SIZE);
-        if (status == UT_KVP_STATUS_SUCCESS)
+        if (ut_kvp_fieldPresent(kvpTestInstance, pixelFormat.c_str()))
         {
+            ut_kvp_getStringField(kvpTestInstance, pixelFormat.c_str(), tempBuffer, UT_KVP_MAX_ELEMENT_SIZE);
             testDetails.pixelFormat = videoDecoderStringToPixelFormat(string(tempBuffer));
         }
 
         // Dynamic range
-        status = ut_kvp_getStringField(kvpTestInstance, dynamicRange.c_str(), tempBuffer, UT_KVP_MAX_ELEMENT_SIZE);
-        if (status == UT_KVP_STATUS_SUCCESS)
+        if (ut_kvp_fieldPresent(kvpTestInstance, dynamicRange.c_str()))
         {
+            ut_kvp_getStringField(kvpTestInstance, dynamicRange.c_str(), tempBuffer, UT_KVP_MAX_ELEMENT_SIZE);
             testDetails.dynamicRange = videoDecoderStringToDynamicRange(string(tempBuffer));
         }
 
         // Colorimetry
-        status = ut_kvp_getStringField(kvpTestInstance, colorimetry.c_str(), tempBuffer, UT_KVP_MAX_ELEMENT_SIZE);
-        if (status == UT_KVP_STATUS_SUCCESS)
+        if (ut_kvp_fieldPresent(kvpTestInstance, colorimetry.c_str()))
         {
+            ut_kvp_getStringField(kvpTestInstance, colorimetry.c_str(), tempBuffer, UT_KVP_MAX_ELEMENT_SIZE);
             testDetails.colorimetry = videoDecoderStringToColorimetry(string(tempBuffer));
         }
 

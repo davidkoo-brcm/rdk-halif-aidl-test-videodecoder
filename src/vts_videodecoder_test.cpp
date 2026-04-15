@@ -64,6 +64,12 @@ void videoDecoderTest::run(bool concurrentDecodeConsume)
 {
     thread consumerThread;
 
+    if (!mAVbufferHelper)
+    {
+        UT_ASSERT_TRUE(false) << "AVBufferHelper is not initialized";
+        return;
+    }
+
     mFrameData.clear();
     mInputBuffer.clear();
 
@@ -196,6 +202,7 @@ void videoDecoderTest::startDecoding()
         {
             UT_LOG_INFO("Calling writeSecureHandle(handle:0x%llx, size=%u, mAVbufferHelper:%p)",
                         videoBufferHandle, frameSize, mAVbufferHelper);
+
             if (!mAVbufferHelper->writeSecureHandle(videoBufferHandle, mInputBuffer.data() + frameOffset, frameSize))
             {
                 UT_LOG_ERROR("Failed to copy frame data to secure buffer");
@@ -206,22 +213,22 @@ void videoDecoderTest::startDecoding()
         else
         {
             UT_LOG_INFO("Calling mapHandle(handle:0x%llx, mAVbufferHelper:%p)", videoBufferHandle, mAVbufferHelper);
-            if (!mAVbufferHelper)
-            {
-                UT_LOG_ERROR("mAVbufferHelper is null before mapHandle");
-                AVBUFFER_FREE_SUCCESS(mAVBufferManager, videoBufferHandle);
-                continue;
-            }
+
             mapBuffer = mAVbufferHelper->mapHandle(videoBufferHandle, &mapSize);
             if (mapBuffer && mapSize >= frameSize)
             {
                 UT_LOG_DEBUG("Copying frame data to mapped buffer, size=%u", frameSize);
                 memcpy(mapBuffer, mInputBuffer.data() + frameOffset, frameSize);
+                mAVbufferHelper->unmapHandle(videoBufferHandle);
             }
             else
             {
                 UT_LOG_ERROR("Failed to map buffer or insufficient size (mapBuffer:%p, mapSize:%u, required:%u)",
                             mapBuffer, mapSize, frameSize);
+                if (mapBuffer)
+                {
+                    mAVbufferHelper->unmapHandle(videoBufferHandle);
+                }
                 AVBUFFER_FREE_SUCCESS(mAVBufferManager, videoBufferHandle);
                 continue;
             }
@@ -337,6 +344,7 @@ bool videoDecoderTest::validateDecodedFrame()
                         UT_LOG_WARNING("Frame PTS:%lld decode time: %lld ns exceeds threshold %lld ns",
                                     decodedFrame.framePTS, decodeTimeNs, mTestConfiguration.decode_time_threshold);
                     }
+                    mInputFrame.erase(inputIt);
                 }
             }
 
