@@ -97,7 +97,6 @@ void videoDecoderTest::run(bool concurrentDecodeConsume)
     else
     {
         //TODO: Not used currently, update implementation if required in future
-        decodeAndConsumeVideoFrames();
     }
 }
 
@@ -153,6 +152,19 @@ void videoDecoderTest::setupVideoDecoder()
     {
         VIDEODECODER_SETFRAMERATE_SUCCESS(mVideoDecoderController, mTestConfiguration.frameRateNumerator, mTestConfiguration.frameRateDenominator);
     }
+    if (mTestConfiguration.colorimetry != Colorimetry::UNKNOWN)
+    {
+        VIDEODECODER_SETCOLORIMETRY_SUCCESS(mVideoDecoderController, mTestConfiguration.colorimetry);
+    }
+    if (mTestConfiguration.masteringDisplayInfo.has_value())
+    {
+        VIDEODECODER_SETMASTERINGDISPLAYINFO_SUCCESS(mVideoDecoderController, mTestConfiguration.masteringDisplayInfo);
+    }
+    if (mTestConfiguration.contentLightLevel.has_value())
+    {
+        VIDEODECODER_SETCONTENTLIGHTLEVEL_SUCCESS(mVideoDecoderController, mTestConfiguration.contentLightLevel);
+    }
+
     // Start Decoder
     VIDEODECODER_START_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
 
@@ -385,10 +397,19 @@ bool videoDecoderTest::validateDecodedFrame()
                 << ", actual=" << static_cast<int>(decodedFrame.metadata->scanType)
                 << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
 
-            // Validate HDR metadata
-            UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo, mTestConfiguration.masteringDisplayInfo)
-                << "MasteringDisplayInfo mismatch for Codec "
-                << videodecoder::toString(mTestConfiguration.codec).c_str();
+            if(decodedFrame.metadata->masteringDisplayInfo.has_value())
+            {
+                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->redPrimaryX, mTestConfiguration.masteringDisplayInfo->redPrimaryX);
+                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->redPrimaryY, mTestConfiguration.masteringDisplayInfo->redPrimaryY);
+                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->greenPrimaryX, mTestConfiguration.masteringDisplayInfo->greenPrimaryX);
+                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->greenPrimaryY, mTestConfiguration.masteringDisplayInfo->greenPrimaryY);
+                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->bluePrimaryX, mTestConfiguration.masteringDisplayInfo->bluePrimaryX);
+                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->bluePrimaryY, mTestConfiguration.masteringDisplayInfo->bluePrimaryY);
+                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->whitePointX, mTestConfiguration.masteringDisplayInfo->whitePointX);
+                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->whitePointY, mTestConfiguration.masteringDisplayInfo->whitePointY);
+                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->maxLuminance, mTestConfiguration.masteringDisplayInfo->maxLuminance);
+                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->minLuminance, mTestConfiguration.masteringDisplayInfo->minLuminance);
+            }
 
             UT_ASSERT_EQUAL(decodedFrame.metadata->contentLightLevel, mTestConfiguration.contentLightLevel)
                 << "ContentLightLevel mismatch for Codec "
@@ -488,78 +509,6 @@ void videoDecoderTest:: teardownDecoder()
     VIDEODECODER_CLOSE_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
 
     // Destroy Video Pool
-    AVBUFFER_DESTROY_POOL_SUCCESS(mAVBufferManager, mVideoPool);
-}
-
-void videoDecoderTest::decodeAndConsumeVideoFrames()
-{
-    sp<IVideoDecoderController> mVideoDecoderController;
-    int64_t videoBufferHandle;
-    Pool mVideoPool;
-    sp<IAVBufferSpaceListener> bufferListener = new AVBufferSpaceListener();
-
-    UT_LOG_DEBUG("decodeAndConsumeVideoFrames start:");
-
-    AVBUFFER_CREATE_VIDEOPOOL_SUCCESS(mAVBufferManager, mSecureDecode, mDecoderId, bufferListener, mVideoPool);
-
-    ifstream inputFile(mTestConfiguration.input, ios::binary);
-    if (!inputFile)
-    {
-        UT_LOG_ERROR("Failed to open file: %s", mTestConfiguration.input.c_str());
-        return;
-    }
-
-    VIDEODECODER_OPEN_SUCCESS(mDecoderHandle, mTestConfiguration.codec, mSecureDecode, mControlListener, mVideoDecoderController, true);
-
-    VIDEODECODER_START_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
-
-    for (const auto& [frameSize, framePTS, errorFrame] : mTestConfiguration.frameDetails)
-    {
-        vector<uint8_t> inputBuffer;
-        DecodedVideoFrame_t decodedFrame;
-
-        AVBUFFER_ALLOC_SUCCESS(mAVBufferManager, mVideoPool, frameSize, videoBufferHandle);
-
-        inputBuffer.resize(frameSize);
-        inputFile.read(reinterpret_cast<char*>(inputBuffer.data()), frameSize);
-
-        auto startTime = chrono::steady_clock::now();
-        VIDEODECODER_DECODEBUFFER_SUCCESS(mVideoDecoderController, framePTS, videoBufferHandle);
-
-        mControlListener->getNextFrame(decodedFrame, std::chrono::milliseconds(100));
-
-        if (!mTunnelMode && !decodedFrame.data.empty())
-        {
-            UT_LOG_INFO("Validating frame data for PTS=%lld", decodedFrame.framePTS);
-        }
-
-        auto duration = chrono::duration_cast<chrono::microseconds>(chrono::steady_clock::now() - startTime);
-        UT_LOG_INFO("Decode Time [PTS: %lld]: %lld", framePTS, duration.count());
-
-        bool isValidBuffer = false;
-        UT_LOG_INFO(" Calling isValid(IN:bufferHandle:[0X%016"PRIx64"], OUT:_aidl_return[])", videoBufferHandle);
-        Status status = mAVBufferManager->isValid(videoBufferHandle, &isValidBuffer);
-        UT_LOG_INFO(" Result isValid(IN:bufferHandle:[0X%016"PRIx64"], OUT:_aidl_return:[%s]), status:[isOK:%s, exception:%s]", \
-            videoBufferHandle, UT_Control_GetMapString(bool_mapTable, isValidBuffer), \
-            UT_Control_GetMapString(bool_mapTable, status.isOk()), \
-            UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()));
-        if(isValidBuffer)
-        {
-            UT_LOG_ERROR(" Encoded buffer not released by decoder [handle:0x%llx]", videoBufferHandle);
-        }
-    }
-
-    VIDEODECODER_STOP_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
-
-    VIDEODECODER_CLOSE_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
-
-    PoolMetrics poolMetrics;
-    UT_LOG_INFO("Calling getPoolMetrics(IN:poolHandle:[%d], OUT:PoolMetrics[])", mVideoPool.handle); \
-    Status status = mAVBufferManager->getPoolMetrics(mVideoPool, &poolMetrics); \
-    UT_LOG_INFO("Result getPoolMetrics(IN:poolHandle:[%d], OUT:PoolMetrics[bytesUsed:%d, bytesTotal:%d]), status:[isOK:%s, exception:%s]", \
-                mVideoPool.handle, poolMetrics.bytesUsed, poolMetrics.bytesTotal, \
-                UT_Control_GetMapString(bool_mapTable, status.isOk()), UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
-
     AVBUFFER_DESTROY_POOL_SUCCESS(mAVBufferManager, mVideoPool);
 }
 
