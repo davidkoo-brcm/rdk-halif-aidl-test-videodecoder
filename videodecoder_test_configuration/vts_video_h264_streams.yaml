@@ -100,7 +100,7 @@ VideoStreams:
     lowLatency: 0
     bit_rate: 837
     no_of_frames: 12
-    decodeErrors: 3
+    decodeErrors: 4
     framesDropped: 0
     frame_size:
       - 733
