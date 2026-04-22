@@ -436,6 +436,15 @@ void videoDecoderTest::decoderThreadFunc()
         }
         std::optional<PropertyValue> aidl_return;
         VIDEODECODER_GETPROPERTY(mDecoderHandle, videodecoder::Property::OPERATIONAL_MODE, aidl_return);
+        if (mTestConfiguration.colorimetry != Colorimetry::UNKNOWN) {
+            VIDEODECODER_SETCOLORIMETRY_SUCCESS(videoDecoderController, mTestConfiguration.colorimetry);
+        }
+        if (mTestConfiguration.masteringDisplayInfo.has_value()) {
+            VIDEODECODER_SETMASTERINGDISPLAYINFO_SUCCESS(videoDecoderController, mTestConfiguration.masteringDisplayInfo);
+        }
+        if (mTestConfiguration.contentLightLevel.has_value()) {
+            VIDEODECODER_SETCONTENTLIGHTLEVEL_SUCCESS(videoDecoderController, mTestConfiguration.contentLightLevel);
+        }
     }
 
     // Start Decoder
@@ -851,6 +860,17 @@ void videoDecoderTest::decodeAndConsumeVideoStreams() {
     }
 
     VIDEODECODER_OPEN_SUCCESS(mDecoderHandle, mTestConfiguration.codec, mSecureDecode, mControlListener, videoDecoderController, true);
+
+    // Set HDR metadata in READY state before starting the decoder
+    if (mTestConfiguration.colorimetry != Colorimetry::UNKNOWN) {
+        VIDEODECODER_SETCOLORIMETRY_SUCCESS(videoDecoderController, mTestConfiguration.colorimetry);
+    }
+    if (mTestConfiguration.masteringDisplayInfo.has_value()) {
+        VIDEODECODER_SETMASTERINGDISPLAYINFO_SUCCESS(videoDecoderController, mTestConfiguration.masteringDisplayInfo);
+    }
+    if (mTestConfiguration.contentLightLevel.has_value()) {
+        VIDEODECODER_SETCONTENTLIGHTLEVEL_SUCCESS(videoDecoderController, mTestConfiguration.contentLightLevel);
+    }
 
     VIDEODECODER_START_SUCCESS(mDecoderHandle, videoDecoderController, true);
 
