@@ -169,6 +169,31 @@ void videoDecoderTest::setupVideoDecoder()
     if (mTestConfiguration.contentLightLevel.has_value())
     {
         VIDEODECODER_SETCONTENTLIGHTLEVEL_SUCCESS(mVideoDecoderController, mTestConfiguration.contentLightLevel);
+        std::lock_guard<std::mutex> lock(mDecodeMutex);
+        UT_LOG_INFO("Calling open(codec:%d, secure:%d, listener:%p)",
+                    mTestConfiguration.codec, mSecureDecode, mControlListener.get());
+        VIDEODECODER_OPEN_SUCCESS(mDecoderHandle, mTestConfiguration.codec, mSecureDecode,
+                                mControlListener, videoDecoderController, true);
+        UT_LOG_INFO("Decoder opened, controller:%p", videoDecoderController.get());
+
+        if (mTunnelMode) {
+            std::vector<std::pair<videodecoder::Property, int32_t>> startedIntProps = {
+                {videodecoder::Property::OPERATIONAL_MODE, static_cast<int32_t>(OperationalMode::TUNNELLED)}
+            };
+            UT_LOG_INFO("Set properties in TUNNELLED Mode");
+            VIDEODECODER_SETPROPERTY_LIST_SUCCESS(videoDecoderController, startedIntProps, intValue);
+        }
+        std::optional<PropertyValue> aidl_return;
+        VIDEODECODER_GETPROPERTY(mDecoderHandle, videodecoder::Property::OPERATIONAL_MODE, aidl_return);
+        if (mTestConfiguration.colorimetry != Colorimetry::UNKNOWN) {
+            VIDEODECODER_SETCOLORIMETRY_SUCCESS(videoDecoderController, mTestConfiguration.colorimetry);
+        }
+        if (mTestConfiguration.masteringDisplayInfo.has_value()) {
+            VIDEODECODER_SETMASTERINGDISPLAYINFO_SUCCESS(videoDecoderController, mTestConfiguration.masteringDisplayInfo);
+        }
+        if (mTestConfiguration.contentLightLevel.has_value()) {
+            VIDEODECODER_SETCONTENTLIGHTLEVEL_SUCCESS(videoDecoderController, mTestConfiguration.contentLightLevel);
+        }
     }
 
     // Start Decoder
@@ -456,6 +481,18 @@ bool videoDecoderTest::validateDecodedFrame()
     {
         UT_ASSERT_TRUE((discontinuityFramesReceived > 0 && discontinuityFramesReceived < expectedFrames));
     }
+    // Set HDR metadata in READY state before starting the decoder
+    if (mTestConfiguration.colorimetry != Colorimetry::UNKNOWN) {
+        VIDEODECODER_SETCOLORIMETRY_SUCCESS(videoDecoderController, mTestConfiguration.colorimetry);
+    }
+    if (mTestConfiguration.masteringDisplayInfo.has_value()) {
+        VIDEODECODER_SETMASTERINGDISPLAYINFO_SUCCESS(videoDecoderController, mTestConfiguration.masteringDisplayInfo);
+    }
+    if (mTestConfiguration.contentLightLevel.has_value()) {
+        VIDEODECODER_SETCONTENTLIGHTLEVEL_SUCCESS(videoDecoderController, mTestConfiguration.contentLightLevel);
+    }
+
+    VIDEODECODER_START_SUCCESS(mDecoderHandle, videoDecoderController, true);
 
     UT_ASSERT_EQUAL(eosFramesReceived, expectedEOSFrames);
 
