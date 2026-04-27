@@ -142,6 +142,13 @@ void videoDecoderTest::setupVideoDecoder()
     VIDEODECODER_OPEN_SUCCESS(mDecoderHandle, mTestConfiguration.codec, mSecureDecode,
                               mControlListener, mVideoDecoderController, true);
 
+    if(mVideoDecoderController.get() == nullptr)
+    {
+        UT_LOG_ERROR("VideoDecoderController is null after open");
+        UT_ASSERT_TRUE(false) << "Failed to get VideoDecoderController after opening decoder";
+        return;
+    }
+
     if (mTunnelMode)
     {
         std::vector<std::pair<videodecoder::Property, int32_t>> startedIntProps = {
@@ -225,7 +232,7 @@ void videoDecoderTest::startDecoding()
         uint32_t mapSize = 0;
         if (mSecureDecode)
         {
-            UT_LOG_INFO("Calling writeSecureHandle(handle:0x%llx, size=%u, mAVbufferHelper:%p)",
+            UT_LOG_INFO("Calling writeSecureHandle(handle:0x%ld, size=%u, mAVbufferHelper:%p)",
                         videoBufferHandle, frameSize, mAVbufferHelper);
 
             if (!mAVbufferHelper->writeSecureHandle(videoBufferHandle, mInputBuffer.data() + frameOffset, frameSize))
@@ -237,7 +244,7 @@ void videoDecoderTest::startDecoding()
         }
         else
         {
-            UT_LOG_INFO("Calling mapHandle(handle:0x%llx, mAVbufferHelper:%p)", videoBufferHandle, mAVbufferHelper);
+            UT_LOG_INFO("Calling mapHandle(handle:0x%ld, mAVbufferHelper:%p)", videoBufferHandle, mAVbufferHelper);
 
             mapBuffer = mAVbufferHelper->mapHandle(videoBufferHandle, &mapSize);
             if (mapBuffer && mapSize >= frameSize)
