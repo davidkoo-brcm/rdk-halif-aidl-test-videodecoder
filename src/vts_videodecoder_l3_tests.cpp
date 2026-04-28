@@ -181,6 +181,67 @@ public:
             UT_LOG_WARNING("Decoder doesn't support Codec [%s]", videodecoder::toString(testConfig.codec).c_str());
             return false;
         }
+    bool isStreamSupportedByDecoder(
+        videodecoder::IVideoDecoder::Id decoderId,
+        bool secureDecode,
+        com::rdk::hal::videodecoder::Capabilities capabilities,
+        videoDecoderTestConfiguration_t testConfig)
+    {
+        UT_LOG_INFO("In function: %s", __func__);
+
+        if (secureDecode && !capabilities.supportsSecure)
+        {
+            UT_LOG_INFO("Decoder [%d] doesn't support secure decoding",
+                        decoderId.value);
+            return false;
+        }
+
+        auto codecIt = std::find_if(
+            capabilities.supportedCodecs.begin(),
+            capabilities.supportedCodecs.end(),
+            [&testConfig](const com::rdk::hal::videodecoder::CodecCapabilities& cap) {
+                return cap.codec == testConfig.codec;
+            });
+
+        if (codecIt == capabilities.supportedCodecs.end())
+        {
+            UT_LOG_INFO("Decoder [%d] doesn't support Codec [%s]",
+                        decoderId.value,
+                        videodecoder::toString(testConfig.codec).c_str());
+            return false;
+        }
+
+        if (testConfig.codedWidth > codecIt->maxFrameWidth ||
+            testConfig.codedHeight > codecIt->maxFrameHeight)
+        {
+            UT_LOG_INFO(
+                "Decoder [%d] skipping stream [%s]: resolution %dx%d exceeds capability %dx%d",
+                 decoderId.value,
+                 testConfig.streamName.c_str(),
+                 testConfig.codedWidth,
+                 testConfig.codedHeight,
+                 codecIt->maxFrameWidth,
+                 codecIt->maxFrameHeight);
+            return false;
+        }
+
+        if (testConfig.frameRateDenominator > 0)
+        {
+            uint32_t streamFps =
+                testConfig.frameRateNumerator / testConfig.frameRateDenominator;
+
+            if (streamFps > static_cast<uint32_t>(codecIt->maxFrameRate))
+            {
+                UT_LOG_INFO(
+                    "Decoder [%d] skipping stream [%s]: frame rate %u fps exceeds capability %d fps",
+                     decoderId.value,
+                     testConfig.streamName.c_str(),
+                     streamFps,
+                     codecIt->maxFrameRate);
+                return false;
+            }
+        }
+
         return true;
     }
 
@@ -199,6 +260,8 @@ public:
             if (!checkDecoderSupportsConfig(_decoderId, capabilities, testConfig, secureDecode))
             {
                 UT_LOG_WARNING("Decoder [%d] doesn't support the required configuration", _decoderId.value);
+            if (!isStreamSupportedByDecoder(_decoderId, secureDecode, *capabilities, testConfig))
+            {
                 continue;
             }
 
@@ -243,6 +306,16 @@ public:
             if (!checkDecoderSupportsConfig(_decoderId, capabilities, testConfig, secureDecode))
             {
                 UT_LOG_WARNING("[DecoderID: %d] Doesn't support the required configuration", _decoderId.value);
+        for (const auto& [_decoderId, decoderHandle, controlListener, eventListener, capabilities] : mVideoDecoderList) {
+            auto it = std::find_if(gVideodecoders_hfp.begin(), gVideodecoders_hfp.end(),
+                [_decoderId](const decoder& item) { return item.id == _decoderId.value; });
+            if (it == gVideodecoders_hfp.end()) {
+                UT_LOG_INFO("[DecoderID: %d] Not available", _decoderId.value);
+                continue;
+            }
+
+            if (!isStreamSupportedByDecoder(_decoderId, secureDecode, *capabilities, testConfig))
+            {
                 continue;
             }
 
