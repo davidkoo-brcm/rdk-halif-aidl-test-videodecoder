@@ -299,6 +299,8 @@ struct videoDecoderTestConfiguration_t {
     bool endOfStream;
     bool discontinuity;
     bool lowLatency;
+    bool blPresent;
+    bool elPresent;
 
     // Sink control fields
     int64_t sink_discardFramesUntilPts;

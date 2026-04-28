@@ -979,6 +979,17 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, const char *m
         {
             ut_kvp_getStringField(kvpTestInstance, dynamicRange.c_str(), tempBuffer, UT_KVP_MAX_ELEMENT_SIZE);
             testDetails.dynamicRange = videoDecoderStringToDynamicRange(string(tempBuffer));
+            if(testDetails.dynamicRange == videodecoder::DynamicRange::DOLBY_VISION)
+            {
+                string blPresent = prefix + "blPresent";
+                string elPresent = prefix + "elPresent";
+
+                testDetails.blPresent = ut_kvp_getUInt32Field(kvpTestInstance, blPresent.c_str());
+                testDetails.elPresent = ut_kvp_getUInt32Field(kvpTestInstance, elPresent.c_str());
+            } else {
+                testDetails.blPresent = 0;
+                testDetails.elPresent = 0;
+            }
         }
 
         // Colorimetry

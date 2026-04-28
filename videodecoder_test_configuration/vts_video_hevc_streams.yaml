@@ -1019,3 +1019,71 @@ VideoStreams:
       - 399999996
       - 433333329
       - 466666662
+  H265_HIGH_3840x2160_DR_DOLBY_VISION_DR_BT2020_60p_PIXEL_FORMAT_YCBCR420_734_DOLBY_VISION:
+    input: H265_HIGH_3840x2160_DR_DOLBY_VISION_DR_BT2020_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
+    codec: H265_HEVC              # Derived from Format: HEVC
+    codedWidth: 3840              # Width: 3840 pixels
+    codedHeight: 2160             # Height: 2160 pixels
+    colorDepth: 10                # Bit depth: 10 bits
+    pixelFormat: YCBCR420         # Chroma subsampling: 4:2:0
+    dynamic_range: DOLBY_VISION   # HDR format: Dolby Vision Profile 8.1 (BL+RPU)
+    scanType: PROGRESSIVE_FRAME   # Progressive (not interlaced)
+    frameRateNumerator: 60000     # Frame rate: 59.940 (60000/1001)
+    frameRateDenominator: 1001
+    endOfStream: 0
+    stop_start_pts: -1            # Not provided → no restart
+    signal_discontinuity_pts: -1  # Not provided → no discontinuity
+    flush_pts: -1                 # Not provided → no flush
+    flush_reset_pts: 266667000    # Preserved from your template
+    eos_pts: -1                   # No EOS signaling
+    discontinuity: 0
+    lowLatency: 0
+    bit_rate: 15100               # Bit rate: 15.1 Mb/s
+    no_of_frames: 12              # From test expectations
+    decodeErrors: 2               # From test expectations
+    framesDropped: 0
+    blPresent: 1
+    elPresent: 0
+    frame_size:
+      - 2779
+      - 471
+      - 472
+      - 472
+      - 481
+      - 481
+      - 473
+      - 482
+      - 481
+      - 473
+      - 474
+      - 473
+      - 482
+      - 482
+      - 473
+      - 482
+      - 481
+      - 477
+      - 478
+      - 475
+    PTS:
+      - 0
+      - 16683333
+      - 33366666
+      - 50049999
+      - 66733332
+      - 83416665
+      - 100099998
+      - 116783331
+      - 133466664
+      - 150149997
+      - 166833330
+      - 183516663
+      - 200199996
+      - 216883329
+      - 233566662
+      - 250249995
+      - 266933328
+      - 283616661
+      - 300299994
+      - 316983327
+

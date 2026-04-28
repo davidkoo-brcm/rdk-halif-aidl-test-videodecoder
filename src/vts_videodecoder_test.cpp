@@ -206,6 +206,13 @@ void videoDecoderTest::setupVideoDecoder()
         if (mTestConfiguration.frameRateDenominator > 0) {
             VIDEODECODER_SETFRAMERATE_SUCCESS(videoDecoderController, mTestConfiguration.frameRateNumerator, mTestConfiguration.frameRateDenominator);
         }
+
+        /*Set Dolby Vision*/
+        UT_LOG_INFO("value of the dynamicRange %d", mTestConfiguration.dynamicRange);
+        if(mTestConfiguration.dynamicRange == videodecoder::DynamicRange::DOLBY_VISION)
+        {
+            VIDEODECODER_SETDOLBYVISIONLAYERFLAGS_SUCCESS(videoDecoderController, mTestConfiguration.blPresent, mTestConfiguration.elPresent);
+        }
     }
 
     // Start Decoder
