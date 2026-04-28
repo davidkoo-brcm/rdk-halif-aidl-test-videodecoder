@@ -200,6 +200,11 @@ void videoDecoderTest::setupVideoDecoder()
         }
         if (mTestConfiguration.contentLightLevel.has_value()) {
             VIDEODECODER_SETCONTENTLIGHTLEVEL_SUCCESS(videoDecoderController, mTestConfiguration.contentLightLevel);
+        if (mTestConfiguration.codedWidth > 0 && mTestConfiguration.codedHeight > 0) {
+            VIDEODECODER_SETSTREAMRESOLUTION_SUCCESS(videoDecoderController, mTestConfiguration.codedWidth, mTestConfiguration.codedHeight);
+        }
+        if (mTestConfiguration.frameRateDenominator > 0) {
+            VIDEODECODER_SETFRAMERATE_SUCCESS(videoDecoderController, mTestConfiguration.frameRateNumerator, mTestConfiguration.frameRateDenominator);
         }
     }
 
