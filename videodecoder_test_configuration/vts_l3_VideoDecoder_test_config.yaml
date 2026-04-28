@@ -32,7 +32,7 @@ videodecoder:
   L3: #Test Level
     Decode_Sequential_NonTunnel_NonSecure:
       Controls:
-        delay_between_decode_calls: 5
+        delay_between_decode_calls: 1
       Inputs:
         Streams:
           - codec: H264_AVC
@@ -49,7 +49,7 @@ videodecoder:
             decode_time_threshold: 10000000
     Decode_Sequential_NonTunnel_NonSecure_Error:
       Controls:
-        delay_between_decode_calls: 5
+        delay_between_decode_calls: 1
       Inputs:
         Streams:
           - codec: H264_AVC
@@ -66,7 +66,7 @@ videodecoder:
             decode_time_threshold: 10000000
     Decode_Sequential_NonTunnel_NonSecure_GOP:
       Controls:
-        delay_between_decode_calls: 5
+        delay_between_decode_calls: 1
       Inputs:
         Streams:
           - codec: H264_AVC
@@ -75,7 +75,7 @@ videodecoder:
             decode_time_threshold: 10000000
     Decode_Sequential_NonTunnel_NonSecure_Discontinuity:
       Controls:
-        delay_between_decode_calls: 5
+        delay_between_decode_calls: 1
       Inputs:
         Streams:
           - codec: H264_AVC
@@ -92,7 +92,7 @@ videodecoder:
             decode_time_threshold: 10000000
     Decode_Sequential_NonTunnel_NonSecure_EOS:
       Controls:
-        delay_between_decode_calls: 5
+        delay_between_decode_calls: 1
       Inputs:
         Streams:
           - codec: H264_AVC
@@ -109,7 +109,7 @@ videodecoder:
             decode_time_threshold: 10000000
     Decode_Sequential_NonTunnel_NonSecure_Flush:
       Controls:
-        delay_between_decode_calls: 5
+        delay_between_decode_calls: 1
       Inputs:
         Streams:
           - codec: H264_AVC
@@ -126,7 +126,7 @@ videodecoder:
             decode_time_threshold: 10000000
     Decode_Sequential_NonTunnel_NonSecure_FlushReset:
       Controls:
-        delay_between_decode_calls: 5
+        delay_between_decode_calls: 1
       Inputs:
         Streams:
           - codec: H264_AVC
@@ -143,7 +143,7 @@ videodecoder:
             decode_time_threshold: 10000000
     Decode_Concurrent_NonTunnel_NonSecure:
       Controls:
-        delay_between_decode_calls: 5
+        delay_between_decode_calls: 1
       Inputs:
         Streams:
           - codec: H264_AVC
@@ -160,7 +160,7 @@ videodecoder:
             decode_time_threshold: 10000000
     Decode_NonTunnel_NonSecure_Error_Discontinuity:
       Controls:
-        delay_between_decode_calls: 5
+        delay_between_decode_calls: 1
       Inputs:
         Streams:
           - codec: H264_AVC
@@ -177,7 +177,7 @@ videodecoder:
             decode_time_threshold: 10000000
     Decode_NonTunnel_NonSecure_Error_EOS:
       Controls:
-        delay_between_decode_calls: 5
+        delay_between_decode_calls: 1
       Inputs:
         Streams:
           - codec: H264_AVC
@@ -194,7 +194,7 @@ videodecoder:
             decode_time_threshold: 10000000
     Decode_NonTunnel_NonSecure_Discontinuity_EOS:
       Controls:
-        delay_between_decode_calls: 5
+        delay_between_decode_calls: 1
       Inputs:
         Streams:
           - codec: H264_AVC
@@ -211,7 +211,7 @@ videodecoder:
             decode_time_threshold: 10000000
     Decode_NonTunnel_NonSecure_Flush_Error:
       Controls:
-        delay_between_decode_calls: 5
+        delay_between_decode_calls: 1
       Inputs:
         Streams:
           - codec: H264_AVC
@@ -228,7 +228,7 @@ videodecoder:
             decode_time_threshold: 10000000
     Decode_NonTunnel_NonSecure_FlushReset_Error:
       Controls:
-        delay_between_decode_calls: 5
+        delay_between_decode_calls: 1
       Inputs:
         Streams:
           - codec: H264_AVC
@@ -245,7 +245,7 @@ videodecoder:
             decode_time_threshold: 10000000
     Decode_Concurrent_NonTunnel_NonSecure_Error:
       Controls:
-        delay_between_decode_calls: 5
+        delay_between_decode_calls: 1
       Inputs:
         Streams:
           - codec: H264_AVC
@@ -262,7 +262,7 @@ videodecoder:
             decode_time_threshold: 10000000
     Decode_Concurrent_NonTunnel_NonSecure_Discontinuity:
       Controls:
-        delay_between_decode_calls: 5
+        delay_between_decode_calls: 1
       Inputs:
         Streams:
           - codec: H264_AVC
@@ -279,7 +279,7 @@ videodecoder:
             decode_time_threshold: 10000000
     Decode_Concurrent_NonTunnel_NonSecure_EOS:
       Controls:
-        delay_between_decode_calls: 5
+        delay_between_decode_calls: 1
       Inputs:
         Streams:
           - codec: H264_AVC
@@ -296,7 +296,7 @@ videodecoder:
             decode_time_threshold: 10000000
     Decode_Concurrent_NonTunnel_NonSecure_Flush:
       Controls:
-        delay_between_decode_calls: 5
+        delay_between_decode_calls: 1
       Inputs:
         Streams:
           - codec: H264_AVC
@@ -313,7 +313,7 @@ videodecoder:
             decode_time_threshold: 10000000
     Decode_Concurrent_NonTunnel_NonSecure_FlushReset:
       Controls:
-        delay_between_decode_calls: 5
+        delay_between_decode_calls: 1
       Inputs:
         Streams:
           - codec: H264_AVC
@@ -330,7 +330,7 @@ videodecoder:
             decode_time_threshold: 10000000
     Decode_Sequential_NonTunnel_NonSecure_CODEC:
       Controls:
-        delay_between_decode_calls: 5
+        delay_between_decode_calls: 1
       Inputs:
         Streams:
           - codec: H264_AVC
@@ -347,7 +347,7 @@ videodecoder:
             decode_time_threshold: 10000000
     Decode_Sequential_NonTunnel_NonSecure_Resolutions:
       Controls:
-        delay_between_decode_calls: 5
+        delay_between_decode_calls: 1
       Inputs:
         Streams:
           - codec: H264_AVC
@@ -364,7 +364,7 @@ videodecoder:
             decode_time_threshold: 10000000
     Decode_Sequential_NonTunnel_NonSecure_HDRModes:
       Controls:
-        delay_between_decode_calls: 5
+        delay_between_decode_calls: 1
       Inputs:
         Streams:
           - codec: H264_AVC
@@ -381,7 +381,7 @@ videodecoder:
             decode_time_threshold: 10000000
     Decode_Sequential_NonTunnel_NonSecure_FrameRate:
       Controls:
-        delay_between_decode_calls: 5
+        delay_between_decode_calls: 1
       Inputs:
         Streams:
           - codec: H264_AVC
@@ -398,7 +398,7 @@ videodecoder:
             decode_time_threshold: 10000000
     Decode_Sequential_NonTunnel_NonSecure_LowLatency:
       Controls:
-        delay_between_decode_calls: 5
+        delay_between_decode_calls: 1
       Inputs:
         Streams:
           - codec: H264_AVC
@@ -415,7 +415,7 @@ videodecoder:
             decode_time_threshold: 10000000
     Decode_Sequential_NonTunnel_NonSecure_AdaptiveBitrate:
       Controls:
-        delay_between_decode_calls: 5
+        delay_between_decode_calls: 1
       Inputs:
         Streams:
           - codec: H264_AVC
@@ -432,7 +432,7 @@ videodecoder:
             decode_time_threshold: 10000000
     Decode_Concurrent_NonTunnel_NonSecure_CODEC:
       Controls:
-        delay_between_decode_calls: 5
+        delay_between_decode_calls: 1
       Inputs:
         Streams:
           - codec: H264_AVC
@@ -449,7 +449,7 @@ videodecoder:
             decode_time_threshold: 10000000
     Decode_Concurrent_NonTunnel_NonSecure_Resolutions:
       Controls:
-        delay_between_decode_calls: 5
+        delay_between_decode_calls: 1
       Inputs:
         Streams:
           - codec: H264_AVC
@@ -466,7 +466,7 @@ videodecoder:
             decode_time_threshold: 10000000
     Decode_Concurrent_NonTunnel_NonSecure_HDRModes:
       Controls:
-        delay_between_decode_calls: 5
+        delay_between_decode_calls: 1
       Inputs:
         Streams:
           - codec: H264_AVC
@@ -483,7 +483,7 @@ videodecoder:
             decode_time_threshold: 10000000
     Decode_Concurrent_NonTunnel_NonSecure_FrameRate:
       Controls:
-        delay_between_decode_calls: 5
+        delay_between_decode_calls: 1
       Inputs:
         Streams:
           - codec: H264_AVC
@@ -500,7 +500,7 @@ videodecoder:
             decode_time_threshold: 10000000
     Decode_Concurrent_NonTunnel_NonSecure_GOPStructure:
       Controls:
-        delay_between_decode_calls: 5
+        delay_between_decode_calls: 1
       Inputs:
         Streams:
           - codec: H264_AVC
@@ -563,7 +563,7 @@ videodecoder:
             decode_time_threshold: 10000000
     Decode_Concurrent_NonTunnel_NonSecure_LowLatency:
       Controls:
-        delay_between_decode_calls: 5
+        delay_between_decode_calls: 1
       Inputs:
         Streams:
           - codec: H264_AVC
