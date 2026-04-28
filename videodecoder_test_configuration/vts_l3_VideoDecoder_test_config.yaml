@@ -584,7 +584,6 @@ videodecoder:
       Inputs:
         Streams:
           - codec: H265_HEVC
-            Name: H265_HIGH_3840x2160_DR_DOLBY_VISION_DR_BT2020_60p_PIXEL_FORMAT_YCBCR420_734_DOLBY_VISION
+            Name: H265_MAIN10_1920x1080_DR_DOLBY_VISION_300NITS_BT2020_23976p_PIXEL_FORMAT_YCBCR420
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
-
