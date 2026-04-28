@@ -181,6 +181,67 @@ public:
             UT_LOG_WARNING("Decoder doesn't support Codec [%s]", videodecoder::toString(testConfig.codec).c_str());
             return false;
         }
+    bool isStreamSupportedByDecoder(
+        videodecoder::IVideoDecoder::Id decoderId,
+        bool secureDecode,
+        com::rdk::hal::videodecoder::Capabilities capabilities,
+        videoDecoderTestConfiguration_t testConfig)
+    {
+        UT_LOG_INFO("In function: %s", __func__);
+
+        if (secureDecode && !capabilities.supportsSecure)
+        {
+            UT_LOG_INFO("Decoder [%d] doesn't support secure decoding",
+                        decoderId.value);
+            return false;
+        }
+
+        auto codecIt = std::find_if(
+            capabilities.supportedCodecs.begin(),
+            capabilities.supportedCodecs.end(),
+            [&testConfig](const com::rdk::hal::videodecoder::CodecCapabilities& cap) {
+                return cap.codec == testConfig.codec;
+            });
+
+        if (codecIt == capabilities.supportedCodecs.end())
+        {
+            UT_LOG_INFO("Decoder [%d] doesn't support Codec [%s]",
+                        decoderId.value,
+                        videodecoder::toString(testConfig.codec).c_str());
+            return false;
+        }
+
+        if (testConfig.codedWidth > codecIt->maxFrameWidth ||
+            testConfig.codedHeight > codecIt->maxFrameHeight)
+        {
+            UT_LOG_INFO(
+                "Decoder [%d] skipping stream [%s]: resolution %dx%d exceeds capability %dx%d",
+                 decoderId.value,
+                 testConfig.streamName.c_str(),
+                 testConfig.codedWidth,
+                 testConfig.codedHeight,
+                 codecIt->maxFrameWidth,
+                 codecIt->maxFrameHeight);
+            return false;
+        }
+
+        if (testConfig.frameRateDenominator > 0)
+        {
+            uint32_t streamFps =
+                testConfig.frameRateNumerator / testConfig.frameRateDenominator;
+
+            if (streamFps > static_cast<uint32_t>(codecIt->maxFrameRate))
+            {
+                UT_LOG_INFO(
+                    "Decoder [%d] skipping stream [%s]: frame rate %u fps exceeds capability %d fps",
+                     decoderId.value,
+                     testConfig.streamName.c_str(),
+                     streamFps,
+                     codecIt->maxFrameRate);
+                return false;
+            }
+        }
+
         return true;
     }
 
@@ -199,6 +260,8 @@ public:
             if (!checkDecoderSupportsConfig(_decoderId, capabilities, testConfig, secureDecode))
             {
                 UT_LOG_WARNING("Decoder [%d] doesn't support the required configuration", _decoderId.value);
+            if (!isStreamSupportedByDecoder(_decoderId, secureDecode, *capabilities, testConfig))
+            {
                 continue;
             }
 
@@ -243,6 +306,16 @@ public:
             if (!checkDecoderSupportsConfig(_decoderId, capabilities, testConfig, secureDecode))
             {
                 UT_LOG_WARNING("[DecoderID: %d] Doesn't support the required configuration", _decoderId.value);
+        for (const auto& [_decoderId, decoderHandle, controlListener, eventListener, capabilities] : mVideoDecoderList) {
+            auto it = std::find_if(gVideodecoders_hfp.begin(), gVideodecoders_hfp.end(),
+                [_decoderId](const decoder& item) { return item.id == _decoderId.value; });
+            if (it == gVideodecoders_hfp.end()) {
+                UT_LOG_INFO("[DecoderID: %d] Not available", _decoderId.value);
+                continue;
+            }
+
+            if (!isStreamSupportedByDecoder(_decoderId, secureDecode, *capabilities, testConfig))
+            {
                 continue;
             }
 
@@ -535,11 +608,110 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_NonTunnel_NonSecure_FlushReset_Error)
     runTest(testName, secureMode, tunnelMode, concurrentMode);
 }
 
+/**
+ * @brief Test the ability to decode video frames in sequential decoding
+ *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 017
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_Dolby_Vision)
+{
+    const char *testName = "Decode_Sequential_NonTunnel_NonSecure_Dolby_Vision";
+    bool secureMode = false;
+    bool tunnelMode = false;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test the ability to decode video frames in sequential decoding
+ *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 018
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Seq_NonTun_NonSec_DV_SetBl_NonDVStream)
+{
+    const char *testName = "Decode_Seq_NonTun_NonSec_DV_SetBl_NonDVStream";
+    bool secureMode = false;
+    bool tunnelMode = false;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test the ability to decode video frames in sequential decoding
+ *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 019
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Seq_NonTun_NonSec_DV_SetBlEl_NonDVStream)
+{
+    const char *testName = "Decode_Seq_NonTun_NonSec_DV_SetBlEl_NonDVStream";
+    bool secureMode = false;
+    bool tunnelMode = false;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test the ability to decode video frames in sequential decoding
+ *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 020
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Seq_NonTun_NonSec_SetBlEl_OnlyBlStream)
+{
+    const char *testName = "Decode_Seq_NonTun_NonSec_SetBlEl_OnlyBlStream";
+    bool secureMode = false;
+    bool tunnelMode = false;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+
+/**
+ * @brief Test the ability to decode video frames in sequential decoding
+ *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 020
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Seq_NonTun_NonSec_SetBl_BlElStream)
+{
+    const char *testName = "Decode_Seq_NonTun_NonSec_SetBl_BlElStream";
+    bool secureMode = false;
+    bool tunnelMode = false;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test the ability to decode video frames in sequential decoding
+ *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 021
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Seq_NonTun_NonSec_SetBl_CorruptBlStream)
+{
+    const char *testName = "Decode_Seq_NonTun_NonSec_SetBl_CorruptBlStream";
+    bool secureMode = false;
+    bool tunnelMode = false;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test the ability to decode video frames in sequential decoding
+ *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 021
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Seq_NonTun_NonSec_SetBlEl_CorruptBlElStream)
+{
+    const char *testName = "Decode_Seq_NonTun_NonSec_SetBlEl_CorruptBlElStream";
+    bool secureMode = false;
+    bool tunnelMode = false;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
 #if 0
 /**
  * @brief Test concurrent decoding in secure mode
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 017
+ * **Test Group ID:** 01 **Test Case ID:** 018
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure)
 {
@@ -553,7 +725,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure)
 /**
  * @brief Test concurrent decoding with error streams
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 018
+ * **Test Group ID:** 01 **Test Case ID:** 019
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_Error)
 {
@@ -567,7 +739,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_Error)
 /**
  * @brief Test concurrent decoding with discontinuity
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 019
+ * **Test Group ID:** 01 **Test Case ID:** 020
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_Discontinuity)
 {
@@ -581,7 +753,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_Discontin
 /**
  * @brief Test concurrent decoding with EOS
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 020
+ * **Test Group ID:** 01 **Test Case ID:** 021
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_EOS)
 {
@@ -595,7 +767,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_EOS)
 /**
  * @brief Test concurrent decoding with flush
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 021
+ * **Test Group ID:** 01 **Test Case ID:** 022
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_Flush)
 {
@@ -609,7 +781,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_Flush)
 /**
  * @brief Test concurrent decoding with flush and reset
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 022
+ * **Test Group ID:** 01 **Test Case ID:** 023
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_FlushReset)
 {
@@ -623,7 +795,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_FlushRese
 /**
  * @brief Test decoding with GOP structure in concurrent mode
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 042
+ * **Test Group ID:** 01 **Test Case ID:** 024
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_GOPStructure)
 {
@@ -634,11 +806,110 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_GOPStruct
     runTest(testName, secureMode, tunnelMode, concurrentMode);
 }
 
+/**
+ * @brief Test the ability to decode video frames in concurrent decoding
+ *        Decoding type: Concurrent, Modes: Non-Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 025
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_Dolby_Vision)
+{
+    const char *testName = "Decode_Concurrent_NonTunnel_NonSecure_Dolby_Vision";
+    bool secureMode = false;
+    bool tunnelMode = false;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test the ability to decode video frames in concurrent decoding
+ *        Decoding type: concurrent, Modes: Non-Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 018
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Con_NonTun_NonSec_DV_SetBl_NonDVStream)
+{
+    const char *testName = "Decode_Con_NonTun_NonSec_DV_SetBl_NonDVStream";
+    bool secureMode = false;
+    bool tunnelMode = false;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test the ability to decode video frames in concurrent decoding
+ *        Decoding type: Concurrent, Modes: Non-Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 019
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Con_NonTun_NonSec_DV_SetBlEl_NonDVStream)
+{
+    const char *testName = "Decode_Con_NonTun_NonSec_DV_SetBlEl_NonDVStream";
+    bool secureMode = false;
+    bool tunnelMode = false;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test the ability to decode video frames in concurrent decoding
+ *        Decoding type: Concurrent, Modes: Non-Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 020
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Con_NonTun_NonSec_SetBlEl_OnlyBlStream)
+{
+    const char *testName = "Decode_Con_NonTun_NonSec_SetBlEl_OnlyBlStream";
+    bool secureMode = false;
+    bool tunnelMode = false;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+
+/**
+ * @brief Test the ability to decode video frames in concurrent decoding
+ *        Decoding type: Concurrent, Modes: Non-Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 020
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Con_NonTun_NonSec_SetBl_BlElStream)
+{
+    const char *testName = "Decode_Con_NonTun_NonSec_SetBl_BlElStream";
+    bool secureMode = false;
+    bool tunnelMode = false;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test the ability to decode video frames in concurrent decoding
+ *        Decoding type: Concurrent, Modes: Non-Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 021
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Con_NonTun_NonSec_SetBl_CorruptBlStream)
+{
+    const char *testName = "Decode_Con_NonTun_NonSec_SetBl_CorruptBlStream";
+    bool secureMode = false;
+    bool tunnelMode = false;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
+/**
+ * @brief Test the ability to decode video frames in concurrent decoding
+ *        Decoding type: Concurrent, Modes: Non-Tunnel, Non-Secure
+ * **Test Group ID:** 01 **Test Case ID:** 021
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Con_NonTun_NonSec_SetBlEl_CorruptBlElStream)
+{
+    const char *testName = "Decode_Con_NonTun_NonSec_SetBlEl_CorruptBlElStream";
+    bool secureMode = false;
+    bool tunnelMode = false;
+    bool concurrentMode = false;
+    runTest(testName, secureMode, tunnelMode, concurrentMode);
+}
+
 #if 0
 /**
  * @brief Test decoding with codec support
  *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 023
+ * **Test Group ID:** 01 **Test Case ID:** 025
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_CODEC)
 {
@@ -652,7 +923,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_CODEC)
 /**
  * @brief Test decoding with different resolutions
  *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 024
+ * **Test Group ID:** 01 **Test Case ID:** 026
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_Resolutions)
 {
@@ -666,7 +937,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_Resolutio
 /**
  * @brief Test decoding with HDR modes
  *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 025
+ * **Test Group ID:** 01 **Test Case ID:** 027
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_HDRModes)
 {
@@ -680,7 +951,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_HDRModes)
 /**
  * @brief Test decoding with different frame rates
  *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 026
+ * **Test Group ID:** 01 **Test Case ID:** 028
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_FrameRate)
 {
@@ -694,7 +965,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_FrameRate
 /**
  * @brief Test decoding in low latency mode
  *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 027
+ * **Test Group ID:** 01 **Test Case ID:** 029
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_LowLatency)
 {
@@ -708,7 +979,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_LowLatenc
 /**
  * @brief Test decoding with adaptive bitrate streaming
  *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 028
+ * **Test Group ID:** 01 **Test Case ID:** 030
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_AdaptiveBitrate)
 {
@@ -723,7 +994,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_AdaptiveB
 /**
  * @brief Test decoding with codec support in secure mode
  *        Decoding type: Sequential, Modes: Non-Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 029
+ * **Test Group ID:** 01 **Test Case ID:** 031
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_CODEC)
 {
@@ -737,7 +1008,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_CODEC)
 /**
  * @brief Test handling of discontinuity signal in secure mode
  *        Decoding type: Sequential, Modes: Non-Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 030
+ * **Test Group ID:** 01 **Test Case ID:** 032
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_Discontinuity)
 {
@@ -751,7 +1022,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_Discontinuit
 /**
  * @brief Test handling of EOS signal in secure mode
  *        Decoding type: Sequential, Modes: Non-Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 031
+ * **Test Group ID:** 01 **Test Case ID:** 033
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_EOS)
 {
@@ -765,7 +1036,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_EOS)
 /**
  * @brief Test flush functionality in secure mode
  *        Decoding type: Sequential, Modes: Non-Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 032
+ * **Test Group ID:** 01 **Test Case ID:** 034
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_Flush)
 {
@@ -779,7 +1050,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_Flush)
 /**
  * @brief Test flush with reset functionality in secure mode
  *        Decoding type: Sequential, Modes: Non-Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 033
+ * **Test Group ID:** 01 **Test Case ID:** 035
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_FlushReset)
 {
@@ -793,7 +1064,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_FlushReset)
 /**
  * @brief Test decoding with different resolutions in secure mode
  *        Decoding type: Sequential, Modes: Non-Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 034
+ * **Test Group ID:** 01 **Test Case ID:** 036
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_Resolutions)
 {
@@ -807,7 +1078,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_Resolutions)
 /**
  * @brief Test decoding with HDR modes in secure mode
  *        Decoding type: Sequential, Modes: Non-Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 035
+ * **Test Group ID:** 01 **Test Case ID:** 037
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_HDRModes)
 {
@@ -821,7 +1092,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_HDRModes)
 /**
  * @brief Test decoding with different frame rates in secure mode
  *        Decoding type: Sequential, Modes: Non-Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 036
+ * **Test Group ID:** 01 **Test Case ID:** 038
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_FrameRate)
 {
@@ -835,7 +1106,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_FrameRate)
 /**
  * @brief Test decoding in low latency mode in secure mode
  *        Decoding type: Sequential, Modes: Non-Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 037
+ * **Test Group ID:** 01 **Test Case ID:** 039
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_LowLatency)
 {
@@ -849,7 +1120,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_LowLatency)
 /**
  * @brief Test decoding with codec support in concurrent mode
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 038
+ * **Test Group ID:** 01 **Test Case ID:** 040
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_CODEC)
 {
@@ -863,7 +1134,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_CODEC)
 /**
  * @brief Test decoding with different resolutions in concurrent mode
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 039
+ * **Test Group ID:** 01 **Test Case ID:** 041
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_Resolutions)
 {
@@ -877,7 +1148,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_Resolutio
 /**
  * @brief Test decoding with HDR modes in concurrent mode
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 040
+ * **Test Group ID:** 01 **Test Case ID:** 042
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_HDRModes)
 {
@@ -891,7 +1162,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_HDRModes)
 /**
  * @brief Test decoding with different frame rates in concurrent mode
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 041
+ * **Test Group ID:** 01 **Test Case ID:** 043
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_FrameRate)
 {
@@ -902,13 +1173,10 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_FrameRate
     runTest(testName, secureMode, tunnelMode, concurrentMode);
 }
 
-
-
-
 /**
  * @brief Test decoding in low latency mode in concurrent mode
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 043
+ * **Test Group ID:** 01 **Test Case ID:** 044
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_LowLatency)
 {
@@ -922,7 +1190,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_LowLatenc
 /**
  * @brief Test decoding with error streams in concurrent and secure modes
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 044
+ * **Test Group ID:** 01 **Test Case ID:** 045
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_Error)
 {
@@ -936,7 +1204,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_Error)
 /**
  * @brief Test decoding with codec support in concurrent and secure modes
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 045
+ * **Test Group ID:** 01 **Test Case ID:** 046
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_CODEC)
 {
@@ -950,7 +1218,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_CODEC)
 /**
  * @brief Test handling of discontinuity signal in concurrent and secure modes
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 046
+ * **Test Group ID:** 01 **Test Case ID:** 047
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_Discontinuity)
 {
@@ -964,7 +1232,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_Discontinuit
 /**
  * @brief Test handling of EOS signal in concurrent and secure modes
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 047
+ * **Test Group ID:** 01 **Test Case ID:** 048
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_EOS)
 {
@@ -978,7 +1246,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_EOS)
 /**
  * @brief Test flush functionality in concurrent and secure modes
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 048
+ * **Test Group ID:** 01 **Test Case ID:** 049
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_Flush)
 {
@@ -992,7 +1260,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_Flush)
 /**
  * @brief Test flush with reset functionality in concurrent and secure modes
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 049
+ * **Test Group ID:** 01 **Test Case ID:** 050
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_FlushReset)
 {
@@ -1006,7 +1274,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_FlushReset)
 /**
  * @brief Test decoding with different resolutions in concurrent and secure modes
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 050
+ * **Test Group ID:** 01 **Test Case ID:** 051
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_Resolutions)
 {
@@ -1020,7 +1288,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_Resolutions)
 /**
  * @brief Test decoding with HDR modes in concurrent and secure modes
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 051
+ * **Test Group ID:** 01 **Test Case ID:** 052
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_HDRModes)
 {
@@ -1034,7 +1302,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_HDRModes)
 /**
  * @brief Test decoding with different frame rates in concurrent and secure modes
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 052
+ * **Test Group ID:** 01 **Test Case ID:** 053
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_FrameRate)
 {
@@ -1048,7 +1316,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_FrameRate)
 /**
  * @brief Test decoding with GOP structure in concurrent and secure modes
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 053
+ * **Test Group ID:** 01 **Test Case ID:** 054
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_GOPStructure)
 {
@@ -1062,7 +1330,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_GOPStructure
 /**
  * @brief Test decoding in low latency mode in concurrent and secure modes
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 054
+ * **Test Group ID:** 01 **Test Case ID:** 055
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_LowLatency)
 {
@@ -1076,7 +1344,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_LowLatency)
 /**
  * @brief Test decoding in low latency mode in concurrent and secure modes
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 054
+ * **Test Group ID:** 01 **Test Case ID:** 056
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_LowLatency)
 {
@@ -1090,7 +1358,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_LowLatency)
 /**
  * @brief Test decoding in tunnel mode
  *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 055
+ * **Test Group ID:** 01 **Test Case ID:** 057
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Tunnel_NonSecure)
 {
@@ -1104,7 +1372,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Tunnel_NonSecure)
 /**
  * @brief Test tunnel and secure modes together
  *        Decoding type: Sequential, Modes: Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 056
+ * **Test Group ID:** 01 **Test Case ID:** 058
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Tunnel_Secure)
 {
@@ -1118,7 +1386,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Tunnel_Secure)
 /**
  * @brief Test tunnel mode with error streams
  *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 057
+ * **Test Group ID:** 01 **Test Case ID:** 059
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Tunnel_NonSecure_Error)
 {
@@ -1132,7 +1400,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Tunnel_NonSecure_Error)
 /**
  * @brief Test concurrent decoding in tunnel mode
  *        Decoding type: Concurrent, Modes: Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 058
+ * **Test Group ID:** 01 **Test Case ID:** 060
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure)
 {
@@ -1146,7 +1414,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure)
 /**
  * @brief Test decoding with codec support in tunnel mode
  *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 059
+ * **Test Group ID:** 01 **Test Case ID:** 061
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_CODEC)
 {
@@ -1160,7 +1428,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_CODEC)
 /**
  * @brief Test handling of discontinuity signal in tunnel mode
  *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 060
+ * **Test Group ID:** 01 **Test Case ID:** 062
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_Discontinuity)
 {
@@ -1174,7 +1442,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_Discontinuit
 /**
  * @brief Test handling of EOS signal in tunnel mode
  *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 061
+ * **Test Group ID:** 01 **Test Case ID:** 063
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_EOS)
 {
@@ -1188,7 +1456,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_EOS)
 /**
  * @brief Test flush functionality in tunnel mode
  *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 062
+ * **Test Group ID:** 01 **Test Case ID:** 064
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_Flush)
 {
@@ -1202,7 +1470,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_Flush)
 /**
  * @brief Test flush with reset functionality in tunnel mode
  *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 063
+ * **Test Group ID:** 01 **Test Case ID:** 065
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_FlushReset)
 {
@@ -1216,7 +1484,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_FlushReset)
 /**
  * @brief Test decoding with different resolutions in tunnel mode
  *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 064
+ * **Test Group ID:** 01 **Test Case ID:** 066
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_Resolutions)
 {
@@ -1230,7 +1498,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_Resolutions)
 /**
  * @brief Test decoding with HDR modes in tunnel mode
  *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 065
+ * **Test Group ID:** 01 **Test Case ID:** 067
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_HDRModes)
 {
@@ -1244,7 +1512,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_HDRModes)
 /**
  * @brief Test decoding with different frame rates in tunnel mode
  *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 066
+ * **Test Group ID:** 01 **Test Case ID:** 068
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_FrameRate)
 {
@@ -1258,7 +1526,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_FrameRate)
 /**
  * @brief Test decoding with GOP structure in tunnel mode
  *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 067
+ * **Test Group ID:** 01 **Test Case ID:** 069
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_GOPStructure)
 {
@@ -1272,7 +1540,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_GOPStructure
 /**
  * @brief Test decoding in low latency mode in tunnel mode
  *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 068
+ * **Test Group ID:** 01 **Test Case ID:** 070
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_LowLatency)
 {
@@ -1286,7 +1554,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_LowLatency)
 /**
  * @brief Test decoding with error streams in tunnel and secure modes
  *        Decoding type: Sequential, Modes: Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 069
+ * **Test Group ID:** 01 **Test Case ID:** 071
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_Error)
 {
@@ -1300,7 +1568,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_Error)
 /**
  * @brief Test decoding with codec support in tunnel and secure modes
  *        Decoding type: Sequential, Modes: Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 070
+ * **Test Group ID:** 01 **Test Case ID:** 072
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_CODEC)
 {
@@ -1314,7 +1582,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_CODEC)
 /**
  * @brief Test handling of discontinuity signal in tunnel and secure modes
  *        Decoding type: Sequential, Modes: Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 071
+ * **Test Group ID:** 01 **Test Case ID:** 073
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_Discontinuity)
 {
@@ -1328,7 +1596,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_Discontinuity)
 /**
  * @brief Test handling of EOS signal in tunnel and secure modes
  *        Decoding type: Sequential, Modes: Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 072
+ * **Test Group ID:** 01 **Test Case ID:** 074
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_EOS)
 {
@@ -1342,7 +1610,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_EOS)
 /**
  * @brief Test flush functionality in tunnel and secure modes
  *        Decoding type: Sequential, Modes: Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 073
+ * **Test Group ID:** 01 **Test Case ID:** 075
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_Flush)
 {
@@ -1356,7 +1624,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_Flush)
 /**
  * @brief Test flush with reset functionality in tunnel and secure modes
  *        Decoding type: Sequential, Modes: Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 074
+ * **Test Group ID:** 01 **Test Case ID:** 076
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_FlushReset)
 {
@@ -1370,7 +1638,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_FlushReset)
 /**
  * @brief Test decoding with different resolutions in tunnel and secure modes
  *        Decoding type: Sequential, Modes: Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 075
+ * **Test Group ID:** 01 **Test Case ID:** 077
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_Resolutions)
 {
@@ -1384,7 +1652,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_Resolutions)
 /**
  * @brief Test decoding with HDR modes in tunnel and secure modes
  *        Decoding type: Sequential, Modes: Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 076
+ * **Test Group ID:** 01 **Test Case ID:** 078
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_HDRModes)
 {
@@ -1398,7 +1666,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_HDRModes)
 /**
  * @brief Test decoding with different frame rates in tunnel and secure modes
  *        Decoding type: Sequential, Modes: Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 077
+ * **Test Group ID:** 01 **Test Case ID:** 079
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_FrameRate)
 {
@@ -1412,7 +1680,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_FrameRate)
 /**
  * @brief Test decoding with GOP structure in tunnel and secure modes
  *        Decoding type: Sequential, Modes: Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 078
+ * **Test Group ID:** 01 **Test Case ID:** 080
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_GOPStructure)
 {
@@ -1426,7 +1694,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_GOPStructure)
 /**
  * @brief Test decoding in low latency mode in tunnel and secure modes
  *        Decoding type: Sequential, Modes: Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 079
+ * **Test Group ID:** 01 **Test Case ID:** 081
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_LowLatency)
 {
@@ -1440,7 +1708,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_LowLatency)
 /**
  * @brief Test decoding with error streams in concurrent and tunnel modes
  *        Decoding type: Concurrent, Modes: Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 080
+ * **Test Group ID:** 01 **Test Case ID:** 082
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_Error)
 {
@@ -1454,7 +1722,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_Error)
 /**
  * @brief Test decoding with codec support in concurrent and tunnel modes
  *        Decoding type: Concurrent, Modes: Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 081
+ * **Test Group ID:** 01 **Test Case ID:** 083
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_CODEC)
 {
@@ -1468,7 +1736,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_CODEC)
 /**
  * @brief Test handling of discontinuity signal in concurrent and tunnel modes
  *        Decoding type: Concurrent, Modes: Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 082
+ * **Test Group ID:** 01 **Test Case ID:** 084
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_Discontinuity)
 {
@@ -1482,7 +1750,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_Discontinuit
 /**
  * @brief Test handling of EOS signal in concurrent and tunnel modes
  *        Decoding type: Concurrent, Modes: Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 083
+ * **Test Group ID:** 01 **Test Case ID:** 085
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_EOS)
 {
@@ -1496,7 +1764,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_EOS)
 /**
  * @brief Test flush functionality in concurrent and tunnel modes
  *        Decoding type: Concurrent, Modes: Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 084
+ * **Test Group ID:** 01 **Test Case ID:** 086
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_Flush)
 {
@@ -1510,7 +1778,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_Flush)
 /**
  * @brief Test flush with reset functionality in concurrent and tunnel modes
  *        Decoding type: Concurrent, Modes: Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 085
+ * **Test Group ID:** 01 **Test Case ID:** 087
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_FlushReset)
 {
@@ -1524,7 +1792,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_FlushReset)
 /**
  * @brief Test decoding with different resolutions in concurrent and tunnel modes
  *        Decoding type: Concurrent, Modes: Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 086
+ * **Test Group ID:** 01 **Test Case ID:** 088
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_Resolutions)
 {
@@ -1538,7 +1806,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_Resolutions)
 /**
  * @brief Test decoding with HDR modes in concurrent and tunnel modes
  *        Decoding type: Concurrent, Modes: Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 087
+ * **Test Group ID:** 01 **Test Case ID:** 089
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_HDRModes)
 {
@@ -1552,7 +1820,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_HDRModes)
 /**
  * @brief Test decoding with different frame rates in concurrent and tunnel modes
  *        Decoding type: Concurrent, Modes: Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 088
+ * **Test Group ID:** 01 **Test Case ID:** 090
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_FrameRate)
 {
@@ -1566,7 +1834,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_FrameRate)
 /**
  * @brief Test decoding with GOP structure in concurrent and tunnel modes
  *        Decoding type: Concurrent, Modes: Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 089
+ * **Test Group ID:** 01 **Test Case ID:** 091
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_GOPStructure)
 {
@@ -1580,7 +1848,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_GOPStructure
 /**
  * @brief Test decoding in low latency mode in concurrent and tunnel modes
  *        Decoding type: Concurrent, Modes: Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 090
+ * **Test Group ID:** 01 **Test Case ID:** 092
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_LowLatency)
 {
@@ -1594,7 +1862,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_LowLatency)
 /**
  * @brief Test concurrent decoding in tunnel and secure modes
  *        Decoding type: Concurrent, Modes: Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 091
+ * **Test Group ID:** 01 **Test Case ID:** 093
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_Secure)
 {

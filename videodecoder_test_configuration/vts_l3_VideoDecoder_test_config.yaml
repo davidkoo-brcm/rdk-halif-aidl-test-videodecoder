@@ -578,3 +578,12 @@ videodecoder:
             Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_LOWLATENCY
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+    Decode_Sequential_NonTunnel_NonSecure_Dolby_Vision:
+      Controls:
+        delay_between_decode_calls: 5
+      Inputs:
+        Streams:
+          - codec: H265_HEVC
+            Name: H265_MAIN10_1920x1080_DR_DOLBY_VISION_300NITS_BT2020_23976p_PIXEL_FORMAT_YCBCR420
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 10000000
