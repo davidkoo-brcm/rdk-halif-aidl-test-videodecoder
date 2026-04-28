@@ -1567,7 +1567,7 @@ public:
 
     Status onDecodeError(videodecoder::ErrorCode errorCode, int32_t vendorErrorCode) override
     {
-        UT_LOG_ERROR("[Video DecoderID: %d] Decode error: errorCode=%d, vendorErrorCode=%d", mDecoderID, static_cast<int32_t>(errorCode), vendorErrorCode);
+        UT_LOG_ERROR("[Video DecoderID: %d] onDecodeError: errorCode=%d, vendorErrorCode=%d", mDecoderID, static_cast<int32_t>(errorCode), vendorErrorCode);
         {
             std::lock_guard<std::mutex> lock(mMutex);
             mErrors.push_back(static_cast<int32_t>(errorCode));
@@ -1577,7 +1577,7 @@ public:
     }
     Status onStateChanged(::com::rdk::hal::State oldState, ::com::rdk::hal::State newState) override
     {
-        UT_LOG_INFO("[Video DecoderID: %d] State Change received: %s -> %s", mDecoderID, ::com::rdk::hal::toString(oldState).c_str(), ::com::rdk::hal::toString(newState).c_str());
+        UT_LOG_INFO("[Video DecoderID: %d] onStateChanged: %s -> %s", mDecoderID, ::com::rdk::hal::toString(oldState).c_str(), ::com::rdk::hal::toString(newState).c_str());
         std::lock_guard<std::mutex> lock(mMutex);
         mStateChanges.push_back({oldState, newState});
         mCond.notify_one();

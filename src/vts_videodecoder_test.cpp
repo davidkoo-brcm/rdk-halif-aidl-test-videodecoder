@@ -94,7 +94,6 @@ void videoDecoderTest::run(bool concurrentDecodeConsume)
         if(!mIsSinkAttached && consumerThread.joinable())
         {
             // If sink is not attached, we need to validate decoded frames here
-            //validateDecodedFrame();
             consumerThread.join();
         }
 
@@ -157,6 +156,7 @@ void videoDecoderTest::setupVideoDecoder()
         UT_LOG_DEBUG("Set properties in TUNNELLED Mode");
         VIDEODECODER_SETPROPERTY_LIST_SUCCESS(mVideoDecoderController, startedIntProps, intValue);
     }
+
     if (mTestConfiguration.codedWidth > 0 && mTestConfiguration.codedHeight > 0)
     {
         VIDEODECODER_SETSTREAMRESOLUTION_SUCCESS(mVideoDecoderController, mTestConfiguration.codedWidth, mTestConfiguration.codedHeight);
@@ -176,43 +176,13 @@ void videoDecoderTest::setupVideoDecoder()
     if (mTestConfiguration.contentLightLevel.has_value())
     {
         VIDEODECODER_SETCONTENTLIGHTLEVEL_SUCCESS(mVideoDecoderController, mTestConfiguration.contentLightLevel);
-        std::lock_guard<std::mutex> lock(mDecodeMutex);
-        UT_LOG_INFO("Calling open(codec:%d, secure:%d, listener:%p)",
-                    mTestConfiguration.codec, mSecureDecode, mControlListener.get());
-        VIDEODECODER_OPEN_SUCCESS(mDecoderHandle, mTestConfiguration.codec, mSecureDecode,
-                                mControlListener, videoDecoderController, true);
-        UT_LOG_INFO("Decoder opened, controller:%p", videoDecoderController.get());
+    }
 
-        if (mTunnelMode) {
-            std::vector<std::pair<videodecoder::Property, int32_t>> startedIntProps = {
-                {videodecoder::Property::OPERATIONAL_MODE, static_cast<int32_t>(OperationalMode::TUNNELLED)}
-            };
-            UT_LOG_INFO("Set properties in TUNNELLED Mode");
-            VIDEODECODER_SETPROPERTY_LIST_SUCCESS(videoDecoderController, startedIntProps, intValue);
-        }
-        std::optional<PropertyValue> aidl_return;
-        VIDEODECODER_GETPROPERTY(mDecoderHandle, videodecoder::Property::OPERATIONAL_MODE, aidl_return);
-        if (mTestConfiguration.colorimetry != Colorimetry::UNKNOWN) {
-            VIDEODECODER_SETCOLORIMETRY_SUCCESS(videoDecoderController, mTestConfiguration.colorimetry);
-        }
-        if (mTestConfiguration.masteringDisplayInfo.has_value()) {
-            VIDEODECODER_SETMASTERINGDISPLAYINFO_SUCCESS(videoDecoderController, mTestConfiguration.masteringDisplayInfo);
-        }
-        if (mTestConfiguration.contentLightLevel.has_value()) {
-            VIDEODECODER_SETCONTENTLIGHTLEVEL_SUCCESS(videoDecoderController, mTestConfiguration.contentLightLevel);
-        if (mTestConfiguration.codedWidth > 0 && mTestConfiguration.codedHeight > 0) {
-            VIDEODECODER_SETSTREAMRESOLUTION_SUCCESS(videoDecoderController, mTestConfiguration.codedWidth, mTestConfiguration.codedHeight);
-        }
-        if (mTestConfiguration.frameRateDenominator > 0) {
-            VIDEODECODER_SETFRAMERATE_SUCCESS(videoDecoderController, mTestConfiguration.frameRateNumerator, mTestConfiguration.frameRateDenominator);
-        }
-
-        /*Set Dolby Vision*/
-        UT_LOG_INFO("value of the dynamicRange %d", mTestConfiguration.dynamicRange);
-        if(mTestConfiguration.dynamicRange == videodecoder::DynamicRange::DOLBY_VISION)
-        {
-            VIDEODECODER_SETDOLBYVISIONLAYERFLAGS_SUCCESS(videoDecoderController, mTestConfiguration.blPresent, mTestConfiguration.elPresent);
-        }
+    /*Set Dolby Vision*/
+    UT_LOG_INFO("value of the dynamicRange %d", mTestConfiguration.dynamicRange);
+    if(mTestConfiguration.dynamicRange == videodecoder::DynamicRange::DOLBY_VISION)
+    {
+        VIDEODECODER_SETDOLBYVISIONLAYERFLAGS_SUCCESS(mVideoDecoderController, mTestConfiguration.blPresent, mTestConfiguration.elPresent);
     }
 
     // Start Decoder
@@ -364,102 +334,6 @@ bool videoDecoderTest::validateDecodedFrame()
                 UT_LOG_DEBUG("Unexpected PTS received: %lld", decodedFrame.framePTS);
                 UT_ASSERT_TRUE(false);
                 continue;
-                auto it = mReceivedPts.find(decodedFrame.framePTS);
-                if (it == mReceivedPts.end()) {
-                    UT_LOG_INFO("Unexpected PTS received: %lld", decodedFrame.framePTS);
-                } else {
-                    UT_LOG_INFO("Validated PTS: %lld", decodedFrame.framePTS);
-                    mReceivedPts.erase(it); // Remove to track received PTS
-                }
-            }
-            if (decodedFrame.metadata)
-            {
-                UT_LOG_INFO("Validating metadata for PTS=%lld", decodedFrame.framePTS);
-                // Validate resolution
-                UT_ASSERT_EQUAL(decodedFrame.metadata->codedWidth, mTestConfiguration.codedWidth)
-                    << "Width mismatch: expected=" << mTestConfiguration.codedWidth
-                    << ", actual=" << decodedFrame.metadata->codedWidth
-                    << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-                UT_ASSERT_EQUAL(decodedFrame.metadata->codedHeight, mTestConfiguration.codedHeight)
-                    << "Height mismatch: expected=" << mTestConfiguration.codedHeight
-                    << ", actual=" << decodedFrame.metadata->codedHeight
-                    << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-
-                UT_ASSERT_EQUAL(decodedFrame.metadata->colorDepth, mTestConfiguration.colorDepth)
-                    << "Color depth mismatch: expected=" << mTestConfiguration.colorDepth
-                    << ", actual=" << decodedFrame.metadata->colorDepth
-                    << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-
-                // Validate dynamic range
-                UT_ASSERT_EQUAL(decodedFrame.metadata->dynamicRange, mTestConfiguration.dynamicRange)
-                    << "Dynamic range mismatch: expected=" << static_cast<int>(mTestConfiguration.dynamicRange)
-                    << ", actual=" << static_cast<int>(decodedFrame.metadata->dynamicRange)
-                    << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-
-                // Validate colorimetry
-                UT_ASSERT_EQUAL(decodedFrame.metadata->colorimetry, mTestConfiguration.colorimetry)
-                    << "Colorimetry mismatch: expected=" << static_cast<int>(mTestConfiguration.colorimetry)
-                    << ", actual=" << static_cast<int>(decodedFrame.metadata->colorimetry)
-                    << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-
-                // Validate frame rate
-                UT_ASSERT_EQUAL(decodedFrame.metadata->frameRateNumerator, mTestConfiguration.frameRateNumerator)
-                    << "Frame rate numerator mismatch: expected=" << mTestConfiguration.frameRateNumerator
-                    << ", actual=" << decodedFrame.metadata->frameRateNumerator
-                    << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-                UT_ASSERT_EQUAL(decodedFrame.metadata->frameRateDenominator, mTestConfiguration.frameRateDenominator)
-                    << "Frame rate denominator mismatch: expected=" << mTestConfiguration.frameRateDenominator
-                    << ", actual=" << decodedFrame.metadata->frameRateDenominator
-                    << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-
-                // Validate scan type
-                UT_ASSERT_EQUAL(decodedFrame.metadata->scanType, mTestConfiguration.scanType)
-                    << "Scan type mismatch: expected=" << static_cast<int>(mTestConfiguration.scanType)
-                    << ", actual=" << static_cast<int>(decodedFrame.metadata->scanType)
-                    << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-
-                // Validate HDR metadata
-                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo, mTestConfiguration.masteringDisplayInfo)
-                    << "MasteringDisplayInfo mismatch for Codec "
-                    << videodecoder::toString(mTestConfiguration.codec).c_str();
-
-                UT_ASSERT_EQUAL(decodedFrame.metadata->contentLightLevel, mTestConfiguration.contentLightLevel)
-                    << "ContentLightLevel mismatch for Codec "
-                    << videodecoder::toString(mTestConfiguration.codec).c_str();
-
-                // Validate flags
-                getDecoderMetrics(framesDecoded, decodeErrors, framesDropped);
-
-                if ((framesDecoded > (mTestConfiguration.no_of_frames - mTestConfiguration.decodeErrors)) ||
-                    (decodedFrame.framePTS == -1))
-                {
-
-                    UT_ASSERT_EQUAL(decodedFrame.metadata->endOfStream, true)
-                        << "endOfStream mismatch: expected=" << mTestConfiguration.endOfStream
-                        << ", actual=" << decodedFrame.metadata->endOfStream
-                        << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-                }
-
-                if(mTestConfiguration.discontinuityPts == decodedFrame.framePTS)
-                {
-                    UT_ASSERT_EQUAL(decodedFrame.metadata->discontinuity, mTestConfiguration.discontinuity)
-                        << "discontinuity mismatch: expected=" << mTestConfiguration.discontinuity
-                        << ", actual=" << decodedFrame.metadata->discontinuity
-                        << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-                }
-
-                UT_ASSERT_EQUAL(decodedFrame.metadata->lowLatency, mTestConfiguration.lowLatency)
-                    << "lowLatency mismatch: expected=" << mTestConfiguration.lowLatency
-                    << ", actual=" << decodedFrame.metadata->lowLatency
-                    << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-
-                if(decodedFrame.metadata->dynamicRange == videodecoder::DynamicRange::DOLBY_VISION)
-                {
-                    UT_ASSERT_EQUAL(decodedFrame.metadata->dynamicRange,mTestConfiguration.dynamicRange)
-                        << "dynamicRange mismatch: expected=" << videodecoder::toString(mTestConfiguration.dynamicRange).c_str()
-                        << ", actual=" << videodecoder::toString(decodedFrame.metadata->dynamicRange).c_str()
-                        << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-                }
             }
             else
             {
@@ -581,11 +455,6 @@ bool videoDecoderTest::validateDecodedFrame()
         else
         {
             UT_LOG_INFO("No metadata available for PTS=%lld", decodedFrame.framePTS);
-                << "ContentLightLevel mismatch";
-             UT_ASSERT_EQUAL(decodedFrame.metadata->dynamicRange, mTestConfiguration.dynamicRange)
-                << "DynamicRange mismatch";
-        } else {
-            UT_LOG_WARNING("No metadata available for PTS=%lld", decodedFrame.framePTS);
         }
 
     }
@@ -601,18 +470,6 @@ bool videoDecoderTest::validateDecodedFrame()
     {
         UT_ASSERT_TRUE((discontinuityFramesReceived > 0 && discontinuityFramesReceived < expectedFrames));
     }
-    // Set HDR metadata in READY state before starting the decoder
-    if (mTestConfiguration.colorimetry != Colorimetry::UNKNOWN) {
-        VIDEODECODER_SETCOLORIMETRY_SUCCESS(videoDecoderController, mTestConfiguration.colorimetry);
-    }
-    if (mTestConfiguration.masteringDisplayInfo.has_value()) {
-        VIDEODECODER_SETMASTERINGDISPLAYINFO_SUCCESS(videoDecoderController, mTestConfiguration.masteringDisplayInfo);
-    }
-    if (mTestConfiguration.contentLightLevel.has_value()) {
-        VIDEODECODER_SETCONTENTLIGHTLEVEL_SUCCESS(videoDecoderController, mTestConfiguration.contentLightLevel);
-    }
-
-    VIDEODECODER_START_SUCCESS(mDecoderHandle, videoDecoderController, true);
 
     UT_ASSERT_EQUAL(eosFramesReceived, expectedEOSFrames);
 
