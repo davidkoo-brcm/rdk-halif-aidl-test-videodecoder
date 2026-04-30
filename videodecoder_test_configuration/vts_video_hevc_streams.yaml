@@ -26,7 +26,7 @@ VideoStreams:
     #reference: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.yuv #reference decoder output
     codec: H265_HEVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
-    codedHeight: 1080
+    codedHeight: 1088
     colorDepth: 8
     pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
@@ -83,7 +83,7 @@ VideoStreams:
     input: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     codec: H265_HEVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
-    codedHeight: 1080
+    codedHeight: 1088
     colorDepth: 8
     pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
@@ -140,7 +140,7 @@ VideoStreams:
     input: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     codec: H265_HEVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
-    codedHeight: 1080
+    codedHeight: 1088
     colorDepth: 8
     pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
@@ -197,7 +197,7 @@ VideoStreams:
     input: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     codec: H265_HEVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
-    codedHeight: 1080
+    codedHeight: 1088
     colorDepth: 8
     pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
@@ -254,7 +254,7 @@ VideoStreams:
     input: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     codec: H265_HEVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
-    codedHeight: 1080
+    codedHeight: 1088
     colorDepth: 8
     pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
@@ -311,7 +311,7 @@ VideoStreams:
     input: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     codec: H265_HEVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
-    codedHeight: 1080
+    codedHeight: 1088
     colorDepth: 8
     pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
@@ -368,7 +368,7 @@ VideoStreams:
     input: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     codec: H265_HEVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
-    codedHeight: 1080
+    codedHeight: 1088
     colorDepth: 8
     pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
@@ -425,7 +425,7 @@ VideoStreams:
     input: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     codec: H265_HEVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
-    codedHeight: 1080
+    codedHeight: 1088
     colorDepth: 8
     pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
@@ -482,7 +482,7 @@ VideoStreams:
     input: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     codec: H265_HEVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
-    codedHeight: 1080
+    codedHeight: 1088
     colorDepth: 8
     pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
@@ -539,7 +539,7 @@ VideoStreams:
     input: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     codec: H265_HEVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
-    codedHeight: 1080
+    codedHeight: 1088
     colorDepth: 8
     pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
@@ -596,7 +596,7 @@ VideoStreams:
     input: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     codec: H265_HEVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
-    codedHeight: 1080
+    codedHeight: 1088
     colorDepth: 8
     pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
@@ -649,3 +649,508 @@ VideoStreams:
       - 266667000
       - 366667000
       - 333333000
+  # HDR10 stream with BT2020 colorimetry
+  # Generated with: ffmpeg -f lavfi -i color=c=blue:size=1920x1080:rate=30 -t 5 -c:v libx265
+  #   -color_primaries bt2020 -color_trc smpte2084 -colorspace bt2020nc -an -f hevc colorimetry_bt2020.es
+  H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_COLORIMETRY:
+    input: H265_HIGH_1920x1080_DR_HDR10_BT2020_ST2084_30p_PIXEL_FORMAT_YCBCR420_COLORIMETRY.es
+    codec: H265_HEVC
+    codedWidth: 1920
+    codedHeight: 1088
+    colorDepth: 10
+    pixelFormat: YCBCR420
+    dynamic_range: HDR10
+    colorimetry: BT2020
+    scanType: PROGRESSIVE_FRAME
+    frameRateNumerator: 30
+    frameRateDenominator: 1
+    endOfStream: 0
+    stop_start_pts: -1
+    signal_discontinuity_pts: -1
+    flush_pts: -1
+    flush_reset_pts: -1
+    eos_pts: -1
+    discontinuity: 0
+    lowLatency: 0
+    bit_rate: 32
+    no_of_frames: 15
+    decodeErrors: 0
+    framesDropped: 0
+    frame_size:
+      - 3032
+      - 109
+      - 109
+      - 112
+      - 108
+      - 122
+      - 109
+      - 114
+      - 109
+      - 124
+      - 110
+      - 110
+      - 114
+      - 109
+      - 125
+    PTS:
+      - 0
+      - 33333333
+      - 66666666
+      - 99999999
+      - 133333332
+      - 166666665
+      - 199999998
+      - 233333331
+      - 266666664
+      - 299999997
+      - 333333330
+      - 366666663
+      - 399999996
+      - 433333329
+      - 466666662
+
+  # Same HDR10 stream, colorimetry NOT set (negative test - expects UNKNOWN in output metadata)
+  H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_COLORIMETRY_NOSET:
+    input: H265_HIGH_1920x1080_DR_HDR10_BT2020_ST2084_30p_PIXEL_FORMAT_YCBCR420_COLORIMETRY.es
+    codec: H265_HEVC
+    codedWidth: 1920
+    codedHeight: 1088
+    colorDepth: 10
+    pixelFormat: YCBCR420
+    dynamic_range: HDR10
+    colorimetry: UNKNOWN
+    scanType: PROGRESSIVE_FRAME
+    frameRateNumerator: 30
+    frameRateDenominator: 1
+    endOfStream: 0
+    stop_start_pts: -1
+    signal_discontinuity_pts: -1
+    flush_pts: -1
+    flush_reset_pts: -1
+    eos_pts: -1
+    discontinuity: 0
+    lowLatency: 0
+    bit_rate: 32
+    no_of_frames: 15
+    decodeErrors: 0
+    framesDropped: 0
+    frame_size:
+      - 3032
+      - 109
+      - 109
+      - 112
+      - 108
+      - 122
+      - 109
+      - 114
+      - 109
+      - 124
+      - 110
+      - 110
+      - 114
+      - 109
+      - 125
+    PTS:
+      - 0
+      - 33333333
+      - 66666666
+      - 99999999
+      - 133333332
+      - 166666665
+      - 199999998
+      - 233333331
+      - 266666664
+      - 299999997
+      - 333333330
+      - 366666663
+      - 399999996
+      - 433333329
+      - 466666662
+
+  # HDR10 stream with MasteringDisplayInfo SEI
+  # Generated with: ffmpeg -f lavfi -i color=c=blue:size=1920x1080:rate=30 -t 5 -c:v libx265
+  #   -color_primaries bt2020 -color_trc smpte2084 -colorspace bt2020nc
+  #   -x265-params "master-display=G(13250,34500)B(7500,3000)R(34000,16000)WP(15635,16450)L(10000000,100)"
+  #   -an -f hevc masterdisplayinfo_bt2020.es
+  H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_MDI:
+    input: H265_HIGH_1920x1080_DR_HDR10_BT2020_ST2084_30p_PIXEL_FORMAT_YCBCR420_MDI.es
+    codec: H265_HEVC
+    codedWidth: 1920
+    codedHeight: 1088
+    colorDepth: 10
+    pixelFormat: YCBCR420
+    dynamic_range: HDR10
+    colorimetry: UNKNOWN
+    scanType: PROGRESSIVE_FRAME
+    frameRateNumerator: 30
+    frameRateDenominator: 1
+    endOfStream: 0
+    stop_start_pts: -1
+    signal_discontinuity_pts: -1
+    flush_pts: -1
+    flush_reset_pts: -1
+    eos_pts: -1
+    discontinuity: 0
+    lowLatency: 0
+    bit_rate: 32
+    no_of_frames: 15
+    decodeErrors: 0
+    framesDropped: 0
+    masteringDisplayInfo:
+      redPrimaryX: 34000
+      redPrimaryY: 16000
+      greenPrimaryX: 13250
+      greenPrimaryY: 34500
+      bluePrimaryX: 7500
+      bluePrimaryY: 3000
+      whitePointX: 15635
+      whitePointY: 16450
+      maxLuminance: 10000000
+      minLuminance: 50
+    frame_size:
+      - 3161
+      - 109
+      - 109
+      - 112
+      - 108
+      - 122
+      - 109
+      - 114
+      - 109
+      - 124
+      - 110
+      - 110
+      - 114
+      - 109
+      - 123
+    PTS:
+      - 0
+      - 33333333
+      - 66666666
+      - 99999999
+      - 133333332
+      - 166666665
+      - 199999998
+      - 233333331
+      - 266666664
+      - 299999997
+      - 333333330
+      - 366666663
+      - 399999996
+      - 433333329
+      - 466666662
+
+  # Same HDR10 stream, MasteringDisplayInfo NOT set (negative test - expects nullopt in output metadata)
+  H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_MDI_NOSET:
+    input: H265_HIGH_1920x1080_DR_HDR10_BT2020_ST2084_30p_PIXEL_FORMAT_YCBCR420_MDI.es
+    codec: H265_HEVC
+    codedWidth: 1920
+    codedHeight: 1088
+    colorDepth: 10
+    pixelFormat: YCBCR420
+    dynamic_range: HDR10
+    colorimetry: UNKNOWN
+    scanType: PROGRESSIVE_FRAME
+    frameRateNumerator: 30
+    frameRateDenominator: 1
+    endOfStream: 0
+    stop_start_pts: -1
+    signal_discontinuity_pts: -1
+    flush_pts: -1
+    flush_reset_pts: -1
+    eos_pts: -1
+    discontinuity: 0
+    lowLatency: 0
+    bit_rate: 32
+    no_of_frames: 15
+    decodeErrors: 0
+    framesDropped: 0
+    frame_size:
+      - 3161
+      - 109
+      - 109
+      - 112
+      - 108
+      - 122
+      - 109
+      - 114
+      - 109
+      - 124
+      - 110
+      - 110
+      - 114
+      - 109
+      - 123
+    PTS:
+      - 0
+      - 33333333
+      - 66666666
+      - 99999999
+      - 133333332
+      - 166666665
+      - 199999998
+      - 233333331
+      - 266666664
+      - 299999997
+      - 333333330
+      - 366666663
+      - 399999996
+      - 433333329
+      - 466666662
+
+  # HDR10 stream with ContentLightLevel SEI
+  # Generated with: ffmpeg -f lavfi -i color=c=blue:size=1920x1080:rate=30 -t 5 -c:v libx265
+  #   -color_primaries bt2020 -color_trc smpte2084 -colorspace bt2020nc
+  #   -x265-params "max-cll=1000,400" -an -f hevc contentlightlevel_bt2020.es
+  H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_CLL:
+    input: H265_HIGH_1920x1080_DR_HDR10_BT2020_ST2084_30p_PIXEL_FORMAT_YCBCR420_CLL.es
+    codec: H265_HEVC
+    codedWidth: 1920
+    codedHeight: 1088
+    colorDepth: 10
+    pixelFormat: YCBCR420
+    dynamic_range: HDR10
+    colorimetry: UNKNOWN
+    scanType: PROGRESSIVE_FRAME
+    frameRateNumerator: 30
+    frameRateDenominator: 1
+    endOfStream: 0
+    stop_start_pts: -1
+    signal_discontinuity_pts: -1
+    flush_pts: -1
+    flush_reset_pts: -1
+    eos_pts: -1
+    discontinuity: 0
+    lowLatency: 0
+    bit_rate: 32
+    no_of_frames: 15
+    decodeErrors: 0
+    framesDropped: 0
+    contentLightLevel:
+      maxCLL: 1000
+      maxFALL: 400
+    frame_size:
+      - 3046
+      - 109
+      - 109
+      - 112
+      - 108
+      - 122
+      - 109
+      - 114
+      - 109
+      - 124
+      - 110
+      - 110
+      - 114
+      - 109
+      - 124
+    PTS:
+      - 0
+      - 33333333
+      - 66666666
+      - 99999999
+      - 133333332
+      - 166666665
+      - 199999998
+      - 233333331
+      - 266666664
+      - 299999997
+      - 333333330
+      - 366666663
+      - 399999996
+      - 433333329
+      - 466666662
+
+  # Same HDR10 stream, ContentLightLevel NOT set (negative test - expects nullopt in output metadata)
+  H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_CLL_NOSET:
+    input: H265_HIGH_1920x1080_DR_HDR10_BT2020_ST2084_30p_PIXEL_FORMAT_YCBCR420_CLL.es
+    codec: H265_HEVC
+    codedWidth: 1920
+    codedHeight: 1088
+    colorDepth: 10
+    pixelFormat: YCBCR420
+    dynamic_range: HDR10
+    colorimetry: UNKNOWN
+    scanType: PROGRESSIVE_FRAME
+    frameRateNumerator: 30
+    frameRateDenominator: 1
+    endOfStream: 0
+    stop_start_pts: -1
+    signal_discontinuity_pts: -1
+    flush_pts: -1
+    flush_reset_pts: -1
+    eos_pts: -1
+    discontinuity: 0
+    lowLatency: 0
+    bit_rate: 32
+    no_of_frames: 15
+    decodeErrors: 0
+    framesDropped: 0
+    frame_size:
+      - 3046
+      - 109
+      - 109
+      - 112
+      - 108
+      - 122
+      - 109
+      - 114
+      - 109
+      - 124
+      - 110
+      - 110
+      - 114
+      - 109
+      - 124
+    PTS:
+      - 0
+      - 33333333
+      - 66666666
+      - 99999999
+      - 133333332
+      - 166666665
+      - 199999998
+      - 233333331
+      - 266666664
+      - 299999997
+      - 333333330
+      - 366666663
+      - 399999996
+      - 433333329
+      - 466666662
+  H265_HIGH_3840x2160_DR_DOLBY_VISION_DR_BT2020_60p_PIXEL_FORMAT_YCBCR420_734_DOLBY_VISION:
+    input: H265_HIGH_3840x2160_DR_DOLBY_VISION_DR_BT2020_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
+    codec: H265_HEVC              # Derived from Format: HEVC
+    codedWidth: 3840              # Width: 3840 pixels
+    codedHeight: 2160             # Height: 2160 pixels
+    colorDepth: 10                # Bit depth: 10 bits
+    pixelFormat: YCBCR420         # Chroma subsampling: 4:2:0
+    dynamic_range: DOLBY_VISION   # HDR format: Dolby Vision Profile 8.1 (BL+RPU)
+    scanType: PROGRESSIVE_FRAME   # Progressive (not interlaced)
+    frameRateNumerator: 60000     # Frame rate: 59.940 (60000/1001)
+  H265_MAIN10_1920x1080_DR_DOLBY_VISION_300NITS_BT2020_23976p_PIXEL_FORMAT_YCBCR420:
+    input: Ves_ColorChecker_300nits_1920x1080_23976_dvhestn_L0_1000.265
+    codec: H265_HEVC
+    codedWidth: 1920
+    codedHeight: 1080
+    colorDepth: 10
+    pixelFormat: YCBCR420
+    dynamic_range: DOLBY_VISION
+    scanType: PROGRESSIVE_FRAME
+    frameRateNumerator: 24000
+    frameRateDenominator: 1001
+    mastering_luminance_nits: 300
+    endOfStream: 0
+    stop_start_pts: -1
+    signal_discontinuity_pts: -1
+    flush_pts: -1
+    flush_reset_pts: -1
+    eos_pts: -1
+    discontinuity: 0
+    lowLatency: 0
+    bit_rate: 1000
+    no_of_frames: 48
+    decodeErrors: 0
+    framesDropped: 0
+    blPresent: 1
+    elPresent: 0
+    frame_size:
+      - 20208
+      - 776
+      - 1030
+      - 825
+      - 1496
+      - 700
+      - 961
+      - 779
+      - 2462
+      - 722
+      - 818
+      - 674
+      - 799
+      - 664
+      - 784
+      - 657
+      - 928
+      - 674
+      - 732
+      - 646
+      - 735
+      - 646
+      - 717
+      - 646
+      - 774
+      - 661
+      - 718
+      - 646
+      - 712
+      - 646
+      - 717
+      - 646
+      - 729
+      - 661
+      - 718
+      - 646
+      - 712
+      - 646
+      - 717
+      - 646
+      - 737
+      - 647
+      - 725
+      - 656
+      - 708
+      - 654
+      - 639
+      - 638
+    PTS:
+      - 0
+      - 50050
+      - 100100
+      - 150150
+      - 200200
+      - 250250
+      - 300300
+      - 350350
+      - 400400
+      - 450450
+      - 500500
+      - 550550
+      - 600600
+      - 650650
+      - 700700
+      - 750750
+      - 800800
+      - 850850
+      - 900900
+      - 950950
+      - 1001000
+      - 1051050
+      - 1101100
+      - 1151150
+      - 1201200
+      - 1251250
+      - 1301300
+      - 1351350
+      - 1401400
+      - 1451450
+      - 1501500
+      - 1551550
+      - 1601600
+      - 1651650
+      - 1701700
+      - 1751750
+      - 1801800
+      - 1851850
+      - 1901900
+      - 1951950
+      - 2002000
+      - 2052050
+      - 2102100
+      - 2152150
+      - 2202200
+      - 2252250
+      - 2302300
+      - 2352350
+

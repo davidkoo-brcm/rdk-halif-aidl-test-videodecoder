@@ -159,6 +159,9 @@ class VTS_L2_VideoDecoder : public UTCore {
 
                 VIDEODECODER_GETCAPABILITIES(videoDecoder,capabilities);
 
+                eventListener->setDecoderID(_decoderId.value);
+                controlListener->setDecoderID(_decoderId.value);
+
                 mVideoDecoderList.push_back({videoDecoder, controlListener, eventListener, capabilities});
             }
             // Custom setup code here, e.g., initialize decoder mocks or profiles
@@ -167,11 +170,11 @@ class VTS_L2_VideoDecoder : public UTCore {
         void checkCompleteStateTransition(sp<IVideoDecoder> decoder, sp<VideoDecoderEventListener> eventListener, ::com::rdk::hal::State oldState, ::com::rdk::hal::State intermediateState, ::com::rdk::hal::State newState)
         {
             // Wait for the intermediate state
-            eventListener->waitForState(intermediateState, std::chrono::milliseconds(VIDEO_MAX_TRANSITORY_STATE_WAIT_MS));
+            std::this_thread::sleep_for(std::chrono::milliseconds(VIDEO_MAX_TRANSITORY_STATE_WAIT_MS));
+
             // Check if the transition from old to intermediate state occurred
             UT_ASSERT_TRUE(eventListener->checkStateTransistion(oldState, intermediateState));
-            // Wait for the final new state
-            eventListener->waitForState(newState, std::chrono::milliseconds(VIDEO_MAX_FINAL_STATE_WAIT_MS));
+
             // Check if the transition from intermediate to new state occurred
             UT_ASSERT_TRUE(eventListener->checkStateTransistion(intermediateState, newState));
         }
@@ -207,7 +210,8 @@ UT_ADD_TEST(VTS_L2_VideoDecoder, TestGetAndSetProperties) {
     // Fetch decoder IDs from the manager
     for(const auto& [videoDecoder, controlListener, eventListener, capabilities] : mVideoDecoderList)
     {
-        for (const auto& _codecCaps : capabilities->supportedCodecs) {
+        for (const auto& _codecCaps : capabilities->supportedCodecs)
+        {
             videodecoder::Codec _codec = _codecCaps.codec;
 
             sp<IVideoDecoderController> controller;
@@ -216,7 +220,8 @@ UT_ADD_TEST(VTS_L2_VideoDecoder, TestGetAndSetProperties) {
             VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities->supportsSecure,
                                       controlListener, controller, false);
 
-            for (const auto& testCase : testCases_readyState) {
+            for (const auto& testCase : testCases_readyState)
+            {
                 PropertyValue setValue;
                 setValue.value = PropertyValue::Value::make<PropertyValue::Value::Tag::intValue>(testCase.testValue);
 
@@ -229,7 +234,8 @@ UT_ADD_TEST(VTS_L2_VideoDecoder, TestGetAndSetProperties) {
 
             //Check and set and get properties for Started State
             VIDEODECODER_START_SUCCESS(videoDecoder,controller,true);
-            for (const auto& testCase : testCases_startedState) {
+            for (const auto& testCase : testCases_startedState)
+            {
                 PropertyValue setValue;
                 setValue.value = PropertyValue::Value::make<PropertyValue::Value::Tag::intValue>(testCase.testValue);
 
@@ -258,7 +264,8 @@ UT_ADD_TEST(VTS_L2_VideoDecoder, TestGetAndSetProperties) {
 * **Test Procedure:**
 * Refer to UT specification documentation [VideoDecoder_L2_Low-level_TestSpecification.md](../docs/pages/VideoDecoder_L2_Low-level_TestSpecification.md)
 */
-UT_ADD_TEST(VTS_L2_VideoDecoder, TestGetAndSetProperties_multipleInstance) {
+UT_ADD_TEST(VTS_L2_VideoDecoder, TestGetAndSetProperties_multipleInstance)
+{
     std::vector<sp<IVideoDecoderController>> videoDecoderControllersList;
 
     for(const auto& [videoDecoder, controlListener, eventListener, capabilities] : mVideoDecoderList)
@@ -281,7 +288,8 @@ UT_ADD_TEST(VTS_L2_VideoDecoder, TestGetAndSetProperties_multipleInstance) {
         /*Get Supported Operationl Modes*/
         VIDEODECODER_MANAGER_GETSUPPORTEDOPERATIONALMODES(supportedModes);
 
-        for (const auto& testCase : testCases_readyState) {
+        for (const auto& testCase : testCases_readyState)
+        {
             PropertyValue setValue;
             setValue.value = PropertyValue::Value::make<PropertyValue::Value::Tag::intValue>(testCase.testValue);
 
@@ -294,7 +302,8 @@ UT_ADD_TEST(VTS_L2_VideoDecoder, TestGetAndSetProperties_multipleInstance) {
 
         //Check and set and get properties for Started State
         VIDEODECODER_START_SUCCESS(videoDecoder,controller,true);
-        for (const auto& testCase : testCases_startedState) {
+        for (const auto& testCase : testCases_startedState)
+        {
             PropertyValue setValue;
             setValue.value = PropertyValue::Value::make<PropertyValue::Value::Tag::intValue>(testCase.testValue);
 
@@ -318,7 +327,6 @@ UT_ADD_TEST(VTS_L2_VideoDecoder, TestGetAndSetProperties_multipleInstance) {
 
 }
 
-
 /**
 * @brief Test the state transitions of video decoders
 *
@@ -330,10 +338,12 @@ UT_ADD_TEST(VTS_L2_VideoDecoder, TestGetAndSetProperties_multipleInstance) {
 * **Test Procedure:**
 * Refer to UT specification documentation [VideoDecoder_L2_Low-level_TestSpecification.md](../docs/pages/VideoDecoder_L2_Low-level_TestSpecification.md)
 */
-UT_ADD_TEST(VTS_L2_VideoDecoder, TestDecoderStateTransitions) {
+UT_ADD_TEST(VTS_L2_VideoDecoder, TestDecoderStateTransitions)
+{
     for(const auto& [videoDecoder, controlListener, eventListener, capabilities] : mVideoDecoderList)
     {
-        for (const auto& _codecCaps : capabilities->supportedCodecs) {
+        for (const auto& _codecCaps : capabilities->supportedCodecs)
+        {
             videodecoder::Codec _codec = _codecCaps.codec;
 
             sp<IVideoDecoderController> controller;
@@ -372,7 +382,8 @@ UT_ADD_TEST(VTS_L2_VideoDecoder, TestDecoderStateTransitions) {
 * **Test Procedure:**
 * Refer to UT specification documentation [VideoDecoder_L2_Low-level_TestSpecification.md](../docs/pages/VideoDecoder_L2_Low-level_TestSpecification.md)
 */
-UT_ADD_TEST(VTS_L2_VideoDecoder, TestDecoderStateTransitions_multipleInstance) {
+UT_ADD_TEST(VTS_L2_VideoDecoder, TestDecoderStateTransitions_multipleInstance)
+{
     std::vector<sp<IVideoDecoderController>> videoDecoderControllersList;
 
     for(const auto& [videoDecoder, controlListener, eventListener, capabilities] : mVideoDecoderList)
@@ -411,7 +422,6 @@ UT_ADD_TEST(VTS_L2_VideoDecoder, TestDecoderStateTransitions_multipleInstance) {
 
 
 }
-
 
 /** @} */ // End of Video_Decoder_Halif_Test_L2
 /** @} */ // End of Video_Decoder_Halif_Test
