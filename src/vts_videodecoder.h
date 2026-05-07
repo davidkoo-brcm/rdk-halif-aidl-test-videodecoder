@@ -121,6 +121,7 @@
 #include "com/rdk/hal/videodecoder/Colorimetry.h"
 #include "com/rdk/hal/videodecoder/MasteringDisplayInfo.h"
 #include "com/rdk/hal/videodecoder/ContentLightLevel.h"
+#include "com/rdk/hal/videodecoder/InputBufferMetadata.h"
 
 #include "vts_helper_functions.h"
 
@@ -223,6 +224,7 @@ struct CodecCapability {
     int32_t maxFrameRate;
     int32_t maxFrameWidth;
     int32_t maxFrameHeight;
+    std::vector<PixelFormat> supportedOutputPixelFormats;
 };
 
 typedef struct decoder {
@@ -301,6 +303,10 @@ struct videoDecoderTestConfiguration_t {
     bool lowLatency;
     bool blPresent;
     bool elPresent;
+
+    // When != -1, open() is replaced by openWithResolution(codec, secure, listener, openWithResolutionWidth, openWithResolutionHeight)
+    int32_t openWithResolutionWidth;  // -1 = use open(), >0 = use openWithResolution()
+    int32_t openWithResolutionHeight; // -1 = use open(), >0 = use openWithResolution()
 
     // Sink control fields
     int64_t sink_discardFramesUntilPts;
@@ -784,6 +790,56 @@ do { \
         UT_ASSERT_TRUE((controller) != nullptr); \
     } while (0)
 
+#define VIDEODECODER_OPEN_WITH_RESOLUTION_SUCCESS(videoDecoder, codec, secure, listener, maxWidth, maxHeight, controller, stateCheck) \
+    do { \
+        Status status; \
+        sp<IVideoDecoderControllerListener> tempListener = (listener); \
+        UT_LOG_INFO("Calling openWithResolution(IN:codec:[%d], IN:secure:[%s], IN:listener:[0x%p], IN:maxWidth:[%d], IN:maxHeight:[%d], OUT:controller[])", \
+                    static_cast<int32_t>(codec), UT_Control_GetMapString(bool_mapTable, secure), tempListener ? tempListener.get() : nullptr, \
+                    static_cast<int32_t>(maxWidth), static_cast<int32_t>(maxHeight)); \
+        status = (videoDecoder)->openWithResolution((codec), (secure), (listener), (maxWidth), (maxHeight), &(controller)); \
+        UT_LOG_INFO("Result openWithResolution(IN:codec:[%d], IN:secure:[%s], IN:listener:[0x%p], IN:maxWidth:[%d], IN:maxHeight:[%d], OUT:controller:[0x%X]), status:[isOK:%s, exception:%s]", \
+                    static_cast<int32_t>(codec), UT_Control_GetMapString(bool_mapTable, secure), tempListener ? tempListener.get() : nullptr, \
+                    static_cast<int32_t>(maxWidth), static_cast<int32_t>(maxHeight), (controller).get(), \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+        UT_ASSERT_TRUE_FATAL(status.isOk()) << "openWithResolution binder call failed"; \
+        UT_ASSERT_EQUAL_FATAL(status.exceptionCode(), Status::EX_NONE); \
+        UT_ASSERT_TRUE_FATAL((controller) != nullptr) << "openWithResolution returned null controller"; \
+        if (stateCheck) { \
+            ::com::rdk::hal::State lastState; \
+            VIDEODECODER_WAIT_FOR_STATE(videoDecoder, ::com::rdk::hal::State::READY, lastState); \
+            UT_ASSERT_EQUAL(lastState, ::com::rdk::hal::State::READY) << "Decoder did not reach READY state"; \
+        } \
+    } while (0)
+
+#define VIDEODECODER_OPEN_WITH_RESOLUTION_FAILURE(videoDecoder, codec, secure, listener, maxWidth, maxHeight, controller, exception) \
+    do { \
+        Status status; \
+        sp<IVideoDecoderControllerListener> tempListener = (listener); \
+        UT_LOG_INFO("Calling openWithResolution(IN:codec:[%d], IN:secure:[%s], IN:listener:[0x%p], IN:maxWidth:[%d], IN:maxHeight:[%d], OUT:controller[])", \
+                    static_cast<int32_t>(codec), UT_Control_GetMapString(bool_mapTable, secure), tempListener ? tempListener.get() : nullptr, \
+                    static_cast<int32_t>(maxWidth), static_cast<int32_t>(maxHeight)); \
+        status = (videoDecoder)->openWithResolution((codec), (secure), (listener), (maxWidth), (maxHeight), &(controller)); \
+        if ((exception) == Status::EX_NONE) { \
+            UT_LOG_INFO("Result openWithResolution(IN:codec:[%d], IN:secure:[%s], IN:listener:[0x%p], IN:maxWidth:[%d], IN:maxHeight:[%d], OUT:controller:[0x%X]), status:[isOK:%s, exception:%s]", \
+                        static_cast<int32_t>(codec), UT_Control_GetMapString(bool_mapTable, secure), tempListener ? tempListener.get() : nullptr, \
+                        static_cast<int32_t>(maxWidth), static_cast<int32_t>(maxHeight), (controller).get(), \
+                        UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                        UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+            UT_ASSERT_TRUE(status.isOk()) << "openWithResolution binder call failed unexpectedly"; \
+            UT_ASSERT_TRUE((controller) == nullptr) << "Expected openWithResolution to return null controller"; \
+        } else { \
+            UT_LOG_INFO("Result openWithResolution(IN:codec:[%d], IN:secure:[%s], IN:listener:[0x%p], IN:maxWidth:[%d], IN:maxHeight:[%d]), status:[isOK:%s, exception:%s]", \
+                        static_cast<int32_t>(codec), UT_Control_GetMapString(bool_mapTable, secure), tempListener ? tempListener.get() : nullptr, \
+                        static_cast<int32_t>(maxWidth), static_cast<int32_t>(maxHeight), \
+                        UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                        UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+            UT_ASSERT_FALSE(status.isOk()) << "Expected openWithResolution failure with exception"; \
+            UT_ASSERT_EQUAL(status.exceptionCode(), (exception)); \
+        } \
+    } while (0)
+
 /**
  * @brief Registers an event listener with the video decoder and verifies success.
  * @param[in] videoDecoder The IVideoDecoder instance.
@@ -1118,41 +1174,6 @@ do { \
     } while (0)
 
 /**
- * @brief Tests that signalEOS succeeds in the STARTED state.
- * @param[in] videoDecoder The IVideoDecoder instance (for state checking).
- * @param[in] videoDecoderController The IVideoDecoderController instance.
- * @param[in] expectSuccess Expect the call to succeed (true for positive test).
- */
-#define VIDEODECODER_SIGNAL_EOS_SUCCESS(videoDecoder, videoDecoderController, expectSuccess) \
-    do { \
-        Status status; \
-        UT_LOG_INFO("Calling signalEOS()"); \
-        status = (videoDecoderController)->signalEOS(); \
-        UT_LOG_INFO("Result signalEOS(), status:[isOK:%s, exception:%s]", \
-                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
-                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
-        UT_ASSERT_TRUE(status.isOk() == (expectSuccess)) << "signalEOS " \
-            << ((expectSuccess) ? "failed unexpectedly" : "succeeded unexpectedly"); \
-    } while (0)
-
-/**
- * @brief Tests that signalEOS fails with the expected exception in an invalid state.
- * @param[in] videoDecoderController The IVideoDecoderController instance.
- * @param[in] expectedException The expected binder exception (e.g., EX_ILLEGAL_STATE).
- */
-#define VIDEODECODER_SIGNAL_EOS_FAILURE(videoDecoderController, expectedException) \
-    do { \
-        Status status; \
-        UT_LOG_INFO("Calling signalEOS()"); \
-        status = (videoDecoderController)->signalEOS(); \
-        UT_LOG_INFO("Result signalEOS(), status:[isOK:%s, exception:%s]", \
-                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
-                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
-        UT_ASSERT_FALSE(status.isOk()) << "signalEOS succeeded unexpectedly"; \
-        UT_ASSERT_EQUAL(status.exceptionCode(), (expectedException)) << "Unexpected exception for signalEOS"; \
-    } while (0)
-
-/**
  * @brief Tests that parseCodecSpecificData succeeds in STARTED with valid data.
  * @param[in] videoDecoder The IVideoDecoder instance (for state checking).
  * @param[in] videoDecoderController The IVideoDecoderController instance.
@@ -1220,41 +1241,49 @@ do { \
         UT_ASSERT_EQUAL(status.exceptionCode(), exception) << "Unexpected exception for parseCodecSpecificData"; \
     } while (0)
 
-#define VIDEODECODER_DECODEBUFFER_SUCCESS(controller, pts, bufferHandle) \
+#define VIDEODECODER_DECODEBUFFER_WITH_METADATA_SUCCESS(controller, framePts, frameBufferHandle, frameMetadata) \
     do { \
-        bool decodeResult; \
-        UT_LOG_INFO("Calling decodeBuffer(IN:pts=[%lld], IN:bufferHandle=[0x%016" PRIx64 "])", \
-                    static_cast<long long>(pts), static_cast<long long>(bufferHandle)); \
-        Status status = controller->decodeBuffer(pts, bufferHandle, &decodeResult); \
-        UT_LOG_INFO("Result decodeBuffer(IN:pts=[%lld], IN:bufferHandle=[0x%016" PRIx64 "]) status=[isOK:%s, exception:%s], result=%s", \
-                    static_cast<long long>(pts), static_cast<long long>(bufferHandle), \
+        bool decodeResult = false; \
+        UT_LOG_INFO("Calling decodeBufferWithMetadata(IN:bufferHandle=[0x%016" PRIx64 "], IN:metadata:[pts=%lld,eos=%d,disc=%d])", \
+                    static_cast<long long>(frameBufferHandle), static_cast<long long>((frameMetadata).nsPresentationTime), \
+                    static_cast<int>((frameMetadata).endOfStream), static_cast<int>((frameMetadata).discontinuity)); \
+        Status status = (controller)->decodeBufferWithMetadata((frameBufferHandle), (frameMetadata), &decodeResult); \
+        UT_LOG_INFO("Result decodeBufferWithMetadata(IN:bufferHandle=[0x%016" PRIx64 "], IN:metadata:[pts=%lld,eos=%d,disc=%d]) status=[isOK:%s, exception:%s], result=%s", \
+                    static_cast<long long>(frameBufferHandle), static_cast<long long>((frameMetadata).nsPresentationTime), \
+                    static_cast<int>((frameMetadata).endOfStream), static_cast<int>((frameMetadata).discontinuity), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                     UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()), \
                     decodeResult ? "true" : "false"); \
-        UT_ASSERT_TRUE(status.isOk()) << "decodeBuffer failed"; \
+        UT_ASSERT_TRUE(status.isOk()) << "decodeBufferWithMetadata failed"; \
         UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
-        UT_ASSERT_TRUE(decodeResult) << "decodeBuffer returned false"; \
+        UT_ASSERT_TRUE(decodeResult) << "decodeBufferWithMetadata returned false"; \
     } while (0)
 
-#define VIDEODECODER_DECODEBUFFER_FAILURE(controller, pts, bufferHandle, expectedException) \
+#define VIDEODECODER_DECODEBUFFER_WITH_METADATA_FAILURE(controller, framePts, frameBufferHandle, frameEos, frameDiscontinuity, expectedException) \
     do { \
-        bool decodeResult; \
-        UT_LOG_INFO("Calling decodeBuffer(IN:pts=[%lld], IN:bufferHandle=[0x%016" PRIx64 "])", \
-                    static_cast<long long>(pts), static_cast<long long>(bufferHandle)); \
-        Status status = controller->decodeBuffer(pts, bufferHandle, &decodeResult); \
-        UT_LOG_INFO("Result decodeBuffer(IN:pts=[%lld], IN:bufferHandle=[0x%016" PRIx64 "]) status=[isOK:%s, exception:%s], result=%s", \
-                    static_cast<long long>(pts), static_cast<long long>(bufferHandle), \
+        bool decodeResult = false; \
+        ::com::rdk::hal::videodecoder::InputBufferMetadata inputMetadata = {}; \
+        inputMetadata.nsPresentationTime = static_cast<int64_t>(framePts); \
+        inputMetadata.endOfStream = static_cast<bool>(frameEos); \
+        inputMetadata.discontinuity = static_cast<bool>(frameDiscontinuity); \
+        UT_LOG_INFO("Calling decodeBufferWithMetadata(IN:bufferHandle=[0x%016" PRIx64 "], IN:metadata:[pts=%lld,eos=%d,disc=%d])", \
+                    static_cast<long long>(frameBufferHandle), static_cast<long long>(inputMetadata.nsPresentationTime), \
+                    static_cast<int>(inputMetadata.endOfStream), static_cast<int>(inputMetadata.discontinuity)); \
+        Status status = (controller)->decodeBufferWithMetadata((frameBufferHandle), inputMetadata, &decodeResult); \
+        UT_LOG_INFO("Result decodeBufferWithMetadata(IN:bufferHandle=[0x%016" PRIx64 "], IN:metadata:[pts=%lld,eos=%d,disc=%d]) status=[isOK:%s, exception:%s], result=%s", \
+                    static_cast<long long>(frameBufferHandle), static_cast<long long>(inputMetadata.nsPresentationTime), \
+                    static_cast<int>(inputMetadata.endOfStream), static_cast<int>(inputMetadata.discontinuity), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                     UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()), \
                     decodeResult ? "true" : "false"); \
         if (expectedException != Status::EX_NONE) { \
             UT_ASSERT_TRUE(status.exceptionCode() == expectedException) \
-                << "decodeBuffer returned unexpected exception"; \
+                << "decodeBufferWithMetadata returned unexpected exception"; \
         } \
         else { \
-            UT_ASSERT_TRUE(status.isOk()) << "decodeBuffer failed unexpectedly"; \
+            UT_ASSERT_TRUE(status.isOk()) << "decodeBufferWithMetadata failed unexpectedly"; \
             UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
-            UT_ASSERT_FALSE(decodeResult) << "decodeBuffer returned true unexpectedly"; \
+            UT_ASSERT_FALSE(decodeResult) << "decodeBufferWithMetadata returned true unexpectedly"; \
         } \
     } while (0)
 
@@ -1471,16 +1500,16 @@ public:
     VideoDecoderControllerListener() {}
     virtual ~VideoDecoderControllerListener() = default;
 
-    Status onFrameOutput(int64_t nsPresentationTime, int64_t frameBufferHandle, const ::std::optional<com::rdk::hal::videodecoder::FrameMetadata>& metadata) override
+    Status onFrameOutput(int64_t nsPresentationTime, int64_t frameAVBufferHandle, const ::std::optional<::com::rdk::hal::videodecoder::FrameMetadata>& metadata) override
     {
         DecodedVideoFrame_t frame;
         frame.receiveTime = std::chrono::steady_clock::now();
 
-        UT_LOG_INFO("[Video DecoderID: %d] onFrameOutput received: nsPresentationTime=%lld, frameBufferHandle=0x%016" PRIx64 "", mDecoderID, nsPresentationTime, frameBufferHandle);
+        UT_LOG_INFO("[Video DecoderID: %d] onFrameOutput received: nsPresentationTime=%lld, frameBufferHandle=0x%016" PRIx64 "", mDecoderID, nsPresentationTime, frameAVBufferHandle);
 
         frame.framePTS = nsPresentationTime;
         frame.isMetaAvailable = metadata.has_value();
-        frame.frameBufferHandle = frameBufferHandle; // Store handle
+        frame.frameBufferHandle = frameAVBufferHandle; // Store handle
         if (metadata.has_value())
         {
             frame.metadata = std::make_unique<com::rdk::hal::videodecoder::FrameMetadata>(metadata.value());
@@ -1524,6 +1553,17 @@ public:
         return Status::ok();
     }
 
+    Status onDecodeBufferAvailable() override
+    {
+        {
+            std::lock_guard<std::mutex> lock(mDecodeBufferAvailableMutex);
+            ++mDecodeBufferAvailableCount;
+        }
+        mDecodeBufferAvailableCV.notify_all();
+        UT_LOG_INFO("[Video DecoderID: %d] onDecodeBufferAvailable received; count=%d", mDecoderID, getDecodeBufferAvailableCount());
+        return Status::ok();
+    }
+
     void setDecoderID(int32_t id)
     {
         mDecoderID = id;
@@ -1549,6 +1589,27 @@ public:
     {
         std::lock_guard<std::mutex> lock(mMutex);
         mDecodedFrames.clear();
+        resetDecodeBufferAvailableCount();
+    }
+
+    bool waitForDecodeBufferAvailable(int expectedCount, std::chrono::milliseconds timeout)
+    {
+        std::unique_lock<std::mutex> lock(mDecodeBufferAvailableMutex);
+        return mDecodeBufferAvailableCV.wait_for(lock, timeout, [this, expectedCount]() {
+            return mDecodeBufferAvailableCount >= expectedCount;
+        });
+    }
+
+    int getDecodeBufferAvailableCount() const
+    {
+        std::lock_guard<std::mutex> lock(mDecodeBufferAvailableMutex);
+        return mDecodeBufferAvailableCount;
+    }
+
+    void resetDecodeBufferAvailableCount()
+    {
+        std::lock_guard<std::mutex> lock(mDecodeBufferAvailableMutex);
+        mDecodeBufferAvailableCount = 0;
     }
 
 private:
@@ -1556,6 +1617,9 @@ private:
     std::mutex mMutex;
     std::condition_variable mCV;
     std::deque<DecodedVideoFrame_t> mDecodedFrames;
+    mutable std::mutex mDecodeBufferAvailableMutex;
+    std::condition_variable mDecodeBufferAvailableCV;
+    int mDecodeBufferAvailableCount = 0;
 };
 
 class VideoDecoderEventListener : public BnVideoDecoderEventListener

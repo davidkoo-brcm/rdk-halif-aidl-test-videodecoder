@@ -45,6 +45,8 @@ VideoStreams:
     no_of_frames: 12
     decodeErrors: 0
     framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
     frame_size:
       - 28
       - 47
@@ -102,6 +104,8 @@ VideoStreams:
     no_of_frames: 12
     decodeErrors: 3
     framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
     frame_size:
       - 28
       - 47
@@ -159,6 +163,8 @@ VideoStreams:
     no_of_frames: 12
     decodeErrors: 0
     framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
     frame_size:
       - 28
       - 47
@@ -216,6 +222,8 @@ VideoStreams:
     no_of_frames: 11
     decodeErrors: 0
     framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
     frame_size:
       - 28
       - 47
@@ -273,6 +281,8 @@ VideoStreams:
     no_of_frames: 12
     decodeErrors: 0
     framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
     frame_size:
       - 28
       - 47
@@ -330,6 +340,8 @@ VideoStreams:
     no_of_frames: 12
     decodeErrors: 0
     framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
     frame_size:
       - 28
       - 47
@@ -387,6 +399,8 @@ VideoStreams:
     no_of_frames: 12
     decodeErrors: 3
     framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
     frame_size:
       - 28
       - 47
@@ -444,6 +458,8 @@ VideoStreams:
     no_of_frames: 12
     decodeErrors: 3
     framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
     frame_size:
       - 28
       - 47
@@ -501,6 +517,8 @@ VideoStreams:
     no_of_frames: 12
     decodeErrors: 0
     framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
     frame_size:
       - 28
       - 47
@@ -558,6 +576,8 @@ VideoStreams:
     no_of_frames: 12
     decodeErrors: 2
     framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
     frame_size:
       - 28
       - 47
@@ -615,6 +635,8 @@ VideoStreams:
     no_of_frames: 12
     decodeErrors: 2
     framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
     frame_size:
       - 28
       - 47
@@ -676,6 +698,8 @@ VideoStreams:
     no_of_frames: 15
     decodeErrors: 0
     framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
     frame_size:
       - 3032
       - 109
@@ -734,6 +758,8 @@ VideoStreams:
     no_of_frames: 15
     decodeErrors: 0
     framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
     frame_size:
       - 3032
       - 109
@@ -796,6 +822,8 @@ VideoStreams:
     no_of_frames: 15
     decodeErrors: 0
     framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
     masteringDisplayInfo:
       redPrimaryX: 34000
       redPrimaryY: 16000
@@ -865,6 +893,8 @@ VideoStreams:
     no_of_frames: 15
     decodeErrors: 0
     framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
     frame_size:
       - 3161
       - 109
@@ -926,6 +956,8 @@ VideoStreams:
     no_of_frames: 15
     decodeErrors: 0
     framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
     contentLightLevel:
       maxCLL: 1000
       maxFALL: 400
@@ -987,6 +1019,8 @@ VideoStreams:
     no_of_frames: 15
     decodeErrors: 0
     framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
     frame_size:
       - 3046
       - 109
@@ -1053,6 +1087,8 @@ VideoStreams:
     no_of_frames: 48
     decodeErrors: 0
     framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
     blPresent: 1
     elPresent: 0
     frame_size:

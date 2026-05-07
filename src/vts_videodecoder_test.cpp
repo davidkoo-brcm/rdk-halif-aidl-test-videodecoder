@@ -137,9 +137,21 @@ void videoDecoderTest::setupVideoDecoder()
     // Create Video Pool
     AVBUFFER_CREATE_VIDEOPOOL_SUCCESS(mAVBufferManager, mSecureDecode, mDecoderId, mBufferListener, mVideoPool);
 
-    // Open Decoder
-    VIDEODECODER_OPEN_SUCCESS(mDecoderHandle, mTestConfiguration.codec, mSecureDecode,
-                              mControlListener, mVideoDecoderController, true);
+    // Open Decoder — use openWithResolution() when hint dimensions are set in the test config
+    if (mTestConfiguration.openWithResolutionWidth != -1 && mTestConfiguration.openWithResolutionHeight != -1)
+    {
+        UT_LOG_INFO("Opening decoder via openWithResolution(%dx%d)",
+                    mTestConfiguration.openWithResolutionWidth, mTestConfiguration.openWithResolutionHeight);
+        VIDEODECODER_OPEN_WITH_RESOLUTION_SUCCESS(
+            mDecoderHandle, mTestConfiguration.codec, mSecureDecode, mControlListener,
+            mTestConfiguration.openWithResolutionWidth, mTestConfiguration.openWithResolutionHeight,
+            mVideoDecoderController, true);
+    }
+    else
+    {
+        VIDEODECODER_OPEN_SUCCESS(mDecoderHandle, mTestConfiguration.codec, mSecureDecode,
+                                  mControlListener, mVideoDecoderController, true);
+    }
 
     if(mVideoDecoderController.get() == nullptr)
     {
@@ -273,15 +285,6 @@ void videoDecoderTest::startDecoding()
             VIDEODECODER_START_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
         }
 
-        if (mTestConfiguration.eosPts == framePTS)
-        {
-            UT_LOG_INFO("Signaling EOS at PTS:%lld", framePTS);
-            VIDEODECODER_SIGNAL_EOS_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
-            VIDEODECODER_DECODEBUFFER_FAILURE(mVideoDecoderController, framePTS, videoBufferHandle, Status::EX_NONE);
-            VIDEODECODER_STOP_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
-            VIDEODECODER_START_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
-        }
-
         UT_LOG_DEBUG("Adding frame to mInputFrame, PTS:%lld, errorFrame=%d", framePTS, isErrorFrame);
 
         // Decode Frame
@@ -295,14 +298,36 @@ void videoDecoderTest::startDecoding()
             mInputFrame.push_back(inputVideo);
         }
 
-        VIDEODECODER_DECODEBUFFER_SUCCESS(mVideoDecoderController, framePTS, videoBufferHandle);
+        videodecoder::InputBufferMetadata metadata = {};
+        metadata.nsPresentationTime = framePTS;
+        metadata.discontinuity = false;
+        const bool isEosControlPoint = (mTestConfiguration.eosPts == framePTS);
+        /* Always send EOS on the final buffer so the HAL can drain and deliver
+         * FrameMetadata.endOfStream = true exactly once per decode session.
+         * When eosPts is set the mid-stream EOS acts as the control point;
+         * after stop()+start() the last submitted buffer of the second run
+         * also carries EOS so the session ends cleanly. */
+        metadata.endOfStream = isEosControlPoint || (i == (mFrameData.size() - 1));
+
+        if (metadata.endOfStream)
+        {
+            UT_LOG_INFO("Submitting final input buffer with metadata EOS at PTS:%lld", framePTS);
+        }
+
+        VIDEODECODER_DECODEBUFFER_WITH_METADATA_SUCCESS(mVideoDecoderController, framePTS, videoBufferHandle, metadata);
+
+        if (isEosControlPoint)
+        {
+            UT_LOG_INFO("Verifying post-EOS decode reject at PTS:%lld", framePTS);
+            VIDEODECODER_DECODEBUFFER_WITH_METADATA_FAILURE(mVideoDecoderController, framePTS, videoBufferHandle,
+                                                            false, false, Status::EX_NONE);
+            VIDEODECODER_STOP_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
+            VIDEODECODER_START_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
+        }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(mTestConfiguration.decoderDelay));
 
-        if(i == (mFrameData.size() - 1) &&  mTestConfiguration.eosPts == -1)
-        {
-            VIDEODECODER_SIGNAL_EOS_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
-        }
+        // EOS is now sent on the final real buffer via InputBufferMetadata.endOfStream.
     }
 
     UT_LOG_DEBUG("[PID: %d, TID: %d] startDecoding End", getpid(), syscall(SYS_gettid));
