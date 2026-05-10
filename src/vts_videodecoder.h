@@ -265,7 +265,7 @@ struct DecodedVideoFrame_t {
     bool isMetaAvailable;
     std::unique_ptr<com::rdk::hal::videodecoder::FrameMetadata> metadata;
     bool validationStatus; // Added for validation result
-    int64_t frameBufferHandle; // Added for output buffer handle
+    int64_t frameAVBufferHandle; // Added for output buffer handle
 };
 
 struct videoDecoderTestConfiguration_t {
@@ -798,9 +798,9 @@ do { \
                     static_cast<int32_t>(codec), UT_Control_GetMapString(bool_mapTable, secure), tempListener ? tempListener.get() : nullptr, \
                     static_cast<int32_t>(maxWidth), static_cast<int32_t>(maxHeight)); \
         status = (videoDecoder)->openWithResolution((codec), (secure), (listener), (maxWidth), (maxHeight), &(controller)); \
-        UT_LOG_INFO("Result openWithResolution(IN:codec:[%d], IN:secure:[%s], IN:listener:[0x%p], IN:maxWidth:[%d], IN:maxHeight:[%d], OUT:controller:[0x%X]), status:[isOK:%s, exception:%s]", \
+        UT_LOG_INFO("Result openWithResolution(IN:codec:[%d], IN:secure:[%s], IN:listener:[0x%p], IN:maxWidth:[%d], IN:maxHeight:[%d], OUT:controller:[0x%p]), status:[isOK:%s, exception:%s]", \
                     static_cast<int32_t>(codec), UT_Control_GetMapString(bool_mapTable, secure), tempListener ? tempListener.get() : nullptr, \
-                    static_cast<int32_t>(maxWidth), static_cast<int32_t>(maxHeight), (controller).get(), \
+                static_cast<int32_t>(maxWidth), static_cast<int32_t>(maxHeight), static_cast<void*>((controller).get()), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                     UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
         UT_ASSERT_TRUE_FATAL(status.isOk()) << "openWithResolution binder call failed"; \
@@ -822,9 +822,9 @@ do { \
                     static_cast<int32_t>(maxWidth), static_cast<int32_t>(maxHeight)); \
         status = (videoDecoder)->openWithResolution((codec), (secure), (listener), (maxWidth), (maxHeight), &(controller)); \
         if ((exception) == Status::EX_NONE) { \
-            UT_LOG_INFO("Result openWithResolution(IN:codec:[%d], IN:secure:[%s], IN:listener:[0x%p], IN:maxWidth:[%d], IN:maxHeight:[%d], OUT:controller:[0x%X]), status:[isOK:%s, exception:%s]", \
+            UT_LOG_INFO("Result openWithResolution(IN:codec:[%d], IN:secure:[%s], IN:listener:[0x%p], IN:maxWidth:[%d], IN:maxHeight:[%d], OUT:controller:[0x%p]), status:[isOK:%s, exception:%s]", \
                         static_cast<int32_t>(codec), UT_Control_GetMapString(bool_mapTable, secure), tempListener ? tempListener.get() : nullptr, \
-                        static_cast<int32_t>(maxWidth), static_cast<int32_t>(maxHeight), (controller).get(), \
+                        static_cast<int32_t>(maxWidth), static_cast<int32_t>(maxHeight), static_cast<void*>((controller).get()), \
                         UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                         UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
             UT_ASSERT_TRUE(status.isOk()) << "openWithResolution binder call failed unexpectedly"; \
@@ -1241,15 +1241,15 @@ do { \
         UT_ASSERT_EQUAL(status.exceptionCode(), exception) << "Unexpected exception for parseCodecSpecificData"; \
     } while (0)
 
-#define VIDEODECODER_DECODEBUFFER_WITH_METADATA_SUCCESS(controller, framePts, frameBufferHandle, frameMetadata) \
+#define VIDEODECODER_DECODEBUFFER_WITH_METADATA_SUCCESS(controller, frameBufferHandle, frameMetadata) \
     do { \
         bool decodeResult = false; \
         UT_LOG_INFO("Calling decodeBufferWithMetadata(IN:bufferHandle=[0x%016" PRIx64 "], IN:metadata:[pts=%lld,eos=%d,disc=%d])", \
-                    static_cast<long long>(frameBufferHandle), static_cast<long long>((frameMetadata).nsPresentationTime), \
+                    static_cast<uint64_t>(frameBufferHandle), static_cast<long long>((frameMetadata).nsPresentationTime), \
                     static_cast<int>((frameMetadata).endOfStream), static_cast<int>((frameMetadata).discontinuity)); \
         Status status = (controller)->decodeBufferWithMetadata((frameBufferHandle), (frameMetadata), &decodeResult); \
         UT_LOG_INFO("Result decodeBufferWithMetadata(IN:bufferHandle=[0x%016" PRIx64 "], IN:metadata:[pts=%lld,eos=%d,disc=%d]) status=[isOK:%s, exception:%s], result=%s", \
-                    static_cast<long long>(frameBufferHandle), static_cast<long long>((frameMetadata).nsPresentationTime), \
+                    static_cast<uint64_t>(frameBufferHandle), static_cast<long long>((frameMetadata).nsPresentationTime), \
                     static_cast<int>((frameMetadata).endOfStream), static_cast<int>((frameMetadata).discontinuity), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                     UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()), \
@@ -1267,11 +1267,11 @@ do { \
         inputMetadata.endOfStream = static_cast<bool>(frameEos); \
         inputMetadata.discontinuity = static_cast<bool>(frameDiscontinuity); \
         UT_LOG_INFO("Calling decodeBufferWithMetadata(IN:bufferHandle=[0x%016" PRIx64 "], IN:metadata:[pts=%lld,eos=%d,disc=%d])", \
-                    static_cast<long long>(frameBufferHandle), static_cast<long long>(inputMetadata.nsPresentationTime), \
+                    static_cast<uint64_t>(frameBufferHandle), static_cast<long long>(inputMetadata.nsPresentationTime), \
                     static_cast<int>(inputMetadata.endOfStream), static_cast<int>(inputMetadata.discontinuity)); \
         Status status = (controller)->decodeBufferWithMetadata((frameBufferHandle), inputMetadata, &decodeResult); \
         UT_LOG_INFO("Result decodeBufferWithMetadata(IN:bufferHandle=[0x%016" PRIx64 "], IN:metadata:[pts=%lld,eos=%d,disc=%d]) status=[isOK:%s, exception:%s], result=%s", \
-                    static_cast<long long>(frameBufferHandle), static_cast<long long>(inputMetadata.nsPresentationTime), \
+                    static_cast<uint64_t>(frameBufferHandle), static_cast<long long>(inputMetadata.nsPresentationTime), \
                     static_cast<int>(inputMetadata.endOfStream), static_cast<int>(inputMetadata.discontinuity), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                     UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()), \
@@ -1492,7 +1492,7 @@ class VTS_L1_VideoDecoder : public UTCore
             // Custom cleanup code here, e.g., release resources
             UTCore::TearDown();  // Call base class teardown (if it exists)
         }
-    };
+};
 
 class VideoDecoderControllerListener : public BnVideoDecoderControllerListener
 {
@@ -1505,11 +1505,11 @@ public:
         DecodedVideoFrame_t frame;
         frame.receiveTime = std::chrono::steady_clock::now();
 
-        UT_LOG_INFO("[Video DecoderID: %d] onFrameOutput received: nsPresentationTime=%lld, frameBufferHandle=0x%016" PRIx64 "", mDecoderID, nsPresentationTime, frameAVBufferHandle);
+        UT_LOG_INFO("[Video DecoderID: %d] onFrameOutput received: nsPresentationTime=%lld, frameAVBufferHandle=0x%016" PRIx64 "", mDecoderID, nsPresentationTime, static_cast<uint64_t>(frameAVBufferHandle));
 
         frame.framePTS = nsPresentationTime;
         frame.isMetaAvailable = metadata.has_value();
-        frame.frameBufferHandle = frameAVBufferHandle; // Store handle
+        frame.frameAVBufferHandle = frameAVBufferHandle; // Store handle
         if (metadata.has_value())
         {
             frame.metadata = std::make_unique<com::rdk::hal::videodecoder::FrameMetadata>(metadata.value());
@@ -1539,10 +1539,18 @@ public:
                         frame.metadata->discontinuity,
                         frame.metadata->lowLatency);
 
+            if (frame.metadata->endOfStream)
+            {
+                UT_LOG_INFO("[Video DecoderID: %d] EOS received on final onFrameOutput callback: PTS=%lld, frameAVBufferHandle=0x%016" PRIx64,
+                            mDecoderID, nsPresentationTime, static_cast<uint64_t>(frameAVBufferHandle));
+            }
+
             UT_LOG_INFO("Source: %d", static_cast<int>(frame.metadata->source));
 
         } else {
             UT_LOG_INFO("No FrameMetadata provided");
+            // Contract: metadata is GUARANTEED non-null on the EOS callback.
+            // A null metadata callback is only valid for routine (non-EOS) frames.
         }
 
         {
@@ -1730,6 +1738,7 @@ public:
         mControlListener->setDecoderID(decoderId.value);
     }
     void run(bool concurrentDecodeConsume);
+    bool runBackPressureTest();
     void getDecoderMetrics(int32_t &framesDecoded, int32_t &decodeErrors, int32_t &framesDropped);
     std::vector<std::tuple<uint64_t, uint32_t, int64_t>> parseFrames(
         const std::vector<uint8_t>& inputBuffer, uint64_t fileSize, videodecoder::Codec codec);

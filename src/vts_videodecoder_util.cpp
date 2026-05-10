@@ -231,6 +231,18 @@ PixelFormat videoDecoderStringToPixelFormat(const std::string& formatStr) {
     return static_cast<PixelFormat>(0); // Unknown format
 }
 
+bool vts_videodecoder_helper_isKnownPixelFormatString(const std::string& formatStr) {
+    static const std::unordered_set<std::string> knownPixelFormats = {
+        "YCBCR422",
+        "YCBCR444",
+        "YCBCR420",
+        "RGB",
+        "NATIVE"
+    };
+
+    return knownPixelFormats.find(formatStr) != knownPixelFormats.end();
+}
+
 bool vts_videodecoder_helper_profileFieldPresent(const std::string& key) {
     // Equivalent to ut_kvp_fieldPresent but for profile instance
     // Try to get string field and check status - this is more reliable than checking return values
@@ -506,12 +518,13 @@ UT_status_t vts_videodecoder_parseVideoDecoderHFP()
                 UT_KVP_PROFILE_GET_STRING(pixFmtPath.c_str(), pixFmtKvp);
                 std::string pixFmtStr = std::string(pixFmtKvp);
                 if (!pixFmtStr.empty()) {
-                    try {
-                        cap.supportedOutputPixelFormats.push_back(videoDecoderStringToPixelFormat(pixFmtStr));
-                    } catch (const std::invalid_argument& e) {
-                        UT_LOG_WARNING("Invalid supportedOutputPixelFormats entry at %s (%s): %s",
-                                       pixFmtPath.c_str(), pixFmtStr.c_str(), e.what());
+                    if (!vts_videodecoder_helper_isKnownPixelFormatString(pixFmtStr)) {
+                        UT_LOG_WARNING("Invalid supportedOutputPixelFormats entry at %s (%s): skipping",
+                                       pixFmtPath.c_str(), pixFmtStr.c_str());
+                        continue;
                     }
+
+                    cap.supportedOutputPixelFormats.push_back(videoDecoderStringToPixelFormat(pixFmtStr));
                 }
             }
 

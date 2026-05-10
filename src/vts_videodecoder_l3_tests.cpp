@@ -305,6 +305,12 @@ public:
 
     void runTest(const char *testName, bool secureMode, bool tunnelMode, bool concurrentMode)
     {
+        if (strcmp(testName, "DecodeBufferAvailable_BackPressure_Callback") == 0)
+        {
+            runBackPressureDecode();
+            return;
+        }
+
         vector<videoDecoderTestConfiguration_t> testConfiguration;
 
         UT_status_t status = vts_videodecoder_parse_testconfig(gVideoDecoderTestConfiguration, VIDEODECODERMGR, gTestGroup, testName, testConfiguration);
@@ -331,12 +337,8 @@ public:
         }
     }
 
-    void runDecodeBufferAvailableBackPressureTest()
+    void runBackPressureDecode()
     {
-        static constexpr uint32_t kInputSizeBytes = 4096;
-        static constexpr int kMaxProbeSubmissions = 512;
-        static constexpr int kBackPressureRetryBurst = 8;
-
         int activeDecoders = 0;
         int decodersWithBackPressure = 0;
 
@@ -349,156 +351,20 @@ public:
             }
 
             activeDecoders++;
-            controlListener->resetQueues();
 
-            sp<AVBufferSpaceListener> bufferListener = new AVBufferSpaceListener();
-            Pool videoPool;
-            sp<IVideoDecoderController> videoDecoderController;
+            videoDecoderTestConfiguration_t config = {};
+            config.codec = capabilities->supportedCodecs.front().codec;
+            config.openWithResolutionWidth = -1;
+            config.openWithResolutionHeight = -1;
 
-            videodecoder::Codec testCodec = capabilities->supportedCodecs.front().codec;
+            videoDecoderTest decodeTest(_decoderId, decoderHandle, controlListener,
+                                        eventListener, mAVBufferManager, false,
+                                        false, config, mAVbufferHelper, false);
 
-            AVBUFFER_CREATE_VIDEOPOOL_SUCCESS(mAVBufferManager, false, _decoderId, bufferListener, videoPool);
-            VIDEODECODER_OPEN_SUCCESS(decoderHandle, testCodec, false,
-                                      controlListener, videoDecoderController, true);
-            UT_ASSERT_TRUE(videoDecoderController != nullptr);
-
-            VIDEODECODER_START_SUCCESS(decoderHandle, videoDecoderController, true);
-            controlListener->resetDecodeBufferAvailableCount();
-
-            bool backPressureObserved = false;
-            bool acceptedAfterCallback = false;
-            int64_t pts = 1000000;
-
-            for (int i = 0; i < kMaxProbeSubmissions; ++i)
-            {
-                int64_t videoBufferHandle = 0;
-                AVBUFFER_ALLOC_SUCCESS(mAVBufferManager, videoPool, kInputSizeBytes, videoBufferHandle);
-
-                void* mapBuffer = nullptr;
-                uint32_t mapSize = 0;
-                mapBuffer = mAVbufferHelper->mapHandle(videoBufferHandle, &mapSize);
-                if (mapBuffer && mapSize >= kInputSizeBytes)
-                {
-                    memset(mapBuffer, 0, kInputSizeBytes);
-                    mAVbufferHelper->unmapHandle(videoBufferHandle);
-                }
-                else
-                {
-                    if (mapBuffer)
-                    {
-                        mAVbufferHelper->unmapHandle(videoBufferHandle);
-                    }
-                    AVBUFFER_FREE_SUCCESS(mAVBufferManager, videoBufferHandle);
-                    UT_ASSERT_TRUE(false) << "Failed to map input buffer for back-pressure test";
-                    break;
-                }
-
-                videodecoder::InputBufferMetadata metadata = {};
-                metadata.nsPresentationTime = pts;
-                metadata.endOfStream = false;
-                metadata.discontinuity = false;
-
-                bool decodeResult = false;
-                Status status = videoDecoderController->decodeBufferWithMetadata(videoBufferHandle, metadata, &decodeResult);
-                UT_ASSERT_TRUE(status.isOk()) << "decodeBufferWithMetadata binder call failed while probing back-pressure";
-                UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE);
-
-                if (!decodeResult)
-                {
-                    backPressureObserved = true;
-
-                    for (int retry = 0; retry < kBackPressureRetryBurst; ++retry)
-                    {
-                        int64_t retryHandle = 0;
-                        AVBUFFER_ALLOC_SUCCESS(mAVBufferManager, videoPool, kInputSizeBytes, retryHandle);
-
-                        void* retryMap = nullptr;
-                        uint32_t retryMapSize = 0;
-                        retryMap = mAVbufferHelper->mapHandle(retryHandle, &retryMapSize);
-                        if (retryMap && retryMapSize >= kInputSizeBytes)
-                        {
-                            memset(retryMap, 0, kInputSizeBytes);
-                            mAVbufferHelper->unmapHandle(retryHandle);
-                        }
-                        else
-                        {
-                            if (retryMap)
-                            {
-                                mAVbufferHelper->unmapHandle(retryHandle);
-                            }
-                            AVBUFFER_FREE_SUCCESS(mAVBufferManager, retryHandle);
-                            UT_ASSERT_TRUE(false) << "Failed to map retry input buffer for back-pressure test";
-                            break;
-                        }
-
-                        videodecoder::InputBufferMetadata retryMetadata = {};
-                        retryMetadata.nsPresentationTime = ++pts;
-                        retryMetadata.endOfStream = false;
-                        retryMetadata.discontinuity = false;
-
-                        bool retryResult = false;
-                        Status retryStatus = videoDecoderController->decodeBufferWithMetadata(retryHandle, retryMetadata, &retryResult);
-                        UT_ASSERT_TRUE(retryStatus.isOk()) << "decodeBufferWithMetadata binder call failed during back-pressure retries";
-                        UT_ASSERT_EQUAL(retryStatus.exceptionCode(), Status::EX_NONE);
-                    }
-
-                    bool callbackObserved = controlListener->waitForDecodeBufferAvailable(1, std::chrono::milliseconds(5000));
-                    UT_ASSERT_TRUE(callbackObserved) << "onDecodeBufferAvailable was not received after queue-full decode refusal";
-                    UT_ASSERT_EQUAL(controlListener->getDecodeBufferAvailableCount(), 1)
-                        << "Expected exactly one onDecodeBufferAvailable callback for a single back-pressure episode";
-
-                    int64_t postCallbackHandle = 0;
-                    AVBUFFER_ALLOC_SUCCESS(mAVBufferManager, videoPool, kInputSizeBytes, postCallbackHandle);
-
-                    void* postMap = nullptr;
-                    uint32_t postMapSize = 0;
-                    postMap = mAVbufferHelper->mapHandle(postCallbackHandle, &postMapSize);
-                    if (postMap && postMapSize >= kInputSizeBytes)
-                    {
-                        memset(postMap, 0, kInputSizeBytes);
-                        mAVbufferHelper->unmapHandle(postCallbackHandle);
-                    }
-                    else
-                    {
-                        if (postMap)
-                        {
-                            mAVbufferHelper->unmapHandle(postCallbackHandle);
-                        }
-                        AVBUFFER_FREE_SUCCESS(mAVBufferManager, postCallbackHandle);
-                        UT_ASSERT_TRUE(false) << "Failed to map post-callback input buffer";
-                        break;
-                    }
-
-                    videodecoder::InputBufferMetadata postCallbackMetadata = {};
-                    postCallbackMetadata.nsPresentationTime = ++pts;
-                    postCallbackMetadata.endOfStream = false;
-                    postCallbackMetadata.discontinuity = false;
-
-                    Status postCallbackStatus = videoDecoderController->decodeBufferWithMetadata(
-                        postCallbackHandle, postCallbackMetadata, &acceptedAfterCallback);
-                    UT_ASSERT_TRUE(postCallbackStatus.isOk()) << "decodeBufferWithMetadata binder call failed after callback";
-                    UT_ASSERT_EQUAL(postCallbackStatus.exceptionCode(), Status::EX_NONE);
-                    break;
-                }
-
-                ++pts;
-            }
-
-            if (backPressureObserved)
+            if (decodeTest.runBackPressureTest())
             {
                 decodersWithBackPressure++;
-                UT_ASSERT_TRUE(acceptedAfterCallback)
-                    << "decodeBufferWithMetadata did not accept a buffer after onDecodeBufferAvailable";
             }
-            else
-            {
-                UT_LOG_WARNING("[DecoderID: %d] Back-pressure not observed within %d submissions; callback semantics not asserted on this decoder",
-                               _decoderId.value, kMaxProbeSubmissions);
-            }
-
-            VIDEODECODER_STOP_SUCCESS(decoderHandle, videoDecoderController, true);
-            VIDEODECODER_CLOSE_SUCCESS(decoderHandle, videoDecoderController, true);
-            AVBUFFER_DESTROY_POOL_SUCCESS(mAVBufferManager, videoPool);
         }
 
         UT_ASSERT_TRUE(activeDecoders > 0) << "No active decoders available for callback test";
@@ -789,7 +655,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_GOPStruct
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, DecodeBufferAvailable_BackPressure_Callback)
 {
-    runDecodeBufferAvailableBackPressureTest();
+    runTest("DecodeBufferAvailable_BackPressure_Callback", false, false, false);
 }
 
 #if NOT_IMPLEMENTED
