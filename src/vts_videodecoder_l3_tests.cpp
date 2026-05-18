@@ -215,6 +215,37 @@ public:
         return true;
     }
 
+    bool isTunnelModeSupported() const
+    {
+        // Check if any decoder supports tunnel mode by querying the manager
+        std::vector<OperationalMode> supportedModes;
+        android::binder::Status status = gVideoDecoderManager->getSupportedOperationalModes(&supportedModes);
+
+        if (!status.isOk()) {
+            UT_LOG_WARNING("Failed to query supported operational modes");
+            return false;
+        }
+
+        for (const auto& mode : supportedModes) {
+            if (mode == OperationalMode::TUNNELLED) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool isSecureModeSupported() const
+    {
+        // Check if any decoder supports secure decoding
+        for (const auto& [_decoderId, decoderHandle, controlListener, eventListener, capabilities] : mVideoDecoderList)
+        {
+            if (capabilities && capabilities->supportsSecure) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     void runSequentialDecode(videoDecoderTestConfiguration_t& testConfig, bool secureDecode, bool tunnelMode, bool concurrentDecodeConsume)
     {
         int32_t activeDecoders = 0;
@@ -305,6 +336,19 @@ public:
 
     void runTest(const char *testName, bool secureMode, bool tunnelMode, bool concurrentMode)
     {
+        // Check if required capabilities are supported before running test
+        if (tunnelMode && !isTunnelModeSupported()) {
+            UT_LOG_INFO("Skipping test '%s': Tunnel mode is not supported by this system", testName);
+            GTEST_SKIP() << "Tunnel mode is not supported by this system";
+            return;
+        }
+
+        if (secureMode && !isSecureModeSupported()) {
+            UT_LOG_INFO("Skipping test '%s': Secure mode is not supported by any decoder", testName);
+            GTEST_SKIP() << "Secure mode is not supported by any decoder";
+            return;
+        }
+
         if (strcmp(testName, "DecodeBufferAvailable_BackPressure_Callback") == 0)
         {
             runBackPressureDecode();
@@ -657,8 +701,6 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, DecodeBufferAvailable_BackPressure_Callback)
 {
     runTest("DecodeBufferAvailable_BackPressure_Callback", false, false, false);
 }
-
-#if NOT_IMPLEMENTED
 
 /**
  * @brief Test decoding in secure mode
@@ -1151,19 +1193,6 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_LowLatency)
     runTest(testName, secureMode, tunnelMode, concurrentMode);
 }
 
-/**
- * @brief Test decoding in low latency mode in concurrent and secure modes
- *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 068
- */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_LowLatency)
-{
-    const char *testName = "Decode_Concurrent_NonTunnel_Secure_LowLatency";
-    bool secureMode = true;
-    bool tunnelMode = false;
-    bool concurrentMode = true;
-    runTest(testName, secureMode, tunnelMode, concurrentMode);
-}
 
 /**
  * @brief Test decoding in tunnel mode
@@ -1682,7 +1711,6 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_Secure)
     bool concurrentMode = true;
     runTest(testName, secureMode, tunnelMode, concurrentMode);
 }
-#endif //NOT_IMPLEMENTED
 
 /** @} */ // End of VIDEO_DECODER_HALTEST_L3 File
 /** @} */ // End of VIDEO_DECODER_HALTEST

@@ -1257,6 +1257,13 @@ do { \
         UT_ASSERT_TRUE(status.isOk()) << "decodeBufferWithMetadata failed"; \
         UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
         UT_ASSERT_TRUE(decodeResult) << "decodeBufferWithMetadata returned false"; \
+        if(decodeResult == false || status.isOk() == false || status.exceptionCode() != Status::EX_NONE) \
+        { \
+            if(frameBufferHandle != -1) \
+            { \
+                AVBUFFER_FREE_SUCCESS(gAVBufferManager, frameBufferHandle);\
+            } \
+        } \
     } while (0)
 
 #define VIDEODECODER_DECODEBUFFER_WITH_METADATA_FAILURE(controller, framePts, frameBufferHandle, frameEos, frameDiscontinuity, expectedException) \
@@ -1284,6 +1291,10 @@ do { \
             UT_ASSERT_TRUE(status.isOk()) << "decodeBufferWithMetadata failed unexpectedly"; \
             UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
             UT_ASSERT_FALSE(decodeResult) << "decodeBufferWithMetadata returned true unexpectedly"; \
+        } \
+        if(frameBufferHandle != -1) \
+        { \
+            AVBUFFER_FREE_SUCCESS(gAVBufferManager, frameBufferHandle);\
         } \
     } while (0)
 
