@@ -89,6 +89,16 @@ void videoDecoderTest::run(bool concurrentDecodeConsume)
         }
         setupVideoDecoder();
 
+        if(mVideoDecoderController.get() == nullptr)
+        {
+            UT_ASSERT_TRUE(false) << "Decoder session is not available";
+            if(!mIsSinkAttached && consumerThread.joinable())
+            {
+                consumerThread.join();
+            }
+            return;
+        }
+
         startDecoding();
 
         if(!mIsSinkAttached && consumerThread.joinable())
@@ -97,12 +107,27 @@ void videoDecoderTest::run(bool concurrentDecodeConsume)
             consumerThread.join();
         }
 
-        teardownDecoder();
+        // Keep decoder running while sink consumes output frames.
+        // Session close/cleanup is handled explicitly by the caller.
+        if (!mIsSinkAttached)
+        {
+            teardownDecoder(false);
+        }
     }
     else
     {
         //TODO: Not used currently, update implementation if required in future
     }
+}
+
+void videoDecoderTest::setTestConfiguration(const videoDecoderTestConfiguration_t& config)
+{
+    mTestConfiguration = config;
+}
+
+void videoDecoderTest::closeDecoderSession()
+{
+    releaseDecoderSession(true);
 }
 
 void videoDecoderTest::getDecoderMetrics(int32_t &framesDecoded, int32_t &decodeErrors, int32_t &framesDropped)
@@ -132,25 +157,34 @@ void videoDecoderTest::getDecoderMetrics(int32_t &framesDecoded, int32_t &decode
 
 void videoDecoderTest::setupVideoDecoder()
 {
-    mBufferListener = new AVBufferSpaceListener();
-
-    // Create Video Pool
-    AVBUFFER_CREATE_VIDEOPOOL_SUCCESS(mAVBufferManager, mSecureDecode, mDecoderId, mBufferListener, mVideoPool);
-
-    // Open Decoder — use openWithResolution() when hint dimensions are set in the test config
-    if (mTestConfiguration.openWithResolutionWidth != -1 && mTestConfiguration.openWithResolutionHeight != -1)
+    if (mVideoDecoderController.get() == nullptr)
     {
-        UT_LOG_INFO("Opening decoder via openWithResolution(%dx%d)",
-                    mTestConfiguration.openWithResolutionWidth, mTestConfiguration.openWithResolutionHeight);
-        VIDEODECODER_OPEN_WITH_RESOLUTION_SUCCESS(
-            mDecoderHandle, mTestConfiguration.codec, mSecureDecode, mControlListener,
-            mTestConfiguration.openWithResolutionWidth, mTestConfiguration.openWithResolutionHeight,
-            mVideoDecoderController, true);
+        mBufferListener = new AVBufferSpaceListener();
+
+        // Create Video Pool
+        AVBUFFER_CREATE_VIDEOPOOL_SUCCESS(mAVBufferManager, mSecureDecode, mDecoderId, mBufferListener, mVideoPool);
+
+        // Open Decoder — use openWithResolution() when hint dimensions are set in the test config
+        if (mTestConfiguration.openWithResolutionWidth != -1 && mTestConfiguration.openWithResolutionHeight != -1)
+        {
+            UT_LOG_INFO("Opening decoder via openWithResolution(%dx%d)",
+                        mTestConfiguration.openWithResolutionWidth, mTestConfiguration.openWithResolutionHeight);
+            VIDEODECODER_OPEN_WITH_RESOLUTION_SUCCESS(
+                mDecoderHandle, mTestConfiguration.codec, mSecureDecode, mControlListener,
+                mTestConfiguration.openWithResolutionWidth, mTestConfiguration.openWithResolutionHeight,
+                mVideoDecoderController, true);
+        }
+        else
+        {
+            VIDEODECODER_OPEN_SUCCESS(mDecoderHandle, mTestConfiguration.codec, mSecureDecode,
+                                      mControlListener, mVideoDecoderController, true);
+        }
     }
     else
     {
-        VIDEODECODER_OPEN_SUCCESS(mDecoderHandle, mTestConfiguration.codec, mSecureDecode,
-                                  mControlListener, mVideoDecoderController, true);
+        UT_LOG_INFO("Reusing open decoder for stream %s with codec %s",
+                    mTestConfiguration.streamName.c_str(),
+                    videodecoder::toString(mTestConfiguration.codec).c_str());
     }
 
     if(mVideoDecoderController.get() == nullptr)
@@ -637,16 +671,42 @@ bool videoDecoderTest::runBackPressureTest()
     return false;
 }
 
-void videoDecoderTest:: teardownDecoder()
+void videoDecoderTest:: teardownDecoder(bool closeDecoderSession)
 {
-    // Stop Decoder
-    VIDEODECODER_STOP_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
+    releaseDecoderSession(closeDecoderSession);
+}
 
-    // Close Decoder
-    VIDEODECODER_CLOSE_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
+void videoDecoderTest::releaseDecoderSession(bool closeController)
+{
+    if (mVideoDecoderController.get() == nullptr)
+    {
+        return;
+    }
 
-    // Destroy Video Pool
-    AVBUFFER_DESTROY_POOL_SUCCESS(mAVBufferManager, mVideoPool);
+    ::com::rdk::hal::State currentState = ::com::rdk::hal::State::UNKNOWN;
+    Status getStateStatus = mDecoderHandle->getState(&currentState);
+    if (getStateStatus.isOk() && getStateStatus.exceptionCode() == Status::EX_NONE)
+    {
+        if (currentState == ::com::rdk::hal::State::STARTED ||
+            currentState == ::com::rdk::hal::State::STARTING ||
+            currentState == ::com::rdk::hal::State::FLUSHING ||
+            currentState == ::com::rdk::hal::State::STOPPING)
+        {
+            VIDEODECODER_STOP_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
+        }
+    }
+    else
+    {
+        UT_LOG_WARNING("Skipping stop during releaseDecoderSession: failed to query decoder state");
+    }
+
+    if (closeController)
+    {
+        VIDEODECODER_CLOSE_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
+        AVBUFFER_DESTROY_POOL_SUCCESS(mAVBufferManager, mVideoPool);
+        mVideoDecoderController = nullptr;
+        mBufferListener = nullptr;
+    }
 }
 
 /** @} */ // End of VIDEO_DECODER_HALTEST

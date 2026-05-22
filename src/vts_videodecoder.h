@@ -1750,6 +1750,8 @@ public:
     }
     void run(bool concurrentDecodeConsume);
     bool runBackPressureTest();
+    void setTestConfiguration(const videoDecoderTestConfiguration_t& config);
+    void closeDecoderSession();
     void getDecoderMetrics(int32_t &framesDecoded, int32_t &decodeErrors, int32_t &framesDropped);
     std::vector<std::tuple<uint64_t, uint32_t, int64_t>> parseFrames(
         const std::vector<uint8_t>& inputBuffer, uint64_t fileSize, videodecoder::Codec codec);
@@ -1783,7 +1785,8 @@ private:
     void setupVideoDecoder();
     void startDecoding();
     bool validateDecodedFrame();
-    void teardownDecoder();
+    void releaseDecoderSession(bool closeController);
+    void teardownDecoder(bool closeDecoderSession = false);
     void decodeAndConsumeVideoFrames();
 };
 
