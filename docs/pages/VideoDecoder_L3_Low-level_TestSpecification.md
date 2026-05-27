@@ -419,9 +419,8 @@ sequenceDiagram
         rundecoder->>VideoDecoder_HAL: start() [if stopPts or flushResetPts]
         rundecoder->>VideoDecoder_HAL: signalDiscontinuity() [if discontinuityPts]
         rundecoder->>VideoDecoder_HAL: flush() [if flushPts or flushResetPts]
-        rundecoder->>VideoDecoder_HAL: signalEOS() [if eosPts]
       end
-      rundecoder->>VideoDecoder_HAL: decodeBuffer(framePTS, videoBufferHandle)
+      rundecoder->>VideoDecoder_HAL: decodeBufferWithMetadata(framePTS, videoBufferHandle, metadata) [metadata.endOfStream=true if eosPts or last frame]
       rundecoder->>ControllerListener: getNextFrame(decodedFrame, 100ms)
       ControllerListener-->>rundecoder: decodedFrame (framePTS, frameBufferHandle, metadata)
       rundecoder->>rundecoder: validate PTS (expectedPts)
@@ -774,7 +773,7 @@ This validation ensures that metadata for each decoded frame matches the expecte
   - `Controls.error_streams`: Streams with errors (e.g., `isErrorFrame` in `frameDetails`).
   - `Controls.gop_structure`: Tests GOP configurations (e.g., I-frame, P-frame sequences).
   - `Controls.signal_discontinuity_pts`: Triggers `signalDiscontinuity` at specified PTS.
-  - `Controls.eos_pts`: Triggers `signalEOS` at specified PTS.
+  - `Controls.eos_pts`: Sets `InputBufferMetadata.endOfStream = true` on the buffer at the specified PTS, signalling EOS in-band (replaces the removed `signalEOS()` API).
   - `Controls.flush_pts`: Triggers `flush` at specified PTS.
   - `Controls.flush_reset_pts`: Triggers `flush` and `start` at specified PTS.
   - `Controls.codec`: Tests specific codecs (e.g., H.264, H.265).
@@ -811,7 +810,7 @@ This validation ensures that metadata for each decoded frame matches the expecte
 - **consumerThreadFunc**: Commented out in `DecoderTest::run`, indicating it’s not used in concurrent mode. It may handle frame consumption and metadata validation if enabled. Confirm if it should be documented as active.
 - **Validation Details**:
   - Tests validate decoder metrics, decode time, AV buffers, and metadata (e.g., `codedWidth`, `pixelFormat`, `dynamicRange`) as described in [video_decoder_metadata_validation.md](#validate-metadata).
-  - Special conditions (e.g., `Controls.signal_discontinuity_pts`, `Controls.eos_pts`) are handled in `decoderThreadFunc` with calls like `signalDiscontinuity` or `signalEOS`.
+  - Special conditions (e.g., `Controls.signal_discontinuity_pts`, `Controls.eos_pts`) are handled in `decoderThreadFunc` with calls like `signalDiscontinuity` or by setting `InputBufferMetadata.endOfStream = true` on the buffer at `eos_pts` (in-band EOS per 0.15.0).
 - **Missing Definitions**:
   - **Supporting Types**:
     - `testConfiguration_t`: Contains `codec`, `codedWidth`, `pixelFormat`, `frameDetails`, `no_of_frames`, `decodeErrors`, `dynamicRange`, `frameRate`, etc.
