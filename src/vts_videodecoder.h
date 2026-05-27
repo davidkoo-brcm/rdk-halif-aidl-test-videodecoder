@@ -148,57 +148,6 @@ extern sp<IVideoDecoderManager>                  gVideoDecoderManager;
 extern std::vector<IVideoDecoder::Id>            decoderIds;
 extern std::vector<sp<IVideoDecoderController>>  controllers;
 
-#ifndef ENABLE_UT_INFO_LOGGING
-    // Only WARNING and ERROR logs are enabled; DEBUG and INFO are disabled
-    #ifdef UT_LOG_DEBUG
-        #undef UT_LOG_DEBUG
-    #endif
-    #define UT_LOG_DEBUG(...)
-    #ifdef UT_LOG_INFO
-        #undef UT_LOG_INFO
-    #endif
-    #define UT_LOG_INFO(...)
-#else //ENABLE_UT_INFO_LOGGING
-    // ENABLE_UT_INFO_LOGGING is defined: use UT_LOG_LEVEL to control log macros
-    #define UT_LOG_LEVEL_NONE    0
-    #define UT_LOG_LEVEL_ERROR   1
-    #define UT_LOG_LEVEL_WARNING 2
-    #define UT_LOG_LEVEL_INFO    3
-    #define UT_LOG_LEVEL_DEBUG   4
-
-    #ifndef UT_LOG_LEVEL
-        #define UT_LOG_LEVEL UT_LOG_LEVEL_INFO
-    #endif
-
-    // DEBUG
-    #if UT_LOG_LEVEL < UT_LOG_LEVEL_DEBUG
-        #ifdef UT_LOG_DEBUG
-            #undef UT_LOG_DEBUG
-        #endif
-        #define UT_LOG_DEBUG(...)
-    #endif
-    // INFO
-    #if UT_LOG_LEVEL < UT_LOG_LEVEL_INFO
-        #ifdef UT_LOG_INFO
-            #undef UT_LOG_INFO
-        #endif
-        #define UT_LOG_INFO(...)
-    #endif
-    // WARNING
-    #if UT_LOG_LEVEL < UT_LOG_LEVEL_WARNING
-        #ifdef UT_LOG_WARNING
-            #undef UT_LOG_WARNING
-        #endif
-        #define UT_LOG_WARNING(...)
-    #endif
-    // ERROR
-    #if UT_LOG_LEVEL < UT_LOG_LEVEL_ERROR
-        #ifdef UT_LOG_ERROR
-            #undef UT_LOG_ERROR
-        #endif
-        #define UT_LOG_ERROR(...)
-    #endif
-#endif //ENABLE_UT_INFO_LOGGING
 
 #define VIDEO_DECODER_TEST_CONFIG_PATH "./videodecoder_test_configuration/vts_l3_VideoDecoder_test_config.yaml"
 #define VIDEO_DECODER_STREAM_CONFIG_PATH "./videodecoder_test_configuration/vts_stream_list.yaml"
