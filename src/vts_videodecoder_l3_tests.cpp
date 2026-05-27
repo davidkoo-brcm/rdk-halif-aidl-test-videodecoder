@@ -160,24 +160,100 @@ public:
     bool checkDecoderSupportsConfig(const IVideoDecoder::Id& decoderId, const videodecoder::Capabilities* capabilities,
                                     const videoDecoderTestConfiguration_t& testConfig, bool secureDecode)
     {
-        if (capabilities == nullptr)
+        auto hfpIt = std::find_if(gVideodecoders_hfp.begin(), gVideodecoders_hfp.end(),
+            [&decoderId](const decoder_t& item) { return item.id == decoderId.value; });
+        if (hfpIt == gVideodecoders_hfp.end())
         {
-            UT_LOG_WARNING("Decoder [%d] capabilities unavailable", decoderId.value);
+            UT_LOG_WARNING("[DecoderID: %d] Not available in HFP", decoderId.value);
             return false;
         }
+        const decoder_t& hfpDecoder = *hfpIt;
 
-        auto it = std::find_if(gVideodecoders_hfp.begin(), gVideodecoders_hfp.end(),
-            [&decoderId](const decoder& item) { return item.id == decoderId.value; });
-        if (it == gVideodecoders_hfp.end())
+        auto supportsConfigFromHfp = [&](const char* fallbackReason) -> bool
         {
-            UT_LOG_WARNING("[DecoderID: %d] Not available", decoderId.value);
-            return false;
+            if (secureDecode && !hfpDecoder.supportsSecure)
+            {
+                UT_LOG_WARNING("Decoder [%d] doesn't support secure decoding (HFP fallback)", decoderId.value);
+                return false;
+            }
+
+            auto hfpCodecIt = std::find_if(hfpDecoder.supportedCodecs.begin(), hfpDecoder.supportedCodecs.end(),
+                [&testConfig](const CodecCapability& cap) { return cap.codec == testConfig.codec; });
+            if (hfpCodecIt == hfpDecoder.supportedCodecs.end())
+            {
+                UT_LOG_WARNING("Decoder [%d] doesn't support Codec [%s] in HFP",
+                               decoderId.value,
+                               videodecoder::toString(testConfig.codec).c_str());
+                return false;
+            }
+
+            if (hfpCodecIt->supportedOutputPixelFormats.empty())
+            {
+                UT_LOG_WARNING("Decoder [%d] HFP missing supportedOutputPixelFormats for codec [%s]",
+                               decoderId.value,
+                               videodecoder::toString(testConfig.codec).c_str());
+                return false;
+            }
+
+            if (std::find(hfpCodecIt->supportedOutputPixelFormats.begin(),
+                          hfpCodecIt->supportedOutputPixelFormats.end(),
+                          testConfig.pixelFormat) == hfpCodecIt->supportedOutputPixelFormats.end())
+            {
+                UT_LOG_INFO("Decoder [%d] skipping stream [%s]: pixel format [%s] unsupported in HFP",
+                            decoderId.value,
+                            testConfig.streamName.c_str(),
+                            videodecoder::toString(testConfig.pixelFormat).c_str());
+                return false;
+            }
+
+            if (testConfig.codedWidth > hfpCodecIt->maxFrameWidth ||
+                testConfig.codedHeight > hfpCodecIt->maxFrameHeight)
+            {
+                UT_LOG_INFO("Decoder [%d] skipping stream [%s]: resolution %dx%d exceeds HFP capability %dx%d",
+                            decoderId.value,
+                            testConfig.streamName.c_str(),
+                            testConfig.codedWidth,
+                            testConfig.codedHeight,
+                            hfpCodecIt->maxFrameWidth,
+                            hfpCodecIt->maxFrameHeight);
+                return false;
+            }
+
+            if (testConfig.frameRateDenominator > 0)
+            {
+                uint32_t streamFps = testConfig.frameRateNumerator / testConfig.frameRateDenominator;
+                if (streamFps > static_cast<uint32_t>(hfpCodecIt->maxFrameRate))
+                {
+                    UT_LOG_INFO("Decoder [%d] skipping stream [%s]: frame rate %u fps exceeds HFP capability %d fps",
+                                decoderId.value,
+                                testConfig.streamName.c_str(),
+                                streamFps,
+                                hfpCodecIt->maxFrameRate);
+                    return false;
+                }
+            }
+
+            UT_LOG_WARNING("Decoder [%d] using HFP fallback for stream [%s] because %s",
+                           decoderId.value,
+                           testConfig.streamName.c_str(),
+                           fallbackReason);
+            return true;
+        };
+
+        if (capabilities == nullptr)
+        {
+            return supportsConfigFromHfp("decoder getCapabilities is unavailable");
         }
 
         if (secureDecode && !capabilities->supportsSecure)
         {
             UT_LOG_WARNING("Decoder doesn't support secure decoding");
             return false;
+        }
+
+        if (capabilities->supportedCodecs.empty())
+        {
+            return supportsConfigFromHfp("decoder getCapabilities missing supportedCodecs");
         }
 
         auto codecIt = std::find_if(capabilities->supportedCodecs.begin(), capabilities->supportedCodecs.end(),
@@ -194,7 +270,7 @@ public:
                 "Decoder [%d] skipping stream [%s]: decoder getCapabilities missing supportedOutputPixelFormats",
                  decoderId.value,
                  testConfig.streamName.c_str());
-            return false;
+            return supportsConfigFromHfp("decoder getCapabilities missing supportedOutputPixelFormats");
         }
 
         if (std::find(codecIt->supportedOutputPixelFormats.begin(),
