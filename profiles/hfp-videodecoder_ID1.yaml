@@ -35,30 +35,40 @@ videodecoder:           # Component object begins
             maxFrameRate: 60
             maxFrameWidth: 1920
             maxFrameHeight: 1080
+            supportedOutputPixelFormats:
+              - YCBCR420
         - H264_AVC:
             profile: H264_HIGH
             level: H264_LEVEL_4_1
             maxFrameRate: 60
             maxFrameWidth: 1920
             maxFrameHeight: 1080
+            supportedOutputPixelFormats:
+              - YCBCR420
         - H265_HEVC:
             profile: H265_MAIN
             level: H265_LEVEL_4_1
             maxFrameRate: 60
             maxFrameWidth: 1920
             maxFrameHeight: 1080
+            supportedOutputPixelFormats:
+              - YCBCR420
         - VP9:
             profile: VP9_PROFILE_0
             level: VP9_LEVEL_4_1
             maxFrameRate: 60
             maxFrameWidth: 1920
             maxFrameHeight: 1080
+            supportedOutputPixelFormats:
+              - YCBCR420
         - AV1:
             profile: AV1_MAIN
             level: AV1_LEVEL_4_1
             maxFrameRate: 60
             maxFrameWidth: 1920
             maxFrameHeight: 1080
+            supportedOutputPixelFormats:
+              - YCBCR420
       supportedDynamicRanges:
         - SDR
       supportedColorimetries:

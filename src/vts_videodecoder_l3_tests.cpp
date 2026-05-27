@@ -160,12 +160,89 @@ public:
     bool checkDecoderSupportsConfig(const IVideoDecoder::Id& decoderId, const videodecoder::Capabilities* capabilities,
                                     const videoDecoderTestConfiguration_t& testConfig, bool secureDecode)
     {
-        auto it = std::find_if(gVideodecoders_hfp.begin(), gVideodecoders_hfp.end(),
-            [&decoderId](const decoder& item) { return item.id == decoderId.value; });
-        if (it == gVideodecoders_hfp.end())
+        auto hfpIt = std::find_if(gVideodecoders_hfp.begin(), gVideodecoders_hfp.end(),
+            [&decoderId](const decoder_t& item) { return item.id == decoderId.value; });
+        if (hfpIt == gVideodecoders_hfp.end())
         {
-            UT_LOG_WARNING("[DecoderID: %d] Not available", decoderId.value);
+            UT_LOG_WARNING("[DecoderID: %d] Not available in HFP", decoderId.value);
             return false;
+        }
+        const decoder_t& hfpDecoder = *hfpIt;
+
+        auto supportsConfigFromHfp = [&](const char* fallbackReason) -> bool
+        {
+            if (secureDecode && !hfpDecoder.supportsSecure)
+            {
+                UT_LOG_WARNING("Decoder [%d] doesn't support secure decoding (HFP fallback)", decoderId.value);
+                return false;
+            }
+
+            auto hfpCodecIt = std::find_if(hfpDecoder.supportedCodecs.begin(), hfpDecoder.supportedCodecs.end(),
+                [&testConfig](const CodecCapability& cap) { return cap.codec == testConfig.codec; });
+            if (hfpCodecIt == hfpDecoder.supportedCodecs.end())
+            {
+                UT_LOG_WARNING("Decoder [%d] doesn't support Codec [%s] in HFP",
+                               decoderId.value,
+                               videodecoder::toString(testConfig.codec).c_str());
+                return false;
+            }
+
+            if (hfpCodecIt->supportedOutputPixelFormats.empty())
+            {
+                UT_LOG_WARNING("Decoder [%d] HFP missing supportedOutputPixelFormats for codec [%s]",
+                               decoderId.value,
+                               videodecoder::toString(testConfig.codec).c_str());
+                return false;
+            }
+
+            if (std::find(hfpCodecIt->supportedOutputPixelFormats.begin(),
+                          hfpCodecIt->supportedOutputPixelFormats.end(),
+                          testConfig.pixelFormat) == hfpCodecIt->supportedOutputPixelFormats.end())
+            {
+                UT_LOG_INFO("Decoder [%d] skipping stream [%s]: pixel format [%s] unsupported in HFP",
+                            decoderId.value,
+                            testConfig.streamName.c_str(),
+                            videodecoder::toString(testConfig.pixelFormat).c_str());
+                return false;
+            }
+
+            if (testConfig.codedWidth > hfpCodecIt->maxFrameWidth ||
+                testConfig.codedHeight > hfpCodecIt->maxFrameHeight)
+            {
+                UT_LOG_INFO("Decoder [%d] skipping stream [%s]: resolution %dx%d exceeds HFP capability %dx%d",
+                            decoderId.value,
+                            testConfig.streamName.c_str(),
+                            testConfig.codedWidth,
+                            testConfig.codedHeight,
+                            hfpCodecIt->maxFrameWidth,
+                            hfpCodecIt->maxFrameHeight);
+                return false;
+            }
+
+            if (testConfig.frameRateDenominator > 0)
+            {
+                uint32_t streamFps = testConfig.frameRateNumerator / testConfig.frameRateDenominator;
+                if (streamFps > static_cast<uint32_t>(hfpCodecIt->maxFrameRate))
+                {
+                    UT_LOG_INFO("Decoder [%d] skipping stream [%s]: frame rate %u fps exceeds HFP capability %d fps",
+                                decoderId.value,
+                                testConfig.streamName.c_str(),
+                                streamFps,
+                                hfpCodecIt->maxFrameRate);
+                    return false;
+                }
+            }
+
+            UT_LOG_WARNING("Decoder [%d] using HFP fallback for stream [%s] because %s",
+                           decoderId.value,
+                           testConfig.streamName.c_str(),
+                           fallbackReason);
+            return true;
+        };
+
+        if (capabilities == nullptr)
+        {
+            return supportsConfigFromHfp("decoder getCapabilities is unavailable");
         }
 
         if (secureDecode && !capabilities->supportsSecure)
@@ -174,11 +251,37 @@ public:
             return false;
         }
 
+        if (capabilities->supportedCodecs.empty())
+        {
+            return supportsConfigFromHfp("decoder getCapabilities missing supportedCodecs");
+        }
+
         auto codecIt = std::find_if(capabilities->supportedCodecs.begin(), capabilities->supportedCodecs.end(),
                                     [&testConfig](const videodecoder::CodecCapabilities& cap) { return cap.codec == testConfig.codec; });
         if (codecIt == capabilities->supportedCodecs.end())
         {
             UT_LOG_WARNING("Decoder doesn't support Codec [%s]", videodecoder::toString(testConfig.codec).c_str());
+            return false;
+        }
+
+        if (codecIt->supportedOutputPixelFormats.empty())
+        {
+            UT_LOG_INFO(
+                "Decoder [%d] skipping stream [%s]: decoder getCapabilities missing supportedOutputPixelFormats",
+                 decoderId.value,
+                 testConfig.streamName.c_str());
+            return supportsConfigFromHfp("decoder getCapabilities missing supportedOutputPixelFormats");
+        }
+
+        if (std::find(codecIt->supportedOutputPixelFormats.begin(),
+                      codecIt->supportedOutputPixelFormats.end(),
+                      testConfig.pixelFormat) == codecIt->supportedOutputPixelFormats.end())
+        {
+            UT_LOG_INFO(
+                "Decoder [%d] skipping stream [%s]: pixel format [%s] unsupported",
+                 decoderId.value,
+                 testConfig.streamName.c_str(),
+                 videodecoder::toString(testConfig.pixelFormat).c_str());
             return false;
         }
 
@@ -215,39 +318,106 @@ public:
         return true;
     }
 
-    void runSequentialDecode(videoDecoderTestConfiguration_t& testConfig, bool secureDecode, bool tunnelMode, bool concurrentDecodeConsume)
+    bool isTunnelModeSupported() const
+    {
+        // Check if any decoder supports tunnel mode by querying the manager
+        std::vector<OperationalMode> supportedModes;
+        android::binder::Status status = gVideoDecoderManager->getSupportedOperationalModes(&supportedModes);
+
+        if (!status.isOk()) {
+            UT_LOG_WARNING("Failed to query supported operational modes");
+            return false;
+        }
+
+        for (const auto& mode : supportedModes) {
+            if (mode == OperationalMode::TUNNELLED) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool isSecureModeSupported() const
+    {
+        // Check if any decoder supports secure decoding
+        for (const auto& [_decoderId, decoderHandle, controlListener, eventListener, capabilities] : mVideoDecoderList)
+        {
+            if (capabilities && capabilities->supportsSecure) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    void runSequentialDecode(std::vector<videoDecoderTestConfiguration_t>& testConfigurations,
+                             bool secureDecode, bool tunnelMode, bool concurrentDecodeConsume)
     {
         int32_t activeDecoders = 0;
 
         for (const auto& [_decoderId, decoderHandle, controlListener, eventListener, capabilities] : mVideoDecoderList)
         {
-            HeapMetrics beforeHeapMetrics, afterHeapMetrics;
             bool isSinkAttached = false;
+            videodecoder::Codec activeCodec = static_cast<videodecoder::Codec>(0);
+            bool streamExecutedOnDecoder = false;
+
+            std::unique_ptr<videoDecoderTest> decodeTest;
 
             eventListener->resetQueues();
             controlListener->resetQueues();
 
-            if (!checkDecoderSupportsConfig(_decoderId, capabilities, testConfig, secureDecode))
+            for (size_t i = 0; i < testConfigurations.size(); ++i)
             {
-                UT_LOG_WARNING("Decoder [%d] doesn't support the required configuration", _decoderId.value);
-                continue;
+                auto& testConfig = testConfigurations[i];
+                HeapMetrics beforeHeapMetrics, afterHeapMetrics;
+
+                if (!checkDecoderSupportsConfig(_decoderId, capabilities, testConfig, secureDecode))
+                {
+                    UT_LOG_WARNING("Decoder [%d] doesn't support the required configuration for stream [%s]",
+                                   _decoderId.value, testConfig.streamName.c_str());
+                    continue;
+                }
+
+                if (!decodeTest)
+                {
+                    decodeTest = std::make_unique<videoDecoderTest>(_decoderId, decoderHandle, controlListener,
+                                                                    eventListener, mAVBufferManager, secureDecode,
+                                                                    tunnelMode, testConfig, mAVbufferHelper, isSinkAttached);
+                }
+                else
+                {
+                    decodeTest->setTestConfiguration(testConfig);
+                }
+
+                const bool codecChanged = (activeCodec != static_cast<videodecoder::Codec>(0)) && (activeCodec != testConfig.codec);
+                if (codecChanged)
+                {
+                    decodeTest->closeDecoderSession();
+                }
+
+                AVBUFFER_GETMETRICS(mAVBufferManager, secureDecode, beforeHeapMetrics);
+
+                decodeTest->run(concurrentDecodeConsume);
+
+                AVBUFFER_GETMETRICS(mAVBufferManager, secureDecode, afterHeapMetrics);
+
+                UT_ASSERT_TRUE(beforeHeapMetrics.secure == afterHeapMetrics.secure);
+                UT_ASSERT_TRUE(beforeHeapMetrics.bytesUsed == afterHeapMetrics.bytesUsed);
+                UT_ASSERT_TRUE(beforeHeapMetrics.bytesTotal == afterHeapMetrics.bytesTotal);
+
+                activeCodec = testConfig.codec;
+                streamExecutedOnDecoder = true;
             }
 
-            AVBUFFER_GETMETRICS(mAVBufferManager, secureDecode, beforeHeapMetrics);
+            if (decodeTest)
+            {
+                decodeTest->closeDecoderSession();
+                decodeTest.reset();
+            }
 
-            videoDecoderTest decodeTest(_decoderId, decoderHandle, controlListener,
-                                        eventListener, mAVBufferManager, secureDecode,
-                                        tunnelMode, testConfig,mAVbufferHelper, isSinkAttached);
-
-            decodeTest.run(concurrentDecodeConsume);
-
-            AVBUFFER_GETMETRICS(mAVBufferManager, secureDecode, afterHeapMetrics);
-
-            UT_ASSERT_TRUE(beforeHeapMetrics.secure == afterHeapMetrics.secure);
-            UT_ASSERT_TRUE(beforeHeapMetrics.bytesUsed == afterHeapMetrics.bytesUsed);
-            UT_ASSERT_TRUE(beforeHeapMetrics.bytesTotal == afterHeapMetrics.bytesTotal);
-
-            activeDecoders++;
+            if (streamExecutedOnDecoder)
+            {
+                activeDecoders++;
+            }
         }
 
         UT_ASSERT_TRUE(activeDecoders > 0) << "No decoders support the requested configuration";
@@ -279,7 +449,8 @@ public:
 
             auto decoderTest = std::make_unique<videoDecoderTest>(_decoderId, decoderHandle, controlListener, eventListener,
                                                             mAVBufferManager, secureDecode, tunnelMode, testConfig,mAVbufferHelper, isSinkAttached);
-            futures.push_back(std::async(std::launch::async, &videoDecoderTest::run, decoderTest.get(), concurrentDecodeConsume));
+            futures.push_back(std::async(std::launch::async, &videoDecoderTest::run,
+                                         decoderTest.get(), concurrentDecodeConsume));
             decoderTests.push_back(std::move(decoderTest));
             activeDecoders++;
         }
@@ -296,6 +467,11 @@ public:
             }
         }
 
+        for (auto& decoderTest : decoderTests)
+        {
+            decoderTest->closeDecoderSession();
+        }
+
         AVBUFFER_GETMETRICS(mAVBufferManager, secureDecode, afterHeapMetrics);
 
         UT_ASSERT_TRUE(beforeHeapMetrics.secure == afterHeapMetrics.secure);
@@ -305,6 +481,25 @@ public:
 
     void runTest(const char *testName, bool secureMode, bool tunnelMode, bool concurrentMode)
     {
+        // Check if required capabilities are supported before running test
+        if (tunnelMode && !isTunnelModeSupported()) {
+            UT_LOG_INFO("Skipping test '%s': Tunnel mode is not supported by this system", testName);
+            GTEST_SKIP() << "Tunnel mode is not supported by this system";
+            return;
+        }
+
+        if (secureMode && !isSecureModeSupported()) {
+            UT_LOG_INFO("Skipping test '%s': Secure mode is not supported by any decoder", testName);
+            GTEST_SKIP() << "Secure mode is not supported by any decoder";
+            return;
+        }
+
+        if (strcmp(testName, "DecodeBufferAvailable_BackPressure_Callback") == 0)
+        {
+            runBackPressureDecode();
+            return;
+        }
+
         vector<videoDecoderTestConfiguration_t> testConfiguration;
 
         UT_status_t status = vts_videodecoder_parse_testconfig(gVideoDecoderTestConfiguration, VIDEODECODERMGR, gTestGroup, testName, testConfiguration);
@@ -324,11 +519,43 @@ public:
         }
         else
         {
-            for (auto& test : testConfiguration)
+            runSequentialDecode(testConfiguration, secureMode, tunnelMode, true);
+        }
+    }
+
+    void runBackPressureDecode()
+    {
+        int activeDecoders = 0;
+        int decodersWithBackPressure = 0;
+
+        for (const auto& [_decoderId, decoderHandle, controlListener, eventListener, capabilities] : mVideoDecoderList)
+        {
+            if (!decoderHandle || !capabilities || capabilities->supportedCodecs.empty())
             {
-                runSequentialDecode(test, secureMode, tunnelMode, true);
+                UT_LOG_WARNING("[DecoderID: %d] Missing decoder handle/capability data, skipping callback test", _decoderId.value);
+                continue;
+            }
+
+            activeDecoders++;
+
+            videoDecoderTestConfiguration_t config = {};
+            config.codec = capabilities->supportedCodecs.front().codec;
+            config.openWithResolutionWidth = -1;
+            config.openWithResolutionHeight = -1;
+
+            videoDecoderTest decodeTest(_decoderId, decoderHandle, controlListener,
+                                        eventListener, mAVBufferManager, false,
+                                        false, config, mAVbufferHelper, false);
+
+            if (decodeTest.runBackPressureTest())
+            {
+                decodersWithBackPressure++;
             }
         }
+
+        UT_ASSERT_TRUE(activeDecoders > 0) << "No active decoders available for callback test";
+        UT_ASSERT_TRUE(decodersWithBackPressure > 0)
+            << "Back-pressure was not observed on any decoder; onDecodeBufferAvailable semantics could not be validated";
     }
 
     void TearDown() override
@@ -607,7 +834,15 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_GOPStruct
     runTest(testName, secureMode, tunnelMode, concurrentMode);
 }
 
-#if NOT_IMPLEMENTED
+/**
+ * @brief Test onDecodeBufferAvailable callback semantics under decoder input back-pressure.
+ *        Verifies one callback is emitted when queue transitions from full to has-space.
+ * **Test Group ID:** 01 **Test Case ID:** 020
+ */
+UT_ADD_TEST(VTS_L3_VideoDecoder, DecodeBufferAvailable_BackPressure_Callback)
+{
+    runTest("DecodeBufferAvailable_BackPressure_Callback", false, false, false);
+}
 
 /**
  * @brief Test decoding in secure mode
@@ -1100,19 +1335,6 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_LowLatency)
     runTest(testName, secureMode, tunnelMode, concurrentMode);
 }
 
-/**
- * @brief Test decoding in low latency mode in concurrent and secure modes
- *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
- * **Test Group ID:** 01 **Test Case ID:** 068
- */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_LowLatency)
-{
-    const char *testName = "Decode_Concurrent_NonTunnel_Secure_LowLatency";
-    bool secureMode = true;
-    bool tunnelMode = false;
-    bool concurrentMode = true;
-    runTest(testName, secureMode, tunnelMode, concurrentMode);
-}
 
 /**
  * @brief Test decoding in tunnel mode
@@ -1631,7 +1853,6 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_Secure)
     bool concurrentMode = true;
     runTest(testName, secureMode, tunnelMode, concurrentMode);
 }
-#endif //NOT_IMPLEMENTED
 
 /** @} */ // End of VIDEO_DECODER_HALTEST_L3 File
 /** @} */ // End of VIDEO_DECODER_HALTEST

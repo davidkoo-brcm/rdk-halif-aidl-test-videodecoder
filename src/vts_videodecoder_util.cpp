@@ -231,6 +231,18 @@ PixelFormat videoDecoderStringToPixelFormat(const std::string& formatStr) {
     return static_cast<PixelFormat>(0); // Unknown format
 }
 
+bool vts_videodecoder_helper_isKnownPixelFormatString(const std::string& formatStr) {
+    static const std::unordered_set<std::string> knownPixelFormats = {
+        "YCBCR422",
+        "YCBCR444",
+        "YCBCR420",
+        "RGB",
+        "NATIVE"
+    };
+
+    return knownPixelFormats.find(formatStr) != knownPixelFormats.end();
+}
+
 bool vts_videodecoder_helper_profileFieldPresent(const std::string& key) {
     // Equivalent to ut_kvp_fieldPresent but for profile instance
     // Try to get string field and check status - this is more reliable than checking return values
@@ -498,6 +510,24 @@ UT_status_t vts_videodecoder_parseVideoDecoderHFP()
             cap.maxFrameWidth = UT_KVP_PROFILE_GET_UINT32((attrpath + ".maxFrameWidth").c_str());
             cap.maxFrameHeight = UT_KVP_PROFILE_GET_UINT32((attrpath + ".maxFrameHeight").c_str());
 
+            int supportedPixFmtCount = UT_KVP_PROFILE_GET_LIST_COUNT((attrpath + ".supportedOutputPixelFormats").c_str());
+            for (int32_t k = 0; k < supportedPixFmtCount; ++k)
+            {
+                char pixFmtKvp[UT_KVP_MAX_ELEMENT_SIZE] = {0};
+                std::string pixFmtPath = attrpath + ".supportedOutputPixelFormats." + std::to_string(k);
+                UT_KVP_PROFILE_GET_STRING(pixFmtPath.c_str(), pixFmtKvp);
+                std::string pixFmtStr = std::string(pixFmtKvp);
+                if (!pixFmtStr.empty()) {
+                    if (!vts_videodecoder_helper_isKnownPixelFormatString(pixFmtStr)) {
+                        UT_LOG_WARNING("Invalid supportedOutputPixelFormats entry at %s (%s): skipping",
+                                       pixFmtPath.c_str(), pixFmtStr.c_str());
+                        continue;
+                    }
+
+                    cap.supportedOutputPixelFormats.push_back(videoDecoderStringToPixelFormat(pixFmtStr));
+                }
+            }
+
             UT_LOG_INFO("Codec %s: profile=%d, level=%d, rate=%d, width=%d, height=%d",
                         detected_codec.c_str(), static_cast<int32_t>(cap.profile), static_cast<int32_t>(cap.level),
                         cap.maxFrameRate, cap.maxFrameWidth, cap.maxFrameHeight);
@@ -719,6 +749,8 @@ void vts_videodecoder_helper_validateCapabilities(
                     codecCap.maxFrameRate,
                     codecCap.maxFrameWidth,
                     codecCap.maxFrameHeight);
+        UT_LOG_INFO("Codec %d: supportedOutputPixelFormats count=%zu",
+                static_cast<int32_t>(codecCap.codec), codecCap.supportedOutputPixelFormats.size());
     }
 
     // Validate supportedDynamicRanges
@@ -783,6 +815,23 @@ void vts_videodecoder_helper_validateCapabilities(
                 UT_ASSERT_EQUAL(cap.maxFrameRate, hfpCap.maxFrameRate);
                 UT_ASSERT_EQUAL(cap.maxFrameWidth, hfpCap.maxFrameWidth);
                 UT_ASSERT_EQUAL(cap.maxFrameHeight, hfpCap.maxFrameHeight);
+
+                UT_ASSERT_EQUAL(cap.supportedOutputPixelFormats.size(), hfpCap.supportedOutputPixelFormats.size());
+                for (const auto& pixelFormat : cap.supportedOutputPixelFormats)
+                {
+                    auto pixelIt = std::find_if(
+                        hfpCap.supportedOutputPixelFormats.begin(),
+                        hfpCap.supportedOutputPixelFormats.end(),
+                        [&pixelFormat](const auto& hfpPixelFormat) {
+                            return static_cast<int32_t>(pixelFormat) == static_cast<int32_t>(hfpPixelFormat);
+                        });
+                    if (pixelIt == hfpCap.supportedOutputPixelFormats.end())
+                    {
+                        UT_LOG_ERROR("Pixel format %d not found in HFP for codec %d on decoder ID %d",
+                                     static_cast<int32_t>(pixelFormat), static_cast<int32_t>(cap.codec), decoderId);
+                        UT_ASSERT_TRUE(false) << "supportedOutputPixelFormats mismatch with HFP";
+                    }
+                }
             }
 
             // Validate dynamic ranges (order-independent)
@@ -920,6 +969,8 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, const char *m
         string rmsDiff = streamList + "." + to_string(i) + ".rms_diff_threshold";
         string decodeTime = streamList + "." + to_string(i) + ".decode_time_threshold";
         string decoderDelay = controlList + ".delay_between_decode_calls";
+        string openWithResolutionWidth  = prefix + "openWithResolutionWidth";
+        string openWithResolutionHeight = prefix + "openWithResolutionHeight";
         string stopPts = prefix + "stop_start_pts";
         string discontinuityPts = prefix + "signal_discontinuity_pts";
         string flushPts = prefix + "flush_pts";
@@ -962,6 +1013,12 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, const char *m
         // Resolution
         testDetails.codedWidth = ut_kvp_getUInt32Field(kvpTestInstance, codedWidth.c_str());
         testDetails.codedHeight = ut_kvp_getUInt32Field(kvpTestInstance, codedHeight.c_str());
+
+        // openWithResolution hint dimensions (optional, default -1 = use open())
+        testDetails.openWithResolutionWidth  = ut_kvp_fieldPresent(kvpTestInstance, openWithResolutionWidth.c_str())
+            ? static_cast<int32_t>(ut_kvp_getUInt32Field(kvpTestInstance, openWithResolutionWidth.c_str())) : -1;
+        testDetails.openWithResolutionHeight = ut_kvp_fieldPresent(kvpTestInstance, openWithResolutionHeight.c_str())
+            ? static_cast<int32_t>(ut_kvp_getUInt32Field(kvpTestInstance, openWithResolutionHeight.c_str())) : -1;
 
         // Frame rate
         testDetails.frameRateNumerator = ut_kvp_getUInt32Field(kvpTestInstance, frameRateNumerator.c_str());

@@ -456,6 +456,15 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, getCapabilities_pos)
                         codecCap.maxFrameRate,
                         codecCap.maxFrameWidth,
                         codecCap.maxFrameHeight);
+
+            UT_ASSERT_FALSE(codecCap.supportedOutputPixelFormats.empty())
+                << "supportedOutputPixelFormats must not be empty for codec "
+                << static_cast<int32_t>(codecCap.codec);
+            for (const auto& pixelFormat : codecCap.supportedOutputPixelFormats)
+            {
+                UT_LOG_INFO("Codec %d supports output pixel format: %d",
+                            static_cast<int32_t>(codecCap.codec), static_cast<int32_t>(pixelFormat));
+            }
         }
         UT_LOG_INFO("Supported Dynamic Ranges: %zu", capabilities.supportedDynamicRanges.size());
         for (const auto& dr : capabilities.supportedDynamicRanges)
@@ -942,6 +951,86 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, open_neg)
                                   videoDecoderController, Status::EX_ILLEGAL_STATE);
 
         VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+    }
+}
+
+UT_ADD_TEST(VTS_L1_VideoDecoder, openWithResolution_pos)
+{
+    std::vector<IVideoDecoder::Id> decoderIds;
+    sp<IVideoDecoder> videoDecoder;
+    videodecoder::Capabilities capabilities;
+
+    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
+    UT_ASSERT_FALSE(decoderIds.empty()) << "No VideoDecoder instances available.";
+
+    for (const auto& _decoderId : decoderIds)
+    {
+        VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(_decoderId, videoDecoder);
+        VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
+
+        for (const auto& codecCap : capabilities.supportedCodecs)
+        {
+            sp<IVideoDecoderController> videoDecoderController;
+            sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
+
+            VIDEODECODER_OPEN_WITH_RESOLUTION_SUCCESS(videoDecoder, codecCap.codec, capabilities.supportsSecure,
+                                                      controllerListener, codecCap.maxFrameWidth,
+                                                      codecCap.maxFrameHeight, videoDecoderController, true);
+
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+        }
+    }
+}
+
+UT_ADD_TEST(VTS_L1_VideoDecoder, openWithResolution_neg)
+{
+    std::vector<IVideoDecoder::Id> decoderIds;
+    sp<IVideoDecoder> videoDecoder;
+    videodecoder::Capabilities capabilities;
+
+    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
+    UT_ASSERT_FALSE(decoderIds.empty()) << "No VideoDecoder instances available.";
+
+    for (const auto& _decoderId : decoderIds)
+    {
+        VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(_decoderId, videoDecoder);
+        VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
+
+        for (const auto& codecCap : capabilities.supportedCodecs)
+        {
+            sp<IVideoDecoderController> videoDecoderController;
+            sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
+
+            VIDEODECODER_OPEN_WITH_RESOLUTION_FAILURE(videoDecoder, codecCap.codec, capabilities.supportsSecure,
+                                                      controllerListener, codecCap.maxFrameWidth + 1,
+                                                      codecCap.maxFrameHeight, videoDecoderController,
+                                                      Status::EX_ILLEGAL_ARGUMENT);
+
+            VIDEODECODER_OPEN_WITH_RESOLUTION_FAILURE(videoDecoder, codecCap.codec, capabilities.supportsSecure,
+                                                      controllerListener, codecCap.maxFrameWidth,
+                                                      codecCap.maxFrameHeight + 1, videoDecoderController,
+                                                      Status::EX_ILLEGAL_ARGUMENT);
+
+            VIDEODECODER_OPEN_WITH_RESOLUTION_FAILURE(videoDecoder, codecCap.codec, capabilities.supportsSecure,
+                                                      controllerListener, 0, codecCap.maxFrameHeight,
+                                                      videoDecoderController, Status::EX_ILLEGAL_ARGUMENT);
+
+            VIDEODECODER_OPEN_WITH_RESOLUTION_FAILURE(videoDecoder, codecCap.codec, capabilities.supportsSecure,
+                                                      nullptr, codecCap.maxFrameWidth, codecCap.maxFrameHeight,
+                                                      videoDecoderController, Status::EX_NULL_POINTER);
+
+            /* Illegal state: openWithResolution requires decoder in CLOSED state */
+            VIDEODECODER_OPEN_WITH_RESOLUTION_SUCCESS(videoDecoder, codecCap.codec, capabilities.supportsSecure,
+                                                      controllerListener, codecCap.maxFrameWidth,
+                                                      codecCap.maxFrameHeight, videoDecoderController, true);
+
+            VIDEODECODER_OPEN_WITH_RESOLUTION_FAILURE(videoDecoder, codecCap.codec, capabilities.supportsSecure,
+                                                      controllerListener, codecCap.maxFrameWidth,
+                                                      codecCap.maxFrameHeight, videoDecoderController,
+                                                      Status::EX_ILLEGAL_STATE);
+
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+        }
     }
 }
 
@@ -1806,9 +1895,9 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, setProperty_neg)
 
 
 /**
- * @brief Test the negative scenarios for the decodeBuffer function in VideoDecoderController
+ * @brief Test the negative scenarios for decodeBufferWithMetadata in VideoDecoderController
  *
- * This test evaluates the behavior of the decodeBuffer function when provided with invalid inputs or states. It ensures that the function handles these scenarios gracefully by returning appropriate error codes and results.
+ * This test evaluates the behavior of decodeBufferWithMetadata when provided with invalid inputs or states.
  *
  * **Test Group ID:** Basic: 01@n
  * **Test Case ID:** 025@n
@@ -1821,11 +1910,11 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, setProperty_neg)
  * **Test Procedure:**@n
  * | Variation / Step | Description | Test Data | Expected Result | Notes |
  * | :----: | --------- | ---------- |-------------- | ----- |
- * | 01 | Attempt to decode buffer without starting the decoder | nsPresentationTime = 3000000, bufferHandle = 1, result = false | result = false, exceptionCode = EX_ILLEGAL_STATE | Should Fail |
- * | 02 | Attempt to decode buffer with an invalid buffer handle | nsPresentationTime = 4000000, bufferHandle = -1, result = false | result = false, exceptionCode = EX_ILLEGAL_ARGUMENT | Should Fail |
- * | 03 | Attempt to decode buffer with an invalid presentation time | nsPresentationTime = -1000000, bufferHandle = 1, result = false | result = false, exceptionCode = EX_ILLEGAL_ARGUMENT | Should Fail |
+ * | 01 | Attempt to decode buffer without starting the decoder | metadata.nsPresentationTime = 3000000, bufferHandle = 1 | exceptionCode = EX_ILLEGAL_STATE | Should Fail |
+ * | 02 | Attempt to decode buffer with an invalid buffer handle | metadata.nsPresentationTime = 4000000, bufferHandle = -1 | exceptionCode = EX_ILLEGAL_ARGUMENT | Should Fail |
+ * | 03 | Attempt to decode buffer with an invalid presentation time | metadata.nsPresentationTime = -1000000, bufferHandle = 1 | exceptionCode = EX_ILLEGAL_ARGUMENT | Should Fail |
  */
-UT_ADD_TEST(VTS_L1_VideoDecoder, decodeBuffer_neg)
+UT_ADD_TEST(VTS_L1_VideoDecoder, decodeBufferWithMetadata_neg)
 {
 
     std::vector<IVideoDecoder::Id> decoderIds;
@@ -1861,17 +1950,24 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, decodeBuffer_neg)
             VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
                                           controllerListener, videoDecoderController, true);
 
-            // Test Case 3: Invalid State - Decoder Not Started
-            VIDEODECODER_DECODEBUFFER_FAILURE(videoDecoderController, 3000000, 1, Status::EX_ILLEGAL_STATE);
+            // Invalid State - Decoder Not Started
+            VIDEODECODER_DECODEBUFFER_WITH_METADATA_FAILURE(videoDecoderController, 3000000, 1,
+                                                            false, false, Status::EX_ILLEGAL_STATE);
 
             /* Start the Decoder */
             VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
 
-            // Test Case 4: Invalid Buffer Handle
-            VIDEODECODER_DECODEBUFFER_FAILURE(videoDecoderController, 4000000, -1, Status::EX_ILLEGAL_ARGUMENT);
+            // Invalid Buffer Handle
+            VIDEODECODER_DECODEBUFFER_WITH_METADATA_FAILURE(videoDecoderController, 4000000, -1,
+                                                            false, false, Status::EX_ILLEGAL_ARGUMENT);
 
-            // Test Case 5: Invalid nsPresentationTime
-            VIDEODECODER_DECODEBUFFER_FAILURE(videoDecoderController, -1000000, 1, Status::EX_ILLEGAL_ARGUMENT);
+            // Invalid nsPresentationTime
+            VIDEODECODER_DECODEBUFFER_WITH_METADATA_FAILURE(videoDecoderController, -1000000, 1,
+                                                            false, false, Status::EX_ILLEGAL_ARGUMENT);
+
+            // Reserved discontinuity in metadata must be rejected in v1
+            VIDEODECODER_DECODEBUFFER_WITH_METADATA_FAILURE(videoDecoderController, 5000000, 1,
+                                                            false, true, Status::EX_ILLEGAL_ARGUMENT);
 
             //Reverting state to READY
             VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
@@ -2160,150 +2256,6 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, signalDiscontinuity_neg)
 
             /* Test signalDiscontinuity in CLOSED state (after close) */
             VIDEODECODER_SIGNAL_DISCONTINUITY_FAILURE(videoDecoderController, Status::EX_ILLEGAL_STATE);
-        }
-    }
-}
-
-/**
- * @brief Test the positive scenario of signaling EOS in VideoDecoderController
- *
- * This test verifies that the VideoDecoderController can successfully signal the end of stream (EOS) when it is in the STARTED state. It ensures that the controller transitions correctly and that the signalEOS function behaves as expected.
- *
- * **Test Group ID:** Basic: 01@n
- * **Test Case ID:** 030@n
- * **Priority:** High@n
- * @n
- * **Pre-Conditions:** None@n
- * **Dependencies:** None@n
- * **User Interaction:** None@n
- * @n
- * **Test Procedure:**@n
- * | Variation / Step | Description | Test Data | Expected Result | Notes |
- * | :----: | --------- | ---------- |-------------- | ----- |
- * | 01 | Ensure the Video Decoder is in the STARTED state by calling start() | controller = <controller_instance>, started = false | status.isOk() = true, started = true | Should be successful |
- * | 02 | Log before calling signalEOS | None | None | Should be successful |
- * | 03 | Call signalEOS on the Video Decoder Controller | controller = <controller_instance> | status.isOk() = true | Should Pass |
- * | 04 | Log the result of signalEOS | None | None | Should be successful |
- * | 05 | Verify the return status of signalEOS is successful | status.isOk() = true | status.isOk() = true | Should Pass |
- * | 06 | Stop the Video Decoder as teardown by calling stop() | controller = <controller_instance>, stopped = false | status.isOk() = true, stopped = true | Done by Pre-requisite TearDown function |
- */
-UT_ADD_TEST(VTS_L1_VideoDecoder, signalEOS_pos)
-{
-    std::vector<IVideoDecoder::Id> decoderIds;
-    sp<IVideoDecoder> videoDecoder;
-    videodecoder::Capabilities capabilities;
-    Status status;
-
-    /* Get the Video decoder IDs */
-    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
-    UT_ASSERT_FALSE(decoderIds.empty()) << "No VideoDecoder instances available.";
-
-    for (const auto& _decoderId : decoderIds)
-    {
-        /* Get Video decoder handle */
-        VIDEODECODER_MANAGER_GETVIDEODECODER(_decoderId, videoDecoder);
-
-        /* Get Capabilities of Video Decoder */
-        VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
-
-        for (const auto& _codecCaps : capabilities.supportedCodecs)
-        {
-            videodecoder::Codec _codec = _codecCaps.codec;
-            UT_LOG_INFO("Testing signalEOS for codec %d, decoder ID %d",
-                        static_cast<int32_t>(_codec), _decoderId.value);
-
-            sp<IVideoDecoderController> videoDecoderController;
-            sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
-            sp<IVideoDecoderEventListener> eventListener = new VideoDecoderEventListener();
-
-            /* Open the Decoder */
-            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
-                                      controllerListener, videoDecoderController, true);
-
-            /* Start the Decoder */
-            VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
-
-            /* Signal EOS to the decoder */
-            VIDEODECODER_SIGNAL_EOS_SUCCESS(videoDecoder, videoDecoderController, true);
-
-            /* Stop the Decoder */
-            VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
-
-            /* Close the Decoder */
-            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
-        }
-    }
-}
-
-/**
- * @brief Test the behavior of VideoDecoderController when signalEOS is called in an invalid state.
- *
- * This test verifies that the VideoDecoderController correctly handles the signalEOS call when the decoder is not in the STARTED state. It ensures that the function returns an EX_ILLEGAL_STATE exception, indicating that the operation is not allowed in the current state.
- *
- * **Test Group ID:** Basic: 01@n
- * **Test Case ID:** 031@n
- * **Priority:** High@n
- * @n
- * **Pre-Conditions:** None@n
- * **Dependencies:** None@n
- * **User Interaction:** None@n
- * @n
- * **Test Procedure:**@n
- * | Variation / Step | Description | Test Data | Expected Result | Notes |
- * | :----: | --------- | ---------- |-------------- | ----- |
- * | 01 | Retrieve the current state of the Video Decoder to ensure it is not STARTED. | controller = instance, currentState = READY | currentState != STARTED | Should be successful |
- * | 02 | Call signalEOS() on the Video Decoder. | controller = instance | status.exceptionCode() = EX_ILLEGAL_STATE | Should Pass |
- */
-UT_ADD_TEST(VTS_L1_VideoDecoder, signalEOS_neg)
-{
-    std::vector<IVideoDecoder::Id> decoderIds;
-    sp<IVideoDecoder> videoDecoder;
-    videodecoder::Capabilities capabilities;
-    Status status;
-
-    /* Get the Video decoder IDs */
-    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
-    UT_ASSERT_FALSE(decoderIds.empty()) << "No VideoDecoder instances available.";
-
-    for (const auto& _decoderId : decoderIds)
-    {
-        /* Get Video decoder handle */
-        VIDEODECODER_MANAGER_GETVIDEODECODER(_decoderId, videoDecoder);
-
-        /* Get Capabilities of Video Decoder */
-        VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
-
-        for (const auto& _codecCaps : capabilities.supportedCodecs)
-        {
-            videodecoder::Codec _codec = _codecCaps.codec;
-            UT_LOG_INFO("Testing signalEOS for codec %d, decoder ID %d",
-                        static_cast<int32_t>(_codec), _decoderId.value);
-
-            sp<IVideoDecoderController> videoDecoderController;
-            sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
-            sp<IVideoDecoderEventListener> eventListener = new VideoDecoderEventListener();
-
-            /* Open the Decoder */
-            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
-                                      controllerListener, videoDecoderController, true);
-
-            /* Test signalEOS in READY state (after open) */
-            VIDEODECODER_SIGNAL_EOS_FAILURE(videoDecoderController, Status::EX_ILLEGAL_STATE);
-
-            /* Start the Decoder */
-            VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
-
-            /* Stop the Decoder */
-            VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
-
-            /* Test signalEOS in READY state (after stop) */
-            VIDEODECODER_SIGNAL_EOS_FAILURE(videoDecoderController, Status::EX_ILLEGAL_STATE);
-
-            /* Close the Decoder */
-            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
-
-            /* Test signalEOS in CLOSED state (after close) */
-            VIDEODECODER_SIGNAL_EOS_FAILURE(videoDecoderController, Status::EX_ILLEGAL_STATE);
         }
     }
 }

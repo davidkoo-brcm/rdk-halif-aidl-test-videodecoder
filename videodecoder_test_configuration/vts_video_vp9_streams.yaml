@@ -45,6 +45,8 @@ VideoStreams:
     no_of_frames: 12
     decodeErrors: 0
     framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
     frame_size:
       - 79916
       - 125
@@ -95,6 +97,8 @@ VideoStreams:
     no_of_frames: 12
     decodeErrors: 2
     framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
     frame_size:
       - 79916
       - 125
@@ -145,6 +149,8 @@ VideoStreams:
     no_of_frames: 12
     decodeErrors: 0
     framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
     frame_size:
       - 79916
       - 125
@@ -195,6 +201,8 @@ VideoStreams:
     no_of_frames: 12
     decodeErrors: 0
     framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
     frame_size:
       - 79916
       - 125
@@ -245,6 +253,8 @@ VideoStreams:
     no_of_frames: 12
     decodeErrors: 0
     framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
     frame_size:
       - 79916
       - 125
@@ -295,6 +305,8 @@ VideoStreams:
     no_of_frames: 12
     decodeErrors: 0
     framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
     frame_size:
       - 79916
       - 125
@@ -345,6 +357,8 @@ VideoStreams:
     no_of_frames: 12
     decodeErrors: 2
     framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
     frame_size:
       - 79916
       - 125
@@ -395,6 +409,8 @@ VideoStreams:
     no_of_frames: 12
     decodeErrors: 2
     framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
     frame_size:
       - 79916
       - 125
@@ -445,6 +461,8 @@ VideoStreams:
     no_of_frames: 12
     decodeErrors: 0
     framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
     frame_size:
       - 79916
       - 125
@@ -495,6 +513,8 @@ VideoStreams:
     no_of_frames: 12
     decodeErrors: 2
     framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
     frame_size:
       - 79916
       - 125
@@ -545,6 +565,8 @@ VideoStreams:
     no_of_frames: 12
     decodeErrors: 2
     framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
     frame_size:
       - 79916
       - 125

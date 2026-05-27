@@ -111,24 +111,29 @@ android::binder::Status VideoDecoder::getCapabilities(videodecoder::Capabilities
     mpeg.maxFrameRate = 60;
     mpeg.maxFrameWidth = 1920;
     mpeg.maxFrameHeight = 1080;
+    mpeg.supportedOutputPixelFormats = {PixelFormat::YCBCR420};
 
     CodecCapabilities h264;
     h264.codec = Codec::H264;
     h264.maxFrameRate = 60;
     h264.maxFrameWidth = 1920;
     h264.maxFrameHeight = 1080;
+    h264.supportedOutputPixelFormats = {PixelFormat::YCBCR420};
 
     CodecCapabilities h265;
     h265.codec = Codec::H265;
     h265.maxFrameRate = 60;
+    h265.supportedOutputPixelFormats = {PixelFormat::YCBCR420};
 
     CodecCapabilities vp9;
     vp9.codec = Codec::VP9;
     vp9.maxFrameRate = 60;
+    vp9.supportedOutputPixelFormats = {PixelFormat::YCBCR420};
 
     CodecCapabilities av1;
     av1.codec = Codec::AV1;
     av1.maxFrameRate = 60;
+    av1.supportedOutputPixelFormats = {PixelFormat::YCBCR420};
 
     if (mId.value == 0) {
         h265.maxFrameWidth = 3840;
@@ -287,6 +292,51 @@ android::binder::Status VideoDecoder::open(videodecoder::Codec codec, bool secur
     }
     if (videoDecoderControllerListener == nullptr) {
         *_aidl_return = nullptr;
+        return android::binder::Status::fromExceptionCode(android::binder::Status::EX_NULL_POINTER);
+    }
+    if (getState() != State::CLOSED) {
+        *_aidl_return = nullptr;
+        return android::binder::Status::fromExceptionCode(android::binder::Status::EX_ILLEGAL_STATE);
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    if (mEventListener) {
+        mVideoDecoderEventListener->onStateChanged(getState(), State::OPENING);
+    }
+    setState(State::OPENING);
+    std::this_thread::sleep_for(std::chrono::milliseconds(250));
+    if (mEventListener) {
+        mVideoDecoderEventListener->onStateChanged(State::OPENING, State::READY);
+    }
+    setState(State::READY);
+    *_aidl_return = new VideoDecoderController(mId, this, videoDecoderControllerListener);
+    return android::binder::Status::ok();
+}
+
+android::binder::Status VideoDecoder::openWithResolution(videodecoder::Codec codec, bool secure, const android::sp<videodecoder::IVideoDecoderControllerListener>& videoDecoderControllerListener, int32_t maxWidth, int32_t maxHeight, android::sp<videodecoder::IVideoDecoderController>* _aidl_return) {
+    if (videoDecoderControllerListener == nullptr) {
+        *_aidl_return = nullptr;
+        return android::binder::Status::fromExceptionCode(android::binder::Status::EX_NULL_POINTER);
+    }
+    if (maxWidth <= 0 || maxHeight <= 0) {
+        *_aidl_return = nullptr;
+        return android::binder::Status::fromExceptionCode(android::binder::Status::EX_ILLEGAL_ARGUMENT);
+    }
+    /* Check maxWidth/maxHeight against per-codec capability limits */
+    Capabilities capabilities;
+    getCapabilities(&capabilities);
+    bool codecFound = false;
+    for (const auto& codecCap : capabilities.supportedCodecs) {
+        if (codecCap.codec == codec) {
+            codecFound = true;
+            if (maxWidth > codecCap.maxFrameWidth || maxHeight > codecCap.maxFrameHeight) {
+                *_aidl_return = nullptr;
+                return android::binder::Status::fromExceptionCode(android::binder::Status::EX_ILLEGAL_ARGUMENT);
+            }
+            break;
+        }
+    }
+    if (!codecFound) {
+        *_aidl_return = nullptr;
         return android::binder::Status::fromExceptionCode(android::binder::Status::EX_ILLEGAL_ARGUMENT);
     }
     if (getState() != State::CLOSED) {
@@ -303,7 +353,7 @@ android::binder::Status VideoDecoder::open(videodecoder::Codec codec, bool secur
         mVideoDecoderEventListener->onStateChanged(State::OPENING, State::READY);
     }
     setState(State::READY);
-    *_aidl_return = new VideoDecoderController(mId, this);
+    *_aidl_return = new VideoDecoderController(mId, this, videoDecoderControllerListener);
     return android::binder::Status::ok();
 }
 
@@ -348,8 +398,9 @@ android::binder::Status VideoDecoder::unregisterEventListener(const android::sp<
     return android::binder::Status::ok();
 }
 
-VideoDecoderController::VideoDecoderController(IVideoDecoder::Id id, VideoDecoder* parentDecoder)
-    : mId(id), mParentDecoder(parentDecoder) {
+VideoDecoderController::VideoDecoderController(IVideoDecoder::Id id, VideoDecoder* parentDecoder,
+                                               const android::sp<videodecoder::IVideoDecoderControllerListener>& controllerListener)
+    : mId(id), mParentDecoder(parentDecoder), mControllerListener(controllerListener) {
     printf("VideoDecoderController service initialized for ID: %d\n", id.value);
 }
 
@@ -391,12 +442,21 @@ android::binder::Status VideoDecoderController::stop() {
     return android::binder::Status::ok();
 }
 
-android::binder::Status VideoDecoderController::decodeBuffer(int64_t nsPresentationTime, int64_t bufferHandle, bool* _aidl_return) {
+android::binder::Status VideoDecoderController::decodeBufferWithMetadata(int64_t bufferHandle, const ::com::rdk::hal::videodecoder::InputBufferMetadata& metadata, bool* _aidl_return) {
     if (mParentDecoder->getState() != State::STARTED) {
         *_aidl_return = false;
         return android::binder::Status::fromExceptionCode(android::binder::Status::EX_ILLEGAL_STATE);
     }
-    if (nsPresentationTime < 0) {
+    if (bufferHandle < 0) {
+        *_aidl_return = false;
+        return android::binder::Status::fromExceptionCode(android::binder::Status::EX_ILLEGAL_ARGUMENT);
+    }
+    if (metadata.nsPresentationTime < 0) {
+        *_aidl_return = false;
+        return android::binder::Status::fromExceptionCode(android::binder::Status::EX_ILLEGAL_ARGUMENT);
+    }
+    /* metadata.discontinuity is reserved in v1 and MUST be false */
+    if (metadata.discontinuity) {
         *_aidl_return = false;
         return android::binder::Status::fromExceptionCode(android::binder::Status::EX_ILLEGAL_ARGUMENT);
     }
@@ -427,13 +487,6 @@ android::binder::Status VideoDecoderController::flush(bool reset) {
 }
 
 android::binder::Status VideoDecoderController::signalDiscontinuity() {
-    if (mParentDecoder->getState() != State::STARTED) {
-        return android::binder::Status::fromExceptionCode(android::binder::Status::EX_ILLEGAL_STATE);
-    }
-    return android::binder::Status::ok();
-}
-
-android::binder::Status VideoDecoderController::signalEOS() {
     if (mParentDecoder->getState() != State::STARTED) {
         return android::binder::Status::fromExceptionCode(android::binder::Status::EX_ILLEGAL_STATE);
     }

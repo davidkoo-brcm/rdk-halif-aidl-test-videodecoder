@@ -30,6 +30,7 @@
 #include <com/rdk/hal/videodecoder/IVideoDecoderManager.h>
 #include <com/rdk/hal/videodecoder/BnVideoDecoder.h>
 #include <com/rdk/hal/videodecoder/BnVideoDecoderController.h>
+#include <com/rdk/hal/videodecoder/InputBufferMetadata.h>
 #include <binder/BinderService.h>
 #include <optional>
 #include <string>
@@ -97,6 +98,7 @@ public:
     android::binder::Status getPropertyMulti(const std::vector<videodecoder::Property>& properties, std::vector<videodecoder::PropertyKVPair>* propertyKVList, bool* _aidl_return) override;
     android::binder::Status getState(State* _aidl_return) override;
     android::binder::Status open(videodecoder::Codec codec, bool secure, const android::sp<videodecoder::IVideoDecoderControllerListener>& videoDecoderControllerListener, android::sp<videodecoder::IVideoDecoderController>* _aidl_return) override;
+    android::binder::Status openWithResolution(videodecoder::Codec codec, bool secure, const android::sp<videodecoder::IVideoDecoderControllerListener>& videoDecoderControllerListener, int32_t maxWidth, int32_t maxHeight, android::sp<videodecoder::IVideoDecoderController>* _aidl_return) override;
     android::binder::Status close(const android::sp<videodecoder::IVideoDecoderController>& videoDecoderController, bool* _aidl_return) override;
     android::binder::Status registerEventListener(const android::sp<videodecoder::IVideoDecoderEventListener>& videoDecoderEventListener, bool* _aidl_return) override;
     android::binder::Status unregisterEventListener(const android::sp<videodecoder::IVideoDecoderEventListener>& videoDecoderEventListener, bool* _aidl_return) override;
@@ -107,17 +109,18 @@ class VideoDecoderController : public android::BinderService<VideoDecoderControl
 private:
     IVideoDecoder::Id mId;
     VideoDecoder* mParentDecoder;
+    android::sp<videodecoder::IVideoDecoderControllerListener> mControllerListener;
 
 public:
-    VideoDecoderController(IVideoDecoder::Id id, VideoDecoder* parentDecoder);
+    VideoDecoderController(IVideoDecoder::Id id, VideoDecoder* parentDecoder,
+                           const android::sp<videodecoder::IVideoDecoderControllerListener>& controllerListener = nullptr);
     virtual ~VideoDecoderController();
 
     android::binder::Status start() override;
     android::binder::Status stop() override;
-    android::binder::Status decodeBuffer(int64_t nsPresentationTime, int64_t bufferHandle, bool* _aidl_return) override;
+    android::binder::Status decodeBufferWithMetadata(int64_t bufferHandle, const ::com::rdk::hal::videodecoder::InputBufferMetadata& metadata, bool* _aidl_return) override;
     android::binder::Status flush(bool reset) override;
     android::binder::Status signalDiscontinuity() override;
-    android::binder::Status signalEOS() override;
     android::binder::Status parseCodecSpecificData(rdk::hal::videodecoder::CSDVideoFormat csdVideoFormat, const std::vector<uint8_t>& codecData, bool* _aidl_return) override;
     android::binder::Status setProperty(videodecoder::Property property, const PropertyValue& propertyValue, bool* _aidl_return) override;
 };
