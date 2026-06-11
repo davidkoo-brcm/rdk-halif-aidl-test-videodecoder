@@ -398,6 +398,8 @@ public:
 
                 decodeTest->run(concurrentDecodeConsume);
 
+                decodeTest->closeDecoderSession();
+
                 AVBUFFER_GETMETRICS(mAVBufferManager, secureDecode, afterHeapMetrics);
 
                 UT_ASSERT_TRUE(beforeHeapMetrics.secure == afterHeapMetrics.secure);
@@ -410,7 +412,6 @@ public:
 
             if (decodeTest)
             {
-                decodeTest->closeDecoderSession();
                 decodeTest.reset();
             }
 
