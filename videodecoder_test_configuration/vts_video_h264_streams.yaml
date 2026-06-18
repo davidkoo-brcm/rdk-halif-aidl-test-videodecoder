@@ -952,7 +952,7 @@ VideoStreams:
       - 150000000
   H264_HIGH_1920x1080_SDR_BT709_60p_YCBCR420_8000_NORMAL:
     input: H264_HIGH_1920x1080_SDR_BT709_60p_YCBCR420_8000_NORMAL.es
-    codec: H264  # Video codec information, Refer `Codec` enum
+    codec: H264_AVC  # Video codec information, Refer `Codec` enum
     codedWidth: 1920
     codedHeight: 1088
     colorDepth: 8
