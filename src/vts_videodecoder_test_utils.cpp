@@ -138,10 +138,10 @@ std::vector<std::tuple<uint64_t, uint32_t, int64_t>> videoDecoderTest::parseFram
             uint64_t pos = 32; // Skip IVF header (fixed 32 bytes)
             size_t frameIndex = 0;
             while (pos + 12 <= fileSize) {
-                uint32_t frameSize = inputBuffer[pos] |
-                                     (inputBuffer[pos + 1] << 8) |
-                                     (inputBuffer[pos + 2] << 16) |
-                                     (inputBuffer[pos + 3] << 24);
+                uint32_t frameSize = (uint32_t)inputBuffer[pos] |
+                                     ((uint32_t)inputBuffer[pos + 1] << 8) |
+                                     ((uint32_t)inputBuffer[pos + 2] << 16) |
+                                     ((uint32_t)inputBuffer[pos + 3] << 24);
                 uint64_t timestamp = static_cast<uint64_t>(inputBuffer[pos + 4]) |
                                      (static_cast<uint64_t>(inputBuffer[pos + 5]) << 8) |
                                      (static_cast<uint64_t>(inputBuffer[pos + 6]) << 16) |
@@ -179,7 +179,7 @@ std::vector<std::tuple<uint64_t, uint32_t, int64_t>> videoDecoderTest::parseFram
                 if (hasSize) {
                     for (int i = 0; i < 8 && pos < fileSize; i++) {
                         uint8_t byte = inputBuffer[pos++];
-                        obuSize |= (byte & 0x7F) << (i * 7);
+                        obuSize |= ((uint32_t)(byte & 0x7F)) << (i * 7);
                         if (!(byte & 0x80)) break;
                     }
                 }

@@ -68,7 +68,7 @@ int32_t VideoDecoderEventListener::mUsedDecoderID = -1;
 
 UT_ADD_TEST_TO_GROUP(VTS_L3_VideoDecoder, UT_TESTS_L3)
 
-static char *gTestGroup = "L3";
+static const char *gTestGroup = "L3";
 
 static sp<IAVBuffer> vts_getAVBufferService()
 {
@@ -83,7 +83,7 @@ static sp<IAVBuffer> vts_getAVBufferService()
 class VTS_L3_VideoDecoder : public UTCore
 {
 public:
-    VTS_L3_VideoDecoder() : UTCore() {}
+    VTS_L3_VideoDecoder() : UTCore(), mAVbufferHelper(nullptr) {}
 
     ~VTS_L3_VideoDecoder() override = default;
 
@@ -138,7 +138,8 @@ public:
                 continue;
             }
             sp<IVideoDecoder> videoDecoder;
-            videodecoder::Capabilities *capabilities = new videodecoder::Capabilities();
+            std::unique_ptr<videodecoder::Capabilities> capabilitiesOwner(new videodecoder::Capabilities());
+            videodecoder::Capabilities *capabilities = capabilitiesOwner.get();
             sp<VideoDecoderEventListener> eventListener = new VideoDecoderEventListener();
             sp<VideoDecoderControllerListener> controlListener = new VideoDecoderControllerListener();
 
@@ -148,7 +149,7 @@ public:
 
             VIDEODECODER_GETCAPABILITIES(videoDecoder, capabilities);
 
-            mVideoDecoderList.push_back({_decoderId, videoDecoder, controlListener, eventListener, capabilities});
+            mVideoDecoderList.push_back({_decoderId, videoDecoder, controlListener, eventListener, capabilitiesOwner.release()});
             UT_LOG_INFO("Added decoder ID %d to test list", decoderIdValue);
         }
         if (mVideoDecoderList.empty()) {
@@ -463,7 +464,7 @@ public:
             try {
                 f.get();
             } catch (const std::exception& e) {
-                UT_LOG("ERROR", "Exception in decoder thread: %s", e.what());
+                UT_LOG_ERROR("Exception in decoder thread: %s", e.what());
                 UT_ASSERT_TRUE(false) << "Decoder thread failed";
             }
         }
@@ -546,7 +547,7 @@ public:
 
             videoDecoderTest decodeTest(_decoderId, decoderHandle, controlListener,
                                         eventListener, mAVBufferManager, false,
-                                        false, config, mAVbufferHelper, false);
+                                        false, std::move(config), mAVbufferHelper, false);
 
             if (decodeTest.runBackPressureTest())
             {
@@ -564,6 +565,7 @@ public:
         for (const auto& [_decoderId, decoder, controlListener, eventListener, capabilities] : mVideoDecoderList)
         {
             VIDEODECODER_UNREGISTER_EVENT_SUCCESS(decoder, eventListener);
+            delete capabilities;
         }
         mVideoDecoderList.clear();
     }

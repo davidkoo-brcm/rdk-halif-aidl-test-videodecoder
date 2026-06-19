@@ -146,7 +146,8 @@ class VTS_L2_VideoDecoder : public UTCore {
             for(const auto& _decoderId: decoderIds)
             {
                 sp<IVideoDecoder> videoDecoder;
-                videodecoder::Capabilities *capabilities = new videodecoder::Capabilities();
+                std::unique_ptr<videodecoder::Capabilities> capabilitiesOwner(new videodecoder::Capabilities());
+                videodecoder::Capabilities *capabilities = capabilitiesOwner.get();
                 sp<VideoDecoderEventListener> eventListener = new VideoDecoderEventListener();
 
                 sp<VideoDecoderControllerListener> controlListener = new VideoDecoderControllerListener();
@@ -162,7 +163,7 @@ class VTS_L2_VideoDecoder : public UTCore {
                 eventListener->setDecoderID(_decoderId.value);
                 controlListener->setDecoderID(_decoderId.value);
 
-                mVideoDecoderList.push_back({videoDecoder, controlListener, eventListener, capabilities});
+                mVideoDecoderList.push_back({videoDecoder, controlListener, eventListener, capabilitiesOwner.release()});
             }
             // Custom setup code here, e.g., initialize decoder mocks or profiles
         }
@@ -190,6 +191,7 @@ class VTS_L2_VideoDecoder : public UTCore {
             {
              /* Un-register the events */
                 VIDEODECODER_UNREGISTER_EVENT_SUCCESS(decoder, eventListener);
+                delete capabilities;
             }
             mVideoDecoderList.clear();
         }
