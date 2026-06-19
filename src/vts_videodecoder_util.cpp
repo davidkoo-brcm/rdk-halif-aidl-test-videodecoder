@@ -1175,7 +1175,7 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, const char *m
         testDetails.flushResetPts = ut_kvp_getUInt64Field(kvpTestInstance, flushResetPts.c_str());
         testDetails.eosPts = ut_kvp_getUInt64Field(kvpTestInstance, eosPts.c_str());
 
-        testDetails.endOfStream = ut_kvp_getUInt32Field(kvpTestInstance, endOfStream.c_str());
+        testDetails.bitstreamEOS = ut_kvp_getUInt32Field(kvpTestInstance, endOfStream.c_str());
         testDetails.discontinuity = ut_kvp_getUInt32Field(kvpTestInstance, discontinuity.c_str());
         testDetails.lowLatency = ut_kvp_getUInt32Field(kvpTestInstance, lowLatency.c_str());
 

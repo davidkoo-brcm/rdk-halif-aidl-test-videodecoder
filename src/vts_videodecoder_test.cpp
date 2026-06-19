@@ -336,19 +336,15 @@ void videoDecoderTest::startDecoding()
         metadata.nsPresentationTime = framePTS;
         metadata.discontinuity = false;
         const bool isEosControlPoint = (mTestConfiguration.eosPts == framePTS);
-        /* Always send EOS on the final buffer so the HAL can drain and deliver
-         * FrameMetadata.endOfStream = true exactly once per decode session.
-         * When eosPts is set the mid-stream EOS acts as the control point;
-         * after stop()+start() the last submitted buffer of the second run
-         * also carries EOS so the session ends cleanly. */
-        metadata.endOfStream = isEosControlPoint || (i == (mFrameData.size() - 1));
-
-        if (metadata.endOfStream)
-        {
-            UT_LOG_INFO("Submitting final input buffer with metadata EOS at PTS:%lld", framePTS);
-        }
 
         VIDEODECODER_DECODEBUFFER_WITH_METADATA_SUCCESS(mVideoDecoderController, videoBufferHandle, metadata);
+
+        const bool isFinalFrame = (i == (mFrameData.size() - 1));
+        if (isEosControlPoint || isFinalFrame)
+        {
+            UT_LOG_INFO("Signaling EOS at PTS:%lld", framePTS);
+            VIDEODECODER_SIGNAL_EOS_SUCCESS(mVideoDecoderController);
+        }
 
         if (isEosControlPoint)
         {
@@ -361,7 +357,7 @@ void videoDecoderTest::startDecoding()
 
         std::this_thread::sleep_for(std::chrono::milliseconds(mTestConfiguration.decoderDelay));
 
-        // EOS is now sent on the final real buffer via InputBufferMetadata.endOfStream.
+        // EOS is sent via signalEndOfStream().
     }
 
     UT_LOG_DEBUG("[PID: %d, TID: %d] startDecoding End", getpid(), syscall(SYS_gettid));
@@ -376,7 +372,7 @@ bool videoDecoderTest::validateDecodedFrame()
     int32_t metricsFramesDecoded, metricsDecodeErrors, metricsFramesDropped;
     int32_t totalOnFramesDecoded = 0;
     int32_t totalOnErrorsReceived = 0;
-    int32_t eosFramesReceived = 0;
+    int32_t eosCallbacksReceived = 0;
     int32_t discontinuityFramesReceived = 0;
 
     // Per contract, EOS fires exactly once per session (twice when eosPts triggers a mid-stream stop+restart).
@@ -500,17 +496,6 @@ bool videoDecoderTest::validateDecodedFrame()
                 << "ContentLightLevel mismatch for Codec "
                 << videodecoder::toString(mTestConfiguration.codec).c_str();
 
-            if (decodedFrame.metadata->endOfStream)
-            {
-                eosFramesReceived++;
-                UT_LOG_INFO("EOS validated: eosFramesReceived=%d, expectedEOSFrames=%d", eosFramesReceived, expectedEOSFrames);
-                if (eosFramesReceived >= expectedEOSFrames)
-                {
-                    // Contract: EOS is the last callback of the session; no need to wait further.
-                    break;
-                }
-            }
-
             if(decodedFrame.metadata->discontinuity)
             {
                 discontinuityFramesReceived++;
@@ -539,7 +524,9 @@ bool videoDecoderTest::validateDecodedFrame()
         UT_ASSERT_TRUE((discontinuityFramesReceived > 0 && discontinuityFramesReceived < expectedFrames));
     }
 
-    UT_ASSERT_EQUAL(eosFramesReceived, expectedEOSFrames);
+    UT_ASSERT_TRUE(mControlListener->waitForEndOfStream(expectedEOSFrames, std::chrono::milliseconds(5000)));
+    eosCallbacksReceived = mControlListener->getEndOfStreamCount(false);
+    UT_ASSERT_EQUAL(eosCallbacksReceived, expectedEOSFrames);
 
     totalOnErrorsReceived = mEventListener->getErrorCount();
 
@@ -635,7 +622,6 @@ bool videoDecoderTest::runBackPressureTest()
 
         videodecoder::InputBufferMetadata metadata = {};
         metadata.nsPresentationTime = pts;
-        metadata.endOfStream = false;
         metadata.discontinuity = false;
 
         bool decodeResult = false;
@@ -683,14 +669,14 @@ void videoDecoderTest::releaseDecoderSession(bool closeController)
         return;
     }
 
-    ::com::rdk::hal::State currentState = ::com::rdk::hal::State::UNKNOWN;
+    ::com::rdk::hal::videodecoder::State currentState = ::com::rdk::hal::videodecoder::State::UNKNOWN;
     Status getStateStatus = mDecoderHandle->getState(&currentState);
     if (getStateStatus.isOk() && getStateStatus.exceptionCode() == Status::EX_NONE)
     {
-        if (currentState == ::com::rdk::hal::State::STARTED ||
-            currentState == ::com::rdk::hal::State::STARTING ||
-            currentState == ::com::rdk::hal::State::FLUSHING ||
-            currentState == ::com::rdk::hal::State::STOPPING)
+        if (currentState == ::com::rdk::hal::videodecoder::State::STARTED ||
+            currentState == ::com::rdk::hal::videodecoder::State::STARTING ||
+            currentState == ::com::rdk::hal::videodecoder::State::FLUSHING ||
+            currentState == ::com::rdk::hal::videodecoder::State::STOPPING)
         {
             VIDEODECODER_STOP_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
         }
