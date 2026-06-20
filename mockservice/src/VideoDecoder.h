@@ -31,12 +31,14 @@
 #include <com/rdk/hal/videodecoder/BnVideoDecoder.h>
 #include <com/rdk/hal/videodecoder/BnVideoDecoderController.h>
 #include <com/rdk/hal/videodecoder/InputBufferMetadata.h>
+#include <com/rdk/hal/videodecoder/VideoDecoderStreamConfig.h>
 #include <binder/BinderService.h>
 #include <optional>
 #include <string>
 #include <utils/StrongPointer.h>
 #include <vector>
 #include <mutex>
+#include <thread>
 
 namespace com {
 namespace rdk {
@@ -121,8 +123,15 @@ public:
     android::binder::Status decodeBufferWithMetadata(int64_t bufferHandle, const ::com::rdk::hal::videodecoder::InputBufferMetadata& metadata, bool* _aidl_return) override;
     android::binder::Status flush(bool reset) override;
     android::binder::Status signalDiscontinuity() override;
+    android::binder::Status signalEndOfStream() override;
     android::binder::Status parseCodecSpecificData(rdk::hal::videodecoder::CSDVideoFormat csdVideoFormat, const std::vector<uint8_t>& codecData, bool* _aidl_return) override;
     android::binder::Status setProperty(videodecoder::Property property, const PropertyValue& propertyValue, bool* _aidl_return) override;
+    android::binder::Status setStreamConfig(const videodecoder::VideoDecoderStreamConfig& config) override;
+
+private:
+    bool mEosSignaled;
+    std::mutex mEosMutex;
+    int32_t mBuffersSubmitted;
 };
 
 } // namespace videodecoder

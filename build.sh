@@ -19,6 +19,14 @@
 #*
 #* ******************************************************************************
 
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+RESET='\033[0m'
+
 # Define the directory where the repository will be cloned
 declare -r TOP=`dirname $(realpath $0)`
 declare -r UT_CORE_DIR="${TOP}/ut-core"
@@ -160,6 +168,37 @@ build_mockservice()
         -C ${MOCK_SERVICE_DIR}
 }
 
+build_mock_only()
+{
+    install_linux_binder
+    generate_avbuffer_hal
+    generate_audiodecoder_hal
+    generate_videodecoder_hal
+    generate_avbufferhelper_skeleton
+    build_aidl_libs
+    build_mockservice
+
+    local required
+    for required in \
+        ${BUILD_DIR}/usr/lib/MockVideoDecoderService \
+        ${BUILD_DIR}/usr/lib/libvideodecoderaidl.so \
+        ${BUILD_DIR}/usr/lib/libavbufferaidl.so \
+        ${BUILD_DIR}/usr/lib/libavbufferhelper.so; do
+        if [ ! -e "$required" ]; then
+            echo -e "${BOLD}${RED}Mock-only build failed: missing artifact ${required}${RESET}"
+            exit 1
+        fi
+    done
+
+    mkdir -p ${BUILD_DIR}/mock_bundle
+    cp -f ${BUILD_DIR}/usr/lib/MockVideoDecoderService ${BUILD_DIR}/mock_bundle/
+    cp -f ${BUILD_DIR}/usr/lib/libvideodecoderaidl.so ${BUILD_DIR}/mock_bundle/
+    cp -f ${BUILD_DIR}/usr/lib/libavbufferaidl.so ${BUILD_DIR}/mock_bundle/
+    cp -f ${BUILD_DIR}/usr/lib/libavbufferhelper.so ${BUILD_DIR}/mock_bundle/
+
+    echo -e "${BOLD}${GREEN}Mock-only build completed. Artifacts: ${BUILD_DIR}/mock_bundle${RESET}"
+}
+
 build_ut_core()
 {
     if [ ! -d ${UT_CORE_DIR} ]; then
@@ -233,23 +272,21 @@ clean_test()
 
 help()
 {
-    # Colors
-    RED='\033[0;31m'
-    GREEN='\033[0;32m'
-    YELLOW='\033[1;33m'
-    CYAN='\033[0;36m'
-    BOLD='\033[1m'
-    RESET='\033[0m'
-
     echo -e "${BOLD}${CYAN}Usage:${RESET}"
 
     echo -e "${BOLD}╔════════════════════════════════════════════════════════════════════╗${RESET}"
     echo -e "${BOLD}* ${GREEN}$0 all${RESET}            ${YELLOW}- Builds the test${RESET}                        ${BOLD}*${RESET}"
+    echo -e "${BOLD}* ${GREEN}$0 mock${RESET}           ${YELLOW}- Builds mock service only (no UT/tests)${RESET} ${BOLD}*${RESET}"
     echo -e "${BOLD}* ${GREEN}$0 clean${RESET}          ${YELLOW}- Cleans the build folder${RESET}                ${BOLD}*${RESET}"
     echo -e "${BOLD}* ${GREEN}$0 dist_clean${RESET}     ${YELLOW}- Deletes all build and checkout folders${RESET} ${BOLD}*${RESET}"
     echo -e "${BOLD}* ${GREEN}$0 help/-h/--help${RESET} ${YELLOW}- Prints this message${RESET}                    ${BOLD}*${RESET}"
     echo -e "${BOLD}╚════════════════════════════════════════════════════════════════════╝${RESET}"
 }
+
+echo -e "${BOLD}${GREEN}VTS Version            : ${RESET}${YELLOW}$(git rev-parse --abbrev-ref HEAD)${RESET}"
+echo -e "${BOLD}${GREEN}RDK_HALIF_AIDL_VERSION : ${RESET}${YELLOW}$RDK_HALIF_AIDL_VERSION${RESET}"
+echo -e "${BOLD}${GREEN}AIDL_BIN               : ${RESET}${YELLOW}$AIDL_BIN${RESET}"
+echo -e "${BOLD}${GREEN}LINUX_BINDER_OUT_DIR   : ${RESET}${YELLOW}$LINUX_BINDER_OUT_DIR${RESET}"
 
 if [ "$1" == "clean" ]; then
     clean_test
@@ -257,6 +294,8 @@ elif [ "$1" == "dist_clean" ]; then
     dist_clean_test
 elif [[ "$1" == "help" || "$1" == "--help" || "$1" == "-h" ]]; then
     help
+elif [ "$1" == "mock" ]; then
+    build_mock_only
 elif [ "$1" == "all" ]; then
     install_linux_binder
     generate_avbuffer_hal
@@ -271,10 +310,6 @@ elif [ "$1" == "all" ]; then
     make -j`nproc` -C ${TOP}
     install_test
 else
-    # Colors
-    RED='\033[0;31m'
-    BOLD='\033[1m'
-    RESET='\033[0m'
     echo -e "${BOLD}${RED}Invalid Arguments${RESET}"
     help
 fi

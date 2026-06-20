@@ -1295,6 +1295,57 @@ do { \
         UT_ASSERT_EQUAL(status.exceptionCode(), (expectedException)); \
     } while (0)
 
+#define VIDEODECODER_SETSTREAMRESOLUTION_SUCCESS(ctrl, w, h) \
+    do { \
+        ::com::rdk::hal::videodecoder::VideoDecoderStreamConfig _scfg; \
+        ::com::rdk::hal::videodecoder::Resolution _res; \
+        _res.width = static_cast<int32_t>(w); \
+        _res.height = static_cast<int32_t>(h); \
+        _scfg.resolution = _res; \
+        VIDEODECODER_SETSTREAMCONFIG_SUCCESS(ctrl, _scfg); \
+    } while (0)
+
+#define VIDEODECODER_SETFRAMERATE_SUCCESS(ctrl, num, den) \
+    do { \
+        ::com::rdk::hal::videodecoder::VideoDecoderStreamConfig _scfg; \
+        ::com::rdk::hal::videodecoder::Fraction _fr; \
+        _fr.numerator = static_cast<int32_t>(num); \
+        _fr.denominator = static_cast<int32_t>(den); \
+        _scfg.frameRate = _fr; \
+        VIDEODECODER_SETSTREAMCONFIG_SUCCESS(ctrl, _scfg); \
+    } while (0)
+
+#define VIDEODECODER_SETCOLORIMETRY_SUCCESS(ctrl, colorimetry) \
+    do { \
+        ::com::rdk::hal::videodecoder::VideoDecoderStreamConfig _scfg; \
+        _scfg.colorimetry = (colorimetry); \
+        VIDEODECODER_SETSTREAMCONFIG_SUCCESS(ctrl, _scfg); \
+    } while (0)
+
+#define VIDEODECODER_SETMASTERINGDISPLAYINFO_SUCCESS(ctrl, info) \
+    do { \
+        ::com::rdk::hal::videodecoder::VideoDecoderStreamConfig _scfg; \
+        _scfg.masteringDisplayInfo = (info); \
+        VIDEODECODER_SETSTREAMCONFIG_SUCCESS(ctrl, _scfg); \
+    } while (0)
+
+#define VIDEODECODER_SETCONTENTLIGHTLEVEL_SUCCESS(ctrl, lightLevel) \
+    do { \
+        ::com::rdk::hal::videodecoder::VideoDecoderStreamConfig _scfg; \
+        _scfg.contentLightLevel = (lightLevel); \
+        VIDEODECODER_SETSTREAMCONFIG_SUCCESS(ctrl, _scfg); \
+    } while (0)
+
+#define VIDEODECODER_SETDOLBYVISIONLAYERFLAGS_SUCCESS(ctrl, blPresent, elPresent) \
+    do { \
+        ::com::rdk::hal::videodecoder::VideoDecoderStreamConfig _scfg; \
+        ::com::rdk::hal::videodecoder::DolbyVisionLayerFlags _dvf; \
+        _dvf.blPresent = static_cast<bool>(blPresent); \
+        _dvf.elPresent = static_cast<bool>(elPresent); \
+        _scfg.dolbyVisionLayerFlags = _dvf; \
+        VIDEODECODER_SETSTREAMCONFIG_SUCCESS(ctrl, _scfg); \
+    } while (0)
+
 /**
  * @brief Test fixture for Level 1 Video Decoder HALIF tests.
  * Inherits from UTCore to leverage ut-core's test utilities and lifecycle methods.

@@ -78,9 +78,9 @@ VideoDecoder::VideoDecoder(IVideoDecoder::Id id) {
     this->mSha1Calc = 0;
     this->mOperationalMode = static_cast<int32_t>(OperationalMode::NON_TUNNELLED);
     this->mSupportsSecure = 1;
-    this->mMetricsFrameDecoded = 0;
-    this->mMetricsDecodeErrors = 0;
-    this->mMetricsFramesDropped = 0;
+    this->mMetricsFrameDecoded = -1;
+    this->mMetricsDecodeErrors = -1;
+    this->mMetricsFramesDropped = -1;
     this->mInputQueueDepth = 96000;
     this->mOutputFramePoolSize = 5;
     this->mSupportedCodecs = {
@@ -400,7 +400,8 @@ android::binder::Status VideoDecoder::unregisterEventListener(const android::sp<
 
 VideoDecoderController::VideoDecoderController(IVideoDecoder::Id id, VideoDecoder* parentDecoder,
                                                const android::sp<videodecoder::IVideoDecoderControllerListener>& controllerListener)
-    : mId(id), mParentDecoder(parentDecoder), mControllerListener(controllerListener) {
+    : mId(id), mParentDecoder(parentDecoder), mControllerListener(controllerListener),
+      mEosSignaled(false), mBuffersSubmitted(0) {
     printf("VideoDecoderController service initialized for ID: %d\n", id.value);
 }
 
@@ -439,6 +440,11 @@ android::binder::Status VideoDecoderController::stop() {
         mParentDecoder->mVideoDecoderEventListener->onStateChanged(State::STOPPING, State::READY);
     }
     mParentDecoder->setState(State::READY);
+    {
+        std::lock_guard<std::mutex> lock(mEosMutex);
+        mEosSignaled = false;
+        mBuffersSubmitted = 0;
+    }
     return android::binder::Status::ok();
 }
 
@@ -446,6 +452,14 @@ android::binder::Status VideoDecoderController::decodeBufferWithMetadata(int64_t
     if (mParentDecoder->getState() != State::STARTED) {
         *_aidl_return = false;
         return android::binder::Status::fromExceptionCode(android::binder::Status::EX_ILLEGAL_STATE);
+    }
+    /* After signalEndOfStream() any decode attempt is gracefully declined (returns false, no exception) */
+    {
+        std::lock_guard<std::mutex> lock(mEosMutex);
+        if (mEosSignaled) {
+            *_aidl_return = false;
+            return android::binder::Status::ok();
+        }
     }
     if (bufferHandle < 0) {
         *_aidl_return = false;
@@ -460,6 +474,20 @@ android::binder::Status VideoDecoderController::decodeBufferWithMetadata(int64_t
         *_aidl_return = false;
         return android::binder::Status::fromExceptionCode(android::binder::Status::EX_ILLEGAL_ARGUMENT);
     }
+    /* Buffer accepted: count it and fire onFrameOutput asynchronously, echoing the same handle back */
+    {
+        std::lock_guard<std::mutex> lock(mEosMutex);
+        mBuffersSubmitted++;
+    }
+    android::sp<videodecoder::IVideoDecoderControllerListener> listener = mControllerListener;
+    int64_t pts = metadata.nsPresentationTime;
+    int64_t handle = bufferHandle;
+    std::thread([listener, pts, handle]() {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        if (listener) {
+            listener->onFrameOutput(pts, handle, std::nullopt);
+        }
+    }).detach();
     *_aidl_return = true;
     return android::binder::Status::ok();
 }
@@ -483,6 +511,37 @@ android::binder::Status VideoDecoderController::flush(bool reset) {
         mParentDecoder->mVideoDecoderEventListener->onStateChanged(State::FLUSHING, targetState);
     }
     mParentDecoder->setState(targetState);
+    {
+        std::lock_guard<std::mutex> lock(mEosMutex);
+        mEosSignaled = false;
+        mBuffersSubmitted = 0;
+    }
+    return android::binder::Status::ok();
+}
+
+android::binder::Status VideoDecoderController::signalEndOfStream() {
+    if (mParentDecoder->getState() != State::STARTED) {
+        return android::binder::Status::fromExceptionCode(android::binder::Status::EX_ILLEGAL_STATE);
+    }
+    {
+        std::lock_guard<std::mutex> lock(mEosMutex);
+        /* Reject if no buffers have ever been submitted on this session */
+        if (mBuffersSubmitted == 0) {
+            return android::binder::Status::fromExceptionCode(android::binder::Status::EX_ILLEGAL_STATE);
+        }
+        /* Second call is a no-op */
+        if (mEosSignaled) {
+            return android::binder::Status::ok();
+        }
+        mEosSignaled = true;
+    }
+    android::sp<videodecoder::IVideoDecoderControllerListener> listener = mControllerListener;
+    std::thread([listener]() {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        if (listener) {
+            listener->onEndOfStream();
+        }
+    }).detach();
     return android::binder::Status::ok();
 }
 
@@ -588,6 +647,33 @@ android::binder::Status VideoDecoderController::parseCodecSpecificData(rdk::hal:
 
     LOG(DEBUG) << "parseCodecSpecificData: Successfully parsed codecData, size: " << codecData.size();
     *_aidl_return = true;
+    return android::binder::Status::ok();
+}
+
+android::binder::Status VideoDecoderController::setStreamConfig(const videodecoder::VideoDecoderStreamConfig& config) {
+    if (mParentDecoder->getState() != State::READY) {
+        return android::binder::Status::fromExceptionCode(android::binder::Status::EX_ILLEGAL_STATE);
+    }
+    if (config.resolution.has_value()) {
+        if (config.resolution->width <= 0 || config.resolution->height <= 0) {
+            LOG(ERROR) << "setStreamConfig: invalid resolution " << config.resolution->width << "x" << config.resolution->height;
+            return android::binder::Status::fromExceptionCode(android::binder::Status::EX_ILLEGAL_ARGUMENT);
+        }
+    }
+    if (config.frameRate.has_value()) {
+        /* denominator must be > 0 unless numerator is also 0 (encodes unknown) */
+        if (config.frameRate->denominator <= 0 && config.frameRate->numerator != 0) {
+            LOG(ERROR) << "setStreamConfig: invalid frameRate " << config.frameRate->numerator << "/" << config.frameRate->denominator;
+            return android::binder::Status::fromExceptionCode(android::binder::Status::EX_ILLEGAL_ARGUMENT);
+        }
+    }
+    if (config.pixelAspectRatio.has_value()) {
+        if (config.pixelAspectRatio->numerator < 0 || config.pixelAspectRatio->denominator < 0) {
+            LOG(ERROR) << "setStreamConfig: invalid pixelAspectRatio " << config.pixelAspectRatio->numerator << "/" << config.pixelAspectRatio->denominator;
+            return android::binder::Status::fromExceptionCode(android::binder::Status::EX_ILLEGAL_ARGUMENT);
+        }
+    }
+    LOG(DEBUG) << "setStreamConfig: accepted stream configuration hints";
     return android::binder::Status::ok();
 }
 
