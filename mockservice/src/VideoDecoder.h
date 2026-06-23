@@ -26,6 +26,7 @@
 #ifndef VIDEODECODER_H
 #define VIDEODECODER_H
 
+#include <com/rdk/hal/PropertyValue.h>
 #include <com/rdk/hal/videodecoder/BnVideoDecoderManager.h>
 #include <com/rdk/hal/videodecoder/IVideoDecoderManager.h>
 #include <com/rdk/hal/videodecoder/BnVideoDecoder.h>
@@ -34,11 +35,24 @@
 #include <com/rdk/hal/videodecoder/VideoDecoderStreamConfig.h>
 #include <binder/BinderService.h>
 #include <optional>
+#include <ostream>
 #include <string>
 #include <utils/StrongPointer.h>
 #include <vector>
 #include <mutex>
 #include <thread>
+
+namespace com {
+namespace rdk {
+namespace hal {
+inline std::ostream& operator<<(std::ostream& os, const PropertyValue& value)
+{
+    os << value.toString();
+    return os;
+}
+} // namespace hal
+} // namespace rdk
+} // namespace com
 
 namespace com {
 namespace rdk {
