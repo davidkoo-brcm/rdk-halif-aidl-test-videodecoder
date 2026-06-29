@@ -203,32 +203,45 @@ void videoDecoderTest::setupVideoDecoder()
         VIDEODECODER_SETPROPERTY_LIST_SUCCESS(mVideoDecoderController, startedIntProps, intValue);
     }
 
-    if (mTestConfiguration.codedWidth > 0 && mTestConfiguration.codedHeight > 0)
     {
-        VIDEODECODER_SETSTREAMRESOLUTION_SUCCESS(mVideoDecoderController, mTestConfiguration.codedWidth, mTestConfiguration.codedHeight);
-    }
-    if (mTestConfiguration.frameRateDenominator > 0)
-    {
-        VIDEODECODER_SETFRAMERATE_SUCCESS(mVideoDecoderController, mTestConfiguration.frameRateNumerator, mTestConfiguration.frameRateDenominator);
-    }
-    if (mTestConfiguration.colorimetry != Colorimetry::UNKNOWN)
-    {
-        VIDEODECODER_SETCOLORIMETRY_SUCCESS(mVideoDecoderController, mTestConfiguration.colorimetry);
-    }
-    if (mTestConfiguration.masteringDisplayInfo.has_value())
-    {
-        VIDEODECODER_SETMASTERINGDISPLAYINFO_SUCCESS(mVideoDecoderController, mTestConfiguration.masteringDisplayInfo);
-    }
-    if (mTestConfiguration.contentLightLevel.has_value())
-    {
-        VIDEODECODER_SETCONTENTLIGHTLEVEL_SUCCESS(mVideoDecoderController, mTestConfiguration.contentLightLevel);
-    }
+        videodecoder::VideoDecoderStreamConfig streamConfig;
 
-    /*Set Dolby Vision*/
-    UT_LOG_INFO("value of the dynamicRange %d", mTestConfiguration.dynamicRange);
-    if(mTestConfiguration.dynamicRange == videodecoder::DynamicRange::DOLBY_VISION)
-    {
-        VIDEODECODER_SETDOLBYVISIONLAYERFLAGS_SUCCESS(mVideoDecoderController, mTestConfiguration.blPresent, mTestConfiguration.elPresent);
+        if (mTestConfiguration.codedWidth > 0 && mTestConfiguration.codedHeight > 0)
+        {
+            videodecoder::Resolution res;
+            res.width  = mTestConfiguration.codedWidth;
+            res.height = mTestConfiguration.codedHeight;
+            streamConfig.resolution = res;
+        }
+        if (mTestConfiguration.frameRateDenominator > 0)
+        {
+            videodecoder::Fraction fr;
+            fr.numerator   = mTestConfiguration.frameRateNumerator;
+            fr.denominator = mTestConfiguration.frameRateDenominator;
+            streamConfig.frameRate = fr;
+        }
+        Colorimetry unknownColorimetry{};
+        if (mTestConfiguration.colorimetry != unknownColorimetry)
+        {
+            streamConfig.colorimetry = mTestConfiguration.colorimetry;
+        }
+        if (mTestConfiguration.masteringDisplayInfo.has_value())
+        {
+            streamConfig.masteringDisplayInfo = mTestConfiguration.masteringDisplayInfo;
+        }
+        if (mTestConfiguration.contentLightLevel.has_value())
+        {
+            streamConfig.contentLightLevel = mTestConfiguration.contentLightLevel;
+        }
+        UT_LOG_INFO("value of the dynamicRange %d", static_cast<int>(mTestConfiguration.dynamicRange));
+        if (mTestConfiguration.dynamicRange == videodecoder::DynamicRange::DOLBY_VISION)
+        {
+            videodecoder::DolbyVisionLayerFlags dvFlags;
+            dvFlags.blPresent = mTestConfiguration.blPresent;
+            dvFlags.elPresent = mTestConfiguration.elPresent;
+            streamConfig.dolbyVisionLayerFlags = dvFlags;
+        }
+        VIDEODECODER_SETSTREAMCONFIG_SUCCESS(mVideoDecoderController, streamConfig);
     }
 
     // Start Decoder
@@ -254,6 +267,12 @@ void videoDecoderTest::startDecoding()
         // Allocate Buffer
         videoBufferHandle = 0;
         AVBUFFER_ALLOC_SUCCESS(mAVBufferManager, mVideoPool, frameSize, videoBufferHandle);
+
+        if (videoBufferHandle == 0)
+        {
+            UT_LOG_ERROR("Alloc failed for frame %zu, skipping", i);
+            continue;
+        }
 
         // Write Frame Data
         void* mapBuffer = nullptr;
@@ -458,8 +477,8 @@ bool videoDecoderTest::validateDecodedFrame()
 
             // Validate colorimetry
             UT_ASSERT_EQUAL(decodedFrame.metadata->colorimetry, mTestConfiguration.colorimetry)
-                << "Colorimetry mismatch: expected=" << static_cast<int>(mTestConfiguration.colorimetry)
-                << ", actual=" << static_cast<int>(decodedFrame.metadata->colorimetry)
+                << "Colorimetry mismatch: expected=" << mTestConfiguration.colorimetry.toString()
+                << ", got=" << decodedFrame.metadata->colorimetry.toString()
                 << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
 
             // Validate frame rate

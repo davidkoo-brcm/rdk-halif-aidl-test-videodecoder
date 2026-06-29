@@ -117,6 +117,11 @@
 #include "com/rdk/hal/videodecoder/CodecCapabilities.h"
 #include "com/rdk/hal/videodecoder/CodecProfile.h"
 #include "com/rdk/hal/videodecoder/CodecLevel.h"
+#include "com/rdk/hal/videodecoder/Profile.h"
+#include "com/rdk/hal/videodecoder/ColorRange.h"
+#include "com/rdk/hal/videodecoder/ColorMatrix.h"
+#include "com/rdk/hal/videodecoder/TransferCharacteristics.h"
+#include "com/rdk/hal/videodecoder/ColorPrimaries.h"
 #include "com/rdk/hal/videodecoder/OperationalMode.h"
 #include "com/rdk/hal/videodecoder/Colorimetry.h"
 #include "com/rdk/hal/videodecoder/MasteringDisplayInfo.h"
@@ -169,8 +174,7 @@ typedef struct InputVideoFrame
 
 struct CodecCapability {
     videodecoder::Codec codec;
-    videodecoder::CodecProfile profile;
-    videodecoder::CodecLevel level;
+    std::vector<videodecoder::Profile> profiles;
     int32_t maxFrameRate;
     int32_t maxFrameWidth;
     int32_t maxFrameHeight;
@@ -277,9 +281,10 @@ UT_status_t getVideoDecoderService();
 DynamicRange videoDecoderStringToDynamicRange(const std::string& rangeStr);
 OperationalMode videoDecoderStringToOperationalMode(const std::string& modeStr);
 PixelFormat videoDecoderStringToPixelFormat(const std::string& formatStr);
-Colorimetry videoDecoderStringToColorimetry(const std::string& colorimetryStr);
 videodecoder::CodecProfile videoDecoderStringToCodecProfile(const std::string& profileStr);
 videodecoder::CodecLevel videoDecoderStringToCodecLevel(const std::string& levelStr);
+videodecoder::Profile videoDecoderStringToProfile(const std::string& profileStr, const std::string& levelStr);
+videodecoder::Colorimetry videoDecoderStringToColorimetry(const std::string& rangeStr, const std::string& matrixStr, const std::string& transferStr, const std::string& primariesStr);
 bool vts_videodecoder_helper_validatePropertyValue(int decoder_id,const std::optional<PropertyValue>& propertyValue, const videodecoder::Property property);
 void vts_videodecoder_helper_validateCapabilities(int32_t decoderId,const videodecoder::Capabilities& capabilities);
 bool vts_videodecoder_helper_checkCodecAttributeExists(const std::string& attrpath, const std::string& codec_name);

@@ -95,20 +95,85 @@ DynamicRange videoDecoderStringToDynamicRange(const std::string& rangeStr) {
     return (it != dynamicRangeMap.end()) ? it->second : DynamicRange::UNKNOWN;
 }
 
-Colorimetry videoDecoderStringToColorimetry(const std::string& colorimetryStr) {
-    static const std::unordered_map<std::string, Colorimetry> colorimetryMap = {
-        {"UNKNOWN", Colorimetry::UNKNOWN},
-        {"BT601_525", Colorimetry::BT601_525},
-        {"BT601_625", Colorimetry::BT601_625},
-        {"BT709", Colorimetry::BT709},
-        {"BT2020", Colorimetry::BT2020},
-        {"BT2020_CL", Colorimetry::BT2020_CL},
-        {"DCI_P3_D65", Colorimetry::DCI_P3_D65},
-        {"DCI_P3_D60", Colorimetry::DCI_P3_D60}
+ColorRange videoDecoderStringToColorRange(const std::string& s) {
+    static const std::unordered_map<std::string, ColorRange> m = {
+        {"UNKNOWN", ColorRange::UNKNOWN},
+        {"LIMITED", ColorRange::LIMITED},
+        {"FULL",    ColorRange::FULL}
     };
+    auto it = m.find(s);
+    return (it != m.end()) ? it->second : ColorRange::UNKNOWN;
+}
 
-    auto it = colorimetryMap.find(colorimetryStr);
-    return (it != colorimetryMap.end()) ? it->second : Colorimetry::UNKNOWN;
+ColorMatrix videoDecoderStringToColorMatrix(const std::string& s) {
+    static const std::unordered_map<std::string, ColorMatrix> m = {
+        {"UNKNOWN",    ColorMatrix::UNKNOWN},
+        {"IDENTITY",   ColorMatrix::IDENTITY},
+        {"BT709",      ColorMatrix::BT709},
+        {"UNSPECIFIED",ColorMatrix::UNSPECIFIED},
+        {"BT601_625",  ColorMatrix::BT601_625},
+        {"BT601_525",  ColorMatrix::BT601_525},
+        {"SMPTE240M",  ColorMatrix::SMPTE240M},
+        {"BT2020_NCL", ColorMatrix::BT2020_NCL},
+        {"BT2020_CL",  ColorMatrix::BT2020_CL}
+    };
+    auto it = m.find(s);
+    return (it != m.end()) ? it->second : ColorMatrix::UNKNOWN;
+}
+
+TransferCharacteristics videoDecoderStringToTransferCharacteristics(const std::string& s) {
+    static const std::unordered_map<std::string, TransferCharacteristics> m = {
+        {"UNKNOWN",          TransferCharacteristics::UNKNOWN},
+        {"BT709",            TransferCharacteristics::BT709},
+        {"UNSPECIFIED",      TransferCharacteristics::UNSPECIFIED},
+        {"BT470M_GAMMA22",   TransferCharacteristics::BT470M_GAMMA22},
+        {"BT470BG_GAMMA28",  TransferCharacteristics::BT470BG_GAMMA28},
+        {"SMPTE170M",        TransferCharacteristics::SMPTE170M},
+        {"SMPTE240M",        TransferCharacteristics::SMPTE240M},
+        {"LINEAR",           TransferCharacteristics::LINEAR},
+        {"LOG_100",          TransferCharacteristics::LOG_100},
+        {"LOG_316",          TransferCharacteristics::LOG_316},
+        {"IEC61966_2_4",     TransferCharacteristics::IEC61966_2_4},
+        {"BT1361",           TransferCharacteristics::BT1361},
+        {"SRGB",             TransferCharacteristics::SRGB},
+        {"BT2020_10",        TransferCharacteristics::BT2020_10},
+        {"BT2020_12",        TransferCharacteristics::BT2020_12},
+        {"SMPTE2084_PQ",     TransferCharacteristics::SMPTE2084_PQ},
+        {"SMPTE428",         TransferCharacteristics::SMPTE428},
+        {"ARIB_STD_B67_HLG", TransferCharacteristics::ARIB_STD_B67_HLG}
+    };
+    auto it = m.find(s);
+    return (it != m.end()) ? it->second : TransferCharacteristics::UNKNOWN;
+}
+
+ColorPrimaries videoDecoderStringToColorPrimaries(const std::string& s) {
+    static const std::unordered_map<std::string, ColorPrimaries> m = {
+        {"UNKNOWN",    ColorPrimaries::UNKNOWN},
+        {"BT709",      ColorPrimaries::BT709},
+        {"UNSPECIFIED",ColorPrimaries::UNSPECIFIED},
+        {"BT470M",     ColorPrimaries::BT470M},
+        {"BT470BG",    ColorPrimaries::BT470BG},
+        {"BT601_525",  ColorPrimaries::BT601_525},
+        {"SMPTE240M",  ColorPrimaries::SMPTE240M},
+        {"FILM",       ColorPrimaries::FILM},
+        {"BT2020",     ColorPrimaries::BT2020},
+        {"SMPTE428",   ColorPrimaries::SMPTE428},
+        {"DCI_P3_D60", ColorPrimaries::DCI_P3_D60},
+        {"DISPLAY_P3", ColorPrimaries::DISPLAY_P3},
+        {"EBU3213",    ColorPrimaries::EBU3213}
+    };
+    auto it = m.find(s);
+    return (it != m.end()) ? it->second : ColorPrimaries::UNKNOWN;
+}
+
+Colorimetry videoDecoderStringToColorimetry(const std::string& rangeStr, const std::string& matrixStr,
+                                             const std::string& transferStr, const std::string& primariesStr) {
+    Colorimetry c;
+    c.range    = videoDecoderStringToColorRange(rangeStr);
+    c.matrix   = videoDecoderStringToColorMatrix(matrixStr);
+    c.transfer = videoDecoderStringToTransferCharacteristics(transferStr);
+    c.primaries= videoDecoderStringToColorPrimaries(primariesStr);
+    return c;
 }
 
 ScanType videoDecoderStringToScanType(const std::string& scanTypeStr) {
@@ -216,6 +281,14 @@ videodecoder::CodecLevel videoDecoderStringToCodecLevel(const std::string& level
     return (it != levelMap.end()) ? it->second : static_cast<videodecoder::CodecLevel>(0);
 }
 
+videodecoder::Profile videoDecoderStringToProfile(const std::string& profileStr, const std::string& levelStr) {
+    videodecoder::Profile prof;
+    prof.profile = videoDecoderStringToCodecProfile(profileStr);
+    prof.maxLevel = videoDecoderStringToCodecLevel(levelStr);
+    prof.maxBitrateInBps = 0;
+    return prof;
+}
+
 PixelFormat videoDecoderStringToPixelFormat(const std::string& formatStr) {
     static const std::unordered_map<std::string, PixelFormat> pixelFormatMap = {
         {"YCBCR422", PixelFormat::YCBCR422},
@@ -250,13 +323,12 @@ bool vts_videodecoder_helper_profileFieldPresent(const std::string& key) {
 }
 
 bool vts_videodecoder_helper_checkCodecAttributeExists(const std::string& attrpath, const std::string& codec_name) {
-    // Check all required fields exist (we already know profile exists from detection phase)
+    // Check all required fields exist
     const std::vector<std::string> requiredFields = {
         ".maxFrameRate",
         ".maxFrameWidth",
         ".maxFrameHeight",
-        ".profile",
-        ".level"
+        ".profiles"
     };
 
     // Check if all required fields exist
@@ -272,27 +344,16 @@ bool vts_videodecoder_helper_checkCodecAttributeExists(const std::string& attrpa
     uint32_t maxFrameWidth = UT_KVP_PROFILE_GET_UINT32((attrpath + ".maxFrameWidth").c_str());
     uint32_t maxFrameHeight = UT_KVP_PROFILE_GET_UINT32((attrpath + ".maxFrameHeight").c_str());
 
-    char result_kvp[UT_KVP_MAX_ELEMENT_SIZE] = {0};
-    UT_KVP_PROFILE_GET_STRING((attrpath + ".profile").c_str(), result_kvp);
-    std::string profileStr = std::string(result_kvp);
-
-    memset(result_kvp, 0, UT_KVP_MAX_ELEMENT_SIZE);
-    UT_KVP_PROFILE_GET_STRING((attrpath + ".level").c_str(), result_kvp);
-    std::string levelStr = std::string(result_kvp);
-
     // Validate values are reasonable
     // Note: Not requiring frameRate > 0 since 0 could be valid for special cases
-    bool isValid = (maxFrameWidth > 0 && maxFrameHeight > 0 &&
-                   !profileStr.empty() && !levelStr.empty());
+    bool isValid = (maxFrameWidth > 0 && maxFrameHeight > 0);
 
     if (isValid) {
-        UT_LOG_DEBUG("Codec %s has valid attributes: rate=%u, width=%u, height=%u, profile=%s, level=%s",
-                     codec_name.c_str(), maxFrameRate, maxFrameWidth, maxFrameHeight,
-                     profileStr.c_str(), levelStr.c_str());
+        UT_LOG_DEBUG("Codec %s has valid attributes: rate=%u, width=%u, height=%u",
+                     codec_name.c_str(), maxFrameRate, maxFrameWidth, maxFrameHeight);
     } else {
-        UT_LOG_DEBUG("Codec %s has invalid attribute values: rate=%u, width=%u, height=%u, profile=%s, level=%s",
-                     codec_name.c_str(), maxFrameRate, maxFrameWidth, maxFrameHeight,
-                     profileStr.c_str(), levelStr.c_str());
+        UT_LOG_DEBUG("Codec %s has invalid attribute values: rate=%u, width=%u, height=%u",
+                     codec_name.c_str(), maxFrameRate, maxFrameWidth, maxFrameHeight);
     }
 
     return isValid;
@@ -447,7 +508,7 @@ UT_status_t vts_videodecoder_parseVideoDecoderHFP()
             std::string detected_codec;
             for (const auto& codec_name : known_codecs)
             {
-                std::string test_path = codecpath + "." + codec_name + ".profile";
+                std::string test_path = codecpath + "." + codec_name + ".profiles";
                 if (vts_videodecoder_helper_profileFieldPresent(test_path))
                 {
                     detected_codec = codec_name;
@@ -485,25 +546,28 @@ UT_status_t vts_videodecoder_parseVideoDecoderHFP()
                 continue;
             }
 
-            // Profile
-            std::string profilepath = attrpath + ".profile";
-            UT_KVP_PROFILE_GET_STRING(profilepath.c_str(), result_kvp);
-            std::string profileStr = std::string(result_kvp);
-            if (!profileStr.empty()) {
-                cap.profile = videoDecoderStringToCodecProfile(profileStr);
-            } else {
-                UT_LOG_WARNING("Empty profile for codec %s", detected_codec.c_str());
-            }
+            // Profiles (array of {profile, maxLevel} entries)
+            int profileCount = UT_KVP_PROFILE_GET_LIST_COUNT((attrpath + ".profiles").c_str());
+            for (int32_t p = 0; p < profileCount; ++p)
+            {
+                std::string profileEntryPath = attrpath + ".profiles." + std::to_string(p);
+                char profile_kvp[UT_KVP_MAX_ELEMENT_SIZE] = {0};
+                char level_kvp[UT_KVP_MAX_ELEMENT_SIZE] = {0};
 
-            // Level
-            std::string levelpath = attrpath + ".level";
-            memset(result_kvp, 0, UT_KVP_MAX_ELEMENT_SIZE);
-            UT_KVP_PROFILE_GET_STRING(levelpath.c_str(), result_kvp);
-            std::string levelStr = std::string(result_kvp);
-            if (!levelStr.empty()) {
-                cap.level = videoDecoderStringToCodecLevel(levelStr);
-            } else {
-                UT_LOG_WARNING("Empty level for codec %s", detected_codec.c_str());
+                UT_KVP_PROFILE_GET_STRING((profileEntryPath + ".profile").c_str(), profile_kvp);
+                UT_KVP_PROFILE_GET_STRING((profileEntryPath + ".maxLevel").c_str(), level_kvp);
+
+                std::string profileStr = std::string(profile_kvp);
+                std::string levelStr   = std::string(level_kvp);
+
+                if (!profileStr.empty()) {
+                    cap.profiles.push_back(videoDecoderStringToProfile(profileStr, levelStr));
+                } else {
+                    UT_LOG_WARNING("Empty profile entry %d for codec %s", p, detected_codec.c_str());
+                }
+            }
+            if (cap.profiles.empty()) {
+                UT_LOG_WARNING("No valid profiles for codec %s", detected_codec.c_str());
             }
 
             cap.maxFrameRate = UT_KVP_PROFILE_GET_UINT32((attrpath + ".maxFrameRate").c_str());
@@ -528,9 +592,9 @@ UT_status_t vts_videodecoder_parseVideoDecoderHFP()
                 }
             }
 
-            UT_LOG_INFO("Codec %s: profile=%d, level=%d, rate=%d, width=%d, height=%d",
-                        detected_codec.c_str(), static_cast<int32_t>(cap.profile), static_cast<int32_t>(cap.level),
-                        cap.maxFrameRate, cap.maxFrameWidth, cap.maxFrameHeight);
+            UT_LOG_INFO("Codec %s: rate=%d, width=%d, height=%d, profiles=%zu",
+                        detected_codec.c_str(), cap.maxFrameRate, cap.maxFrameWidth, cap.maxFrameHeight,
+                        cap.profiles.size());
 
             temporary.supportedCodecs.push_back(cap);
         }
@@ -560,20 +624,23 @@ UT_status_t vts_videodecoder_parseVideoDecoderHFP()
         UT_LOG_INFO("Decoder %d: colorimetry count=%d", i, supportedcolor_count);
         for (int32_t j = 0; j < supportedcolor_count; ++j)
         {
-            char result_kvp[UT_KVP_MAX_ELEMENT_SIZE] = {0};
             std::string colorpath = supportedcolorpath + "." + std::to_string(j);
-            UT_KVP_PROFILE_GET_STRING(colorpath.c_str(), result_kvp);
-            std::string colorStr = std::string(result_kvp);
-            UT_LOG_INFO("Reading colorimetry path: %s, value: %s", colorpath.c_str(), colorStr.c_str());
-            if (!colorStr.empty()) {
-                try {
-                    temporary.supportedColorimetries.push_back(videoDecoderStringToColorimetry(colorStr));
-                } catch (const std::invalid_argument& e) {
-                    UT_LOG_WARNING("Invalid colorimetry at path: %s, value: %s, error: %s",
-                                   colorpath.c_str(), colorStr.c_str(), e.what());
-                }
-            } else {
-                UT_LOG_WARNING("Empty colorimetry at path: %s", colorpath.c_str());
+            char range_kvp[UT_KVP_MAX_ELEMENT_SIZE]    = {0};
+            char matrix_kvp[UT_KVP_MAX_ELEMENT_SIZE]   = {0};
+            char transfer_kvp[UT_KVP_MAX_ELEMENT_SIZE] = {0};
+            char primaries_kvp[UT_KVP_MAX_ELEMENT_SIZE]= {0};
+            UT_KVP_PROFILE_GET_STRING((colorpath + ".range").c_str(),    range_kvp);
+            UT_KVP_PROFILE_GET_STRING((colorpath + ".matrix").c_str(),   matrix_kvp);
+            UT_KVP_PROFILE_GET_STRING((colorpath + ".transfer").c_str(), transfer_kvp);
+            UT_KVP_PROFILE_GET_STRING((colorpath + ".primaries").c_str(),primaries_kvp);
+            UT_LOG_INFO("Reading colorimetry path: %s, range=%s, matrix=%s, transfer=%s, primaries=%s",
+                        colorpath.c_str(), range_kvp, matrix_kvp, transfer_kvp, primaries_kvp);
+            try {
+                temporary.supportedColorimetries.push_back(videoDecoderStringToColorimetry(
+                    std::string(range_kvp), std::string(matrix_kvp),
+                    std::string(transfer_kvp), std::string(primaries_kvp)));
+            } catch (const std::invalid_argument& e) {
+                UT_LOG_WARNING("Invalid colorimetry at path: %s, error: %s", colorpath.c_str(), e.what());
             }
         }
 
@@ -742,13 +809,17 @@ void vts_videodecoder_helper_validateCapabilities(
         UT_ASSERT_TRUE(codecCap.maxFrameRate > 0);
         UT_ASSERT_TRUE(codecCap.maxFrameWidth > 0);
         UT_ASSERT_TRUE(codecCap.maxFrameHeight > 0);
-        UT_LOG_INFO("Codec %d: profile=%d, level=%d, rate=%d, width=%d, height=%d",
+        UT_LOG_INFO("Codec %d: rate=%d, width=%d, height=%d",
                     static_cast<int32_t>(codecCap.codec),
-                    static_cast<int32_t>(codecCap.profile),
-                    static_cast<int32_t>(codecCap.level),
                     codecCap.maxFrameRate,
                     codecCap.maxFrameWidth,
                     codecCap.maxFrameHeight);
+        for (const auto& p : codecCap.profiles) {
+            UT_LOG_INFO("  Profile: %d, MaxLevel: %d, MaxBitrate: %lld",
+                        static_cast<int32_t>(p.profile),
+                        static_cast<int32_t>(p.maxLevel),
+                        static_cast<long long>(p.maxBitrateInBps));
+        }
         UT_LOG_INFO("Codec %d: supportedOutputPixelFormats count=%zu",
                 static_cast<int32_t>(codecCap.codec), codecCap.supportedOutputPixelFormats.size());
     }
@@ -810,8 +881,7 @@ void vts_videodecoder_helper_validateCapabilities(
                 const auto& hfpCap = *it;
                 UT_LOG_INFO("Validating codec: %d", static_cast<int32_t>(cap.codec));
                 UT_ASSERT_EQUAL(static_cast<int32_t>(cap.codec), static_cast<int32_t>(hfpCap.codec));
-                UT_ASSERT_EQUAL(static_cast<int32_t>(cap.profile), static_cast<int32_t>(hfpCap.profile));
-                UT_ASSERT_EQUAL(static_cast<int32_t>(cap.level), static_cast<int32_t>(hfpCap.level));
+                UT_ASSERT_EQUAL(cap.profiles, hfpCap.profiles);
                 UT_ASSERT_EQUAL(cap.maxFrameRate, hfpCap.maxFrameRate);
                 UT_ASSERT_EQUAL(cap.maxFrameWidth, hfpCap.maxFrameWidth);
                 UT_ASSERT_EQUAL(cap.maxFrameHeight, hfpCap.maxFrameHeight);
@@ -862,16 +932,20 @@ void vts_videodecoder_helper_validateCapabilities(
                     hfpDecoder.supportedColorimetries.begin(),
                     hfpDecoder.supportedColorimetries.end(),
                     [&colorimetry](const auto& hfpColorimetry) {
-                        return static_cast<int32_t>(colorimetry) == static_cast<int32_t>(hfpColorimetry);
+                        return colorimetry == hfpColorimetry;
                     });
                 if (it == hfpDecoder.supportedColorimetries.end())
                 {
-                    UT_LOG_ERROR("Colorimetry %d not found in hfpDecoder for decoder ID: %d", static_cast<int32_t>(colorimetry), decoderId);
+                    UT_LOG_ERROR("Colorimetry not found in hfpDecoder for decoder ID: %d", decoderId);
                     UT_ASSERT_TRUE(false) << "Colorimetry not found in hfpDecoder";
                     continue;
                 }
-                UT_LOG_INFO("Validated colorimetry: %d", static_cast<int32_t>(colorimetry));
-                UT_ASSERT_EQUAL(static_cast<int32_t>(colorimetry), static_cast<int32_t>(*it));
+                UT_LOG_INFO("Validated colorimetry: range=%d, matrix=%d, transfer=%d, primaries=%d",
+                            static_cast<int32_t>(colorimetry.range),
+                            static_cast<int32_t>(colorimetry.matrix),
+                            static_cast<int32_t>(colorimetry.transfer),
+                            static_cast<int32_t>(colorimetry.primaries));
+                UT_ASSERT_EQUAL(colorimetry, *it);
             }
             break;
         }
@@ -929,7 +1003,7 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, const char *m
         std::string resultKVP;
         vector<uint32_t> errorFrameNum;
 
-        testDetails.colorimetry = Colorimetry::UNKNOWN;
+        testDetails.colorimetry = Colorimetry{};
         testDetails.masteringDisplayInfo.reset();
         testDetails.contentLightLevel.reset();
 
@@ -1049,11 +1123,19 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, const char *m
             }
         }
 
-        // Colorimetry
-        if (ut_kvp_fieldPresent(kvpTestInstance, colorimetry.c_str()))
+        // Colorimetry (now a 4-axis parcelable: range, matrix, transfer, primaries)
+        if (ut_kvp_fieldPresent(kvpTestInstance, (colorimetry + ".range").c_str()))
         {
-            ut_kvp_getStringField(kvpTestInstance, colorimetry.c_str(), tempBuffer, UT_KVP_MAX_ELEMENT_SIZE);
-            testDetails.colorimetry = videoDecoderStringToColorimetry(string(tempBuffer));
+            char rangeKvp[UT_KVP_MAX_ELEMENT_SIZE]    = {0};
+            char matrixKvp[UT_KVP_MAX_ELEMENT_SIZE]   = {0};
+            char transferKvp[UT_KVP_MAX_ELEMENT_SIZE] = {0};
+            char primariesKvp[UT_KVP_MAX_ELEMENT_SIZE]= {0};
+            ut_kvp_getStringField(kvpTestInstance, (colorimetry + ".range").c_str(),    rangeKvp,    UT_KVP_MAX_ELEMENT_SIZE);
+            ut_kvp_getStringField(kvpTestInstance, (colorimetry + ".matrix").c_str(),   matrixKvp,   UT_KVP_MAX_ELEMENT_SIZE);
+            ut_kvp_getStringField(kvpTestInstance, (colorimetry + ".transfer").c_str(), transferKvp, UT_KVP_MAX_ELEMENT_SIZE);
+            ut_kvp_getStringField(kvpTestInstance, (colorimetry + ".primaries").c_str(),primariesKvp,UT_KVP_MAX_ELEMENT_SIZE);
+            testDetails.colorimetry = videoDecoderStringToColorimetry(
+                string(rangeKvp), string(matrixKvp), string(transferKvp), string(primariesKvp));
         }
 
         // Mastering display info
@@ -1175,7 +1257,7 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, const char *m
         testDetails.flushResetPts = ut_kvp_getUInt64Field(kvpTestInstance, flushResetPts.c_str());
         testDetails.eosPts = ut_kvp_getUInt64Field(kvpTestInstance, eosPts.c_str());
 
-        testDetails.bitstreamEOS = ut_kvp_getUInt32Field(kvpTestInstance, endOfStream.c_str());
+        testDetails.endOfStream = ut_kvp_getUInt32Field(kvpTestInstance, endOfStream.c_str());
         testDetails.discontinuity = ut_kvp_getUInt32Field(kvpTestInstance, discontinuity.c_str());
         testDetails.lowLatency = ut_kvp_getUInt32Field(kvpTestInstance, lowLatency.c_str());
 

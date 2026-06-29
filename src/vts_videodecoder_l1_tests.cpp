@@ -433,13 +433,17 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, getCapabilities_pos)
         UT_LOG_INFO("Supported Codecs: %zu", capabilities.supportedCodecs.size());
         for (const auto& codecCap : capabilities.supportedCodecs)
         {
-            UT_LOG_INFO("Codec: %d, Profile: %d, Level: %d, maxFrameRate: %d, maxFrameWidth: %d, maxFrameHeight: %d",
+            UT_LOG_INFO("Codec: %d, maxFrameRate: %d, maxFrameWidth: %d, maxFrameHeight: %d",
                         static_cast<int32_t>(codecCap.codec),
-                        static_cast<int32_t>(codecCap.profile),
-                        static_cast<int32_t>(codecCap.level),
                         codecCap.maxFrameRate,
                         codecCap.maxFrameWidth,
                         codecCap.maxFrameHeight);
+            for (const auto& p : codecCap.profiles) {
+                UT_LOG_INFO("  Profile: %d, MaxLevel: %d, MaxBitrate: %lld",
+                            static_cast<int32_t>(p.profile),
+                            static_cast<int32_t>(p.maxLevel),
+                            static_cast<long long>(p.maxBitrateInBps));
+            }
 
             UT_ASSERT_FALSE(codecCap.supportedOutputPixelFormats.empty())
                 << "supportedOutputPixelFormats must not be empty for codec "
