@@ -258,6 +258,14 @@ struct videoDecoderTestConfiguration_t {
     bool blPresent;
     bool elPresent;
 
+    // Mid-stream metadata override via InputBufferMetadata nullable fields (-1 = disabled)
+    int64_t metadataOverridePts;
+    std::optional<videodecoder::Colorimetry> overrideColorimetry;
+    std::optional<MasteringDisplayInfo> overrideMasteringDisplayInfo;
+    std::optional<ContentLightLevel> overrideContentLightLevel;
+    std::optional<DolbyVisionLayerFlags> overrideDolbyVisionLayerFlags;
+    std::optional<videodecoder::Fraction> overridePixelAspectRatio;
+
     // When != -1, open() is replaced by openWithResolution(codec, secure, listener, openWithResolutionWidth, openWithResolutionHeight)
     int32_t openWithResolutionWidth;  // -1 = use open(), >0 = use openWithResolution()
     int32_t openWithResolutionHeight; // -1 = use open(), >0 = use openWithResolution()
@@ -285,6 +293,7 @@ videodecoder::CodecProfile videoDecoderStringToCodecProfile(const std::string& p
 videodecoder::CodecLevel videoDecoderStringToCodecLevel(const std::string& levelStr);
 videodecoder::Profile videoDecoderStringToProfile(const std::string& profileStr, const std::string& levelStr);
 videodecoder::Colorimetry videoDecoderStringToColorimetry(const std::string& rangeStr, const std::string& matrixStr, const std::string& transferStr, const std::string& primariesStr);
+videodecoder::Colorimetry videoDecoderStringToColorimetryStandard(const std::string& standardStr);
 bool vts_videodecoder_helper_validatePropertyValue(int decoder_id,const std::optional<PropertyValue>& propertyValue, const videodecoder::Property property);
 void vts_videodecoder_helper_validateCapabilities(int32_t decoderId,const videodecoder::Capabilities& capabilities);
 bool vts_videodecoder_helper_checkCodecAttributeExists(const std::string& attrpath, const std::string& codec_name);
@@ -451,22 +460,31 @@ do { \
         ::android::binder::Status status; \
         UT_LOG_INFO("Calling getProperty(IN:property[%s], OUT:propertyValue[]", videodecoder::toString(property).c_str()); \
         status = (videoDecoder)->getProperty(property, &propertyValue); \
-        switch (propertyValue->value.value().getTag()) \
+        if (propertyValue.has_value() && propertyValue->value.has_value()) \
         { \
-            case PropertyValue::Value::Tag::intValue: \
-                UT_LOG_INFO("Result getProperty(IN:property[%s], OUT:propertyValue[%d]), status:[isOK:%s, exception:%s]", videodecoder::toString(property).c_str(), \
-                propertyValue->value->get<PropertyValue::Value::Tag::intValue>(), \
-                UT_Control_GetMapString(bool_mapTable, status.isOk()), \
-                UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
-                break; \
-            case PropertyValue::Value::Tag::stringValue: \
-                UT_LOG_INFO("Result getProperty(IN:property[%s], OUT:propertyValue[%s]), status:[isOK:%s, exception:%s]", videodecoder::toString(property).c_str(), \
-                propertyValue->value->get<PropertyValue::Value::Tag::stringValue>().string(), \
-                UT_Control_GetMapString(bool_mapTable, status.isOk()), \
-                UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
-                break; \
-            default: \
-                break; \
+            switch (propertyValue->value.value().getTag()) \
+            { \
+                case PropertyValue::Value::Tag::intValue: \
+                    UT_LOG_INFO("Result getProperty(IN:property[%s], OUT:propertyValue[%d]), status:[isOK:%s, exception:%s]", videodecoder::toString(property).c_str(), \
+                    propertyValue->value->get<PropertyValue::Value::Tag::intValue>(), \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+                    break; \
+                case PropertyValue::Value::Tag::stringValue: \
+                    UT_LOG_INFO("Result getProperty(IN:property[%s], OUT:propertyValue[%s]), status:[isOK:%s, exception:%s]", videodecoder::toString(property).c_str(), \
+                    propertyValue->value->get<PropertyValue::Value::Tag::stringValue>().string(), \
+                    UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+                    UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
+                    break; \
+                default: \
+                    break; \
+            } \
+        } \
+        else \
+        { \
+            UT_LOG_INFO("Result getProperty(IN:property[%s], OUT:propertyValue[]), status:[isOK:%s, exception:%s]", videodecoder::toString(property).c_str(), \
+            UT_Control_GetMapString(bool_mapTable, status.isOk()), \
+            UT_Control_GetMapString(statusException_mapTable, status.exceptionCode())); \
         } \
         UT_ASSERT_TRUE(status.isOk()); \
         UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \

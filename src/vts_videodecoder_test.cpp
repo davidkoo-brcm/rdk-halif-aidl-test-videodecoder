@@ -475,11 +475,22 @@ bool videoDecoderTest::validateDecodedFrame()
                 << ", actual=" << static_cast<int>(decodedFrame.metadata->dynamicRange)
                 << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
 
-            // Validate colorimetry
-            UT_ASSERT_EQUAL(decodedFrame.metadata->colorimetry, mTestConfiguration.colorimetry)
-                << "Colorimetry mismatch: expected=" << mTestConfiguration.colorimetry.toString()
-                << ", got=" << decodedFrame.metadata->colorimetry.toString()
-                << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+            // Validate colorimetry — use override values for frames at or after metadataOverridePts
+            const bool afterOverride = (mTestConfiguration.metadataOverridePts != -1 &&
+                                        decodedFrame.framePTS >= mTestConfiguration.metadataOverridePts);
+            if (afterOverride && mTestConfiguration.overrideColorimetry.has_value())
+            {
+                UT_ASSERT_EQUAL(decodedFrame.metadata->colorimetry, mTestConfiguration.overrideColorimetry.value())
+                    << "Colorimetry override mismatch after metadataOverridePts="
+                    << mTestConfiguration.metadataOverridePts;
+            }
+            else
+            {
+                UT_ASSERT_EQUAL(decodedFrame.metadata->colorimetry, mTestConfiguration.colorimetry)
+                    << "Colorimetry mismatch: expected=" << mTestConfiguration.colorimetry.toString()
+                    << ", got=" << decodedFrame.metadata->colorimetry.toString()
+                    << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+            }
 
             // Validate frame rate
             UT_ASSERT_EQUAL(decodedFrame.metadata->frameRateNumerator, mTestConfiguration.frameRateNumerator)
@@ -499,21 +510,42 @@ bool videoDecoderTest::validateDecodedFrame()
 
             if(decodedFrame.metadata->masteringDisplayInfo.has_value())
             {
-                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->redPrimaryX, mTestConfiguration.masteringDisplayInfo->redPrimaryX);
-                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->redPrimaryY, mTestConfiguration.masteringDisplayInfo->redPrimaryY);
-                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->greenPrimaryX, mTestConfiguration.masteringDisplayInfo->greenPrimaryX);
-                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->greenPrimaryY, mTestConfiguration.masteringDisplayInfo->greenPrimaryY);
-                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->bluePrimaryX, mTestConfiguration.masteringDisplayInfo->bluePrimaryX);
-                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->bluePrimaryY, mTestConfiguration.masteringDisplayInfo->bluePrimaryY);
-                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->whitePointX, mTestConfiguration.masteringDisplayInfo->whitePointX);
-                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->whitePointY, mTestConfiguration.masteringDisplayInfo->whitePointY);
-                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->maxLuminance, mTestConfiguration.masteringDisplayInfo->maxLuminance);
-                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->minLuminance, mTestConfiguration.masteringDisplayInfo->minLuminance);
+                const auto& expectedMdi = (afterOverride && mTestConfiguration.overrideMasteringDisplayInfo.has_value())
+                    ? mTestConfiguration.overrideMasteringDisplayInfo.value()
+                    : mTestConfiguration.masteringDisplayInfo.value();
+                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->redPrimaryX,   expectedMdi.redPrimaryX);
+                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->redPrimaryY,   expectedMdi.redPrimaryY);
+                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->greenPrimaryX, expectedMdi.greenPrimaryX);
+                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->greenPrimaryY, expectedMdi.greenPrimaryY);
+                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->bluePrimaryX,  expectedMdi.bluePrimaryX);
+                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->bluePrimaryY,  expectedMdi.bluePrimaryY);
+                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->whitePointX,   expectedMdi.whitePointX);
+                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->whitePointY,   expectedMdi.whitePointY);
+                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->maxLuminance,  expectedMdi.maxLuminance);
+                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->minLuminance,  expectedMdi.minLuminance);
             }
 
-            UT_ASSERT_EQUAL(decodedFrame.metadata->contentLightLevel, mTestConfiguration.contentLightLevel)
-                << "ContentLightLevel mismatch for Codec "
-                << videodecoder::toString(mTestConfiguration.codec).c_str();
+            {
+                const auto& expectedCll = (afterOverride && mTestConfiguration.overrideContentLightLevel.has_value())
+                    ? mTestConfiguration.overrideContentLightLevel
+                    : mTestConfiguration.contentLightLevel;
+                UT_ASSERT_EQUAL(decodedFrame.metadata->contentLightLevel, expectedCll)
+                    << "ContentLightLevel mismatch for Codec "
+                    << videodecoder::toString(mTestConfiguration.codec).c_str();
+            }
+
+            if (afterOverride && mTestConfiguration.overridePixelAspectRatio.has_value())
+            {
+                const auto& expectedPar = mTestConfiguration.overridePixelAspectRatio.value();
+                UT_ASSERT_EQUAL(decodedFrame.metadata->parX, expectedPar.numerator)
+                    << "PAR numerator mismatch after metadataOverridePts="
+                    << mTestConfiguration.metadataOverridePts
+                    << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+                UT_ASSERT_EQUAL(decodedFrame.metadata->parY, expectedPar.denominator)
+                    << "PAR denominator mismatch after metadataOverridePts="
+                    << mTestConfiguration.metadataOverridePts
+                    << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+            }
 
             if(decodedFrame.metadata->discontinuity)
             {

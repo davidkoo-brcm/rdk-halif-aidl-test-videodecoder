@@ -1261,6 +1261,64 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, const char *m
         testDetails.discontinuity = ut_kvp_getUInt32Field(kvpTestInstance, discontinuity.c_str());
         testDetails.lowLatency = ut_kvp_getUInt32Field(kvpTestInstance, lowLatency.c_str());
 
+        // Mid-stream metadata override fields
+        string metadataOverridePts = prefix + "metadata_override_pts";
+        testDetails.metadataOverridePts = ut_kvp_fieldPresent(kvpTestInstance, metadataOverridePts.c_str())
+            ? static_cast<int64_t>(ut_kvp_getUInt64Field(kvpTestInstance, metadataOverridePts.c_str())) : -1;
+
+        string overrideColorimetry = prefix + "override_colorimetry";
+        if (ut_kvp_fieldPresent(kvpTestInstance, (overrideColorimetry + ".range").c_str()) ||
+            ut_kvp_fieldPresent(kvpTestInstance, (overrideColorimetry + ".matrix").c_str()) ||
+            ut_kvp_fieldPresent(kvpTestInstance, (overrideColorimetry + ".transfer").c_str()) ||
+            ut_kvp_fieldPresent(kvpTestInstance, (overrideColorimetry + ".primaries").c_str()))
+        {
+            char rangeKvp[UT_KVP_MAX_ELEMENT_SIZE]    = {0};
+            char matrixKvp[UT_KVP_MAX_ELEMENT_SIZE]   = {0};
+            char transferKvp[UT_KVP_MAX_ELEMENT_SIZE]  = {0};
+            char primariesKvp[UT_KVP_MAX_ELEMENT_SIZE] = {0};
+            ut_kvp_getStringField(kvpTestInstance, (overrideColorimetry + ".range").c_str(),    rangeKvp,    UT_KVP_MAX_ELEMENT_SIZE);
+            ut_kvp_getStringField(kvpTestInstance, (overrideColorimetry + ".matrix").c_str(),   matrixKvp,   UT_KVP_MAX_ELEMENT_SIZE);
+            ut_kvp_getStringField(kvpTestInstance, (overrideColorimetry + ".transfer").c_str(), transferKvp, UT_KVP_MAX_ELEMENT_SIZE);
+            ut_kvp_getStringField(kvpTestInstance, (overrideColorimetry + ".primaries").c_str(),primariesKvp,UT_KVP_MAX_ELEMENT_SIZE);
+            testDetails.overrideColorimetry = videoDecoderStringToColorimetry(
+                string(rangeKvp), string(matrixKvp), string(transferKvp), string(primariesKvp));
+        }
+
+        string overrideMdi = prefix + "override_mastering_display_info";
+        if (ut_kvp_fieldPresent(kvpTestInstance, (overrideMdi + ".whitePointX").c_str()))
+        {
+            MasteringDisplayInfo mdi{};
+            mdi.redPrimaryX   = ut_kvp_getUInt32Field(kvpTestInstance, (overrideMdi + ".redPrimaryX").c_str());
+            mdi.redPrimaryY   = ut_kvp_getUInt32Field(kvpTestInstance, (overrideMdi + ".redPrimaryY").c_str());
+            mdi.greenPrimaryX = ut_kvp_getUInt32Field(kvpTestInstance, (overrideMdi + ".greenPrimaryX").c_str());
+            mdi.greenPrimaryY = ut_kvp_getUInt32Field(kvpTestInstance, (overrideMdi + ".greenPrimaryY").c_str());
+            mdi.bluePrimaryX  = ut_kvp_getUInt32Field(kvpTestInstance, (overrideMdi + ".bluePrimaryX").c_str());
+            mdi.bluePrimaryY  = ut_kvp_getUInt32Field(kvpTestInstance, (overrideMdi + ".bluePrimaryY").c_str());
+            mdi.whitePointX   = ut_kvp_getUInt32Field(kvpTestInstance, (overrideMdi + ".whitePointX").c_str());
+            mdi.whitePointY   = ut_kvp_getUInt32Field(kvpTestInstance, (overrideMdi + ".whitePointY").c_str());
+            mdi.maxLuminance  = ut_kvp_getUInt32Field(kvpTestInstance, (overrideMdi + ".maxLuminance").c_str());
+            mdi.minLuminance  = ut_kvp_getUInt32Field(kvpTestInstance, (overrideMdi + ".minLuminance").c_str());
+            testDetails.overrideMasteringDisplayInfo = mdi;
+        }
+
+        string overrideCll = prefix + "override_content_light_level";
+        if (ut_kvp_fieldPresent(kvpTestInstance, (overrideCll + ".maxCLL").c_str()))
+        {
+            ContentLightLevel cll{};
+            cll.maxCLL  = ut_kvp_getUInt32Field(kvpTestInstance, (overrideCll + ".maxCLL").c_str());
+            cll.maxFALL = ut_kvp_getUInt32Field(kvpTestInstance, (overrideCll + ".maxFALL").c_str());
+            testDetails.overrideContentLightLevel = cll;
+        }
+
+        string overridePAR = prefix + "override_pixel_aspect_ratio";
+        if (ut_kvp_fieldPresent(kvpTestInstance, (overridePAR + ".numerator").c_str()))
+        {
+            videodecoder::Fraction par{};
+            par.numerator   = static_cast<int32_t>(ut_kvp_getUInt32Field(kvpTestInstance, (overridePAR + ".numerator").c_str()));
+            par.denominator = static_cast<int32_t>(ut_kvp_getUInt32Field(kvpTestInstance, (overridePAR + ".denominator").c_str()));
+            testDetails.overridePixelAspectRatio = par;
+        }
+
         testConfiguration.push_back(testDetails);
         UT_LOG_INFO("Added test configuration for stream %d, frameDetails size: %zu, expectedPts size: %zu",
                     i, testDetails.frameDetails.size(), testDetails.expectedPts.size());

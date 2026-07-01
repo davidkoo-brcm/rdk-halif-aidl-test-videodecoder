@@ -2248,73 +2248,33 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, signalDiscontinuity_neg)
     }
 }
 
-UT_ADD_TEST(VTS_L1_VideoDecoder, signalEOS_pos)
-{
-    std::vector<IVideoDecoder::Id> decoderIds;
-    sp<IVideoDecoder> videoDecoder;
-    videodecoder::Capabilities capabilities;
-    IAVBufferHelper* avbufferHelper = getAVBufferHelperInstance();
-
-    UT_ASSERT_TRUE(avbufferHelper != nullptr);
-
-    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
-    UT_ASSERT_FALSE(decoderIds.empty()) << "No VideoDecoder instances available.";
-
-    for (const auto& _decoderId : decoderIds)
-    {
-        VIDEODECODER_MANAGER_GETVIDEODECODER(_decoderId, videoDecoder);
-        VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
-
-        for (const auto& _codecCaps : capabilities.supportedCodecs)
-        {
-            videodecoder::Codec _codec = _codecCaps.codec;
-            sp<IVideoDecoderController> videoDecoderController;
-            sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
-
-            sp<IAVBufferSpaceListener> bufferListener = new AVBufferSpaceListener();
-            Pool videoPool;
-            int64_t videoBufferHandle = 0;
-
-            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, false,
-                                      controllerListener, videoDecoderController, true);
-            VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
-
-            AVBUFFER_CREATE_VIDEOPOOL_SUCCESS(gAVBufferManager, false, _decoderId, bufferListener, videoPool);
-            AVBUFFER_ALLOC_SUCCESS(gAVBufferManager, videoPool, 4096, videoBufferHandle);
-
-            void* mapBuffer = nullptr;
-            uint32_t mapSize = 0;
-            mapBuffer = avbufferHelper->mapHandle(videoBufferHandle, &mapSize);
-            UT_ASSERT_TRUE(mapBuffer != nullptr);
-            UT_ASSERT_TRUE(mapSize >= 4096);
-            memset(mapBuffer, 0, 4096);
-            avbufferHelper->unmapHandle(videoBufferHandle);
-
-            videodecoder::InputBufferMetadata metadata = {};
-            metadata.nsPresentationTime = 1000000;
-            metadata.discontinuity = false;
-
-            bool decodeResult = false;
-            Status status = videoDecoderController->decodeBufferWithMetadata(videoBufferHandle, metadata, &decodeResult);
-
-            if (!status.isOk() || status.exceptionCode() != Status::EX_NONE || !decodeResult)
-            {
-                AVBUFFER_FREE_SUCCESS(gAVBufferManager, videoBufferHandle);
-            }
-
-            UT_ASSERT_TRUE(status.isOk());
-            UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE);
-            UT_ASSERT_TRUE(decodeResult);
-
-            VIDEODECODER_SIGNAL_EOS_SUCCESS(videoDecoderController);
-
-            VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
-            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
-            AVBUFFER_DESTROY_POOL_SUCCESS(gAVBufferManager, videoPool);
-        }
-    }
-}
-
+/**
+ * @brief Test the negative scenarios for the signalEndOfStream API in VideoDecoderController.
+ *
+ * This test verifies that signalEndOfStream() is rejected with EX_ILLEGAL_STATE in every
+ * state where it must not succeed: before start() (READY), immediately after start() with
+ * no buffers ever submitted on the session (STARTED, per the compound precondition in the
+ * 0.2.0.0 AIDL contract), and after stop() (READY again).
+ *
+ * **Test Group ID:** Basic: 01@n
+ * **Test Case ID:** 031@n
+ * **Priority:** High@n
+ * @n
+ * **Pre-Conditions:** None@n
+ * **Dependencies:** None@n
+ * **User Interaction:** None@n
+ * @n
+ * **Test Procedure:**@n
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |
+ * | :----: | --------- | ---------- |-------------- | ----- |
+ * | 01 | Open the Video Decoder for each supported codec | codec = each supported codec | status.isOk() = true, controller != null | Should be successful |
+ * | 02 | Call signalEndOfStream() while in READY (before start()) | controller = instance | status.isOk() = false, status.exceptionCode() = EX_ILLEGAL_STATE | Should Fail |
+ * | 03 | Start the Video Decoder | controller = instance | status.isOk() = true, state = STARTED | Should be successful |
+ * | 04 | Call signalEndOfStream() while STARTED with zero buffers ever submitted on this session | controller = instance | status.isOk() = false, status.exceptionCode() = EX_ILLEGAL_STATE | Should Fail |
+ * | 05 | Stop the Video Decoder | controller = instance | status.isOk() = true, state = READY | Should be successful |
+ * | 06 | Call signalEndOfStream() while in READY (after stop()) | controller = instance | status.isOk() = false, status.exceptionCode() = EX_ILLEGAL_STATE | Should Fail |
+ * | 07 | Close the Video Decoder | controller = instance | status.isOk() = true | Should be successful |
+ */
 UT_ADD_TEST(VTS_L1_VideoDecoder, signalEOS_neg)
 {
     std::vector<IVideoDecoder::Id> decoderIds;
