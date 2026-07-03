@@ -329,7 +329,7 @@ void videoDecoderTest::startDecoding()
         inputVideo.sendTime = std::chrono::steady_clock::now();
         {
             std::lock_guard<std::mutex> lock(mInputFrameMutex);
-            mInputFrame.push_back(inputVideo);
+            mInputFrame.push_back(std::move(inputVideo));
         }
 
         videodecoder::InputBufferMetadata metadata = {};
@@ -604,9 +604,9 @@ bool videoDecoderTest::runBackPressureTest()
     bool callbackObserved = false;
     int64_t pts = 1000000;
 
-    auto freeIfRejected = [&](int64_t bufferHandle, const Status& status, bool decodeAccepted)
+    auto freeIfRejected = [&](int64_t bufferHandle, const Status& decodeStatus, bool decodeAccepted)
     {
-        if (!decodeAccepted || !status.isOk() || status.exceptionCode() != Status::EX_NONE)
+        if (!decodeAccepted || !decodeStatus.isOk() || decodeStatus.exceptionCode() != Status::EX_NONE)
         {
             AVBUFFER_FREE_SUCCESS(mAVBufferManager, bufferHandle);
         }

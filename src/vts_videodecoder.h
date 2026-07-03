@@ -1660,7 +1660,7 @@ private:
     std::condition_variable mCV;
     std::condition_variable mCond;
 
-    ::com::rdk::hal::State mCurrentState;
+    ::com::rdk::hal::State mCurrentState = ::com::rdk::hal::State::UNKNOWN;
     std::vector<std::pair<::com::rdk::hal::State, ::com::rdk::hal::State>> mStateChanges;
     std::vector<int32_t> mErrors;
     int32_t mDecoderID = -1;
@@ -1681,16 +1681,16 @@ public:
                 sp<VideoDecoderControllerListener> controlListener,
                 sp<VideoDecoderEventListener> eventListener,
                 sp<IAVBuffer> AVBufferManager,
-                bool secureDecode, bool tunnelMode, videoDecoderTestConfiguration_t config,
+                bool secureDecode, bool tunnelMode, const videoDecoderTestConfiguration_t& config,
                 IAVBufferHelper* avbufferHelper, bool isSinkAttached)
     {
         mDecoderId = decoderId;
-        mDecoderHandle = decoderHandle;
-        mControlListener = controlListener;
+        mDecoderHandle = std::move(decoderHandle);
+        mControlListener = std::move(controlListener);
         mSecureDecode = secureDecode;
-        mEventListener = eventListener;
+        mEventListener = std::move(eventListener);
         mTestConfiguration = config;
-        mAVBufferManager = AVBufferManager;
+        mAVBufferManager = std::move(AVBufferManager);
         mAVbufferHelper = avbufferHelper;
         mIsSinkAttached = isSinkAttached;
         mTunnelMode = tunnelMode;
@@ -1710,7 +1710,7 @@ private:
     IVideoDecoder::Id mDecoderId;
     bool mSecureDecode;
     bool mTunnelMode;
-    bool mConcurrentDecodeConsume;
+    bool mConcurrentDecodeConsume = false;
     bool mIsSinkAttached;
     videoDecoderTestConfiguration_t mTestConfiguration;
     sp<IVideoDecoder> mDecoderHandle;
