@@ -2571,6 +2571,102 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, setStreamConfig_pos)
         }
     }
 }
+
+/**
+ * @brief Test the negative scenarios of the consolidated setStreamConfig API.
+ *
+ * This test verifies that setStreamConfig() correctly rejects calls made outside
+ * the READY state (EX_ILLEGAL_STATE), and rejects individual fields that fail the
+ * documented validation rules (EX_ILLEGAL_ARGUMENT for invalid resolution, invalid
+ * frame rate, and invalid pixel aspect ratio).
+ *
+ * **Test Group ID:** Basic: 01@n
+ * **Test Case ID:** 035@n
+ * **Priority:** High@n
+ * @n
+ * **Pre-Conditions:** None@n
+ * **Dependencies:** None@n
+ * **User Interaction:** None@n
+ * @n
+ * **Test Procedure:**@n
+ * | Variation / Step | Description | Test Data | Expected Result | Notes |
+ * | :----: | --------- | ---------- |-------------- | ----- |
+ * | 01 | Call setStreamConfig() while STARTED (not READY) | config = valid resolution | status.exceptionCode() = EX_ILLEGAL_STATE | Should Fail |
+ * | 02 | Call setStreamConfig() while CLOSED | config = valid resolution | status.exceptionCode() = EX_ILLEGAL_STATE | Should Fail |
+ * | 03 | Call setStreamConfig() in READY with resolution.width &lt;= 0 | resolution = {0, 1080} | status.exceptionCode() = EX_ILLEGAL_ARGUMENT | Should Fail |
+ * | 04 | Call setStreamConfig() in READY with frameRate.denominator == 0 while numerator != 0 | frameRate = {24, 0} | status.exceptionCode() = EX_ILLEGAL_ARGUMENT | Should Fail |
+ * | 05 | Call setStreamConfig() in READY with pixelAspectRatio having exactly one zero field | pixelAspectRatio = {1, 0} | status.exceptionCode() = EX_ILLEGAL_ARGUMENT | Should Fail |
+ */
+UT_ADD_TEST(VTS_L1_VideoDecoder, setStreamConfig_neg)
+{
+    std::vector<IVideoDecoder::Id> decoderIds;
+    sp<IVideoDecoder> videoDecoder;
+    videodecoder::Capabilities capabilities;
+
+    VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds);
+    UT_ASSERT_FALSE(decoderIds.empty()) << "No VideoDecoder instances available.";
+
+    for (const auto& _decoderId : decoderIds)
+    {
+        VIDEODECODER_MANAGER_GETVIDEODECODER_SUCCESS(_decoderId, videoDecoder);
+        VIDEODECODER_GETCAPABILITIES(videoDecoder, &capabilities);
+
+        for (const auto& _codecCaps : capabilities.supportedCodecs)
+        {
+            videodecoder::Codec _codec = _codecCaps.codec;
+            sp<IVideoDecoderController> videoDecoderController;
+            sp<IVideoDecoderControllerListener> controllerListener = new VideoDecoderControllerListener();
+
+            VideoDecoderStreamConfig validConfig{};
+            Resolution validResolution{};
+            validResolution.width = intValueStreamWidth;
+            validResolution.height = intValueStreamHeight;
+            validConfig.resolution = validResolution;
+
+            // Test 1: setStreamConfig while STARTED (not READY) must fail with EX_ILLEGAL_STATE
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener, videoDecoderController, true);
+            VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
+            VIDEODECODER_SETSTREAMCONFIG_FAILURE(videoDecoderController, validConfig, Status::EX_ILLEGAL_STATE);
+            VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);
+
+            // Test 2: setStreamConfig while CLOSED must fail with EX_ILLEGAL_STATE
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+            VIDEODECODER_SETSTREAMCONFIG_FAILURE(videoDecoderController, validConfig, Status::EX_ILLEGAL_STATE);
+
+            // Re-open for the argument-validation cases (must be in READY)
+            sp<IVideoDecoderControllerListener> controllerListener2 = new VideoDecoderControllerListener();
+            VIDEODECODER_OPEN_SUCCESS(videoDecoder, _codec, capabilities.supportsSecure,
+                                      controllerListener2, videoDecoderController, true);
+
+            // Test 3: invalid resolution (width <= 0)
+            VideoDecoderStreamConfig invalidResolutionConfig{};
+            Resolution invalidResolution{};
+            invalidResolution.width = 0;
+            invalidResolution.height = intValueStreamHeight;
+            invalidResolutionConfig.resolution = invalidResolution;
+            VIDEODECODER_SETSTREAMCONFIG_FAILURE(videoDecoderController, invalidResolutionConfig, Status::EX_ILLEGAL_ARGUMENT);
+
+            // Test 4: invalid frameRate (denominator == 0 while numerator != 0)
+            VideoDecoderStreamConfig invalidFrameRateConfig{};
+            Fraction invalidFrameRate{};
+            invalidFrameRate.numerator = intValueFrameRateNum;
+            invalidFrameRate.denominator = 0;
+            invalidFrameRateConfig.frameRate = invalidFrameRate;
+            VIDEODECODER_SETSTREAMCONFIG_FAILURE(videoDecoderController, invalidFrameRateConfig, Status::EX_ILLEGAL_ARGUMENT);
+
+            // Test 5: invalid pixelAspectRatio (exactly one of numerator/denominator is 0; only 0/0 is valid "unknown")
+            VideoDecoderStreamConfig invalidParConfig{};
+            Fraction invalidPar{};
+            invalidPar.numerator = 1;
+            invalidPar.denominator = 0;
+            invalidParConfig.pixelAspectRatio = invalidPar;
+            VIDEODECODER_SETSTREAMCONFIG_FAILURE(videoDecoderController, invalidParConfig, Status::EX_ILLEGAL_ARGUMENT);
+
+            VIDEODECODER_CLOSE_SUCCESS(videoDecoder, videoDecoderController, true);
+        }
+    }
+}
 /** @} */ // End of Video_Decoder_Halif_Test_L1
 /** @} */ // End of Video_Decoder_Halif_Test
 /** @} */ // End of Video_Decoder

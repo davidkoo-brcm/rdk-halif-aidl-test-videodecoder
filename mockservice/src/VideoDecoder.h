@@ -33,6 +33,18 @@
 #include <com/rdk/hal/videodecoder/BnVideoDecoderController.h>
 #include <com/rdk/hal/videodecoder/InputBufferMetadata.h>
 #include <com/rdk/hal/videodecoder/VideoDecoderStreamConfig.h>
+#include <com/rdk/hal/videodecoder/FrameMetadata.h>
+#include <com/rdk/hal/videodecoder/Resolution.h>
+#include <com/rdk/hal/videodecoder/Fraction.h>
+#include <com/rdk/hal/videodecoder/Colorimetry.h>
+#include <com/rdk/hal/videodecoder/TransferCharacteristics.h>
+#include <com/rdk/hal/videodecoder/MasteringDisplayInfo.h>
+#include <com/rdk/hal/videodecoder/ContentLightLevel.h>
+#include <com/rdk/hal/videodecoder/DolbyVisionLayerFlags.h>
+#include <com/rdk/hal/videodecoder/ErrorCode.h>
+#include <com/rdk/hal/avbuffer/IAVBuffer.h>
+#include <com/rdk/hal/avbuffer/Pool.h>
+#include <com/rdk/hal/avbuffer/BnAVBufferSpaceListener.h>
 #include <binder/BinderService.h>
 #include <optional>
 #include <ostream>
@@ -40,6 +52,7 @@
 #include <utils/StrongPointer.h>
 #include <vector>
 #include <mutex>
+#include <atomic>
 #include <thread>
 
 namespace com {
@@ -120,17 +133,36 @@ public:
     android::binder::Status unregisterEventListener(const android::sp<videodecoder::IVideoDecoderEventListener>& videoDecoderEventListener, bool* _aidl_return) override;
 };
 
+// No-op listener to satisfy createVideoPool()'s non-null requirement
+class OutputPoolSpaceListener : public ::com::rdk::hal::avbuffer::BnAVBufferSpaceListener {
+public:
+    android::binder::Status onSpaceAvailable() override { return android::binder::Status::ok(); }
+};
+
 class VideoDecoderController : public android::BinderService<VideoDecoderController>,
                             public BnVideoDecoderController {
 private:
     IVideoDecoder::Id mId;
     VideoDecoder* mParentDecoder;
     android::sp<videodecoder::IVideoDecoderControllerListener> mControllerListener;
+    bool mSecure;
 
 public:
     VideoDecoderController(IVideoDecoder::Id id, VideoDecoder* parentDecoder,
-                           const android::sp<videodecoder::IVideoDecoderControllerListener>& controllerListener = nullptr);
+                           const android::sp<videodecoder::IVideoDecoderControllerListener>& controllerListener = nullptr,
+                           bool secure = false);
     virtual ~VideoDecoderController();
+
+    void fireOnFrameOutputCallback(int64_t nsPresentationTime, int64_t outputBufferHandle,
+                                   bool sendFullMetadata, bool discontinuity);
+    void fireOnEndOfStreamCallback();
+    void ensureOutputPool();
+    // Synchronously destroys the output pool if valid. Called from close() so pool
+    // teardown doesn't depend on this object's destructor timing, which only runs when
+    // the client's remote binder reference is released - an async, non-deterministic
+    // event relative to close() returning. Idempotent; also called from the destructor
+    // as a fallback for sessions that never call close() explicitly.
+    void releaseOutputPool();
 
     android::binder::Status start() override;
     android::binder::Status stop() override;
@@ -146,6 +178,35 @@ private:
     bool mEosSignaled;
     std::mutex mEosMutex;
     int32_t mBuffersSubmitted;
+
+    /* Pending discontinuity flag, applied to the next output frame */
+    bool mDiscontinuityPending;
+    /* Forces a full (non-null) FrameMetadata on the next onFrameOutput() call */
+    bool mMetadataChanged;
+    bool mFirstFrameAfterStart;
+
+    /* Effective stream-config state: setStreamConfig() hints, overridable per-buffer via InputBufferMetadata */
+    std::optional<videodecoder::Resolution> mResolution;
+    std::optional<videodecoder::Fraction> mFrameRate;
+    videodecoder::Colorimetry mColorimetry;
+    std::optional<videodecoder::MasteringDisplayInfo> mMasteringDisplayInfo;
+    std::optional<videodecoder::ContentLightLevel> mContentLightLevel;
+    std::optional<videodecoder::DolbyVisionLayerFlags> mDolbyVisionLayerFlags;
+    std::optional<videodecoder::Fraction> mPixelAspectRatio;
+
+    /* Outstanding-frame count (atomic: decremented on a background thread) */
+    std::atomic<int32_t> mQueueCount;
+    static constexpr int32_t kQueueDepth = 4;
+
+    /* Deterministic decode-error simulation: every Kth accepted frame is treated as corrupt */
+    int32_t mFrameCounter;
+    static constexpr int32_t kErrorEveryNth = 4;
+
+    /* Connection to MockAVBufferService for allocating output frame buffers */
+    android::sp<::com::rdk::hal::avbuffer::IAVBuffer> mAVBuffer;
+    ::com::rdk::hal::avbuffer::Pool mOutputPool;
+    bool mOutputPoolValid;
+    android::sp<OutputPoolSpaceListener> mOutputPoolSpaceListener;
 };
 
 } // namespace videodecoder

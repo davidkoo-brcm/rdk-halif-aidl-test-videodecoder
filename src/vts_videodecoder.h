@@ -94,8 +94,10 @@
 #include <chrono>
 #include <condition_variable>
 #include <unistd.h>
+#include <cstdlib>
 #include <sys/syscall.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <memory> // For std::unique_ptr
 #include <inttypes.h>
 
@@ -155,7 +157,39 @@ extern std::vector<IVideoDecoder::Id>            decoderIds;
 extern std::vector<sp<IVideoDecoderController>>  controllers;
 
 
-#define VIDEO_DECODER_TEST_CONFIG_PATH "./videodecoder_test_configuration/vts_l3_VideoDecoder_test_config.yaml"
+// Detects MockVideoDecoderService the same way videodecoder/run.sh does (pgrep -f),
+// so the mock-only config path below is picked automatically regardless of which
+// run.sh actually launched this binary - the deployed top-level run.sh (build/bin/run.sh)
+// is a generic launcher shared by all HAL components and never sets
+// VIDEO_DECODER_L3_CONFIG_PATH, so relying on that env var alone silently fell back
+// to the real-HAL config path even when running against the mock.
+inline bool isMockVideoDecoderServiceRunning()
+{
+    int status = std::system("pgrep -f MockVideoDecoderService > /dev/null 2>&1");
+    return WIFEXITED(status) && WEXITSTATUS(status) == 0;
+}
+
+// VIDEO_DECODER_L3_CONFIG_PATH lets run.sh point L3 tests at a mock-only config
+// (with matching mock stream yamls) when running against MockVideoDecoderService,
+// without touching the default path used for real-HAL runs. Falls back to
+// pgrep-based auto-detection when the env var isn't set.
+inline const char* getVideoDecoderTestConfigPath()
+{
+    const char* envPath = getenv("VIDEO_DECODER_L3_CONFIG_PATH");
+    if (envPath != nullptr)
+    {
+        return envPath;
+    }
+    if (isMockVideoDecoderServiceRunning())
+    {
+        return "./videodecoder_test_configuration/vts_l3_VideoDecoder_test_config_mock.yaml";
+    }
+    return "./videodecoder_test_configuration/vts_l3_VideoDecoder_test_config.yaml";
+}
+// vts_kvp_create_instance() takes char* (not const char*); a raw string literal
+// gets an implicit (deprecated) conversion to char*, but a function-returned
+// const char* does not, so cast explicitly here instead of relaxing the callee.
+#define VIDEO_DECODER_TEST_CONFIG_PATH const_cast<char*>(getVideoDecoderTestConfigPath())
 #define VIDEO_DECODER_STREAM_CONFIG_PATH "./videodecoder_test_configuration/vts_stream_list.yaml"
 #define VIDEO_DECODER_STREAM_DOWNLOAD_PATH "videodecoder.stream_download_path"
 #define VIDEO_DECODER_STREAM_INPUT_PATH "videodecoder.input_streams_path"

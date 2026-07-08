@@ -1089,10 +1089,13 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, const char *m
         testDetails.codedHeight = ut_kvp_getUInt32Field(kvpTestInstance, codedHeight.c_str());
 
         // openWithResolution hint dimensions (optional, default -1 = use open())
+        // Uses the signed getter since -1 is a valid sentinel here: ut_kvp_getUInt32Field()
+        // parses "-1" via strtoul() and range-checks against UINT32_MAX, which clamps to 0
+        // on platforms where `unsigned long` is 64-bit (e.g. x86_64 dev hosts).
         testDetails.openWithResolutionWidth  = ut_kvp_fieldPresent(kvpTestInstance, openWithResolutionWidth.c_str())
-            ? static_cast<int32_t>(ut_kvp_getUInt32Field(kvpTestInstance, openWithResolutionWidth.c_str())) : -1;
+            ? ut_kvp_getInt32Field(kvpTestInstance, openWithResolutionWidth.c_str()) : -1;
         testDetails.openWithResolutionHeight = ut_kvp_fieldPresent(kvpTestInstance, openWithResolutionHeight.c_str())
-            ? static_cast<int32_t>(ut_kvp_getUInt32Field(kvpTestInstance, openWithResolutionHeight.c_str())) : -1;
+            ? ut_kvp_getInt32Field(kvpTestInstance, openWithResolutionHeight.c_str()) : -1;
 
         // Frame rate
         testDetails.frameRateNumerator = ut_kvp_getUInt32Field(kvpTestInstance, frameRateNumerator.c_str());

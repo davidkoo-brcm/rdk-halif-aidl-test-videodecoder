@@ -28,6 +28,7 @@
 #include <chrono>
 #include <thread>
 #include <android-base/logging.h>
+#include <binder/IServiceManager.h>
 
 namespace com {
 namespace rdk {
@@ -52,7 +53,7 @@ android::binder::Status VideoDecoderManager::getVideoDecoderIds(std::vector<IVid
 }
 
 android::binder::Status VideoDecoderManager::getSupportedOperationalModes(std::vector<OperationalMode>* _aidl_return) {
-// _aidl_return->push_back(OperationalMode::TUNNELLED);
+    _aidl_return->push_back(OperationalMode::TUNNELLED);
     _aidl_return->push_back(OperationalMode::NON_TUNNELLED);
 // _aidl_return->push_back(OperationalMode::GRAPHICS_TEXTURE);
     return android::binder::Status::ok();
@@ -78,9 +79,9 @@ VideoDecoder::VideoDecoder(IVideoDecoder::Id id) {
     this->mSha1Calc = 0;
     this->mOperationalMode = static_cast<int32_t>(OperationalMode::NON_TUNNELLED);
     this->mSupportsSecure = 1;
-    this->mMetricsFrameDecoded = -1;
-    this->mMetricsDecodeErrors = -1;
-    this->mMetricsFramesDropped = -1;
+    this->mMetricsFrameDecoded = 0;
+    this->mMetricsDecodeErrors = 0;
+    this->mMetricsFramesDropped = 0;
     this->mInputQueueDepth = 96000;
     this->mOutputFramePoolSize = 5;
     this->mSupportedCodecs = {
@@ -106,18 +107,20 @@ State VideoDecoder::getState() {
 
 android::binder::Status VideoDecoder::getCapabilities(videodecoder::Capabilities* _aidl_return) {
     Capabilities capabilities;
+    /* maxFrameHeight uses 1088, not 1080: coded height is padded up to the next
+     * 16-pixel macroblock boundary, and 1080p test streams declare codedHeight=1088. */
     CodecCapabilities mpeg;
     mpeg.codec = Codec::MPEG2_VIDEO;
     mpeg.maxFrameRate = 60;
     mpeg.maxFrameWidth = 1920;
-    mpeg.maxFrameHeight = 1080;
+    mpeg.maxFrameHeight = 1088;
     mpeg.supportedOutputPixelFormats = {PixelFormat::YCBCR420};
 
     CodecCapabilities h264;
     h264.codec = Codec::H264_AVC;
     h264.maxFrameRate = 60;
     h264.maxFrameWidth = 1920;
-    h264.maxFrameHeight = 1080;
+    h264.maxFrameHeight = 1088;
     h264.supportedOutputPixelFormats = {PixelFormat::YCBCR420};
 
     CodecCapabilities h265;
@@ -150,11 +153,11 @@ android::binder::Status VideoDecoder::getCapabilities(videodecoder::Capabilities
         };
     } else if (mId.value == 1){
         h265.maxFrameWidth = 1920;
-        h265.maxFrameHeight = 1080;
+        h265.maxFrameHeight = 1088;
         vp9.maxFrameWidth = 1920;
-        vp9.maxFrameHeight = 1080;
+        vp9.maxFrameHeight = 1088;
         av1.maxFrameWidth = 1920;
-        av1.maxFrameHeight = 1080;
+        av1.maxFrameHeight = 1088;
         capabilities.supportedDynamicRanges = {
             DynamicRange::SDR
         };
@@ -282,13 +285,14 @@ android::binder::Status VideoDecoder::getState(State* _aidl_return) {
 
 android::binder::Status VideoDecoder::open(videodecoder::Codec codec, bool secure, const android::sp<videodecoder::IVideoDecoderControllerListener>& videoDecoderControllerListener, android::sp<videodecoder::IVideoDecoderController>* _aidl_return) {
     if (std::find(mSupportedCodecs.begin(), mSupportedCodecs.end(), codec) == mSupportedCodecs.end()) {
+        /* Recognized-but-unsupported codec: gracefully decline per spec (null controller, EX_NONE), not EX_ILLEGAL_ARGUMENT */
         *_aidl_return = nullptr;
-        return android::binder::Status::fromExceptionCode(android::binder::Status::EX_ILLEGAL_ARGUMENT);
+        return android::binder::Status::ok();
     }
-    if (codec == Codec::MPEG2_VIDEO && !secure) { // Fail for MPEG with secure:false
-        LOG(ERROR) << "open: MPEG codec not supported with secure:false";
+    if (codec == Codec::MPEG2_VIDEO && !secure) { // MPEG2 with secure:false is an unsupported combination, not an invalid argument
+        LOG(DEBUG) << "open: MPEG codec + secure:false is an unsupported combination, declining gracefully";
         *_aidl_return = nullptr;
-        return android::binder::Status::fromExceptionCode(android::binder::Status::EX_ILLEGAL_ARGUMENT);
+        return android::binder::Status::ok();
     }
     if (videoDecoderControllerListener == nullptr) {
         *_aidl_return = nullptr;
@@ -308,7 +312,11 @@ android::binder::Status VideoDecoder::open(videodecoder::Codec codec, bool secur
         mVideoDecoderEventListener->onStateChanged(State::OPENING, State::READY);
     }
     setState(State::READY);
-    *_aidl_return = new VideoDecoderController(mId, this, videoDecoderControllerListener);
+    /* Metrics reset on open() per Property.aidl */
+    mMetricsFrameDecoded = 0;
+    mMetricsDecodeErrors = 0;
+    mMetricsFramesDropped = 0;
+    *_aidl_return = new VideoDecoderController(mId, this, videoDecoderControllerListener, secure);
     return android::binder::Status::ok();
 }
 
@@ -353,7 +361,11 @@ android::binder::Status VideoDecoder::openWithResolution(videodecoder::Codec cod
         mVideoDecoderEventListener->onStateChanged(State::OPENING, State::READY);
     }
     setState(State::READY);
-    *_aidl_return = new VideoDecoderController(mId, this, videoDecoderControllerListener);
+    /* Metrics reset on open() per Property.aidl */
+    mMetricsFrameDecoded = 0;
+    mMetricsDecodeErrors = 0;
+    mMetricsFramesDropped = 0;
+    *_aidl_return = new VideoDecoderController(mId, this, videoDecoderControllerListener, secure);
     return android::binder::Status::ok();
 }
 
@@ -367,6 +379,16 @@ android::binder::Status VideoDecoder::close(const android::sp<videodecoder::IVid
         mVideoDecoderEventListener->onStateChanged(getState(), State::CLOSING);
     }
     setState(State::CLOSING);
+    /* Destroy the output pool synchronously here rather than relying on
+     * ~VideoDecoderController() alone: that only runs when the client's remote binder
+     * reference is released, which is async and can race the client's own post-close()
+     * heap-metrics check. videoDecoderController is the same local object open() created
+     * (resolved back to the local strong ref when passed back to this process), so the
+     * downcast is safe. */
+    VideoDecoderController* controller = dynamic_cast<VideoDecoderController*>(videoDecoderController.get());
+    if (controller != nullptr) {
+        controller->releaseOutputPool();
+    }
     std::this_thread::sleep_for(std::chrono::milliseconds(250));
     if (mEventListener) {
         mVideoDecoderEventListener->onStateChanged(State::CLOSING, State::CLOSED);
@@ -377,6 +399,10 @@ android::binder::Status VideoDecoder::close(const android::sp<videodecoder::IVid
 }
 
 android::binder::Status VideoDecoder::registerEventListener(const android::sp<videodecoder::IVideoDecoderEventListener>& videoDecoderEventListener, bool* _aidl_return) {
+    if (videoDecoderEventListener == nullptr) {
+        *_aidl_return = false;
+        return android::binder::Status::fromExceptionCode(android::binder::Status::EX_NULL_POINTER);
+    }
     if (mEventListener) {
         *_aidl_return = false;
         return android::binder::Status::ok();
@@ -388,6 +414,10 @@ android::binder::Status VideoDecoder::registerEventListener(const android::sp<vi
 }
 
 android::binder::Status VideoDecoder::unregisterEventListener(const android::sp<videodecoder::IVideoDecoderEventListener>& videoDecoderEventListener, bool* _aidl_return) {
+    if (videoDecoderEventListener == nullptr) {
+        *_aidl_return = false;
+        return android::binder::Status::fromExceptionCode(android::binder::Status::EX_NULL_POINTER);
+    }
     if (!mEventListener) {
         *_aidl_return = false;
         return android::binder::Status::ok();
@@ -399,14 +429,49 @@ android::binder::Status VideoDecoder::unregisterEventListener(const android::sp<
 }
 
 VideoDecoderController::VideoDecoderController(IVideoDecoder::Id id, VideoDecoder* parentDecoder,
-                                               const android::sp<videodecoder::IVideoDecoderControllerListener>& controllerListener)
-    : mId(id), mParentDecoder(parentDecoder), mControllerListener(controllerListener),
-      mEosSignaled(false), mBuffersSubmitted(0) {
+                                               const android::sp<videodecoder::IVideoDecoderControllerListener>& controllerListener,
+                                               bool secure)
+    : mId(id), mParentDecoder(parentDecoder), mControllerListener(controllerListener), mSecure(secure),
+      mEosSignaled(false), mBuffersSubmitted(0),
+      mDiscontinuityPending(false), mMetadataChanged(false), mFirstFrameAfterStart(false),
+      mColorimetry(videodecoder::Colorimetry{}),
+      mQueueCount(0), mFrameCounter(0), mOutputPoolValid(false) {
+    mOutputPoolSpaceListener = new OutputPoolSpaceListener();
+    android::sp<android::IBinder> binder = android::defaultServiceManager()->getService(
+        android::String16(::com::rdk::hal::avbuffer::IAVBuffer::serviceName().c_str()));
+    mAVBuffer = android::interface_cast<::com::rdk::hal::avbuffer::IAVBuffer>(binder);
     printf("VideoDecoderController service initialized for ID: %d\n", id.value);
 }
 
 VideoDecoderController::~VideoDecoderController() {
+    releaseOutputPool();
     printf("VideoDecoderController service destroyed for ID: %d\n", mId.value);
+}
+
+void VideoDecoderController::releaseOutputPool() {
+    if (mAVBuffer != nullptr && mOutputPoolValid) {
+        bool destroyResult = false;
+        android::binder::Status destroyStatus = mAVBuffer->destroyPool(mOutputPool, &destroyResult);
+        if (!destroyStatus.isOk() || !destroyResult) {
+            LOG(ERROR) << "destroyPool for internal output pool failed at session end: "
+                       << "exceptionCode=" << destroyStatus.exceptionCode()
+                       << " destroyResult=" << destroyResult;
+        }
+        mOutputPoolValid = false;
+    }
+}
+
+void VideoDecoderController::ensureOutputPool() {
+    if (mAVBuffer != nullptr && !mOutputPoolValid) {
+        ::com::rdk::hal::avbuffer::Pool pool;
+        android::binder::Status poolStatus = mAVBuffer->createVideoPool(mSecure, mId, mOutputPoolSpaceListener, &pool);
+        if (poolStatus.isOk()) {
+            mOutputPool = pool;
+            mOutputPoolValid = true;
+        } else {
+            LOG(ERROR) << "createVideoPool for internal output pool failed: exceptionCode=" << poolStatus.exceptionCode();
+        }
+    }
 }
 
 android::binder::Status VideoDecoderController::start() {
@@ -423,6 +488,12 @@ android::binder::Status VideoDecoderController::start() {
         mParentDecoder->mVideoDecoderEventListener->onStateChanged(State::STARTING, State::STARTED);
     }
     mParentDecoder->setState(State::STARTED);
+
+    mFirstFrameAfterStart = true;
+    mMetadataChanged = true;
+    mQueueCount = 0;
+
+    ensureOutputPool();
     return android::binder::Status::ok();
 }
 
@@ -445,6 +516,16 @@ android::binder::Status VideoDecoderController::stop() {
         mEosSignaled = false;
         mBuffersSubmitted = 0;
     }
+    mQueueCount = 0;
+    /* Metrics reset on stop() per Property.aidl. mFrameCounter deliberately NOT
+     * reset here: it drives the deterministic error-injection pattern, which is
+     * a mock-internal detail independent of the spec's metrics-reset lifecycle -
+     * keeping it monotonic for the controller's lifetime makes the error pattern
+     * (and therefore expected decodeErrors counts in test data) independent of
+     * how many times start()/stop()/flush() are called during a test. */
+    mParentDecoder->mMetricsFrameDecoded = 0;
+    mParentDecoder->mMetricsDecodeErrors = 0;
+    mParentDecoder->mMetricsFramesDropped = 0;
     return android::binder::Status::ok();
 }
 
@@ -453,12 +534,12 @@ android::binder::Status VideoDecoderController::decodeBufferWithMetadata(int64_t
         *_aidl_return = false;
         return android::binder::Status::fromExceptionCode(android::binder::Status::EX_ILLEGAL_STATE);
     }
-    /* After signalEndOfStream() any decode attempt is gracefully declined (returns false, no exception) */
+    /* Per spec, decodeBufferWithMetadata() throws EX_ILLEGAL_STATE if called after signalEndOfStream() */
     {
         std::lock_guard<std::mutex> lock(mEosMutex);
         if (mEosSignaled) {
             *_aidl_return = false;
-            return android::binder::Status::ok();
+            return android::binder::Status::fromExceptionCode(android::binder::Status::EX_ILLEGAL_STATE);
         }
     }
     if (bufferHandle < 0) {
@@ -474,22 +555,177 @@ android::binder::Status VideoDecoderController::decodeBufferWithMetadata(int64_t
         *_aidl_return = false;
         return android::binder::Status::fromExceptionCode(android::binder::Status::EX_ILLEGAL_ARGUMENT);
     }
-    /* Buffer accepted: count it and fire onFrameOutput asynchronously, echoing the same handle back */
+
+    /* Backpressure: bounded input queue, matching the audio mock's pattern */
+    if (mQueueCount >= kQueueDepth) {
+        *_aidl_return = false;
+        android::sp<videodecoder::IVideoDecoderControllerListener> listener = mControllerListener;
+        std::thread([listener]() {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            if (listener) {
+                listener->onDecodeBufferAvailable();
+            }
+        }).detach();
+        return android::binder::Status::ok();
+    }
+
+    /* Buffer accepted - reserve a queue slot */
+    mQueueCount++;
     {
         std::lock_guard<std::mutex> lock(mEosMutex);
         mBuffersSubmitted++;
     }
-    android::sp<videodecoder::IVideoDecoderControllerListener> listener = mControllerListener;
+    *_aidl_return = true;
+
+    /* Apply per-buffer metadata overrides; each persists from this buffer onward */
+    if (metadata.colorimetry.has_value()) {
+        mColorimetry = metadata.colorimetry.value();
+        mMetadataChanged = true;
+    }
+    if (metadata.masteringDisplayInfo.has_value()) {
+        mMasteringDisplayInfo = metadata.masteringDisplayInfo;
+        mMetadataChanged = true;
+    }
+    if (metadata.contentLightLevel.has_value()) {
+        mContentLightLevel = metadata.contentLightLevel;
+        mMetadataChanged = true;
+    }
+    if (metadata.dolbyVisionLayerFlags.has_value()) {
+        mDolbyVisionLayerFlags = metadata.dolbyVisionLayerFlags;
+        mMetadataChanged = true;
+    }
+    if (metadata.pixelAspectRatio.has_value()) {
+        mPixelAspectRatio = metadata.pixelAspectRatio;
+        mMetadataChanged = true;
+    }
+
+    /* Input buffer ownership transfers to the decoder; free it here */
+    if (mAVBuffer != nullptr) {
+        bool freeResult = false;
+        mAVBuffer->free(bufferHandle, &freeResult);
+    }
+
+    /* Deterministic decode-error simulation: every Kth accepted frame this session is corrupt.
+     * No bitstream parsing - content-based detection can't reliably tell genuinely truncated
+     * frames apart from legitimately tiny NALs (see plan doc for rationale). */
+    mFrameCounter++;
+    bool isErrorFrame = (mFrameCounter % kErrorEveryNth == 0);
+
     int64_t pts = metadata.nsPresentationTime;
-    int64_t handle = bufferHandle;
-    std::thread([listener, pts, handle]() {
+
+    if (isErrorFrame) {
+        mParentDecoder->mMetricsDecodeErrors++;
+        android::sp<videodecoder::IVideoDecoderEventListener> eventListener = mParentDecoder->mVideoDecoderEventListener;
+        bool hasEventListener = mParentDecoder->mEventListener;
+        std::thread([eventListener, hasEventListener]() {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            if (hasEventListener && eventListener) {
+                eventListener->onDecodeError(ErrorCode::xxxx, 0);
+            }
+        }).detach();
+
+        if (mParentDecoder->mDecodeErrorPolicy == 1) {
+            /* Conceal corrupt frames: no output for this frame, release its queue slot.
+             * Deliberately don't consume mDiscontinuityPending here - a concealed frame
+             * never reaches fireOnFrameOutputCallback, so consuming it here would drop
+             * the signal on the floor. Leaving it pending carries it forward to the next
+             * frame that actually gets emitted. */
+            mQueueCount--;
+            return android::binder::Status::ok();
+        }
+        /* Default policy (0): fall through and output the corrupt frame anyway */
+    }
+
+    /* Consume the pending discontinuity flag - only once we know this frame will actually
+     * be emitted (concealed frames above return early without reaching here). */
+    bool isDiscontinuous = mDiscontinuityPending;
+    if (isDiscontinuous) {
+        mDiscontinuityPending = false;
+        mMetadataChanged = true;
+    }
+
+    mParentDecoder->mMetricsFrameDecoded++;
+
+    /* Allocate a real output buffer; tunnelled mode always reports -1 per spec */
+    bool tunnelled = (mParentDecoder->mOperationalMode == static_cast<int32_t>(OperationalMode::TUNNELLED));
+    int64_t outputBufferHandle = -1;
+    if (!tunnelled) {
+        ensureOutputPool();
+        if (mOutputPoolValid) {
+            int32_t width = (mResolution.has_value() && mResolution->width > 0) ? mResolution->width : 1920;
+            int32_t height = (mResolution.has_value() && mResolution->height > 0) ? mResolution->height : 1080;
+            int32_t bytes = width * height * 3 / 2; /* approx YUV 4:2:0 */
+            int64_t handle = -1;
+            android::binder::Status allocStatus = mAVBuffer->alloc(mOutputPool, bytes, &handle);
+            if (allocStatus.isOk() && handle >= 0) {
+                outputBufferHandle = handle;
+            }
+        }
+    }
+
+    bool sendFullMetadata = mMetadataChanged || mFirstFrameAfterStart;
+    fireOnFrameOutputCallback(pts, outputBufferHandle, sendFullMetadata, isDiscontinuous);
+    mFirstFrameAfterStart = false;
+    mMetadataChanged = false;
+
+    return android::binder::Status::ok();
+}
+
+void VideoDecoderController::fireOnFrameOutputCallback(int64_t nsPresentationTime, int64_t outputBufferHandle,
+                                                       bool sendFullMetadata, bool discontinuity) {
+    android::sp<videodecoder::IVideoDecoderControllerListener> listener = mControllerListener;
+
+    std::optional<FrameMetadata> metadataOpt;
+    if (sendFullMetadata) {
+        FrameMetadata fm;
+        fm.codedWidth = mResolution.has_value() ? mResolution->width : 0;
+        fm.codedHeight = mResolution.has_value() ? mResolution->height : 0;
+        fm.activeWidth = fm.codedWidth;
+        fm.activeHeight = fm.codedHeight;
+        /* colorDepth/dynamicRange have no dedicated client-settable AIDL field, but the
+         * colorimetry.transfer hint (set via setStreamConfig()/InputBufferMetadata) is the
+         * documented signal that distinguishes HDR from SDR (see TransferCharacteristics.aidl),
+         * so derive them from it instead of hardcoding SDR for every stream. */
+        switch (mColorimetry.transfer) {
+            case TransferCharacteristics::SMPTE2084_PQ:
+                fm.dynamicRange = DynamicRange::HDR10;
+                fm.colorDepth = 10;
+                break;
+            case TransferCharacteristics::ARIB_STD_B67_HLG:
+                fm.dynamicRange = DynamicRange::HLG;
+                fm.colorDepth = 10;
+                break;
+            default:
+                fm.dynamicRange = DynamicRange::SDR;
+                fm.colorDepth = 8;
+                break;
+        }
+        fm.pixelFormat = PixelFormat::YCBCR420;
+        fm.scanType = ScanType::PROGRESSIVE_FRAME;
+        fm.frameRateNumerator = mFrameRate.has_value() ? mFrameRate->numerator : 0;
+        fm.frameRateDenominator = mFrameRate.has_value() ? mFrameRate->denominator : 0;
+        fm.bitstreamEOS = false;
+        fm.discontinuity = discontinuity;
+        fm.lowLatency = (mParentDecoder->mLowLatency == 1);
+        fm.colorimetry = mColorimetry;
+        fm.masteringDisplayInfo = mMasteringDisplayInfo;
+        fm.contentLightLevel = mContentLightLevel;
+        fm.source = mParentDecoder->mAVSource;
+        if (mPixelAspectRatio.has_value()) {
+            fm.parX = mPixelAspectRatio->numerator;
+            fm.parY = mPixelAspectRatio->denominator;
+        }
+        metadataOpt.emplace(std::move(fm));
+    }
+
+    std::thread([this, listener, nsPresentationTime, outputBufferHandle, metadataOpt]() {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        /* Frame processing complete - release its queue slot */
+        mQueueCount--;
         if (listener) {
-            listener->onFrameOutput(pts, handle, std::nullopt);
+            listener->onFrameOutput(nsPresentationTime, outputBufferHandle, metadataOpt);
         }
     }).detach();
-    *_aidl_return = true;
-    return android::binder::Status::ok();
 }
 
 android::binder::Status VideoDecoderController::flush(bool reset) {
@@ -516,6 +752,20 @@ android::binder::Status VideoDecoderController::flush(bool reset) {
         mEosSignaled = false;
         mBuffersSubmitted = 0;
     }
+    mQueueCount = 0;
+    /* Metrics reset on flush() per Property.aidl, regardless of the reset flag.
+     * mFrameCounter deliberately NOT reset here - see stop() for rationale. */
+    mParentDecoder->mMetricsFrameDecoded = 0;
+    mParentDecoder->mMetricsDecodeErrors = 0;
+    mParentDecoder->mMetricsFramesDropped = 0;
+    if (!reset) {
+        /* Still STARTED: per spec, metadata must be non-null again on the first frame after flush() */
+        mFirstFrameAfterStart = true;
+        mMetadataChanged = true;
+    }
+    /* Note: colorimetry/masteringDisplayInfo/contentLightLevel/dolbyVisionLayerFlags/pixelAspectRatio
+     * hints deliberately persist across flush() per VideoDecoderStreamConfig's documented semantics -
+     * cleared only on close() (i.e. when a fresh VideoDecoderController is constructed on next open()). */
     return android::binder::Status::ok();
 }
 
@@ -549,6 +799,7 @@ android::binder::Status VideoDecoderController::signalDiscontinuity() {
     if (mParentDecoder->getState() != State::STARTED) {
         return android::binder::Status::fromExceptionCode(android::binder::Status::EX_ILLEGAL_STATE);
     }
+    mDiscontinuityPending = true;
     return android::binder::Status::ok();
 }
 
@@ -659,6 +910,8 @@ android::binder::Status VideoDecoderController::setStreamConfig(const videodecod
             LOG(ERROR) << "setStreamConfig: invalid resolution " << config.resolution->width << "x" << config.resolution->height;
             return android::binder::Status::fromExceptionCode(android::binder::Status::EX_ILLEGAL_ARGUMENT);
         }
+        mResolution = config.resolution;
+        mMetadataChanged = true;
     }
     if (config.frameRate.has_value()) {
         /* denominator must be > 0 unless numerator is also 0 (encodes unknown) */
@@ -666,14 +919,42 @@ android::binder::Status VideoDecoderController::setStreamConfig(const videodecod
             LOG(ERROR) << "setStreamConfig: invalid frameRate " << config.frameRate->numerator << "/" << config.frameRate->denominator;
             return android::binder::Status::fromExceptionCode(android::binder::Status::EX_ILLEGAL_ARGUMENT);
         }
+        mFrameRate = config.frameRate;
+        mMetadataChanged = true;
     }
     if (config.pixelAspectRatio.has_value()) {
-        if (config.pixelAspectRatio->numerator < 0 || config.pixelAspectRatio->denominator < 0) {
-            LOG(ERROR) << "setStreamConfig: invalid pixelAspectRatio " << config.pixelAspectRatio->numerator << "/" << config.pixelAspectRatio->denominator;
+        const int32_t parNum = config.pixelAspectRatio->numerator;
+        const int32_t parDen = config.pixelAspectRatio->denominator;
+        if (parNum < 0 || parDen < 0) {
+            LOG(ERROR) << "setStreamConfig: invalid pixelAspectRatio " << parNum << "/" << parDen;
             return android::binder::Status::fromExceptionCode(android::binder::Status::EX_ILLEGAL_ARGUMENT);
         }
+        /* The only valid "unknown" encoding is 0/0; exactly one field being 0 is invalid */
+        if ((parNum == 0) != (parDen == 0)) {
+            LOG(ERROR) << "setStreamConfig: pixelAspectRatio " << parNum << "/" << parDen
+                       << " has exactly one zero field; only 0/0 (unknown) is valid";
+            return android::binder::Status::fromExceptionCode(android::binder::Status::EX_ILLEGAL_ARGUMENT);
+        }
+        mPixelAspectRatio = config.pixelAspectRatio;
+        mMetadataChanged = true;
     }
-    LOG(DEBUG) << "setStreamConfig: accepted stream configuration hints";
+    if (config.colorimetry.has_value()) {
+        mColorimetry = config.colorimetry.value();
+        mMetadataChanged = true;
+    }
+    if (config.masteringDisplayInfo.has_value()) {
+        mMasteringDisplayInfo = config.masteringDisplayInfo;
+        mMetadataChanged = true;
+    }
+    if (config.contentLightLevel.has_value()) {
+        mContentLightLevel = config.contentLightLevel;
+        mMetadataChanged = true;
+    }
+    if (config.dolbyVisionLayerFlags.has_value()) {
+        mDolbyVisionLayerFlags = config.dolbyVisionLayerFlags;
+        mMetadataChanged = true;
+    }
+    LOG(DEBUG) << "setStreamConfig: accepted and stored stream configuration hints";
     return android::binder::Status::ok();
 }
 

@@ -1,0 +1,778 @@
+#** *****************************************************************************
+# *
+# * If not stated otherwise in this file or this component's LICENSE file the
+# * following copyright and licenses apply:
+# *
+# * Copyright 2025 RDK Management
+# *
+# * Licensed under the Apache License, Version 2.0 (the "License");
+# * you may not use this file except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *
+# * http://www.apache.org/licenses/LICENSE-2.0
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *
+#** ******************************************************************************
+
+VideoStreams:
+  VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734:
+    input: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
+    #reference: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.yuv #reference decoder output
+    codec: VP9  #Video codec information, Refer `Codec` enum
+    codedWidth: 1920
+    codedHeight: 1088
+    colorDepth: 8
+    pixelFormat: YCBCR420
+    dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
+    scanType: PROGRESSIVE_FRAME
+    frameRateNumerator: 30 #Frame Rate
+    frameRateDenominator: 1
+    endOfStream: 0
+    stop_start_pts: -1 #`pts` value in nano seconds at which the decoder should be stopped and restarted during the test. -1 indicates that decoder should not be restarted
+    signal_discontinuity_pts: -1 #`pts` value in nano seconds at which the test should signal discontinuity to the decoder. -1 indicates that no discontinuity signal should be sent
+    flush_pts: -1 #`pts` value in nano seconds that determine when the test should flush the decoder. -1 indicates that test should not flush
+    flush_reset_pts: -1 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
+    eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
+    discontinuity: 0
+    lowLatency: 0
+    bit_rate: 801
+    no_of_frames: 12
+    decodeErrors: 3
+    framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
+    frame_size:
+      - 79916
+      - 125
+      - 191
+      - 410
+      - 1213
+      - 1296
+      - 1358
+      - 1576
+      - 1035
+      - 2145
+      - 17142
+      - 463
+    PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
+      - 00000000
+      - 33333000
+      - 66667000
+      - 100000000
+      - 133333000
+      - 166667000
+      - 200000000
+      - 233333000
+      - 266667000
+      - 300000000
+      - 400000000
+      - 466667000
+  VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_ERROR:
+    input: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
+    #reference: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.yuv #reference decoder output
+    codec: VP9  #Video codec information, Refer `Codec` enum
+    codedWidth: 1920
+    codedHeight: 1088
+    colorDepth: 8
+    pixelFormat: YCBCR420
+    dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
+    scanType: PROGRESSIVE_FRAME
+    frameRateNumerator: 30 #Frame Rate
+    frameRateDenominator: 1
+    endOfStream: 0
+    stop_start_pts: -1 #`pts` value in nano seconds at which the decoder should be stopped and restarted during the test. -1 indicates that decoder should not be restarted
+    signal_discontinuity_pts: -1 #`pts` value in nano seconds at which the test should signal discontinuity to the decoder. -1 indicates that no discontinuity signal should be sent
+    flush_pts: -1 #`pts` value in nano seconds that determine when the test should flush the decoder. -1 indicates that test should not flush
+    flush_reset_pts: -1 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
+    eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
+    discontinuity: 0
+    lowLatency: 0
+    bit_rate: 801
+    no_of_frames: 12
+    decodeErrors: 3
+    framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
+    frame_size:
+      - 79916
+      - 125
+      - 191
+      - 410
+      - 1213
+      - 1296
+      - 1358
+      - 1576
+      - 105
+      - 215
+      - 17142
+      - 463
+    PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
+      - 00000000
+      - 33333000
+      - 66667000
+      - 100000000
+      - 133333000
+      - 166667000
+      - 200000000
+      - 233333000
+      - 266667000
+      - 300000000
+      - 400000000
+      - 466667000
+  VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_DISCONTINUITY:
+    input: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
+    #reference: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.yuv #reference decoder output
+    codec: VP9  #Video codec information, Refer `Codec` enum
+    codedWidth: 1920
+    codedHeight: 1088
+    colorDepth: 8
+    pixelFormat: YCBCR420
+    dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
+    scanType: PROGRESSIVE_FRAME
+    frameRateNumerator: 30 #Frame Rate
+    frameRateDenominator: 1
+    endOfStream: 0
+    stop_start_pts: -1 #`pts` value in nano seconds at which the decoder should be stopped and restarted during the test. -1 indicates that decoder should not be restarted
+    signal_discontinuity_pts: 166667000 #`pts` value in nano seconds at which the test should signal discontinuity to the decoder. -1 indicates that no discontinuity signal should be sent
+    flush_pts: -1 #`pts` value in nano seconds that determine when the test should flush the decoder. -1 indicates that test should not flush
+    flush_reset_pts: -1 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
+    eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
+    discontinuity: 1
+    lowLatency: 0
+    bit_rate: 801
+    no_of_frames: 12
+    decodeErrors: 3
+    framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
+    frame_size:
+      - 79916
+      - 125
+      - 191
+      - 410
+      - 1213
+      - 1296
+      - 1358
+      - 1576
+      - 1035
+      - 2145
+      - 17142
+      - 463
+    PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
+      - 00000000
+      - 33333000
+      - 66667000
+      - 100000000
+      - 133333000
+      - 166667000
+      - 200000000
+      - 233333000
+      - 266667000
+      - 300000000
+      - 400000000
+      - 466667000
+  VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_EOS:
+    input: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
+    #reference: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.yuv #reference decoder output
+    codec: VP9  #Video codec information, Refer `Codec` enum
+    codedWidth: 1920
+    codedHeight: 1088
+    colorDepth: 8
+    pixelFormat: YCBCR420
+    dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
+    scanType: PROGRESSIVE_FRAME
+    frameRateNumerator: 30 #Frame Rate
+    frameRateDenominator: 1
+    endOfStream: 1
+    stop_start_pts: -1 #`pts` value in nano seconds at which the decoder should be stopped and restarted during the test. -1 indicates that decoder should not be restarted
+    signal_discontinuity_pts: -1 #`pts` value in nano seconds at which the test should signal discontinuity to the decoder. -1 indicates that no discontinuity signal should be sent
+    flush_pts: -1 #`pts` value in nano seconds that determine when the test should flush the decoder. -1 indicates that test should not flush
+    flush_reset_pts: -1 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
+    eos_pts: 300000000 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
+    discontinuity: 0
+    lowLatency: 0
+    bit_rate: 801
+    no_of_frames: 12
+    decodeErrors: 3
+    framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
+    frame_size:
+      - 79916
+      - 125
+      - 191
+      - 410
+      - 1213
+      - 1296
+      - 1358
+      - 1576
+      - 1035
+      - 2145
+      - 17142
+      - 463
+    PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
+      - 00000000
+      - 33333000
+      - 66667000
+      - 100000000
+      - 133333000
+      - 166667000
+      - 200000000
+      - 233333000
+      - 266667000
+      - 300000000
+      - 400000000
+      - 466667000
+  VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_FLUSH:
+    input: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
+    #reference: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.yuv #reference decoder output
+    codec: VP9  #Video codec information, Refer `Codec` enum
+    codedWidth: 1920
+    codedHeight: 1088
+    colorDepth: 8
+    pixelFormat: YCBCR420
+    dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
+    scanType: PROGRESSIVE_FRAME
+    frameRateNumerator: 30 #Frame Rate
+    frameRateDenominator: 1
+    endOfStream: 0
+    stop_start_pts: -1 #`pts` value in nano seconds at which the decoder should be stopped and restarted during the test. -1 indicates that decoder should not be restarted
+    signal_discontinuity_pts: -1 #`pts` value in nano seconds at which the test should signal discontinuity to the decoder. -1 indicates that no discontinuity signal should be sent
+    flush_pts: 133333000 #`pts` value in nano seconds that determine when the test should flush the decoder. -1 indicates that test should not flush
+    flush_reset_pts: -1 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
+    eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
+    discontinuity: 0
+    lowLatency: 0
+    bit_rate: 801
+    no_of_frames: 12
+    decodeErrors: 3
+    framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
+    frame_size:
+      - 79916
+      - 125
+      - 191
+      - 410
+      - 1213
+      - 1296
+      - 1358
+      - 1576
+      - 1035
+      - 2145
+      - 17142
+      - 463
+    PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
+      - 00000000
+      - 33333000
+      - 66667000
+      - 100000000
+      - 133333000
+      - 166667000
+      - 200000000
+      - 233333000
+      - 266667000
+      - 300000000
+      - 400000000
+      - 466667000
+  VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_FLUSH_RESET:
+    input: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
+    #reference: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.yuv #reference decoder output
+    codec: VP9  #Video codec information, Refer `Codec` enum
+    codedWidth: 1920
+    codedHeight: 1088
+    colorDepth: 8
+    pixelFormat: YCBCR420
+    dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
+    scanType: PROGRESSIVE_FRAME
+    frameRateNumerator: 30 #Frame Rate
+    frameRateDenominator: 1
+    endOfStream: 0
+    stop_start_pts: -1 #`pts` value in nano seconds at which the decoder should be stopped and restarted during the test. -1 indicates that decoder should not be restarted
+    signal_discontinuity_pts: -1 #`pts` value in nano seconds at which the test should signal discontinuity to the decoder. -1 indicates that no discontinuity signal should be sent
+    flush_pts: -1 #`pts` value in nano seconds that determine when the test should flush the decoder. -1 indicates that test should not flush
+    flush_reset_pts: 266667000 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
+    eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
+    discontinuity: 0
+    lowLatency: 0
+    bit_rate: 801
+    no_of_frames: 12
+    decodeErrors: 3
+    framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
+    frame_size:
+      - 79916
+      - 125
+      - 191
+      - 410
+      - 1213
+      - 1296
+      - 1358
+      - 1576
+      - 1035
+      - 2145
+      - 17142
+      - 463
+    PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
+      - 00000000
+      - 33333000
+      - 66667000
+      - 100000000
+      - 133333000
+      - 166667000
+      - 200000000
+      - 233333000
+      - 266667000
+      - 300000000
+      - 400000000
+      - 466667000
+  VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_ERROR_DISCONTINUITY:
+    input: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
+    #reference: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.yuv #reference decoder output
+    codec: VP9  #Video codec information, Refer `Codec` enum
+    codedWidth: 1920
+    codedHeight: 1088
+    colorDepth: 8
+    pixelFormat: YCBCR420
+    dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
+    scanType: PROGRESSIVE_FRAME
+    frameRateNumerator: 30 #Frame Rate
+    frameRateDenominator: 1
+    endOfStream: 0
+    stop_start_pts: -1 #`pts` value in nano seconds at which the decoder should be stopped and restarted during the test. -1 indicates that decoder should not be restarted
+    signal_discontinuity_pts: 300000000 #`pts` value in nano seconds at which the test should signal discontinuity to the decoder. -1 indicates that no discontinuity signal should be sent
+    flush_pts: -1 #`pts` value in nano seconds that determine when the test should flush the decoder. -1 indicates that test should not flush
+    flush_reset_pts: -1 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
+    eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
+    discontinuity: 1
+    lowLatency: 0
+    bit_rate: 801
+    no_of_frames: 12
+    decodeErrors: 3
+    framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
+    frame_size:
+      - 79916
+      - 125
+      - 191
+      - 410
+      - 1213
+      - 1296
+      - 1358
+      - 1576
+      - 105
+      - 215
+      - 17142
+      - 463
+    PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
+      - 00000000
+      - 33333000
+      - 66667000
+      - 100000000
+      - 133333000
+      - 166667000
+      - 200000000
+      - 233333000
+      - 266667000
+      - 300000000
+      - 400000000
+      - 466667000
+  VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_ERROR_EOS:
+    input: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
+    #reference: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.yuv #reference decoder output
+    codec: VP9  #Video codec information, Refer `Codec` enum
+    codedWidth: 1920
+    codedHeight: 1088
+    colorDepth: 8
+    pixelFormat: YCBCR420
+    dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
+    scanType: PROGRESSIVE_FRAME
+    frameRateNumerator: 30 #Frame Rate
+    frameRateDenominator: 1
+    endOfStream: 1
+    stop_start_pts: -1 #`pts` value in nano seconds at which the decoder should be stopped and restarted during the test. -1 indicates that decoder should not be restarted
+    signal_discontinuity_pts: -1 #`pts` value in nano seconds at which the test should signal discontinuity to the decoder. -1 indicates that no discontinuity signal should be sent
+    flush_pts: -1 #`pts` value in nano seconds that determine when the test should flush the decoder. -1 indicates that test should not flush
+    flush_reset_pts: -1 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
+    eos_pts: 300000000 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
+    discontinuity: 0
+    lowLatency: 0
+    bit_rate: 801
+    no_of_frames: 12
+    decodeErrors: 3
+    framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
+    frame_size:
+      - 79916
+      - 125
+      - 191
+      - 410
+      - 1213
+      - 1296
+      - 1358
+      - 1576
+      - 105
+      - 215
+      - 17142
+      - 463
+    PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
+      - 00000000
+      - 33333000
+      - 66667000
+      - 100000000
+      - 133333000
+      - 166667000
+      - 200000000
+      - 233333000
+      - 266667000
+      - 300000000
+      - 400000000
+      - 466667000
+  VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_DISCONTINUITY_EOS:
+    input: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
+    #reference: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.yuv #reference decoder output
+    codec: VP9  #Video codec information, Refer `Codec` enum
+    codedWidth: 1920
+    codedHeight: 1088
+    colorDepth: 8
+    pixelFormat: YCBCR420
+    dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
+    scanType: PROGRESSIVE_FRAME
+    frameRateNumerator: 30 #Frame Rate
+    frameRateDenominator: 1
+    endOfStream: 1
+    stop_start_pts: -1 #`pts` value in nano seconds at which the decoder should be stopped and restarted during the test. -1 indicates that decoder should not be restarted
+    signal_discontinuity_pts: 166667000 #`pts` value in nano seconds at which the test should signal discontinuity to the decoder. -1 indicates that no discontinuity signal should be sent
+    flush_pts: -1 #`pts` value in nano seconds that determine when the test should flush the decoder. -1 indicates that test should not flush
+    flush_reset_pts: -1 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
+    eos_pts: 300000000 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
+    discontinuity: 1
+    lowLatency: 0
+    bit_rate: 801
+    no_of_frames: 12
+    decodeErrors: 3
+    framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
+    frame_size:
+      - 79916
+      - 125
+      - 191
+      - 410
+      - 1213
+      - 1296
+      - 1358
+      - 1576
+      - 1035
+      - 2145
+      - 17142
+      - 463
+    PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
+      - 00000000
+      - 33333000
+      - 66667000
+      - 100000000
+      - 133333000
+      - 166667000
+      - 200000000
+      - 233333000
+      - 266667000
+      - 300000000
+      - 400000000
+      - 466667000
+  VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_FLUSH_ERROR:
+    input: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
+    #reference: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.yuv #reference decoder output
+    codec: VP9  #Video codec information, Refer `Codec` enum
+    codedWidth: 1920
+    codedHeight: 1088
+    colorDepth: 8
+    pixelFormat: YCBCR420
+    dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
+    scanType: PROGRESSIVE_FRAME
+    frameRateNumerator: 30 #Frame Rate
+    frameRateDenominator: 1
+    endOfStream: 0
+    stop_start_pts: -1 #`pts` value in nano seconds at which the decoder should be stopped and restarted during the test. -1 indicates that decoder should not be restarted
+    signal_discontinuity_pts: -1 #`pts` value in nano seconds at which the test should signal discontinuity to the decoder. -1 indicates that no discontinuity signal should be sent
+    flush_pts: 133333000 #`pts` value in nano seconds that determine when the test should flush the decoder. -1 indicates that test should not flush
+    flush_reset_pts: -1 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
+    eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
+    discontinuity: 0
+    lowLatency: 0
+    bit_rate: 801
+    no_of_frames: 12
+    decodeErrors: 3
+    framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
+    frame_size:
+      - 79916
+      - 125
+      - 191
+      - 410
+      - 1213
+      - 1296
+      - 1358
+      - 15
+      - 10
+      - 2145
+      - 17142
+      - 463
+    PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
+      - 00000000
+      - 33333000
+      - 66667000
+      - 100000000
+      - 133333000
+      - 166667000
+      - 200000000
+      - 233333000
+      - 266667000
+      - 300000000
+      - 400000000
+      - 466667000
+  VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_FLUSH_RESET_ERROR:
+    input: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
+    #reference: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.yuv #reference decoder output
+    codec: VP9  #Video codec information, Refer `Codec` enum
+    codedWidth: 1920
+    codedHeight: 1088
+    colorDepth: 8
+    pixelFormat: YCBCR420
+    dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
+    scanType: PROGRESSIVE_FRAME
+    frameRateNumerator: 30 #Frame Rate
+    frameRateDenominator: 1
+    endOfStream: 0
+    stop_start_pts: -1 #`pts` value in nano seconds at which the decoder should be stopped and restarted during the test. -1 indicates that decoder should not be restarted
+    signal_discontinuity_pts: -1 #`pts` value in nano seconds at which the test should signal discontinuity to the decoder. -1 indicates that no discontinuity signal should be sent
+    flush_pts: -1 #`pts` value in nano seconds that determine when the test should flush the decoder. -1 indicates that test should not flush
+    flush_reset_pts: 266667000 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
+    eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
+    discontinuity: 0
+    lowLatency: 0
+    bit_rate: 801
+    no_of_frames: 12
+    decodeErrors: 3
+    framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
+    frame_size:
+      - 79916
+      - 125
+      - 191
+      - 410
+      - 1213
+      - 1296
+      - 1358
+      - 1576
+      - 1035
+      - 21
+      - 17
+      - 463
+    PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
+      - 00000000
+      - 33333000
+      - 66667000
+      - 100000000
+      - 133333000
+      - 166667000
+      - 200000000
+      - 233333000
+      - 266667000
+      - 300000000
+      - 400000000
+      - 466667000
+  VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_METADATA_OVERRIDE_HDR:
+    input: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
+    codec: VP9  #Video codec information, Refer `Codec` enum
+    codedWidth: 1920
+    codedHeight: 1088
+    colorDepth: 8
+    pixelFormat: YCBCR420
+    dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
+    scanType: PROGRESSIVE_FRAME
+    frameRateNumerator: 30 #Frame Rate
+    frameRateDenominator: 1
+    endOfStream: 0
+    stop_start_pts: -1
+    signal_discontinuity_pts: -1
+    flush_pts: -1
+    flush_reset_pts: -1
+    eos_pts: -1
+    discontinuity: 0
+    lowLatency: 0
+    bit_rate: 801
+    no_of_frames: 12
+    decodeErrors: 3
+    framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
+    metadata_override_pts: 166667000 #PTS at which HDR colorimetry override is applied mid-stream
+    override_colorimetry:
+      range: LIMITED
+      matrix: BT2020_NCL
+      transfer: SMPTE2084_PQ
+      primaries: BT2020
+    override_mastering_display_info:
+      redPrimaryX: 35400
+      redPrimaryY: 14600
+      greenPrimaryX: 8500
+      greenPrimaryY: 39850
+      bluePrimaryX: 6550
+      bluePrimaryY: 2300
+      whitePointX: 15635
+      whitePointY: 16450
+      maxLuminance: 10000000
+      minLuminance: 500
+    override_content_light_level:
+      maxCLL: 1000
+      maxFALL: 400
+    frame_size:
+      - 79916
+      - 125
+      - 191
+      - 410
+      - 1213
+      - 1296
+      - 1358
+      - 1576
+      - 1035
+      - 2145
+      - 17142
+      - 463
+    PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
+      - 00000000
+      - 33333000
+      - 66667000
+      - 100000000
+      - 133333000
+      - 166667000
+      - 200000000
+      - 233333000
+      - 266667000
+      - 300000000
+      - 400000000
+      - 466667000
+  VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_METADATA_OVERRIDE_SSAI:
+    input: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
+    codec: VP9  #Video codec information, Refer `Codec` enum
+    codedWidth: 1920
+    codedHeight: 1088
+    colorDepth: 8
+    pixelFormat: YCBCR420
+    dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
+    scanType: PROGRESSIVE_FRAME
+    frameRateNumerator: 30 #Frame Rate
+    frameRateDenominator: 1
+    endOfStream: 0
+    stop_start_pts: -1
+    signal_discontinuity_pts: -1
+    flush_pts: -1
+    flush_reset_pts: -1
+    eos_pts: -1
+    discontinuity: 0
+    lowLatency: 0
+    bit_rate: 801
+    no_of_frames: 12
+    decodeErrors: 3
+    framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
+    metadata_override_pts: 133333000 #PTS at which ad-segment colorimetry override is applied (SSAI splice point)
+    override_colorimetry:
+      range: FULL
+      matrix: BT709
+      transfer: BT709
+      primaries: BT709
+    frame_size:
+      - 79916
+      - 125
+      - 191
+      - 410
+      - 1213
+      - 1296
+      - 1358
+      - 1576
+      - 1035
+      - 2145
+      - 17142
+      - 463
+    PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
+      - 00000000
+      - 33333000
+      - 66667000
+      - 100000000
+      - 133333000
+      - 166667000
+      - 200000000
+      - 233333000
+      - 266667000
+      - 300000000
+      - 400000000
+      - 466667000
+  VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_METADATA_OVERRIDE_PAR:
+    input: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
+    codec: VP9  #Video codec information, Refer `Codec` enum
+    codedWidth: 1920
+    codedHeight: 1088
+    colorDepth: 8
+    pixelFormat: YCBCR420
+    dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
+    scanType: PROGRESSIVE_FRAME
+    frameRateNumerator: 30 #Frame Rate
+    frameRateDenominator: 1
+    endOfStream: 0
+    stop_start_pts: -1
+    signal_discontinuity_pts: -1
+    flush_pts: -1
+    flush_reset_pts: -1
+    eos_pts: -1
+    discontinuity: 0
+    lowLatency: 0
+    bit_rate: 801
+    no_of_frames: 12
+    decodeErrors: 3
+    framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
+    metadata_override_pts: 100000000 #PTS at which pixel aspect ratio override is applied
+    override_pixel_aspect_ratio:
+      numerator: 40
+      denominator: 33
+    frame_size:
+      - 79916
+      - 125
+      - 191
+      - 410
+      - 1213
+      - 1296
+      - 1358
+      - 1576
+      - 1035
+      - 2145
+      - 17142
+      - 463
+    PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
+      - 00000000
+      - 33333000
+      - 66667000
+      - 100000000
+      - 133333000
+      - 166667000
+      - 200000000
+      - 233333000
+      - 266667000
+      - 300000000
+      - 400000000
+      - 466667000

@@ -81,6 +81,208 @@ VideoStreams:
       - 166667000
       - 133333000
       - 150000000
+  H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_METADATAOVERRIDE_HDR:
+    input: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
+    codec: H264_AVC  #Video codec information, Refer `Codec` enum
+    codedWidth: 1920
+    codedHeight: 1088
+    colorDepth: 8
+    pixelFormat: YCBCR420
+    dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
+    scanType: PROGRESSIVE_FRAME
+    frameRateNumerator: 60 #Frame Rate
+    frameRateDenominator: 1
+    endOfStream: 0
+    stop_start_pts: -1
+    signal_discontinuity_pts: -1
+    flush_pts: -1
+    flush_reset_pts: -1
+    eos_pts: -1
+    discontinuity: 0
+    lowLatency: 0
+    bit_rate: 837
+    no_of_frames: 12
+    decodeErrors: 0
+    framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
+    # Mid-stream colorimetry/HDR metadata override, simulating an ABR period transition from SDR to HDR10.
+    metadata_override_pts: 66667000
+    override_colorimetry:
+      range: LIMITED
+      matrix: BT2020_NCL
+      transfer: SMPTE2084_PQ
+      primaries: BT2020
+    override_content_light_level:
+      maxCLL: 1000
+      maxFALL: 400
+    frame_size:
+      - 733
+      - 31
+      - 11
+      - 732
+      - 108718
+      - 2897
+      - 1076
+      - 1043
+      - 1101
+      - 1198
+      - 1092
+      - 715
+      - 4040
+      - 1260
+      - 1390
+      - 1490
+    PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
+      - 00000000
+      - 00000000
+      - 00000000
+      - 00000000
+      - 00000000
+      - 116667000
+      - 50000000
+      - 16667000
+      - 33333000
+      - 66667000
+      - 83333000
+      - 100000000
+      - 183333000
+      - 166667000
+      - 133333000
+      - 150000000
+  H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_METADATAOVERRIDE_SSAI:
+    input: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
+    codec: H264_AVC  #Video codec information, Refer `Codec` enum
+    codedWidth: 1920
+    codedHeight: 1088
+    colorDepth: 8
+    pixelFormat: YCBCR420
+    dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
+    scanType: PROGRESSIVE_FRAME
+    frameRateNumerator: 60 #Frame Rate
+    frameRateDenominator: 1
+    endOfStream: 0
+    stop_start_pts: -1
+    signal_discontinuity_pts: -1
+    flush_pts: -1
+    flush_reset_pts: -1
+    eos_pts: -1
+    discontinuity: 0
+    lowLatency: 0
+    bit_rate: 837
+    no_of_frames: 12
+    decodeErrors: 0
+    framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
+    # Mid-stream colorimetry/content-light-level override at a simulated SSAI ad-insertion splice point.
+    metadata_override_pts: 100000000
+    override_colorimetry:
+      range: LIMITED
+      matrix: BT2020_NCL
+      transfer: SMPTE2084_PQ
+      primaries: BT2020
+    override_content_light_level:
+      maxCLL: 800
+      maxFALL: 300
+    frame_size:
+      - 733
+      - 31
+      - 11
+      - 732
+      - 108718
+      - 2897
+      - 1076
+      - 1043
+      - 1101
+      - 1198
+      - 1092
+      - 715
+      - 4040
+      - 1260
+      - 1390
+      - 1490
+    PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
+      - 00000000
+      - 00000000
+      - 00000000
+      - 00000000
+      - 00000000
+      - 116667000
+      - 50000000
+      - 16667000
+      - 33333000
+      - 66667000
+      - 83333000
+      - 100000000
+      - 183333000
+      - 166667000
+      - 133333000
+      - 150000000
+  H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_METADATAOVERRIDE_PAR:
+    input: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
+    codec: H264_AVC  #Video codec information, Refer `Codec` enum
+    codedWidth: 1920
+    codedHeight: 1088
+    colorDepth: 8
+    pixelFormat: YCBCR420
+    dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
+    scanType: PROGRESSIVE_FRAME
+    frameRateNumerator: 60 #Frame Rate
+    frameRateDenominator: 1
+    endOfStream: 0
+    stop_start_pts: -1
+    signal_discontinuity_pts: -1
+    flush_pts: -1
+    flush_reset_pts: -1
+    eos_pts: -1
+    discontinuity: 0
+    lowLatency: 0
+    bit_rate: 837
+    no_of_frames: 12
+    decodeErrors: 0
+    framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
+    # Mid-stream pixel aspect ratio override, simulating anamorphic content.
+    metadata_override_pts: 133333000
+    override_pixel_aspect_ratio:
+      numerator: 4
+      denominator: 3
+    frame_size:
+      - 733
+      - 31
+      - 11
+      - 732
+      - 108718
+      - 2897
+      - 1076
+      - 1043
+      - 1101
+      - 1198
+      - 1092
+      - 715
+      - 4040
+      - 1260
+      - 1390
+      - 1490
+    PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
+      - 00000000
+      - 00000000
+      - 00000000
+      - 00000000
+      - 00000000
+      - 116667000
+      - 50000000
+      - 16667000
+      - 33333000
+      - 66667000
+      - 83333000
+      - 100000000
+      - 183333000
+      - 166667000
+      - 133333000
+      - 150000000
   H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_ERROR:
     input: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     codec: H264_AVC  #Video codec information, Refer `Codec` enum

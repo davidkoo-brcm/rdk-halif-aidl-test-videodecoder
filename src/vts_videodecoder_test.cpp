@@ -72,6 +72,7 @@ void videoDecoderTest::run(bool concurrentDecodeConsume)
 
     mFrameData.clear();
     mInputBuffer.clear();
+    mInputFrame.clear();
 
     bool status = makeFrame();
     if (!status)
@@ -244,6 +245,15 @@ void videoDecoderTest::setupVideoDecoder()
         VIDEODECODER_SETSTREAMCONFIG_SUCCESS(mVideoDecoderController, streamConfig);
     }
 
+    // Streams with expected decode errors need conceal mode, otherwise the HAL's
+    // default (output corrupt frames) makes expectedFrames/error-count checks below fail.
+    if (mTestConfiguration.decodeErrors > 0)
+    {
+        PropertyValue concealValue;
+        concealValue.value = PropertyValue::Value::make<PropertyValue::Value::Tag::intValue>(1);
+        VIDEODECODER_SETPROPERTY_SUCCESS(mVideoDecoderController, videodecoder::Property::DECODE_ERROR_POLICY, concealValue);
+    }
+
     // Start Decoder
     VIDEODECODER_START_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
 
@@ -354,6 +364,15 @@ void videoDecoderTest::startDecoding()
         videodecoder::InputBufferMetadata metadata = {};
         metadata.nsPresentationTime = framePTS;
         metadata.discontinuity = false;
+        if (mTestConfiguration.metadataOverridePts != -1 && mTestConfiguration.metadataOverridePts == framePTS)
+        {
+            UT_LOG_INFO("Applying metadata override at PTS:%lld", framePTS);
+            metadata.colorimetry = mTestConfiguration.overrideColorimetry;
+            metadata.masteringDisplayInfo = mTestConfiguration.overrideMasteringDisplayInfo;
+            metadata.contentLightLevel = mTestConfiguration.overrideContentLightLevel;
+            metadata.dolbyVisionLayerFlags = mTestConfiguration.overrideDolbyVisionLayerFlags;
+            metadata.pixelAspectRatio = mTestConfiguration.overridePixelAspectRatio;
+        }
         const bool isEosControlPoint = (mTestConfiguration.eosPts == framePTS);
 
         VIDEODECODER_DECODEBUFFER_WITH_METADATA_SUCCESS(mVideoDecoderController, videoBufferHandle, metadata);
@@ -368,8 +387,9 @@ void videoDecoderTest::startDecoding()
         if (isEosControlPoint)
         {
             UT_LOG_INFO("Verifying post-EOS decode reject at PTS:%lld", framePTS);
+            // Per spec, decodeBufferWithMetadata() must throw EX_ILLEGAL_STATE once called after signalEndOfStream().
             VIDEODECODER_DECODEBUFFER_WITH_METADATA_FAILURE(mVideoDecoderController, framePTS, videoBufferHandle,
-                                                            false, false, Status::EX_NONE);
+                                                            false, false, Status::EX_ILLEGAL_STATE);
             VIDEODECODER_STOP_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
             VIDEODECODER_START_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
         }
@@ -464,20 +484,44 @@ bool videoDecoderTest::validateDecodedFrame()
                 << ", actual=" << decodedFrame.metadata->codedHeight
                 << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
 
-            UT_ASSERT_EQUAL(decodedFrame.metadata->colorDepth, mTestConfiguration.colorDepth)
-                << "Color depth mismatch: expected=" << mTestConfiguration.colorDepth
+            // colorDepth/dynamicRange are derived from TransferCharacteristics (see
+            // TransferCharacteristics.aidl) — a mid-stream colorimetry override therefore
+            // changes the expected colorDepth/dynamicRange too, not just colorimetry itself.
+            const bool afterOverride = (mTestConfiguration.metadataOverridePts != -1 &&
+                                        decodedFrame.framePTS >= mTestConfiguration.metadataOverridePts);
+            int32_t expectedColorDepth = mTestConfiguration.colorDepth;
+            videodecoder::DynamicRange expectedDynamicRange = mTestConfiguration.dynamicRange;
+            if (afterOverride && mTestConfiguration.overrideColorimetry.has_value())
+            {
+                switch (mTestConfiguration.overrideColorimetry.value().transfer)
+                {
+                    case videodecoder::TransferCharacteristics::SMPTE2084_PQ:
+                        expectedColorDepth = 10;
+                        expectedDynamicRange = videodecoder::DynamicRange::HDR10;
+                        break;
+                    case videodecoder::TransferCharacteristics::ARIB_STD_B67_HLG:
+                        expectedColorDepth = 10;
+                        expectedDynamicRange = videodecoder::DynamicRange::HLG;
+                        break;
+                    default:
+                        expectedColorDepth = 8;
+                        expectedDynamicRange = videodecoder::DynamicRange::SDR;
+                        break;
+                }
+            }
+
+            UT_ASSERT_EQUAL(decodedFrame.metadata->colorDepth, expectedColorDepth)
+                << "Color depth mismatch: expected=" << expectedColorDepth
                 << ", actual=" << decodedFrame.metadata->colorDepth
                 << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
 
             // Validate dynamic range
-            UT_ASSERT_EQUAL(decodedFrame.metadata->dynamicRange, mTestConfiguration.dynamicRange)
-                << "Dynamic range mismatch: expected=" << static_cast<int>(mTestConfiguration.dynamicRange)
+            UT_ASSERT_EQUAL(decodedFrame.metadata->dynamicRange, expectedDynamicRange)
+                << "Dynamic range mismatch: expected=" << static_cast<int>(expectedDynamicRange)
                 << ", actual=" << static_cast<int>(decodedFrame.metadata->dynamicRange)
                 << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
 
             // Validate colorimetry — use override values for frames at or after metadataOverridePts
-            const bool afterOverride = (mTestConfiguration.metadataOverridePts != -1 &&
-                                        decodedFrame.framePTS >= mTestConfiguration.metadataOverridePts);
             if (afterOverride && mTestConfiguration.overrideColorimetry.has_value())
             {
                 UT_ASSERT_EQUAL(decodedFrame.metadata->colorimetry, mTestConfiguration.overrideColorimetry.value())
@@ -586,7 +630,10 @@ bool videoDecoderTest::validateDecodedFrame()
     UT_LOG_DEBUG("Final Decoder Metrics: Codec: %d, Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
                     mTestConfiguration.codec, metricsFramesDecoded, metricsDecodeErrors, metricsFramesDropped);
 
-    if((mTestConfiguration.flushResetPts == -1) && (mTestConfiguration.flushPts==-1))
+    // eosPts triggers a mid-session stop()+start() (see the isEosControlPoint block above),
+    // and Property.aidl documents METRIC_FRAMES_DECODED/METRIC_DECODE_ERRORS as reset on stop() -
+    // so exact-total assertions don't hold for it, same as the existing flush cases.
+    if((mTestConfiguration.flushResetPts == -1) && (mTestConfiguration.flushPts==-1) && (mTestConfiguration.eosPts == -1))
     {
         if(metricsFramesDecoded != -1)
         {
