@@ -219,7 +219,7 @@ VideoStreams:
     discontinuity: 0
     lowLatency: 0
     bit_rate: 837
-    no_of_frames: 11
+    no_of_frames: 12
     decodeErrors: 0
     framesDropped: 0
     openWithResolutionWidth: -1

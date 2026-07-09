@@ -165,7 +165,8 @@ extern std::vector<sp<IVideoDecoderController>>  controllers;
 // to the real-HAL config path even when running against the mock.
 inline bool isMockVideoDecoderServiceRunning()
 {
-    int status = std::system("pgrep -f MockVideoDecoderService > /dev/null 2>&1");
+    // Bracket trick avoids self-matching the "sh -c <this pgrep>" wrapper std::system() spawns.
+    int status = std::system("pgrep -f [M]ockVideoDecoderService > /dev/null 2>&1");
     return WIFEXITED(status) && WEXITSTATUS(status) == 0;
 }
 
