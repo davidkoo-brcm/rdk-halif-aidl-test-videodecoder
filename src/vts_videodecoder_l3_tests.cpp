@@ -600,20 +600,6 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_CODEC)
 }
 
 /**
- * @brief Test decoding with different resolutions
- *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
- * **Test Group ID:** 01 **Test Case ID:** 003
- */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_Resolutions)
-{
-    const char *testName = "Decode_Sequential_NonTunnel_NonSecure_Resolutions";
-    bool secureMode = false;
-    bool tunnelMode = false;
-    bool concurrentMode = false;
-    runTest(testName, secureMode, tunnelMode, concurrentMode);
-}
-
-/**
  * @brief Test decoding with HDR modes
  *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 004
@@ -656,7 +642,10 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_LowLatenc
 }
 
 /**
- * @brief Test decoding with adaptive bitrate streaming
+ * @brief Test decoding with adaptive bitrate streaming: validates both the resolution
+ *        and bitrate ladder dynamically as the decoder switches mid-stream (absorbs
+ *        the former, now-retired Resolutions test case - same runTest() mechanism,
+ *        just against a stream carrying a real in-band resolution/bitrate ladder).
  *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 007
  */
@@ -921,13 +910,13 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_CODEC)
 }
 
 /**
- * @brief Test decoding with different resolutions in concurrent mode
+ * @brief Test decoding with adaptive bitrate streaming in concurrent mode
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 024
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_Resolutions)
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_AdaptiveBitrate)
 {
-    const char *testName = "Decode_Concurrent_NonTunnel_NonSecure_Resolutions";
+    const char *testName = "Decode_Concurrent_NonTunnel_NonSecure_AdaptiveBitrate";
     bool secureMode = false;
     bool tunnelMode = false;
     bool concurrentMode = true;
@@ -1089,13 +1078,13 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_CODEC)
 }
 
 /**
- * @brief Test decoding with different resolutions in secure mode
+ * @brief Test decoding with adaptive bitrate streaming in secure mode
  *        Decoding type: Sequential, Modes: Non-Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 036
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_Resolutions)
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_AdaptiveBitrate)
 {
-    const char *testName = "Decode_Sequential_NonTunnel_Secure_Resolutions";
+    const char *testName = "Decode_Sequential_NonTunnel_Secure_AdaptiveBitrate";
     bool secureMode = true;
     bool tunnelMode = false;
     bool concurrentMode = false;
@@ -1257,13 +1246,13 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_CODEC)
 }
 
 /**
- * @brief Test decoding with different resolutions in concurrent and secure modes
+ * @brief Test decoding with adaptive bitrate streaming in concurrent and secure modes
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 048
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_Resolutions)
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_AdaptiveBitrate)
 {
-    const char *testName = "Decode_Concurrent_NonTunnel_Secure_Resolutions";
+    const char *testName = "Decode_Concurrent_NonTunnel_Secure_AdaptiveBitrate";
     bool secureMode = true;
     bool tunnelMode = false;
     bool concurrentMode = true;
@@ -1426,13 +1415,13 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_CODEC)
 }
 
 /**
- * @brief Test decoding with different resolutions in tunnel mode
+ * @brief Test decoding with adaptive bitrate streaming in tunnel mode
  *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 060
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_Resolutions)
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_AdaptiveBitrate)
 {
-    const char *testName = "Decode_Sequential_Tunnel_NonSecure_Resolutions";
+    const char *testName = "Decode_Sequential_Tunnel_NonSecure_AdaptiveBitrate";
     bool secureMode = false;
     bool tunnelMode = true;
     bool concurrentMode = false;
@@ -1594,13 +1583,13 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_CODEC)
 }
 
 /**
- * @brief Test decoding with different resolutions in concurrent and tunnel modes
+ * @brief Test decoding with adaptive bitrate streaming in concurrent and tunnel modes
  *        Decoding type: Concurrent, Modes: Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 072
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_Resolutions)
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_AdaptiveBitrate)
 {
-    const char *testName = "Decode_Concurrent_Tunnel_NonSecure_Resolutions";
+    const char *testName = "Decode_Concurrent_Tunnel_NonSecure_AdaptiveBitrate";
     bool secureMode = false;
     bool tunnelMode = true;
     bool concurrentMode = true;
@@ -1762,13 +1751,13 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_CODEC)
 }
 
 /**
- * @brief Test decoding with different resolutions in tunnel and secure modes
+ * @brief Test decoding with adaptive bitrate streaming in tunnel and secure modes
  *        Decoding type: Sequential, Modes: Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 084
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_Resolutions)
+UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_AdaptiveBitrate)
 {
-    const char *testName = "Decode_Sequential_Tunnel_Secure_Resolutions";
+    const char *testName = "Decode_Sequential_Tunnel_Secure_AdaptiveBitrate";
     bool secureMode = true;
     bool tunnelMode = true;
     bool concurrentMode = false;

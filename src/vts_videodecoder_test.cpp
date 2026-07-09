@@ -254,6 +254,16 @@ void videoDecoderTest::setupVideoDecoder()
         VIDEODECODER_SETPROPERTY_SUCCESS(mVideoDecoderController, videodecoder::Property::DECODE_ERROR_POLICY, concealValue);
     }
 
+    // Streams flagged lowLatency:1 request LOW_LATENCY_MODE so the decoder skips/
+    // discards any B-frames and outputs decoded frames as soon as possible; the
+    // resulting FrameMetadata.lowLatency is verified per-frame further below.
+    if (mTestConfiguration.lowLatency)
+    {
+        PropertyValue lowLatencyValue;
+        lowLatencyValue.value = PropertyValue::Value::make<PropertyValue::Value::Tag::intValue>(1);
+        VIDEODECODER_SETPROPERTY_SUCCESS(mVideoDecoderController, videodecoder::Property::LOW_LATENCY_MODE, lowLatencyValue);
+    }
+
     // Start Decoder
     VIDEODECODER_START_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
 
@@ -453,8 +463,23 @@ bool videoDecoderTest::validateDecodedFrame()
                     auto decodeTimeNs = std::chrono::duration_cast<std::chrono::nanoseconds>(receiveTime - sendTime).count();
                     if (decodeTimeNs > mTestConfiguration.decode_time_threshold)
                     {
-                        UT_LOG_WARNING("Frame PTS:%lld decode time: %lld ns exceeds threshold %lld ns",
-                                    decodedFrame.framePTS, decodeTimeNs, mTestConfiguration.decode_time_threshold);
+                        // Streams with a resolution ladder (AdaptiveBitrate) use this as the
+                        // real-time-decode proxy for bitrate validation, since the AIDL has no
+                        // decoder-reported bitrate field to assert against directly - a breach
+                        // here means the decoder couldn't keep up with that rung's bitrate, so
+                        // it's a hard failure. Every other stream keeps the existing warning.
+                        if (!mTestConfiguration.resolutionChanges.empty())
+                        {
+                            UT_ASSERT_TRUE(false)
+                                << "Frame PTS:" << decodedFrame.framePTS << " decode time: " << decodeTimeNs
+                                << " ns exceeds real-time threshold " << mTestConfiguration.decode_time_threshold
+                                << " ns (decoder could not keep up with this bitrate/resolution rung)";
+                        }
+                        else
+                        {
+                            UT_LOG_WARNING("Frame PTS:%lld decode time: %lld ns exceeds threshold %lld ns",
+                                        decodedFrame.framePTS, decodeTimeNs, mTestConfiguration.decode_time_threshold);
+                        }
                     }
                     mInputFrame.erase(inputIt);
                 }
@@ -474,13 +499,29 @@ bool videoDecoderTest::validateDecodedFrame()
         if (decodedFrame.metadata)
         {
             UT_LOG_DEBUG("Validating metadata for PTS=%lld", decodedFrame.framePTS);
-            // Validate resolution
-            UT_ASSERT_EQUAL(decodedFrame.metadata->codedWidth, mTestConfiguration.codedWidth)
-                << "Width mismatch: expected=" << mTestConfiguration.codedWidth
+            // Validate resolution. Streams carrying a resolution_changes ladder (AdaptiveBitrate)
+            // switch resolution mid-stream, so the expected value is whichever segment's pts is
+            // the latest one <= this frame's PTS, not the flat stream-level codedWidth/codedHeight
+            // (which for these streams instead holds the ladder's peak, used for capability checks).
+            int32_t expectedResWidth = mTestConfiguration.codedWidth;
+            int32_t expectedResHeight = mTestConfiguration.codedHeight;
+            if (!mTestConfiguration.resolutionChanges.empty())
+            {
+                for (const auto& change : mTestConfiguration.resolutionChanges)
+                {
+                    if (change.pts <= decodedFrame.framePTS)
+                    {
+                        expectedResWidth = change.width;
+                        expectedResHeight = change.height;
+                    }
+                }
+            }
+            UT_ASSERT_EQUAL(decodedFrame.metadata->codedWidth, expectedResWidth)
+                << "Width mismatch: expected=" << expectedResWidth
                 << ", actual=" << decodedFrame.metadata->codedWidth
                 << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-            UT_ASSERT_EQUAL(decodedFrame.metadata->codedHeight, mTestConfiguration.codedHeight)
-                << "Height mismatch: expected=" << mTestConfiguration.codedHeight
+            UT_ASSERT_EQUAL(decodedFrame.metadata->codedHeight, expectedResHeight)
+                << "Height mismatch: expected=" << expectedResHeight
                 << ", actual=" << decodedFrame.metadata->codedHeight
                 << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
 

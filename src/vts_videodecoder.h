@@ -257,6 +257,15 @@ struct DecodedVideoFrame_t {
     int64_t frameAVBufferHandle; // Added for output buffer handle
 };
 
+// One in-band resolution/bitrate ladder breakpoint: expected width/height/bitRate
+// take effect from `pts` onward, until the next entry's pts (or end of stream).
+struct ResolutionChange_t {
+    int64_t pts;
+    int32_t width;
+    int32_t height;
+    uint32_t bitRate;
+};
+
 struct videoDecoderTestConfiguration_t {
     std::string input; // Path to input .es file
     std::string streamName; //
@@ -300,6 +309,12 @@ struct videoDecoderTestConfiguration_t {
     std::optional<ContentLightLevel> overrideContentLightLevel;
     std::optional<DolbyVisionLayerFlags> overrideDolbyVisionLayerFlags;
     std::optional<videodecoder::Fraction> overridePixelAspectRatio;
+
+    // In-band resolution/bitrate ladder breakpoints (empty = no dynamic resolution
+    // change; codedWidth/codedHeight above stay authoritative for the whole stream).
+    // Non-empty also switches the decode_time_threshold check from warning-only to
+    // a hard failure, since these streams are the AdaptiveBitrate real-time proxy.
+    std::vector<ResolutionChange_t> resolutionChanges;
 
     // When != -1, open() is replaced by openWithResolution(codec, secure, listener, openWithResolutionWidth, openWithResolutionHeight)
     int32_t openWithResolutionWidth;  // -1 = use open(), >0 = use openWithResolution()

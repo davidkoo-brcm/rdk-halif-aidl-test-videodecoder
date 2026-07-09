@@ -21,6 +21,207 @@
 #** ******************************************************************************
 
 VideoStreams:
+  H264_HIGH_RES_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_ABR:
+    input: H264_HIGH_RES_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_ABR.es #Stream Name
+    codec: H264_AVC  #Video codec information, Refer `Codec` enum
+    codedWidth: 1920
+    codedHeight: 1080
+    colorDepth: 8
+    pixelFormat: YCBCR420
+    dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
+    scanType: PROGRESSIVE_FRAME
+    frameRateNumerator: 60 #Frame Rate
+    frameRateDenominator: 1
+    endOfStream: 0
+    stop_start_pts: -1 #`pts` value in nano seconds at which the decoder should be stopped and restarted during the test. -1 indicates that decoder should not be restarted
+    signal_discontinuity_pts: -1 #`pts` value in nano seconds at which the test should signal discontinuity to the decoder. -1 indicates that no discontinuity signal should be sent
+    flush_pts: -1 #`pts` value in nano seconds that determine when the test should flush the decoder. -1 indicates that test should not flush
+    flush_reset_pts: -1 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
+    eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
+    discontinuity: 0
+    lowLatency: 0
+    bit_rate: 442533 # overall average across the full resolution ladder; see resolution_changes for per-segment values
+    no_of_frames: 70
+    decodeErrors: 0
+    framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
+    # In-band resolution/bitrate ladder breakpoints: one entry per segment where the
+    # bitstream's resolution changes (real, decoder-signalled changes via new SPS/
+    # sequence headers, not simulated). Each entry's `pts` is the first frame's PTS
+    # in that segment; the segment's expected width/height/bit_rate hold from that
+    # PTS until the next entry's pts (or end of stream for the last one).
+    resolution_changes:
+      - pts: 0
+        width: 640
+        height: 360
+        bit_rate: 150672
+      - pts: 166666670
+        width: 720
+        height: 480
+        bit_rate: 229824
+      - pts: 333333340
+        width: 1280
+        height: 720
+        bit_rate: 600336
+      - pts: 500000010
+        width: 1920
+        height: 1080
+        bit_rate: 1136064
+      - pts: 666666680
+        width: 1280
+        height: 720
+        bit_rate: 600336
+      - pts: 833333350
+        width: 720
+        height: 480
+        bit_rate: 229824
+      - pts: 1000000020
+        width: 640
+        height: 360
+        bit_rate: 150672
+    frame_size:
+      - 822
+      - 16
+      - 18
+      - 17
+      - 703
+      - 35
+      - 928
+      - 279
+      - 16
+      - 305
+      - 850
+      - 20
+      - 22
+      - 21
+      - 1303
+      - 50
+      - 1524
+      - 403
+      - 57
+      - 538
+      - 946
+      - 37
+      - 38
+      - 38
+      - 3466
+      - 443
+      - 4308
+      - 1542
+      - 313
+      - 1376
+      - 1155
+      - 68
+      - 70
+      - 70
+      - 5649
+      - 4452
+      - 750
+      - 8344
+      - 1062
+      - 2048
+      - 946
+      - 37
+      - 38
+      - 38
+      - 3466
+      - 443
+      - 4308
+      - 1542
+      - 313
+      - 1376
+      - 850
+      - 20
+      - 22
+      - 21
+      - 1303
+      - 50
+      - 1524
+      - 403
+      - 57
+      - 538
+      - 822
+      - 16
+      - 18
+      - 17
+      - 703
+      - 35
+      - 928
+      - 279
+      - 16
+      - 305
+    PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
+      - 0
+      - 16666667
+      - 33333334
+      - 50000001
+      - 66666668
+      - 83333335
+      - 100000002
+      - 116666669
+      - 133333336
+      - 150000003
+      - 166666670
+      - 183333337
+      - 200000004
+      - 216666671
+      - 233333338
+      - 250000005
+      - 266666672
+      - 283333339
+      - 300000006
+      - 316666673
+      - 333333340
+      - 350000007
+      - 366666674
+      - 383333341
+      - 400000008
+      - 416666675
+      - 433333342
+      - 450000009
+      - 466666676
+      - 483333343
+      - 500000010
+      - 516666677
+      - 533333344
+      - 550000011
+      - 566666678
+      - 583333345
+      - 600000012
+      - 616666679
+      - 633333346
+      - 650000013
+      - 666666680
+      - 683333347
+      - 700000014
+      - 716666681
+      - 733333348
+      - 750000015
+      - 766666682
+      - 783333349
+      - 800000016
+      - 816666683
+      - 833333350
+      - 850000017
+      - 866666684
+      - 883333351
+      - 900000018
+      - 916666685
+      - 933333352
+      - 950000019
+      - 966666686
+      - 983333353
+      - 1000000020
+      - 1016666687
+      - 1033333354
+      - 1050000021
+      - 1066666688
+      - 1083333355
+      - 1100000022
+      - 1116666689
+      - 1133333356
+      - 1150000023
   H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734:
     input: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     #reference: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.yuv #reference decoder output
@@ -41,6 +242,65 @@ VideoStreams:
     eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
     discontinuity: 0
     lowLatency: 0
+    bit_rate: 837
+    no_of_frames: 12
+    decodeErrors: 0
+    framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
+    frame_size:
+      - 733
+      - 31
+      - 11
+      - 732
+      - 108718
+      - 2897
+      - 1076
+      - 1043
+      - 1101
+      - 1198
+      - 1092
+      - 715
+      - 4040
+      - 1260
+      - 1390
+      - 1490
+    PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
+      - 00000000
+      - 00000000
+      - 00000000
+      - 00000000
+      - 00000000
+      - 116667000
+      - 50000000
+      - 16667000
+      - 33333000
+      - 66667000
+      - 83333000
+      - 100000000
+      - 183333000
+      - 166667000
+      - 133333000
+      - 150000000
+  H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_LOWLATENCY:
+    input: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
+    codec: H264_AVC  #Video codec information, Refer `Codec` enum
+    codedWidth: 1920
+    codedHeight: 1088
+    colorDepth: 8
+    pixelFormat: YCBCR420
+    dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
+    scanType: PROGRESSIVE_FRAME
+    frameRateNumerator: 60 #Frame Rate
+    frameRateDenominator: 1
+    endOfStream: 0
+    stop_start_pts: -1
+    signal_discontinuity_pts: -1
+    flush_pts: -1
+    flush_reset_pts: -1
+    eos_pts: -1
+    discontinuity: 0
+    lowLatency: 1 # drives setProperty(LOW_LATENCY_MODE, 1) before start; same content as the _734 baseline otherwise
     bit_rate: 837
     no_of_frames: 12
     decodeErrors: 0

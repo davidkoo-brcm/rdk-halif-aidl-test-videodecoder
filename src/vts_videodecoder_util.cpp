@@ -1322,9 +1322,23 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, const char *m
             testDetails.overridePixelAspectRatio = par;
         }
 
+        // In-band resolution/bitrate ladder breakpoints (AdaptiveBitrate streams only)
+        string resolutionChanges = prefix + "resolution_changes";
+        int32_t resolutionChangeCount = ut_kvp_getListCount(kvpTestInstance, resolutionChanges.c_str());
+        for (int32_t j = 0; j < resolutionChangeCount; j++)
+        {
+            string entryPrefix = resolutionChanges + "." + to_string(j) + ".";
+            ResolutionChange_t change{};
+            change.pts    = static_cast<int64_t>(ut_kvp_getUInt64Field(kvpTestInstance, (entryPrefix + "pts").c_str()));
+            change.width  = static_cast<int32_t>(ut_kvp_getUInt32Field(kvpTestInstance, (entryPrefix + "width").c_str()));
+            change.height = static_cast<int32_t>(ut_kvp_getUInt32Field(kvpTestInstance, (entryPrefix + "height").c_str()));
+            change.bitRate = ut_kvp_getUInt32Field(kvpTestInstance, (entryPrefix + "bit_rate").c_str());
+            testDetails.resolutionChanges.push_back(change);
+        }
+
         testConfiguration.push_back(testDetails);
-        UT_LOG_INFO("Added test configuration for stream %d, frameDetails size: %zu, expectedPts size: %zu",
-                    i, testDetails.frameDetails.size(), testDetails.expectedPts.size());
+        UT_LOG_INFO("Added test configuration for stream %d, frameDetails size: %zu, expectedPts size: %zu, resolutionChanges size: %zu",
+                    i, testDetails.frameDetails.size(), testDetails.expectedPts.size(), testDetails.resolutionChanges.size());
     }
 
     if (testConfiguration.empty()) {
