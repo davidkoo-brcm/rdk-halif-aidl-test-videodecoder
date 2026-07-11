@@ -1462,17 +1462,119 @@ videodecoder:
       Inputs:
         Streams:
           - codec: H264_AVC
-            Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_ADAPTIVEBITRATE
+            Name: H264_HIGH_RES_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_ABR
             rms_diff_threshold: 0.5
-            decode_time_threshold: 10000000
+            decode_time_threshold: 16666667
           - codec: H265_HEVC
-            Name: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_ADAPTIVEBITRATE
+            Name: H265_HIGH_RES_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_ABR
             rms_diff_threshold: 0.5
-            decode_time_threshold: 10000000
+            decode_time_threshold: 33333333
           - codec: VP9
-            Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_ADAPTIVEBITRATE
+            Name: VP9_HIGH_RES_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_ABR
             rms_diff_threshold: 0.5
-            decode_time_threshold: 10000000
+            decode_time_threshold: 33333333
+    Decode_Sequential_Tunnel_NonSecure_AdaptiveBitrate:
+      Controls:
+        delay_between_decode_calls: 1
+      Inputs:
+        Streams:
+          - codec: H264_AVC
+            Name: H264_HIGH_RES_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_ABR
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 16666667
+          - codec: H265_HEVC
+            Name: H265_HIGH_RES_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_ABR
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+          - codec: VP9
+            Name: VP9_HIGH_RES_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_ABR
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+    Decode_Sequential_NonTunnel_Secure_AdaptiveBitrate:
+      Controls:
+        delay_between_decode_calls: 1
+      Inputs:
+        Streams:
+          - codec: H264_AVC
+            Name: H264_HIGH_RES_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_ABR
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 16666667
+          - codec: H265_HEVC
+            Name: H265_HIGH_RES_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_ABR
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+          - codec: VP9
+            Name: VP9_HIGH_RES_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_ABR
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+    Decode_Sequential_Tunnel_Secure_AdaptiveBitrate:
+      Controls:
+        delay_between_decode_calls: 1
+      Inputs:
+        Streams:
+          - codec: H264_AVC
+            Name: H264_HIGH_RES_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_ABR
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 16666667
+          - codec: H265_HEVC
+            Name: H265_HIGH_RES_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_ABR
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+          - codec: VP9
+            Name: VP9_HIGH_RES_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_ABR
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+    Decode_Concurrent_NonTunnel_NonSecure_AdaptiveBitrate:
+      Controls:
+        delay_between_decode_calls: 1
+      Inputs:
+        Streams:
+          - codec: H264_AVC
+            Name: H264_HIGH_RES_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_ABR
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 16666667
+          - codec: H265_HEVC
+            Name: H265_HIGH_RES_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_ABR
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+          - codec: VP9
+            Name: VP9_HIGH_RES_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_ABR
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+    Decode_Concurrent_Tunnel_NonSecure_AdaptiveBitrate:
+      Controls:
+        delay_between_decode_calls: 1
+      Inputs:
+        Streams:
+          - codec: H264_AVC
+            Name: H264_HIGH_RES_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_ABR
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 16666667
+          - codec: H265_HEVC
+            Name: H265_HIGH_RES_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_ABR
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+          - codec: VP9
+            Name: VP9_HIGH_RES_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_ABR
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+    Decode_Concurrent_NonTunnel_Secure_AdaptiveBitrate:
+      Controls:
+        delay_between_decode_calls: 1
+      Inputs:
+        Streams:
+          - codec: H264_AVC
+            Name: H264_HIGH_RES_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_ABR
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 16666667
+          - codec: H265_HEVC
+            Name: H265_HIGH_RES_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_ABR
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+          - codec: VP9
+            Name: VP9_HIGH_RES_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_ABR
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
     Decode_Concurrent_NonTunnel_NonSecure_CODEC:
       Controls:
         delay_between_decode_calls: 1

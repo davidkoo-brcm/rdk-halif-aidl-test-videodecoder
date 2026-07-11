@@ -1420,4 +1420,523 @@ VideoStreams:
       - 266667000
       - 366667000
       - 333333000
+  H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_LOWLATENCY:
+    input: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
+    codec: H265_HEVC  #Video codec information, Refer `Codec` enum
+    codedWidth: 1920
+    codedHeight: 1088
+    colorDepth: 8
+    pixelFormat: YCBCR420
+    dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
+    scanType: PROGRESSIVE_FRAME
+    frameRateNumerator: 30 #Frame Rate
+    frameRateDenominator: 1
+    endOfStream: 0
+    stop_start_pts: -1
+    signal_discontinuity_pts: -1
+    flush_pts: -1
+    flush_reset_pts: -1
+    eos_pts: -1
+    discontinuity: 0
+    lowLatency: 1 # drives setProperty(LOW_LATENCY_MODE, 1) before start; same content as the _734 baseline otherwise
+    bit_rate: 837
+    no_of_frames: 16
+    decodeErrors: 0
+    framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
+    frame_size:
+      - 28
+      - 47
+      - 11
+      - 1914
+      - 131765
+      - 1517
+      - 474
+      - 311
+      - 298
+      - 200
+      - 1137
+      - 306
+      - 172
+      - 164
+      - 2434
+      - 327
+    PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
+      - 0
+      - 400000000
+      - 433333000
+      - 466667000
+      - 500000000
+      - 166667000
+      - 100000000
+      - 33333000
+      - 66667000
+      - 133333000
+      - 300000000
+      - 233333000
+      - 200000000
+      - 266667000
+      - 366667000
+      - 333333000
+  H265_HIGH_1920x1080_DR_HDR_DR_BT2020_30p_PIXEL_FORMAT_YCBCR420_734_HDR:
+    # Reuses the existing COLORIMETRY .es asset (real HDR10/BT2020/ST2084 content,
+    # confirmed via ffprobe: 1920x1080, HEVC, yuv420p10le, 30fps) rather than a
+    # not-yet-provided dedicated file.
+    input: H265_HIGH_1920x1080_DR_HDR10_BT2020_ST2084_30p_PIXEL_FORMAT_YCBCR420_COLORIMETRY.es #Stream Name
+    codec: H265_HEVC  #Video codec information, Refer `Codec` enum
+    codedWidth: 1920
+    codedHeight: 1088
+    colorDepth: 10
+    pixelFormat: YCBCR420
+    dynamic_range: HDR10 #com.rdk.hal.video.decoder.DynamicRange enum.
+    colorimetry:
+      range: LIMITED
+      matrix: BT2020_NCL
+      transfer: SMPTE2084_PQ
+      primaries: BT2020
+    scanType: PROGRESSIVE_FRAME
+    frameRateNumerator: 30 #Frame Rate
+    frameRateDenominator: 1
+    endOfStream: 0
+    stop_start_pts: -1
+    signal_discontinuity_pts: -1
+    flush_pts: -1
+    flush_reset_pts: -1
+    eos_pts: -1
+    discontinuity: 0
+    lowLatency: 0
+    bit_rate: 837
+    no_of_frames: 15
+    decodeErrors: 0
+    framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
+    # frame_size taken from the first 15 packets of the real .es file (ffprobe).
+    frame_size:
+      - 3035
+      - 122
+      - 112
+      - 109
+      - 109
+      - 108
+      - 124
+      - 114
+      - 110
+      - 110
+      - 109
+      - 125
+      - 114
+      - 109
+      - 109
+    PTS: #List of Presentation Time Stamps (per frame) in nanoseconds, linear (no B-frame reordering)
+      - 0
+      - 33333333
+      - 66666666
+      - 99999999
+      - 133333332
+      - 166666665
+      - 199999998
+      - 233333331
+      - 266666664
+      - 299999997
+      - 333333330
+      - 366666663
+      - 399999996
+      - 433333329
+      - 466666662
+  H265_HIGH_1280x720_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_RESOLUTIONS:
+    input: H265_HIGH_1280x720_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_RESOLUTIONS.es #Stream Name
+    codec: H265_HEVC  #Video codec information, Refer `Codec` enum
+    codedWidth: 1280
+    codedHeight: 720
+    colorDepth: 8
+    pixelFormat: YCBCR420
+    dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
+    scanType: PROGRESSIVE_FRAME
+    frameRateNumerator: 30 #Frame Rate
+    frameRateDenominator: 1
+    endOfStream: 0
+    stop_start_pts: -1
+    signal_discontinuity_pts: -1
+    flush_pts: -1
+    flush_reset_pts: -1
+    eos_pts: -1
+    discontinuity: 0
+    lowLatency: 0
+    bit_rate: 837
+    no_of_frames: 16
+    decodeErrors: 0
+    framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
+    # frame_size/PTS are placeholders pending the real 1280x720 .es asset; recompute once supplied.
+    frame_size:
+      - 28
+      - 47
+      - 11
+      - 1914
+      - 131765
+      - 1517
+      - 474
+      - 311
+      - 298
+      - 200
+      - 1137
+      - 306
+      - 172
+      - 164
+      - 2434
+      - 327
+    PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
+      - 00000000
+      - 400000000
+      - 433333000
+      - 466667000
+      - 500000000
+      - 166667000
+      - 100000000
+      - 33333000
+      - 66667000
+      - 133333000
+      - 300000000
+      - 233333000
+      - 200000000
+      - 266667000
+      - 366667000
+      - 333333000
+  H265_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_FRAMERATE:
+    # Reuses the real 30fps base "_734" asset; frame_size below is copied verbatim from it
+    # and PTS is halved to simulate the declared 60fps rate (see frameRateNumerator).
+    input: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
+    codec: H265_HEVC  #Video codec information, Refer `Codec` enum
+    codedWidth: 1920
+    codedHeight: 1088
+    colorDepth: 8
+    pixelFormat: YCBCR420
+    dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
+    scanType: PROGRESSIVE_FRAME
+    frameRateNumerator: 60 #Frame Rate
+    frameRateDenominator: 1
+    endOfStream: 0
+    stop_start_pts: -1
+    signal_discontinuity_pts: -1
+    flush_pts: -1
+    flush_reset_pts: -1
+    eos_pts: -1
+    discontinuity: 0
+    lowLatency: 0
+    bit_rate: 837
+    no_of_frames: 16
+    decodeErrors: 0
+    framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
+    frame_size:
+      - 28
+      - 47
+      - 11
+      - 1914
+      - 131765
+      - 1517
+      - 474
+      - 311
+      - 298
+      - 200
+      - 1137
+      - 306
+      - 172
+      - 164
+      - 2434
+      - 327
+    PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
+      - 00000000
+      - 200000000
+      - 216667000
+      - 233333000
+      - 250000000
+      - 83333000
+      - 50000000
+      - 16667000
+      - 33333000
+      - 66667000
+      - 150000000
+      - 116667000
+      - 100000000
+      - 133333000
+      - 183333000
+      - 166667000
+  H265_HIGH_RES_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_ABR:
+    input: H265_HIGH_RES_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_ABR.es #Stream Name
+    codec: H265_HEVC  #Video codec information, Refer `Codec` enum
+    codedWidth: 3840
+    codedHeight: 2160
+    colorDepth: 8
+    pixelFormat: YCBCR420
+    dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
+    scanType: PROGRESSIVE_FRAME
+    frameRateNumerator: 30 #Frame Rate
+    frameRateDenominator: 1
+    endOfStream: 0
+    stop_start_pts: -1 #`pts` value in nano seconds at which the decoder should be stopped and restarted during the test. -1 indicates that decoder should not be restarted
+    signal_discontinuity_pts: -1 #`pts` value in nano seconds at which the test should signal discontinuity to the decoder. -1 indicates that no discontinuity signal should be sent
+    flush_pts: -1 #`pts` value in nano seconds that determine when the test should flush the decoder. -1 indicates that test should not flush
+    flush_reset_pts: -1 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
+    eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
+    discontinuity: 0
+    lowLatency: 0
+    bit_rate: 1134641 # overall average across the full resolution ladder; see resolution_changes for per-segment values
+    no_of_frames: 100
+    decodeErrors: 0
+    framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
+    # In-band resolution/bitrate ladder breakpoints: one entry per segment where the
+    # bitstream's resolution changes (real, decoder-signalled changes via new SPS/
+    # sequence headers, not simulated). Each entry's `pts` is the first frame's PTS
+    # in that segment; the segment's expected width/height/bit_rate hold from that
+    # PTS until the next entry's pts (or end of stream for the last one).
+    resolution_changes:
+      - pts: 0
+        width: 640
+        height: 360
+        bit_rate: 345360
+      - pts: 333333330
+        width: 720
+        height: 480
+        bit_rate: 466704
+      - pts: 666666660
+        width: 1280
+        height: 720
+        bit_rate: 1050072
+      - pts: 999999990
+        width: 1920
+        height: 1080
+        bit_rate: 1152240
+      - pts: 1333333320
+        width: 2560
+        height: 1440
+        bit_rate: 1745160
+      - pts: 1666666650
+        width: 3840
+        height: 2160
+        bit_rate: 2172720
+      - pts: 1999999980
+        width: 2560
+        height: 1440
+        bit_rate: 1745160
+      - pts: 2333333310
+        width: 1920
+        height: 1080
+        bit_rate: 1152240
+      - pts: 2666666640
+        width: 1280
+        height: 720
+        bit_rate: 1050072
+      - pts: 2999999970
+        width: 720
+        height: 480
+        bit_rate: 466680
+    frame_size:
+      - 2547
+      - 38
+      - 41
+      - 753
+      - 1540
+      - 206
+      - 5018
+      - 2810
+      - 341
+      - 1096
+      - 2601
+      - 45
+      - 49
+      - 969
+      - 2069
+      - 371
+      - 6598
+      - 4048
+      - 575
+      - 2121
+      - 2722
+      - 70
+      - 78
+      - 2249
+      - 3881
+      - 10264
+      - 1282
+      - 12987
+      - 1355
+      - 8865
+      - 3041
+      - 107
+      - 122
+      - 1995
+      - 3776
+      - 6415
+      - 529
+      - 15764
+      - 1380
+      - 14881
+      - 3337
+      - 158
+      - 158
+      - 3156
+      - 5347
+      - 13623
+      - 2659
+      - 24622
+      - 2408
+      - 17247
+      - 4398
+      - 270
+      - 271
+      - 4449
+      - 6957
+      - 11398
+      - 1715
+      - 28572
+      - 3037
+      - 29463
+      - 3337
+      - 158
+      - 158
+      - 3156
+      - 5347
+      - 13623
+      - 2659
+      - 24622
+      - 2408
+      - 17247
+      - 3041
+      - 107
+      - 122
+      - 1995
+      - 3776
+      - 6415
+      - 529
+      - 15764
+      - 1380
+      - 14881
+      - 2722
+      - 70
+      - 78
+      - 2249
+      - 3881
+      - 10264
+      - 1282
+      - 12987
+      - 1355
+      - 8865
+      - 2601
+      - 45
+      - 49
+      - 969
+      - 2069
+      - 371
+      - 6598
+      - 4048
+      - 574
+      - 2121
+    PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
+      - 0
+      - 33333333
+      - 66666666
+      - 99999999
+      - 133333332
+      - 166666665
+      - 199999998
+      - 233333331
+      - 266666664
+      - 299999997
+      - 333333330
+      - 366666663
+      - 399999996
+      - 433333329
+      - 466666662
+      - 499999995
+      - 533333328
+      - 566666661
+      - 599999994
+      - 633333327
+      - 666666660
+      - 699999993
+      - 733333326
+      - 766666659
+      - 799999992
+      - 833333325
+      - 866666658
+      - 899999991
+      - 933333324
+      - 966666657
+      - 999999990
+      - 1033333323
+      - 1066666656
+      - 1099999989
+      - 1133333322
+      - 1166666655
+      - 1199999988
+      - 1233333321
+      - 1266666654
+      - 1299999987
+      - 1333333320
+      - 1366666653
+      - 1399999986
+      - 1433333319
+      - 1466666652
+      - 1499999985
+      - 1533333318
+      - 1566666651
+      - 1599999984
+      - 1633333317
+      - 1666666650
+      - 1699999983
+      - 1733333316
+      - 1766666649
+      - 1799999982
+      - 1833333315
+      - 1866666648
+      - 1899999981
+      - 1933333314
+      - 1966666647
+      - 1999999980
+      - 2033333313
+      - 2066666646
+      - 2099999979
+      - 2133333312
+      - 2166666645
+      - 2199999978
+      - 2233333311
+      - 2266666644
+      - 2299999977
+      - 2333333310
+      - 2366666643
+      - 2399999976
+      - 2433333309
+      - 2466666642
+      - 2499999975
+      - 2533333308
+      - 2566666641
+      - 2599999974
+      - 2633333307
+      - 2666666640
+      - 2699999973
+      - 2733333306
+      - 2766666639
+      - 2799999972
+      - 2833333305
+      - 2866666638
+      - 2899999971
+      - 2933333304
+      - 2966666637
+      - 2999999970
+      - 3033333303
+      - 3066666636
+      - 3099999969
+      - 3133333302
+      - 3166666635
+      - 3199999968
+      - 3233333301
+      - 3266666634
+      - 3299999967
 

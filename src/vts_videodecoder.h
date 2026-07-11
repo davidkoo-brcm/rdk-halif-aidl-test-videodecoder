@@ -80,6 +80,7 @@
 #include <optional>
 #include <algorithm>
 #include <unordered_set>
+#include <set>
 #include <stdexcept>
 #include <thread>
 #include <chrono>
@@ -157,12 +158,8 @@ extern std::vector<IVideoDecoder::Id>            decoderIds;
 extern std::vector<sp<IVideoDecoderController>>  controllers;
 
 
-// Detects MockVideoDecoderService the same way videodecoder/run.sh does (pgrep -f),
-// so the mock-only config path below is picked automatically regardless of which
-// run.sh actually launched this binary - the deployed top-level run.sh (build/bin/run.sh)
-// is a generic launcher shared by all HAL components and never sets
-// VIDEO_DECODER_L3_CONFIG_PATH, so relying on that env var alone silently fell back
-// to the real-HAL config path even when running against the mock.
+// Detects MockVideoDecoderService via pgrep (like videodecoder/run.sh), since the
+// shared top-level run.sh never sets VIDEO_DECODER_L3_CONFIG_PATH for any HAL component.
 inline bool isMockVideoDecoderServiceRunning()
 {
     // Bracket trick avoids self-matching the "sh -c <this pgrep>" wrapper std::system() spawns.
@@ -170,10 +167,7 @@ inline bool isMockVideoDecoderServiceRunning()
     return WIFEXITED(status) && WEXITSTATUS(status) == 0;
 }
 
-// VIDEO_DECODER_L3_CONFIG_PATH lets run.sh point L3 tests at a mock-only config
-// (with matching mock stream yamls) when running against MockVideoDecoderService,
-// without touching the default path used for real-HAL runs. Falls back to
-// pgrep-based auto-detection when the env var isn't set.
+// Lets run.sh point L3 tests at a mock-only config; falls back to pgrep auto-detection if unset.
 inline const char* getVideoDecoderTestConfigPath()
 {
     const char* envPath = getenv("VIDEO_DECODER_L3_CONFIG_PATH");
@@ -310,10 +304,8 @@ struct videoDecoderTestConfiguration_t {
     std::optional<DolbyVisionLayerFlags> overrideDolbyVisionLayerFlags;
     std::optional<videodecoder::Fraction> overridePixelAspectRatio;
 
-    // In-band resolution/bitrate ladder breakpoints (empty = no dynamic resolution
-    // change; codedWidth/codedHeight above stay authoritative for the whole stream).
-    // Non-empty also switches the decode_time_threshold check from warning-only to
-    // a hard failure, since these streams are the AdaptiveBitrate real-time proxy.
+    // In-band resolution/bitrate ladder (AdaptiveBitrate streams); non-empty makes
+    // decode_time_threshold a hard failure instead of a warning.
     std::vector<ResolutionChange_t> resolutionChanges;
 
     // When != -1, open() is replaced by openWithResolution(codec, secure, listener, openWithResolutionWidth, openWithResolutionHeight)
@@ -1787,8 +1779,21 @@ private:
 private:
     bool makeFrame();
     void setupVideoDecoder();
+    // Helpers for setupVideoDecoder(), one per setup concern:
+    void openOrReuseVideoDecoder();
+    void applyTunnelModePropertyIfNeeded();
+    void buildAndApplyStreamConfig();
+    void applyDecodeErrorPolicyIfNeeded();
+    void applyLowLatencyModeIfNeeded();
     void startDecoding();
     bool validateDecodedFrame();
+    // Helpers for validateDecodedFrame(), one per validation concern:
+    bool validateFrameLatencyAndBuffer(const DecodedVideoFrame_t& decodedFrame, std::set<int64_t>& receivedPts,
+                                        int32_t& totalOnFramesDecoded);
+    void validateFrameMetadata(const DecodedVideoFrame_t& decodedFrame, int32_t& discontinuityFramesReceived);
+    void validateDiscontinuityAndEndOfStream(int32_t discontinuityFramesReceived, int32_t expectedFrames,
+                                              int32_t expectedEOSFrames);
+    void validateFinalMetrics(int32_t totalOnFramesDecoded, int32_t totalOnErrorsReceived, int32_t expectedFrames);
     void releaseDecoderSession(bool closeController);
     void teardownDecoder(bool closeDecoderSession = false);
     void decodeAndConsumeVideoFrames();

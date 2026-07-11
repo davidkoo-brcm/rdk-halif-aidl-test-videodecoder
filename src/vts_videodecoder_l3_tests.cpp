@@ -642,11 +642,8 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_LowLatenc
 }
 
 /**
- * @brief Test decoding with adaptive bitrate streaming: validates both the resolution
- *        and bitrate ladder dynamically as the decoder switches mid-stream (absorbs
- *        the former, now-retired Resolutions test case - same runTest() mechanism,
- *        just against a stream carrying a real in-band resolution/bitrate ladder).
- *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
+ * @brief Test adaptive bitrate streaming: validates the resolution/bitrate ladder
+ *        as the decoder switches mid-stream. Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 007
  */
 UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_AdaptiveBitrate)
@@ -814,14 +811,9 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_FlushRese
 }
 
 /**
- * @brief Test mid-stream colorimetry and HDR metadata override via InputBufferMetadata.
- *
- * Validates that the HAL correctly applies a colorimetry and HDR metadata change
- * attached to a buffer mid-stream (e.g. ABR period transition from SDR to HDR10).
- * The override is supplied via the nullable fields in InputBufferMetadata rather
- * than a separate setStreamConfig() call, simulating a container-driven per-buffer
- * metadata update. Output FrameMetadata is verified to reflect the new values from
- * the override PTS onward.
+ * @brief Test mid-stream colorimetry/HDR override via InputBufferMetadata (e.g. an
+ *        ABR period transition from SDR to HDR10), verifying FrameMetadata reflects
+ *        the new values from the override PTS onward.
  *
  * **Test Group ID:** 01 @n
  * **Test Case ID:** 019 @n
@@ -837,14 +829,8 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_MetadataO
 }
 
 /**
- * @brief Test mid-stream metadata override simulating SSAI ad insertion.
- *
- * Validates that the HAL accepts and applies colorimetry and content light level
- * overrides at a mid-stream buffer boundary representing a server-side ad insertion
- * splice point. The override is carried on the first ad buffer via InputBufferMetadata
- * nullable fields and must persist for subsequent buffers without requiring a
- * setStreamConfig() call. Output FrameMetadata is verified before and after the
- * splice point.
+ * @brief Test mid-stream colorimetry/content-light-level override via InputBufferMetadata
+ *        simulating an SSAI ad-insertion splice point, verifying it persists across buffers.
  *
  * **Test Group ID:** 01 @n
  * **Test Case ID:** 020 @n
@@ -860,13 +846,8 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_MetadataO
 }
 
 /**
- * @brief Test mid-stream pixel aspect ratio override via InputBufferMetadata.
- *
- * Validates that the HAL correctly applies a pixel aspect ratio change attached
- * to a buffer mid-stream via the nullable pixelAspectRatio field in
- * InputBufferMetadata. This covers anamorphic content or resolution changes where
- * the PAR differs from the initial stream configuration. Output FrameMetadata is
- * verified to reflect the overridden PAR from the override PTS onward.
+ * @brief Test mid-stream pixel aspect ratio override via InputBufferMetadata (e.g.
+ *        anamorphic content), verifying FrameMetadata reflects the overridden PAR.
  *
  * **Test Group ID:** 01 @n
  * **Test Case ID:** 021 @n

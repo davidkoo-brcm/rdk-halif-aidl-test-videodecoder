@@ -75,9 +75,9 @@ all: $(MOCK_SERVICE_BIN)
 
 check-libs:
 	@echo "Checking required libraries..."
-	@test -e "$(HALIF_LIB_DIR)/libvideodecoder-cpp.so" || { echo "ERROR: missing $(HALIF_LIB_DIR)/libvideodecoder-cpp.so - run ./build.sh Target=linux (or arm) first"; exit 1; }
-	@test -e "$(HALIF_LIB_DIR)/libavbuffer-cpp.so" || { echo "ERROR: missing $(HALIF_LIB_DIR)/libavbuffer-cpp.so - run ./build.sh Target=linux (or arm) first"; exit 1; }
-	@test -e "$(HALIF_LIB_DIR)/libcommon-cpp.so" || { echo "ERROR: missing $(HALIF_LIB_DIR)/libcommon-cpp.so - run ./build.sh Target=linux (or arm) first"; exit 1; }
+	@test -e "$(HALIF_LIB_DIR)/libvideodecoder-cpp_vts.so" || { echo "ERROR: missing $(HALIF_LIB_DIR)/libvideodecoder-cpp_vts.so - run ./build.sh Target=linux (or arm) first"; exit 1; }
+	@test -e "$(HALIF_LIB_DIR)/libavbuffer-cpp_vts.so" || { echo "ERROR: missing $(HALIF_LIB_DIR)/libavbuffer-cpp_vts.so - run ./build.sh Target=linux (or arm) first"; exit 1; }
+	@test -e "$(HALIF_LIB_DIR)/libcommon-cpp_vts.so" || { echo "ERROR: missing $(HALIF_LIB_DIR)/libcommon-cpp_vts.so - run ./build.sh Target=linux (or arm) first"; exit 1; }
 	@test -e "$(BUILD_DIR)/usr/lib/libbinder.so" || { echo "ERROR: missing $(BUILD_DIR)/usr/lib/libbinder.so - run ./build.sh Target=linux (or arm) first"; exit 1; }
 	@test -e "$(BUILD_DIR)/usr/lib/libutils.so" || { echo "ERROR: missing $(BUILD_DIR)/usr/lib/libutils.so - run ./build.sh Target=linux (or arm) first"; exit 1; }
 	@test -e "$(BUILD_DIR)/usr/lib/libbase.so" || { echo "ERROR: missing $(BUILD_DIR)/usr/lib/libbase.so - run ./build.sh Target=linux (or arm) first"; exit 1; }
@@ -89,9 +89,9 @@ $(MOCK_SERVICE_BIN): check-libs $(MOCK_SERVICE_BIN_SRC:%.cpp=%.o)
 		$(MOCK_SERVICE_BIN_SRC:%.cpp=%.o) -o $@ \
 		$(MOCK_SERVICE_LD_LIBS) \
 		-lpthread \
-		-lvideodecoder-cpp \
-		-lcommon-cpp \
-		-lavbuffer-cpp
+		-lvideodecoder-cpp_vts \
+		-lcommon-cpp_vts \
+		-lavbuffer-cpp_vts
 
 %.o: %.cpp
 	$(CXX) $(MOCK_SERVICE_CXXFLAGS) $(MOCK_SERVICE_INC_FLAGS) -fPIC -Wno-error -w -c $< -o $@
