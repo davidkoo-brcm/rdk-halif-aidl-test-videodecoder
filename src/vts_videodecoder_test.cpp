@@ -500,7 +500,8 @@ void videoDecoderTest::validateFrameMetadata(const DecodedVideoFrame_t& decodedF
     // frame's PTS, not the stream-level codedWidth/codedHeight (which holds the ladder's peak).
     int32_t expectedResWidth = mTestConfiguration.codedWidth;
     int32_t expectedResHeight = mTestConfiguration.codedHeight;
-    if (!mTestConfiguration.resolutionChanges.empty())
+    bool isAdaptiveBitrate = !mTestConfiguration.resolutionChanges.empty();
+    if (isAdaptiveBitrate)
     {
         for (const auto& change : mTestConfiguration.resolutionChanges)
         {
@@ -511,13 +512,16 @@ void videoDecoderTest::validateFrameMetadata(const DecodedVideoFrame_t& decodedF
             }
         }
     }
-    UT_ASSERT_EQUAL(decodedFrame.metadata->codedWidth, expectedResWidth)
+    // ABR ladder resolutions are nominal/display size, so compare against active dims, not the macroblock-padded coded dims
+    int32_t actualResWidth = isAdaptiveBitrate ? decodedFrame.metadata->activeWidth : decodedFrame.metadata->codedWidth;
+    int32_t actualResHeight = isAdaptiveBitrate ? decodedFrame.metadata->activeHeight : decodedFrame.metadata->codedHeight;
+    UT_ASSERT_EQUAL(actualResWidth, expectedResWidth)
         << "Width mismatch: expected=" << expectedResWidth
-        << ", actual=" << decodedFrame.metadata->codedWidth
+        << ", actual=" << actualResWidth
         << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-    UT_ASSERT_EQUAL(decodedFrame.metadata->codedHeight, expectedResHeight)
+    UT_ASSERT_EQUAL(actualResHeight, expectedResHeight)
         << "Height mismatch: expected=" << expectedResHeight
-        << ", actual=" << decodedFrame.metadata->codedHeight
+        << ", actual=" << actualResHeight
         << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
 
     // colorDepth/dynamicRange are derived from TransferCharacteristics (see

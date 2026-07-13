@@ -103,6 +103,7 @@ public:
     int32_t mLowLatency;
     AVSource mAVSource;
     int32_t mDecodeErrorPolicy;
+    bool mDecodeErrorPolicySet;
     int32_t mSha1Calc;
     int32_t mOperationalMode;
 
@@ -157,11 +158,8 @@ public:
                                    bool sendFullMetadata, bool discontinuity);
     void fireOnEndOfStreamCallback();
     void ensureOutputPool();
-    // Synchronously destroys the output pool if valid. Called from close() so pool
-    // teardown doesn't depend on this object's destructor timing, which only runs when
-    // the client's remote binder reference is released - an async, non-deterministic
-    // event relative to close() returning. Idempotent; also called from the destructor
-    // as a fallback for sessions that never call close() explicitly.
+    // Synchronously destroys the output pool; called from close() and, as a fallback,
+    // from the destructor for sessions that never call close() explicitly. Idempotent.
     void releaseOutputPool();
 
     android::binder::Status start() override;
@@ -175,6 +173,14 @@ public:
     android::binder::Status setStreamConfig(const videodecoder::VideoDecoderStreamConfig& config) override;
 
 private:
+    // Helpers for decodeBufferWithMetadata(), one per concern:
+    android::binder::Status validateDecodeBufferArgs(int64_t bufferHandle,
+        const ::com::rdk::hal::videodecoder::InputBufferMetadata& metadata);
+    bool tryAcceptBufferIntoQueue();
+    void applyMetadataOverrides(const ::com::rdk::hal::videodecoder::InputBufferMetadata& metadata);
+    bool injectDecodeErrorIfDue();
+    int64_t allocateOutputBufferIfNeeded();
+
     bool mEosSignaled;
     std::mutex mEosMutex;
     int32_t mBuffersSubmitted;

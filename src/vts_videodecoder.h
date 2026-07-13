@@ -313,16 +313,9 @@ struct videoDecoderTestConfiguration_t {
     int32_t openWithResolutionHeight; // -1 = use open(), >0 = use openWithResolution()
 
     // Sink control fields
+    bool    sink_backpressure;
     int64_t sink_discardFramesUntilPts;
-    int64_t sink_underflowPts;
-    int64_t sink_resumeTriggerPts;
-    int32_t sink_repeatPerFrame;
-    int64_t sink_flush_pts;
-    int64_t sink_flush_reset_pts;
-    int64_t sink_eos_pts;
-    int64_t sink_interFrameDelayMs;
-    int64_t sink_discontinuityPTS;
-    std::string sink_testName;
+    int64_t sink_underflow_pts; //sink specific
 };
 
 
@@ -347,6 +340,9 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, const char *m
 UT_status_t vts_videodecoder_parseVideoDecoderHFP();
 
 size_t vts_bytesPerPixel(PixelFormat format);
+
+bool checkDecoderSupportsConfig(const IVideoDecoder::Id& decoderId, const videodecoder::Capabilities* capabilities,
+                                const videoDecoderTestConfiguration_t& testConfig, bool secureDecode);
 
 
 #define VIDEODECODER_MANAGER_GETVIDEODECODERIDS(decoderIds) \
