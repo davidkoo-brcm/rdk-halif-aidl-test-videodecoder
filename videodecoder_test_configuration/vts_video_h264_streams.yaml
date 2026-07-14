@@ -243,7 +243,7 @@ VideoStreams:
     discontinuity: 0
     lowLatency: 0
     bit_rate: 837
-    no_of_frames: 12
+    no_of_frames: 16
     decodeErrors: 0
     framesDropped: 0
     openWithResolutionWidth: -1
@@ -302,7 +302,7 @@ VideoStreams:
     discontinuity: 0
     lowLatency: 1 # drives setProperty(LOW_LATENCY_MODE, 1) before start; same content as the _734 baseline otherwise
     bit_rate: 837
-    no_of_frames: 12
+    no_of_frames: 16
     decodeErrors: 0
     framesDropped: 0
     openWithResolutionWidth: -1
@@ -341,7 +341,7 @@ VideoStreams:
       - 166667000
       - 133333000
       - 150000000
-  H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_METADATAOVERRIDE_HDR:
+  H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_METADATA_OVERRIDE_HDR:
     input: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     codec: H264_AVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
@@ -361,7 +361,7 @@ VideoStreams:
     discontinuity: 0
     lowLatency: 0
     bit_rate: 837
-    no_of_frames: 12
+    no_of_frames: 16
     decodeErrors: 0
     framesDropped: 0
     openWithResolutionWidth: -1
@@ -410,7 +410,7 @@ VideoStreams:
       - 166667000
       - 133333000
       - 150000000
-  H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_METADATAOVERRIDE_SSAI:
+  H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_METADATA_OVERRIDE_SSAI:
     input: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     codec: H264_AVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
@@ -430,7 +430,7 @@ VideoStreams:
     discontinuity: 0
     lowLatency: 0
     bit_rate: 837
-    no_of_frames: 12
+    no_of_frames: 16
     decodeErrors: 0
     framesDropped: 0
     openWithResolutionWidth: -1
@@ -479,7 +479,7 @@ VideoStreams:
       - 166667000
       - 133333000
       - 150000000
-  H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_METADATAOVERRIDE_PAR:
+  H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_METADATA_OVERRIDE_PAR:
     input: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     codec: H264_AVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
@@ -499,7 +499,7 @@ VideoStreams:
     discontinuity: 0
     lowLatency: 0
     bit_rate: 837
-    no_of_frames: 12
+    no_of_frames: 16
     decodeErrors: 0
     framesDropped: 0
     openWithResolutionWidth: -1
@@ -563,7 +563,7 @@ VideoStreams:
     discontinuity: 0
     lowLatency: 0
     bit_rate: 837
-    no_of_frames: 12
+    no_of_frames: 16
     decodeErrors: 4
     framesDropped: 0
     openWithResolutionWidth: -1
@@ -622,7 +622,7 @@ VideoStreams:
     discontinuity: 1
     lowLatency: 0
     bit_rate: 837
-    no_of_frames: 12
+    no_of_frames: 16
     decodeErrors: 0
     framesDropped: 0
     openWithResolutionWidth: -1
@@ -681,7 +681,7 @@ VideoStreams:
     discontinuity: 0
     lowLatency: 0
     bit_rate: 837
-    no_of_frames: 12
+    no_of_frames: 16
     decodeErrors: 0
     framesDropped: 0
     openWithResolutionWidth: -1
@@ -740,7 +740,7 @@ VideoStreams:
     discontinuity: 0
     lowLatency: 0
     bit_rate: 837
-    no_of_frames: 12
+    no_of_frames: 16
     decodeErrors: 0
     framesDropped: 0
     openWithResolutionWidth: -1
@@ -799,7 +799,7 @@ VideoStreams:
     discontinuity: 0
     lowLatency: 0
     bit_rate: 837
-    no_of_frames: 12
+    no_of_frames: 16
     decodeErrors: 0
     framesDropped: 0
     openWithResolutionWidth: -1
@@ -858,7 +858,7 @@ VideoStreams:
     discontinuity: 0
     lowLatency: 0
     bit_rate: 837
-    no_of_frames: 122
+    no_of_frames: 126
     decodeErrors: 0
     framesDropped: 0
     openWithResolutionWidth: -1
@@ -1137,7 +1137,7 @@ VideoStreams:
     discontinuity: 1
     lowLatency: 0
     bit_rate: 837
-    no_of_frames: 12
+    no_of_frames: 16
     decodeErrors: 3
     framesDropped: 0
     openWithResolutionWidth: -1
@@ -1196,7 +1196,7 @@ VideoStreams:
     discontinuity: 0
     lowLatency: 0
     bit_rate: 837
-    no_of_frames: 12
+    no_of_frames: 16
     decodeErrors: 3
     framesDropped: 0
     openWithResolutionWidth: -1
@@ -1255,7 +1255,7 @@ VideoStreams:
     discontinuity: 1
     lowLatency: 0
     bit_rate: 837
-    no_of_frames: 12
+    no_of_frames: 16
     decodeErrors: 0
     framesDropped: 0
     openWithResolutionWidth: -1
@@ -1314,7 +1314,7 @@ VideoStreams:
     discontinuity: 0
     lowLatency: 0
     bit_rate: 837
-    no_of_frames: 12
+    no_of_frames: 16
     decodeErrors: 2
     framesDropped: 0
     openWithResolutionWidth: -1
@@ -1373,7 +1373,7 @@ VideoStreams:
     discontinuity: 0
     lowLatency: 0
     bit_rate: 837
-    no_of_frames: 12
+    no_of_frames: 16
     decodeErrors: 3
     framesDropped: 0
     openWithResolutionWidth: -1
@@ -1412,7 +1412,7 @@ VideoStreams:
       - 166667000
       - 133333000
       - 150000000
-  H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_METADATA_OVERRIDE_HDR:
+  H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_METADATA_OVERRIDE_HDR_ALT:
     input: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     codec: H264_AVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
@@ -1432,7 +1432,7 @@ VideoStreams:
     discontinuity: 0
     lowLatency: 0
     bit_rate: 837
-    no_of_frames: 12
+    no_of_frames: 16
     decodeErrors: 0
     framesDropped: 0
     openWithResolutionWidth: -1
@@ -1491,7 +1491,7 @@ VideoStreams:
       - 166667000
       - 133333000
       - 150000000
-  H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_METADATA_OVERRIDE_SSAI:
+  H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_METADATA_OVERRIDE_SSAI_ALT:
     input: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     codec: H264_AVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
@@ -1511,7 +1511,7 @@ VideoStreams:
     discontinuity: 0
     lowLatency: 0
     bit_rate: 837
-    no_of_frames: 12
+    no_of_frames: 16
     decodeErrors: 0
     framesDropped: 0
     openWithResolutionWidth: -1
@@ -1556,7 +1556,7 @@ VideoStreams:
       - 166667000
       - 133333000
       - 150000000
-  H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_METADATA_OVERRIDE_PAR:
+  H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_METADATA_OVERRIDE_PAR_ALT:
     input: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     codec: H264_AVC  #Video codec information, Refer `Codec` enum
     codedWidth: 1920
@@ -1576,7 +1576,7 @@ VideoStreams:
     discontinuity: 0
     lowLatency: 0
     bit_rate: 837
-    no_of_frames: 12
+    no_of_frames: 16
     decodeErrors: 0
     framesDropped: 0
     openWithResolutionWidth: -1

@@ -315,7 +315,7 @@ VideoStreams:
     discontinuity: 0
     lowLatency: 0
     bit_rate: 837
-    no_of_frames: 12
+    no_of_frames: 16
     decodeErrors: 0
     framesDropped: 0
     openWithResolutionWidth: -1
@@ -374,7 +374,7 @@ VideoStreams:
     discontinuity: 0
     lowLatency: 1 # drives setProperty(LOW_LATENCY_MODE, 1) before start; same content as the _734 baseline otherwise
     bit_rate: 837
-    no_of_frames: 12
+    no_of_frames: 16
     decodeErrors: 0
     framesDropped: 0
     openWithResolutionWidth: -1
@@ -433,7 +433,7 @@ VideoStreams:
     discontinuity: 0
     lowLatency: 0
     bit_rate: 837
-    no_of_frames: 12
+    no_of_frames: 16
     decodeErrors: 3
     framesDropped: 0
     openWithResolutionWidth: -1
@@ -492,7 +492,7 @@ VideoStreams:
     discontinuity: 1
     lowLatency: 0
     bit_rate: 837
-    no_of_frames: 12
+    no_of_frames: 16
     decodeErrors: 0
     framesDropped: 0
     openWithResolutionWidth: -1
@@ -551,7 +551,7 @@ VideoStreams:
     discontinuity: 0
     lowLatency: 0
     bit_rate: 837
-    no_of_frames: 12
+    no_of_frames: 16
     decodeErrors: 0
     framesDropped: 0
     openWithResolutionWidth: -1
@@ -610,7 +610,7 @@ VideoStreams:
     discontinuity: 0
     lowLatency: 0
     bit_rate: 837
-    no_of_frames: 12
+    no_of_frames: 16
     decodeErrors: 0
     framesDropped: 0
     openWithResolutionWidth: -1
@@ -669,7 +669,7 @@ VideoStreams:
     discontinuity: 0
     lowLatency: 0
     bit_rate: 837
-    no_of_frames: 12
+    no_of_frames: 16
     decodeErrors: 0
     framesDropped: 0
     openWithResolutionWidth: -1
@@ -728,7 +728,7 @@ VideoStreams:
     discontinuity: 1
     lowLatency: 0
     bit_rate: 837
-    no_of_frames: 12
+    no_of_frames: 16
     decodeErrors: 3
     framesDropped: 0
     openWithResolutionWidth: -1
@@ -787,7 +787,7 @@ VideoStreams:
     discontinuity: 0
     lowLatency: 0
     bit_rate: 837
-    no_of_frames: 12
+    no_of_frames: 16
     decodeErrors: 3
     framesDropped: 0
     openWithResolutionWidth: -1
@@ -846,7 +846,7 @@ VideoStreams:
     discontinuity: 1
     lowLatency: 0
     bit_rate: 837
-    no_of_frames: 12
+    no_of_frames: 16
     decodeErrors: 0
     framesDropped: 0
     openWithResolutionWidth: -1
@@ -905,7 +905,7 @@ VideoStreams:
     discontinuity: 0
     lowLatency: 0
     bit_rate: 837
-    no_of_frames: 12
+    no_of_frames: 16
     decodeErrors: 2
     framesDropped: 0
     openWithResolutionWidth: -1
@@ -964,7 +964,7 @@ VideoStreams:
     discontinuity: 0
     lowLatency: 0
     bit_rate: 837
-    no_of_frames: 12
+    no_of_frames: 16
     decodeErrors: 2
     framesDropped: 0
     openWithResolutionWidth: -1
@@ -1565,7 +1565,7 @@ VideoStreams:
     discontinuity: 0
     lowLatency: 0
     bit_rate: 837
-    no_of_frames: 12
+    no_of_frames: 16
     decodeErrors: 0
     framesDropped: 0
     openWithResolutionWidth: -1
@@ -1644,7 +1644,7 @@ VideoStreams:
     discontinuity: 0
     lowLatency: 0
     bit_rate: 837
-    no_of_frames: 12
+    no_of_frames: 16
     decodeErrors: 0
     framesDropped: 0
     openWithResolutionWidth: -1
@@ -1709,7 +1709,7 @@ VideoStreams:
     discontinuity: 0
     lowLatency: 0
     bit_rate: 837
-    no_of_frames: 12
+    no_of_frames: 16
     decodeErrors: 0
     framesDropped: 0
     openWithResolutionWidth: -1

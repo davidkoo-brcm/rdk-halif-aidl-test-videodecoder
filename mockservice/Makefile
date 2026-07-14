@@ -94,7 +94,7 @@ $(MOCK_SERVICE_BIN): check-libs $(MOCK_SERVICE_BIN_SRC:%.cpp=%.o)
 		-lavbuffer-cpp_vts
 
 %.o: %.cpp
-	$(CXX) $(MOCK_SERVICE_CXXFLAGS) $(MOCK_SERVICE_INC_FLAGS) -fPIC -Wno-error -w -c $< -o $@
+	$(CXX) $(MOCK_SERVICE_CXXFLAGS) $(MOCK_SERVICE_INC_FLAGS) -fPIC -Wno-error -c $< -o $@
 
 
 clean:

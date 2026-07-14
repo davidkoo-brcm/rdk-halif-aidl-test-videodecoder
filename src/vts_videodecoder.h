@@ -164,6 +164,11 @@ inline bool isMockVideoDecoderServiceRunning()
 {
     // Bracket trick avoids self-matching the "sh -c <this pgrep>" wrapper std::system() spawns.
     int status = std::system("pgrep -f [M]ockVideoDecoderService > /dev/null 2>&1");
+    if (status == -1)
+    {
+        // Child process could not be created/waited on; status is not a wait status here.
+        return false;
+    }
     return WIFEXITED(status) && WEXITSTATUS(status) == 0;
 }
 
@@ -187,8 +192,6 @@ inline const char* getVideoDecoderTestConfigPath()
 #define VIDEO_DECODER_TEST_CONFIG_PATH const_cast<char*>(getVideoDecoderTestConfigPath())
 #define VIDEO_DECODER_STREAM_CONFIG_PATH "./videodecoder_test_configuration/vts_stream_list.yaml"
 #define VIDEO_DECODER_STREAM_DOWNLOAD_PATH "videodecoder.stream_download_path"
-#define VIDEO_DECODER_STREAM_INPUT_PATH "videodecoder.input_streams_path"
-#define VIDEO_DECODER_STREAM_REF_PATH "videodecoder.reference_streams_path"
 
 extern void *gVideoDecoderTestConfiguration;
 
@@ -335,7 +338,9 @@ bool vts_videodecoder_helper_checkCodecAttributeExists(const std::string& attrpa
 bool vts_videodecoder_helper_profileFieldPresent(const std::string& key);
 double vts_computeVideoRMSDiff(const uint8_t* ref, const uint8_t* dec, size_t width, size_t height, PixelFormat format);
 
-UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, const char *module, const char *testGroup, const char *testName, std::vector<videoDecoderTestConfiguration_t>& testConfiguration);
+UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, const char *module,
+                                              const char *testGroup, const char *testName,
+                                              std::vector<videoDecoderTestConfiguration_t>& testConfiguration);
 
 UT_status_t vts_videodecoder_parseVideoDecoderHFP();
 
@@ -1301,19 +1306,19 @@ do { \
         } \
     } while (0)
 
-#define VIDEODECODER_DECODEBUFFER_WITH_METADATA_FAILURE(controller, framePts, frameBufferHandle, frameEos, frameDiscontinuity, expectedException) \
+#define VIDEODECODER_DECODEBUFFER_WITH_METADATA_FAILURE(controller, framePts, frameBufferHandle, frameDiscontinuity, expectedException) \
     do { \
         bool decodeResult = false; \
         ::com::rdk::hal::videodecoder::InputBufferMetadata inputMetadata = {}; \
         inputMetadata.nsPresentationTime = static_cast<int64_t>(framePts); \
         inputMetadata.discontinuity = static_cast<bool>(frameDiscontinuity); \
-        UT_LOG_INFO("Calling decodeBufferWithMetadata(IN:bufferHandle=[0x%016" PRIx64 "], IN:metadata:[pts=%lld,disc=%d], legacyEosHint=%d)", \
+        UT_LOG_INFO("Calling decodeBufferWithMetadata(IN:bufferHandle=[0x%016" PRIx64 "], IN:metadata:[pts=%lld,disc=%d])", \
                     static_cast<uint64_t>(frameBufferHandle), static_cast<long long>(inputMetadata.nsPresentationTime), \
-                    static_cast<int>(inputMetadata.discontinuity), static_cast<int>(frameEos)); \
+                    static_cast<int>(inputMetadata.discontinuity)); \
         Status status = (controller)->decodeBufferWithMetadata((frameBufferHandle), inputMetadata, &decodeResult); \
-        UT_LOG_INFO("Result decodeBufferWithMetadata(IN:bufferHandle=[0x%016" PRIx64 "], IN:metadata:[pts=%lld,disc=%d], legacyEosHint=%d) status=[isOK:%s, exception:%s], result=%s", \
+        UT_LOG_INFO("Result decodeBufferWithMetadata(IN:bufferHandle=[0x%016" PRIx64 "], IN:metadata:[pts=%lld,disc=%d]) status=[isOK:%s, exception:%s], result=%s", \
                     static_cast<uint64_t>(frameBufferHandle), static_cast<long long>(inputMetadata.nsPresentationTime), \
-                    static_cast<int>(inputMetadata.discontinuity), static_cast<int>(frameEos), \
+                    static_cast<int>(inputMetadata.discontinuity), \
                     UT_Control_GetMapString(bool_mapTable, status.isOk()), \
                     UT_Control_GetMapString(statusException_mapTable, status.exceptionCode()), \
                     decodeResult ? "true" : "false"); \

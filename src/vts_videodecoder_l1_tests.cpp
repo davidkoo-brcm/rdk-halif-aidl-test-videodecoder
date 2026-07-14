@@ -1940,22 +1940,22 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, decodeBufferWithMetadata_neg)
 
             // Invalid State - Decoder Not Started
             VIDEODECODER_DECODEBUFFER_WITH_METADATA_FAILURE(videoDecoderController, 3000000, 1,
-                                                            false, false, Status::EX_ILLEGAL_STATE);
+                                                            false, Status::EX_ILLEGAL_STATE);
 
             /* Start the Decoder */
             VIDEODECODER_START_SUCCESS(videoDecoder, videoDecoderController, true);
 
             // Invalid Buffer Handle
             VIDEODECODER_DECODEBUFFER_WITH_METADATA_FAILURE(videoDecoderController, 4000000, -1,
-                                                            false, false, Status::EX_ILLEGAL_ARGUMENT);
+                                                            false, Status::EX_ILLEGAL_ARGUMENT);
 
             // Invalid nsPresentationTime
             VIDEODECODER_DECODEBUFFER_WITH_METADATA_FAILURE(videoDecoderController, -1000000, 1,
-                                                            false, false, Status::EX_ILLEGAL_ARGUMENT);
+                                                            false, Status::EX_ILLEGAL_ARGUMENT);
 
             // Reserved discontinuity in metadata must be rejected in v1
             VIDEODECODER_DECODEBUFFER_WITH_METADATA_FAILURE(videoDecoderController, 5000000, 1,
-                                                            false, true, Status::EX_ILLEGAL_ARGUMENT);
+                                                            true, Status::EX_ILLEGAL_ARGUMENT);
 
             //Reverting state to READY
             VIDEODECODER_STOP_SUCCESS(videoDecoder, videoDecoderController, true);

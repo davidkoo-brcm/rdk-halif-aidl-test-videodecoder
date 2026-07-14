@@ -35,10 +35,6 @@ declare -r BUILD_INSTALL_PREFIX=${BUILD_DIR}/usr
 declare -r MOCK_SERVICE_DIR="${TOP}/mockservice"
 declare -r RDK_HAL_DIR=${TOP}/rdk-halif-aidl
 declare -r INSTALL_PATH=${BUILD_DIR}/bin
-declare -r DEFAULT_AIDL_MANIFEST="versions_released.yaml"
-
-AIDL_VERSION_MANIFEST="${AIDL_VERSION_MANIFEST=${DEFAULT_AIDL_MANIFEST}}"
-PREBUILT_AIDL_ROOT="${PREBUILT_AIDL_ROOT=${DEFAULT_PREBUILT_AIDL_ROOT}}"
 
 # build_mock.sh owns mock-only flow and handles binder provisioning.
 if [ "${1:-}" == "mock" ]; then
@@ -77,100 +73,6 @@ ensure_rdk_hal_repo()
     if [ ! -d "$RDK_HAL_DIR" ]; then
         git clone -b $RDK_HALIF_AIDL_VERSION 'ssh://git@github.com/rdkcentral/rdk-halif-aidl.git' $RDK_HAL_DIR
     fi
-}
-
-resolve_manifest_file()
-{
-    if [[ "$AIDL_VERSION_MANIFEST" = /* ]]; then
-        echo "$AIDL_VERSION_MANIFEST"
-    else
-        echo "${RDK_HAL_DIR}/${AIDL_VERSION_MANIFEST}"
-    fi
-}
-
-manifest_component_version()
-{
-    local component="$1"
-    local manifest_file
-    local default_version
-
-    manifest_file="$(resolve_manifest_file)"
-    if [ ! -f "$manifest_file" ]; then
-        echo "current"
-        return 0
-    fi
-
-    default_version=$(awk '/^default:/{print $2; exit}' "$manifest_file")
-    default_version=${default_version:-current}
-
-    awk -v comp="$component" -v def="$default_version" '
-        /^components:/      { inmap=1; next }
-        inmap && /^[^[:space:]#]/ { inmap=0 }
-        inmap && $1 == comp":" {
-            print ($2 == "" ? def : $2)
-            found=1
-            exit
-        }
-        END { if (!found) print def }
-    ' "$manifest_file"
-}
-
-stage_prebuilt_aidl_artifacts()
-{
-    local prebuilt_root
-    local prebuilt_include
-    local prebuilt_lib
-    local audio_ver
-    local avbuffer_ver
-    local videodecoder_ver
-    local audio_lib
-    local avbuffer_lib
-    local videodecoder_lib
-
-    prebuilt_root="$(realpath "$PREBUILT_AIDL_ROOT" 2>/dev/null || true)"
-    prebuilt_include="${prebuilt_root}/usr/include"
-    prebuilt_lib="${prebuilt_root}/usr/lib"
-
-    if [ ! -d "$prebuilt_include/com/rdk/hal/videodecoder" ] || [ ! -d "$prebuilt_lib" ]; then
-        return 1
-    fi
-
-    ensure_rdk_hal_repo
-
-    audio_ver="$(manifest_component_version audiodecoder)"
-    avbuffer_ver="$(manifest_component_version avbuffer)"
-    videodecoder_ver="$(manifest_component_version videodecoder)"
-
-    audio_lib="libaudiodecoder-v${audio_ver}-cpp.so"
-    avbuffer_lib="libavbuffer-v${avbuffer_ver}-cpp.so"
-    videodecoder_lib="libvideodecoder-v${videodecoder_ver}-cpp.so"
-
-    if [ ! -f "${prebuilt_lib}/${audio_lib}" ] || [ ! -f "${prebuilt_lib}/${avbuffer_lib}" ] || [ ! -f "${prebuilt_lib}/${videodecoder_lib}" ]; then
-        return 1
-    fi
-
-    install -d ${BUILD_INSTALL_PREFIX}/include ${BUILD_INSTALL_PREFIX}/lib
-    cp -apr ${prebuilt_include}/com ${BUILD_INSTALL_PREFIX}/include/
-
-    install -d ${BUILD_DIR}/audiodecoder_gen/current/h/com/rdk/hal/audiodecoder
-    install -d ${BUILD_DIR}/avbuffer_gen/current/h/com/rdk/hal/avbuffer
-    install -d ${BUILD_DIR}/videodecoder_gen/current/h/com/rdk/hal/videodecoder
-    cp -f ${prebuilt_include}/com/rdk/hal/audiodecoder/*.h ${BUILD_DIR}/audiodecoder_gen/current/h/com/rdk/hal/audiodecoder/
-    cp -f ${prebuilt_include}/com/rdk/hal/avbuffer/*.h ${BUILD_DIR}/avbuffer_gen/current/h/com/rdk/hal/avbuffer/
-    cp -f ${prebuilt_include}/com/rdk/hal/videodecoder/*.h ${BUILD_DIR}/videodecoder_gen/current/h/com/rdk/hal/videodecoder/
-
-    cp -f ${prebuilt_lib}/${audio_lib} ${BUILD_INSTALL_PREFIX}/lib/
-    cp -f ${prebuilt_lib}/${avbuffer_lib} ${BUILD_INSTALL_PREFIX}/lib/
-    cp -f ${prebuilt_lib}/${videodecoder_lib} ${BUILD_INSTALL_PREFIX}/lib/
-
-    ln -sf ${audio_lib} ${BUILD_INSTALL_PREFIX}/lib/libaudiodecoderaidl.so
-    ln -sf ${avbuffer_lib} ${BUILD_INSTALL_PREFIX}/lib/libavbufferaidl.so
-    ln -sf ${videodecoder_lib} ${BUILD_INSTALL_PREFIX}/lib/libvideodecoderaidl.so
-
-    echo "Using prebuilt AIDL artifacts from ${prebuilt_root}"
-    echo "Resolved versions: audiodecoder=${audio_ver}, avbuffer=${avbuffer_ver}, videodecoder=${videodecoder_ver}"
-
-    return 0
 }
 
 prepare_aidl_binder_sdk()
@@ -363,44 +265,6 @@ build_mockservice()
         -C ${MOCK_SERVICE_DIR}
 }
 
-build_mock_only()
-{
-    install_linux_binder
-    generate_avbufferhelper_skeleton
-
-    if ! stage_prebuilt_aidl_artifacts; then
-        echo "Prebuilt AIDL artifacts unavailable; falling back to local AIDL generation."
-        prepare_aidl_binder_sdk
-        find_host_cmake
-        generate_avbuffer_hal
-        generate_audiodecoder_hal
-        generate_videodecoder_hal
-        build_aidl_libs
-    fi
-
-    build_mockservice
-
-    local required
-    for required in \
-        ${BUILD_DIR}/bin/MockVideoDecoderService \
-        ${BUILD_DIR}/usr/lib/libvideodecoderaidl.so \
-        ${BUILD_DIR}/usr/lib/libavbufferaidl.so \
-        ${BUILD_DIR}/usr/lib/libavbufferhelper.so; do
-        if [ ! -e "$required" ]; then
-            echo -e "${BOLD}${RED}Mock-only build failed: missing artifact ${required}${RESET}"
-            exit 1
-        fi
-    done
-
-    mkdir -p ${BUILD_DIR}/mock_bundle
-    cp -f ${BUILD_DIR}/bin/MockVideoDecoderService ${BUILD_DIR}/mock_bundle/
-    cp -f ${BUILD_DIR}/usr/lib/libvideodecoderaidl.so ${BUILD_DIR}/mock_bundle/
-    cp -f ${BUILD_DIR}/usr/lib/libavbufferaidl.so ${BUILD_DIR}/mock_bundle/
-    cp -f ${BUILD_DIR}/usr/lib/libavbufferhelper.so ${BUILD_DIR}/mock_bundle/
-
-    echo -e "${BOLD}${GREEN}Mock-only build completed. Artifacts: ${BUILD_DIR}/mock_bundle${RESET}"
-}
-
 build_ut_core()
 {
     if [ ! -d ${UT_CORE_DIR} ]; then
@@ -496,8 +360,6 @@ elif [ "$1" == "dist_clean" ]; then
     dist_clean_test
 elif [[ "$1" == "help" || "$1" == "--help" || "$1" == "-h" ]]; then
     help
-elif [ "$1" == "mock" ]; then
-    build_mock_only
 elif [ "$1" == "all" ]; then
     install_linux_binder
     prepare_aidl_binder_sdk
