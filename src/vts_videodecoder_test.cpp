@@ -205,7 +205,19 @@ void videoDecoderTest::buildAndApplyStreamConfig()
 {
     videodecoder::VideoDecoderStreamConfig streamConfig;
 
-    if (mTestConfiguration.codedWidth > 0 && mTestConfiguration.codedHeight > 0)
+    // AdaptiveBitrate streams: codedWidth/codedHeight is the ladder peak (used for
+    // capability checks), not the resolution the stream actually starts at. Seed the
+    // hint with the first rung instead, so it doesn't contradict the bitstream-signalled
+    // resolution changes FrameMetadata is expected to report as the ladder progresses.
+    if (!mTestConfiguration.resolutionChanges.empty())
+    {
+        const auto& firstRung = mTestConfiguration.resolutionChanges.front();
+        videodecoder::Resolution res;
+        res.width  = firstRung.width;
+        res.height = firstRung.height;
+        streamConfig.resolution = res;
+    }
+    else if (mTestConfiguration.codedWidth > 0 && mTestConfiguration.codedHeight > 0)
     {
         videodecoder::Resolution res;
         res.width  = mTestConfiguration.codedWidth;

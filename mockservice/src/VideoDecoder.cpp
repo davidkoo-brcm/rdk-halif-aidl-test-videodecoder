@@ -848,10 +848,12 @@ void VideoDecoderController::fireOnFrameOutputCallback(int64_t nsPresentationTim
         metadataOpt.emplace(std::move(fm));
     }
 
-    std::thread([this, listener, nsPresentationTime, outputBufferHandle, metadataOpt]() {
+    // Keep controller alive until the detached thread below finishes.
+    android::sp<VideoDecoderController> self(this);
+    std::thread([self, listener, nsPresentationTime, outputBufferHandle, metadataOpt]() {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
         /* Frame processing complete - release its queue slot */
-        mQueueCount--;
+        self->mQueueCount--;
         if (listener) {
             listener->onFrameOutput(nsPresentationTime, outputBufferHandle, metadataOpt);
         }
