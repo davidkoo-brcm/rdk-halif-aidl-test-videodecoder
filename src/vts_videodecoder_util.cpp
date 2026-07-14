@@ -746,13 +746,16 @@ bool checkDecoderSupportsConfig(const IVideoDecoder::Id& decoderId, const videod
 
         if (testConfig.frameRateDenominator > 0)
         {
-            uint32_t streamFps = testConfig.frameRateNumerator / testConfig.frameRateDenominator;
-            if (streamFps > static_cast<uint32_t>(hfpCodecIt->maxFrameRate))
+            // Cross-multiply instead of comparing truncated integer division results,
+            // so e.g. 61/2 (30.5fps) isn't rounded down to 30 and wrongly accepted.
+            if (testConfig.frameRateNumerator >
+                static_cast<uint32_t>(hfpCodecIt->maxFrameRate) * testConfig.frameRateDenominator)
             {
-                UT_LOG_INFO("Decoder [%d] skipping stream [%s]: frame rate %u fps exceeds HFP capability %d fps",
+                UT_LOG_INFO("Decoder [%d] skipping stream [%s]: frame rate %u/%u fps exceeds HFP capability %d fps",
                             decoderId.value,
                             testConfig.streamName.c_str(),
-                            streamFps,
+                            testConfig.frameRateNumerator,
+                            testConfig.frameRateDenominator,
                             hfpCodecIt->maxFrameRate);
                 return false;
             }
@@ -826,16 +829,17 @@ bool checkDecoderSupportsConfig(const IVideoDecoder::Id& decoderId, const videod
 
     if (testConfig.frameRateDenominator > 0)
     {
-        uint32_t streamFps =
-            testConfig.frameRateNumerator / testConfig.frameRateDenominator;
-
-        if (streamFps > static_cast<uint32_t>(codecIt->maxFrameRate))
+        // Cross-multiply instead of comparing truncated integer division results,
+        // so e.g. 61/2 (30.5fps) isn't rounded down to 30 and wrongly accepted.
+        if (testConfig.frameRateNumerator >
+            static_cast<uint32_t>(codecIt->maxFrameRate) * testConfig.frameRateDenominator)
         {
             UT_LOG_INFO(
-                "Decoder [%d] skipping stream [%s]: frame rate %u fps exceeds capability %d fps",
+                "Decoder [%d] skipping stream [%s]: frame rate %u/%u fps exceeds capability %d fps",
                  decoderId.value,
                  testConfig.streamName.c_str(),
-                 streamFps,
+                 testConfig.frameRateNumerator,
+                 testConfig.frameRateDenominator,
                  codecIt->maxFrameRate);
             return false;
         }

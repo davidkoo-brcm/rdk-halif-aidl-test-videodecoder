@@ -607,31 +607,13 @@ void videoDecoderTest::validateFrameMetadata(const DecodedVideoFrame_t& decodedF
         << ", actual=" << static_cast<int>(decodedFrame.metadata->scanType)
         << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
 
-    if(decodedFrame.metadata->masteringDisplayInfo.has_value())
     {
-        // Same optional as overrideContentLightLevel/contentLightLevel below: check has_value()
-        // before unwrapping, so a stream with in-band mastering info but no matching test-config
-        // expectation fails the assertion cleanly instead of throwing bad_optional_access.
         const auto& expectedMdiOpt = (afterOverride && mTestConfiguration.overrideMasteringDisplayInfo.has_value())
             ? mTestConfiguration.overrideMasteringDisplayInfo
             : mTestConfiguration.masteringDisplayInfo;
-        UT_ASSERT_TRUE(expectedMdiOpt.has_value())
-            << "Decoder reported masteringDisplayInfo but test config has no expected value, for Codec "
+        UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo, expectedMdiOpt)
+            << "MasteringDisplayInfo mismatch for Codec "
             << videodecoder::toString(mTestConfiguration.codec).c_str();
-        if (expectedMdiOpt.has_value())
-        {
-            const auto& expectedMdi = expectedMdiOpt.value();
-            UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->redPrimaryX,   expectedMdi.redPrimaryX);
-            UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->redPrimaryY,   expectedMdi.redPrimaryY);
-            UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->greenPrimaryX, expectedMdi.greenPrimaryX);
-            UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->greenPrimaryY, expectedMdi.greenPrimaryY);
-            UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->bluePrimaryX,  expectedMdi.bluePrimaryX);
-            UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->bluePrimaryY,  expectedMdi.bluePrimaryY);
-            UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->whitePointX,   expectedMdi.whitePointX);
-            UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->whitePointY,   expectedMdi.whitePointY);
-            UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->maxLuminance,  expectedMdi.maxLuminance);
-            UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->minLuminance,  expectedMdi.minLuminance);
-        }
     }
 
     {
