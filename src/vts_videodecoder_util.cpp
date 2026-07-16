@@ -468,6 +468,8 @@ UT_status_t vts_videodecoder_parseVideoDecoderHFP()
     // Get all known codec names from the centralized mapping
     const std::vector<std::string> known_codecs = videoDecoderGetAllCodecNames();
 
+    auto savedOpmodes = std::move(temporary.supportedOperationalModes);
+
     gVideodecoders_hfp.clear();
     UT_LOG_INFO("Cleared gVideodecoders_hfp, capacity: %zu", gVideodecoders_hfp.capacity());
     UT_LOG_INFO("Will search for these codec types: %s",
@@ -493,6 +495,7 @@ UT_status_t vts_videodecoder_parseVideoDecoderHFP()
         temporary.supportedCodecs.clear();
         temporary.supportedDynamicRanges.clear();
         temporary.supportedColorimetries.clear();
+        temporary.supportedOperationalModes = savedOpmodes;
 
         UT_LOG_INFO("Parsing Decoder ID: %d, supportsSecure: %d", temporary.id, temporary.supportsSecure);
 
@@ -596,7 +599,7 @@ UT_status_t vts_videodecoder_parseVideoDecoderHFP()
                         detected_codec.c_str(), cap.maxFrameRate, cap.maxFrameWidth, cap.maxFrameHeight,
                         cap.profiles.size());
 
-            temporary.supportedCodecs.push_back(cap);
+            temporary.supportedCodecs.push_back(std::move(cap));
         }
 
         int supporteddr_count = UT_KVP_PROFILE_GET_LIST_COUNT(supporteddrpath.c_str());
@@ -664,7 +667,7 @@ UT_status_t vts_videodecoder_parseVideoDecoderHFP()
             continue;
         }
 
-        gVideodecoders_hfp.push_back(temporary);
+        gVideodecoders_hfp.push_back(std::move(temporary));
     }
 
     if (gVideodecoders_hfp.empty()) {

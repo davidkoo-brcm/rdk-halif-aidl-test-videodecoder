@@ -66,6 +66,9 @@
 
 #include "vts_videodecoder.h"
 
+/* Test class registration with UT_Core */
+UT_ADD_TEST_TO_GROUP(VTS_L1_VideoDecoder, UT_TESTS_L1)
+
 using ::com::rdk::hal::videodecoder::State;
 
 // Properties writable in READY only
