@@ -182,7 +182,10 @@ inline const char* getVideoDecoderTestConfigPath()
     }
     if (isMockVideoDecoderServiceRunning())
     {
-        return "./videodecoder_test_configuration/vts_l3_VideoDecoder_test_config_mock.yaml";
+        // Consolidated mock config (test defs + all per-codec stream data in one file);
+        // source lives at mockservice/config/L3_stream_mock.yaml, installed alongside the
+        // real config by install_test() so this relative path resolves the same way.
+        return "./videodecoder_test_configuration/L3_stream_mock.yaml";
     }
     return "./videodecoder_test_configuration/vts_l3_VideoDecoder_test_config.yaml";
 }

@@ -463,6 +463,7 @@ VideoDecoderController::VideoDecoderController(IVideoDecoder::Id id, VideoDecode
       mEosSignaled(false), mBuffersSubmitted(0),
       mDiscontinuityPending(false), mMetadataChanged(false), mFirstFrameAfterStart(false),
       mColorimetry(videodecoder::Colorimetry{}),
+      mColorDepth(8), mDynamicRange(DynamicRange::SDR),
       mQueueCount(0), mFrameCounter(0), mOutputPoolValid(false) {
     mOutputPoolSpaceListener = new OutputPoolSpaceListener();
     android::sp<android::IBinder> binder = android::defaultServiceManager()->getService(
@@ -1059,6 +1060,27 @@ android::binder::Status VideoDecoderController::setStreamConfig(const videodecod
     }
     if (config.colorimetry.has_value()) {
         mColorimetry = config.colorimetry.value();
+        /* colorDepth/dynamicRange are bitstream-derived per FrameMetadata.aidl - the mock has
+         * no real content analysis, so approximate this once from the session's configured
+         * colorimetry (a reasonable proxy: real HDR10/HLG content is what actually carries
+         * these transfer characteristics). Deliberately done only here, not on every frame or
+         * on a later per-buffer override in applyMetadataOverrides() - colorDepth/dynamicRange
+         * have no override field in InputBufferMetadata, so they must stay fixed for the rest
+         * of the session once derived, regardless of any mid-stream colorimetry override. */
+        switch (mColorimetry.transfer) {
+            case TransferCharacteristics::SMPTE2084_PQ:
+                mColorDepth = 10;
+                mDynamicRange = DynamicRange::HDR10;
+                break;
+            case TransferCharacteristics::ARIB_STD_B67_HLG:
+                mColorDepth = 10;
+                mDynamicRange = DynamicRange::HLG;
+                break;
+            default:
+                mColorDepth = 8;
+                mDynamicRange = DynamicRange::SDR;
+                break;
+        }
         mMetadataChanged = true;
     }
     if (config.masteringDisplayInfo.has_value()) {
