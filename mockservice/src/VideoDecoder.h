@@ -195,6 +195,11 @@ private:
     std::optional<videodecoder::Resolution> mResolution;
     std::optional<videodecoder::Fraction> mFrameRate;
     videodecoder::Colorimetry mColorimetry;
+    /* Bitstream-derived only per FrameMetadata.aidl - neither InputBufferMetadata nor
+     * VideoDecoderStreamConfig has an override field for either, so these are fixed for the
+     * lifetime of the session and must never be derived from mColorimetry. */
+    int32_t mColorDepth;
+    videodecoder::DynamicRange mDynamicRange;
     std::optional<videodecoder::MasteringDisplayInfo> mMasteringDisplayInfo;
     std::optional<videodecoder::ContentLightLevel> mContentLightLevel;
     std::optional<videodecoder::DolbyVisionLayerFlags> mDolbyVisionLayerFlags;

@@ -809,22 +809,11 @@ void VideoDecoderController::fireOnFrameOutputCallback(int64_t nsPresentationTim
         fm.codedHeight = mResolution.has_value() ? mResolution->height : 0;
         fm.activeWidth = fm.codedWidth;
         fm.activeHeight = fm.codedHeight;
-        /* No dedicated colorDepth/dynamicRange field; derive from colorimetry.transfer
-         * per TransferCharacteristics.aidl instead of hardcoding SDR. */
-        switch (mColorimetry.transfer) {
-            case TransferCharacteristics::SMPTE2084_PQ:
-                fm.dynamicRange = DynamicRange::HDR10;
-                fm.colorDepth = 10;
-                break;
-            case TransferCharacteristics::ARIB_STD_B67_HLG:
-                fm.dynamicRange = DynamicRange::HLG;
-                fm.colorDepth = 10;
-                break;
-            default:
-                fm.dynamicRange = DynamicRange::SDR;
-                fm.colorDepth = 8;
-                break;
-        }
+        /* Bitstream-derived only per FrameMetadata.aidl - neither InputBufferMetadata nor
+         * VideoDecoderStreamConfig has an override field for colorDepth/dynamicRange, so these
+         * must stay fixed regardless of any colorimetry override applied via decodeBufferWithMetadata(). */
+        fm.colorDepth = mColorDepth;
+        fm.dynamicRange = mDynamicRange;
         fm.pixelFormat = PixelFormat::YCBCR420;
         fm.scanType = ScanType::PROGRESSIVE_FRAME;
         fm.frameRateNumerator = mFrameRate.has_value() ? mFrameRate->numerator : 0;
