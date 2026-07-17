@@ -539,31 +539,13 @@ void videoDecoderTest::validateFrameMetadata(const DecodedVideoFrame_t& decodedF
         << ", actual=" << actualResHeight
         << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
 
-    // colorDepth/dynamicRange are derived from TransferCharacteristics (see
-    // TransferCharacteristics.aidl) — a mid-stream colorimetry override therefore
-    // changes the expected colorDepth/dynamicRange too, not just colorimetry itself.
+    // colorDepth and dynamicRange are bitstream-derived only (see FrameMetadata.aidl);
+    // InputBufferMetadata has no override field for either, so a colorimetry override
+    // does not change them regardless of the overridden TransferCharacteristics.
     const bool afterOverride = (mTestConfiguration.metadataOverridePts != -1 &&
                                 decodedFrame.framePTS >= mTestConfiguration.metadataOverridePts);
     int32_t expectedColorDepth = mTestConfiguration.colorDepth;
     videodecoder::DynamicRange expectedDynamicRange = mTestConfiguration.dynamicRange;
-    if (afterOverride && mTestConfiguration.overrideColorimetry.has_value())
-    {
-        switch (mTestConfiguration.overrideColorimetry.value().transfer)
-        {
-            case videodecoder::TransferCharacteristics::SMPTE2084_PQ:
-                expectedColorDepth = 10;
-                expectedDynamicRange = videodecoder::DynamicRange::HDR10;
-                break;
-            case videodecoder::TransferCharacteristics::ARIB_STD_B67_HLG:
-                expectedColorDepth = 10;
-                expectedDynamicRange = videodecoder::DynamicRange::HLG;
-                break;
-            default:
-                expectedColorDepth = 8;
-                expectedDynamicRange = videodecoder::DynamicRange::SDR;
-                break;
-        }
-    }
 
     UT_ASSERT_EQUAL(decodedFrame.metadata->colorDepth, expectedColorDepth)
         << "Color depth mismatch: expected=" << expectedColorDepth

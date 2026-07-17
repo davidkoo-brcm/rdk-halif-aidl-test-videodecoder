@@ -18,7 +18,7 @@
 #*
 #* ******************************************************************************
 
-.PHONY: all clean check-libs
+.PHONY: all clean check-libs check-headers
 
 MOCK_SERVICE_BIN := MockVideoDecoderService
 
@@ -73,6 +73,14 @@ MOCK_SERVICE_BIN := $(BUILD_DIR)/bin/$(MOCK_SERVICE_BIN)
 
 all: $(MOCK_SERVICE_BIN)
 
+check-headers:
+	@echo "Checking required header directories..."
+	@test -d "$(COMMON_HEADERS)" || { echo "ERROR: missing common headers under $(RDK_HAL_DIR)/out/build/include/common/*/include - run ./build.sh Target=linux (or arm) first"; exit 1; }
+	@test -d "$(AVBUFFER_HEADERS)" || { echo "ERROR: missing avbuffer headers under $(RDK_HAL_DIR)/out/build/include/avbuffer/*/include - run ./build.sh Target=linux (or arm) first"; exit 1; }
+	@test -d "$(VIDEODECODER_HEADERS)" || { echo "ERROR: missing videodecoder headers under $(RDK_HAL_DIR)/out/build/include/videodecoder/*/include - run ./build.sh Target=linux (or arm) first"; exit 1; }
+	@test -d "$(AUDIODECODER_HEADERS)" || { echo "ERROR: missing audiodecoder headers under $(RDK_HAL_DIR)/out/build/include/audiodecoder/*/include - run ./build.sh Target=linux (or arm) first"; exit 1; }
+	@echo "Header check passed"
+
 check-libs:
 	@echo "Checking required libraries..."
 	@test -e "$(HALIF_LIB_DIR)/libvideodecoder-cpp_vts.so" || { echo "ERROR: missing $(HALIF_LIB_DIR)/libvideodecoder-cpp_vts.so - run ./build.sh Target=linux (or arm) first"; exit 1; }
@@ -83,7 +91,7 @@ check-libs:
 	@test -e "$(BUILD_DIR)/usr/lib/libbase.so" || { echo "ERROR: missing $(BUILD_DIR)/usr/lib/libbase.so - run ./build.sh Target=linux (or arm) first"; exit 1; }
 	@echo "Library check passed"
 
-$(MOCK_SERVICE_BIN): check-libs $(MOCK_SERVICE_BIN_SRC:%.cpp=%.o)
+$(MOCK_SERVICE_BIN): check-headers check-libs $(MOCK_SERVICE_BIN_SRC:%.cpp=%.o)
 	@mkdir -p $(dir $@)
 	$(CXX) $(MOCK_SERVICE_CXXFLAGS) $(MOCK_SERVICE_LDFLAGS) \
 		$(MOCK_SERVICE_BIN_SRC:%.cpp=%.o) -o $@ \
