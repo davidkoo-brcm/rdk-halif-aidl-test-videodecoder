@@ -366,6 +366,12 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    # Stream's SPS signals 1:1 SAR (same shared .es file as the PAR test - verified via
+    # `ffmpeg -bsf:v trace_headers`); no PAR override attempted here, so this is just the
+    # real value a decoder must report throughout.
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     # Mid-stream colorimetry/HDR metadata override, simulating an ABR period transition from SDR to HDR10.
     metadata_override_pts: 66667000
     override_colorimetry:
@@ -446,6 +452,12 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    # Stream's SPS signals 1:1 SAR (same shared .es file as the PAR test - verified via
+    # `ffmpeg -bsf:v trace_headers`); no PAR override attempted here, so this is just the
+    # real value a decoder must report throughout.
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     # Mid-stream colorimetry/content-light-level override at a simulated SSAI ad-insertion splice point.
     metadata_override_pts: 100000000
     override_colorimetry:
