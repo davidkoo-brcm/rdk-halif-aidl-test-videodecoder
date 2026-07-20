@@ -279,6 +279,7 @@ struct videoDecoderTestConfiguration_t {
     videodecoder::Colorimetry colorimetry;
     std::optional<MasteringDisplayInfo> masteringDisplayInfo;
     std::optional<ContentLightLevel> contentLightLevel;
+    std::optional<videodecoder::Fraction> pixelAspectRatio; // set only if bitstream signals PAR
     videodecoder::ScanType scanType;
     uint32_t colorDepth; // Bit depth
     uint32_t bit_rate; // Bit rate

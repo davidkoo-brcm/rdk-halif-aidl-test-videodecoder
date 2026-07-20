@@ -376,6 +376,17 @@ VideoStreams:
     override_content_light_level:
       maxCLL: 1000
       maxFALL: 400
+    override_mastering_display_info:
+      redPrimaryX: 35400
+      redPrimaryY: 14600
+      greenPrimaryX: 8500
+      greenPrimaryY: 39850
+      bluePrimaryX: 6550
+      bluePrimaryY: 2300
+      whitePointX: 15635
+      whitePointY: 16450
+      maxLuminance: 10000000
+      minLuminance: 500
     frame_size:
       - 733
       - 31
@@ -504,7 +515,12 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
-    # Mid-stream pixel aspect ratio override, simulating anamorphic content.
+    # Stream's SPS signals 1:1 SAR (verified via `ffmpeg -bsf:v trace_headers`), so the
+    # override below must be ignored - bitstream wins per InputBufferMetadata.aidl.
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
+    # Mid-stream pixel aspect ratio override attempt, simulating anamorphic content.
     metadata_override_pts: 133333000
     override_pixel_aspect_ratio:
       numerator: 4
@@ -1390,213 +1406,6 @@ VideoStreams:
       - 11
       - 11
       - 10
-      - 715
-      - 4040
-      - 1260
-      - 1390
-      - 1490
-    PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
-      - 00000000
-      - 00000000
-      - 00000000
-      - 00000000
-      - 00000000
-      - 116667000
-      - 50000000
-      - 16667000
-      - 33333000
-      - 66667000
-      - 83333000
-      - 100000000
-      - 183333000
-      - 166667000
-      - 133333000
-      - 150000000
-  H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_METADATA_OVERRIDE_HDR_ALT:
-    input: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
-    codec: H264_AVC  #Video codec information, Refer `Codec` enum
-    codedWidth: 1920
-    codedHeight: 1088
-    colorDepth: 8
-    pixelFormat: YCBCR420
-    dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
-    scanType: PROGRESSIVE_FRAME
-    frameRateNumerator: 60 #Frame Rate
-    frameRateDenominator: 1
-    endOfStream: 0
-    stop_start_pts: -1
-    signal_discontinuity_pts: -1
-    flush_pts: -1
-    flush_reset_pts: -1
-    eos_pts: -1
-    discontinuity: 0
-    lowLatency: 0
-    bit_rate: 837
-    no_of_frames: 12
-    decodeErrors: 0
-    framesDropped: 0
-    openWithResolutionWidth: -1
-    openWithResolutionHeight: -1
-    metadata_override_pts: 83333000 #PTS at which HDR colorimetry override is applied mid-stream
-    override_colorimetry:
-      range: LIMITED
-      matrix: BT2020_NCL
-      transfer: SMPTE2084_PQ
-      primaries: BT2020
-    override_mastering_display_info:
-      redPrimaryX: 35400
-      redPrimaryY: 14600
-      greenPrimaryX: 8500
-      greenPrimaryY: 39850
-      bluePrimaryX: 6550
-      bluePrimaryY: 2300
-      whitePointX: 15635
-      whitePointY: 16450
-      maxLuminance: 10000000
-      minLuminance: 500
-    override_content_light_level:
-      maxCLL: 1000
-      maxFALL: 400
-    frame_size:
-      - 733
-      - 31
-      - 11
-      - 732
-      - 108718
-      - 2897
-      - 1076
-      - 1043
-      - 1101
-      - 1198
-      - 1092
-      - 715
-      - 4040
-      - 1260
-      - 1390
-      - 1490
-    PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
-      - 00000000
-      - 00000000
-      - 00000000
-      - 00000000
-      - 00000000
-      - 116667000
-      - 50000000
-      - 16667000
-      - 33333000
-      - 66667000
-      - 83333000
-      - 100000000
-      - 183333000
-      - 166667000
-      - 133333000
-      - 150000000
-  H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_METADATA_OVERRIDE_SSAI_ALT:
-    input: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
-    codec: H264_AVC  #Video codec information, Refer `Codec` enum
-    codedWidth: 1920
-    codedHeight: 1088
-    colorDepth: 8
-    pixelFormat: YCBCR420
-    dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
-    scanType: PROGRESSIVE_FRAME
-    frameRateNumerator: 60 #Frame Rate
-    frameRateDenominator: 1
-    endOfStream: 0
-    stop_start_pts: -1
-    signal_discontinuity_pts: -1
-    flush_pts: -1
-    flush_reset_pts: -1
-    eos_pts: -1
-    discontinuity: 0
-    lowLatency: 0
-    bit_rate: 837
-    no_of_frames: 12
-    decodeErrors: 0
-    framesDropped: 0
-    openWithResolutionWidth: -1
-    openWithResolutionHeight: -1
-    metadata_override_pts: 50000000 #PTS at which ad-segment colorimetry override is applied (SSAI splice point)
-    override_colorimetry:
-      range: FULL
-      matrix: BT709
-      transfer: BT709
-      primaries: BT709
-    frame_size:
-      - 733
-      - 31
-      - 11
-      - 732
-      - 108718
-      - 2897
-      - 1076
-      - 1043
-      - 1101
-      - 1198
-      - 1092
-      - 715
-      - 4040
-      - 1260
-      - 1390
-      - 1490
-    PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
-      - 00000000
-      - 00000000
-      - 00000000
-      - 00000000
-      - 00000000
-      - 116667000
-      - 50000000
-      - 16667000
-      - 33333000
-      - 66667000
-      - 83333000
-      - 100000000
-      - 183333000
-      - 166667000
-      - 133333000
-      - 150000000
-  H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_METADATA_OVERRIDE_PAR_ALT:
-    input: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
-    codec: H264_AVC  #Video codec information, Refer `Codec` enum
-    codedWidth: 1920
-    codedHeight: 1088
-    colorDepth: 8
-    pixelFormat: YCBCR420
-    dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
-    scanType: PROGRESSIVE_FRAME
-    frameRateNumerator: 60 #Frame Rate
-    frameRateDenominator: 1
-    endOfStream: 0
-    stop_start_pts: -1
-    signal_discontinuity_pts: -1
-    flush_pts: -1
-    flush_reset_pts: -1
-    eos_pts: -1
-    discontinuity: 0
-    lowLatency: 0
-    bit_rate: 837
-    no_of_frames: 12
-    decodeErrors: 0
-    framesDropped: 0
-    openWithResolutionWidth: -1
-    openWithResolutionHeight: -1
-    metadata_override_pts: 66667000 #PTS at which pixel aspect ratio override is applied
-    override_pixel_aspect_ratio:
-      numerator: 40
-      denominator: 33
-    frame_size:
-      - 733
-      - 31
-      - 11
-      - 732
-      - 108718
-      - 2897
-      - 1076
-      - 1043
-      - 1101
-      - 1198
-      - 1092
       - 715
       - 4040
       - 1260

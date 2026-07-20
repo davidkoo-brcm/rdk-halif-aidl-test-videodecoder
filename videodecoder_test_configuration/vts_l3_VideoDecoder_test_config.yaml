@@ -916,18 +916,6 @@ videodecoder:
             sink_backpressure: false # Enable backpressure to the sink
             sink_discardFramesUntilPts: -1
             sink_underflow_pts: -1
-    Decode_Sequential_NonTunnel_NonSecure_MetadataOverride_HDR_ALT:
-      Controls:
-        delay_between_decode_calls: 1
-      Inputs:
-        Streams:
-          - codec: H264_AVC
-            Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_METADATA_OVERRIDE_HDR_ALT
-            rms_diff_threshold: 0.5
-            decode_time_threshold: 10000000
-            sink_backpressure: false # Enable backpressure to the sink
-            sink_discardFramesUntilPts: -1
-            sink_underflow_pts: -1
     Decode_Sequential_NonTunnel_NonSecure_MetadataOverride_SSAI:
       Controls:
         delay_between_decode_calls: 1
@@ -940,18 +928,6 @@ videodecoder:
             sink_backpressure: false # Enable backpressure to the sink
             sink_discardFramesUntilPts: -1
             sink_underflow_pts: -1
-    Decode_Sequential_NonTunnel_NonSecure_MetadataOverride_SSAI_ALT:
-      Controls:
-        delay_between_decode_calls: 1
-      Inputs:
-        Streams:
-          - codec: H264_AVC
-            Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_METADATA_OVERRIDE_SSAI_ALT
-            rms_diff_threshold: 0.5
-            decode_time_threshold: 10000000
-            sink_backpressure: false # Enable backpressure to the sink
-            sink_discardFramesUntilPts: -1
-            sink_underflow_pts: -1
     Decode_Sequential_NonTunnel_NonSecure_MetadataOverride_PAR:
       Controls:
         delay_between_decode_calls: 1
@@ -959,18 +935,6 @@ videodecoder:
         Streams:
           - codec: H264_AVC
             Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_METADATA_OVERRIDE_PAR
-            rms_diff_threshold: 0.5
-            decode_time_threshold: 10000000
-            sink_backpressure: false # Enable backpressure to the sink
-            sink_discardFramesUntilPts: -1
-            sink_underflow_pts: -1
-    Decode_Sequential_NonTunnel_NonSecure_MetadataOverride_PAR_ALT:
-      Controls:
-        delay_between_decode_calls: 1
-      Inputs:
-        Streams:
-          - codec: H264_AVC
-            Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_METADATA_OVERRIDE_PAR_ALT
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
             sink_backpressure: false # Enable backpressure to the sink

@@ -687,8 +687,8 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_MetadataO
 }
 
 /**
- * @brief Test mid-stream pixel aspect ratio override via InputBufferMetadata (e.g.
- *        anamorphic content), verifying FrameMetadata reflects the overridden PAR.
+ * @brief Test that a pixel aspect ratio override via InputBufferMetadata is ignored
+ *        when the bitstream itself signals PAR (this stream signals 1:1 SAR).
  *
  * **Test Group ID:** 01 @n
  * **Test Case ID:** 021 @n

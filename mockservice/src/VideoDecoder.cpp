@@ -600,24 +600,28 @@ bool VideoDecoderController::tryAcceptBufferIntoQueue() {
 }
 
 void VideoDecoderController::applyMetadataOverrides(const ::com::rdk::hal::videodecoder::InputBufferMetadata& metadata) {
-    /* Per-buffer metadata overrides; each persists from this buffer onward */
-    if (metadata.colorimetry.has_value()) {
+    /* Per-buffer metadata overrides; each persists from this buffer onward. A field already
+     * locked via setStreamConfig() (this mock's stand-in for bitstream-derived truth - see
+     * setStreamConfig() below) is left untouched here: InputBufferMetadata.aidl says
+     * bitstream-derived metadata always wins, the override is only a fallback for when the
+     * bitstream is silent. */
+    if (metadata.colorimetry.has_value() && mColorimetry == videodecoder::Colorimetry{}) {
         mColorimetry = metadata.colorimetry.value();
         mMetadataChanged = true;
     }
-    if (metadata.masteringDisplayInfo.has_value()) {
+    if (metadata.masteringDisplayInfo.has_value() && !mMasteringDisplayInfo.has_value()) {
         mMasteringDisplayInfo = metadata.masteringDisplayInfo;
         mMetadataChanged = true;
     }
-    if (metadata.contentLightLevel.has_value()) {
+    if (metadata.contentLightLevel.has_value() && !mContentLightLevel.has_value()) {
         mContentLightLevel = metadata.contentLightLevel;
         mMetadataChanged = true;
     }
-    if (metadata.dolbyVisionLayerFlags.has_value()) {
+    if (metadata.dolbyVisionLayerFlags.has_value() && !mDolbyVisionLayerFlags.has_value()) {
         mDolbyVisionLayerFlags = metadata.dolbyVisionLayerFlags;
         mMetadataChanged = true;
     }
-    if (metadata.pixelAspectRatio.has_value()) {
+    if (metadata.pixelAspectRatio.has_value() && !mPixelAspectRatio.has_value()) {
         mPixelAspectRatio = metadata.pixelAspectRatio;
         mMetadataChanged = true;
     }

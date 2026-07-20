@@ -244,6 +244,10 @@ void videoDecoderTest::buildAndApplyStreamConfig()
     {
         streamConfig.contentLightLevel = mTestConfiguration.contentLightLevel;
     }
+    if (mTestConfiguration.pixelAspectRatio.has_value())
+    {
+        streamConfig.pixelAspectRatio = mTestConfiguration.pixelAspectRatio;
+    }
     UT_LOG_INFO("value of the dynamicRange %d", static_cast<int>(mTestConfiguration.dynamicRange));
     if (mTestConfiguration.dynamicRange == videodecoder::DynamicRange::DOLBY_VISION)
     {
@@ -508,6 +512,57 @@ bool videoDecoderTest::validateFrameLatencyAndBuffer(const DecodedVideoFrame_t& 
     return true;
 }
 
+namespace {
+
+/* Shared InputBufferMetadata.aidl precedence rule for non-nullable, sentinel-defaulted
+ * output fields (Colorimetry's per-axis UNKNOWN, PixelAspectRatio's 0/0): bitstream-derived
+ * metadata always wins; the override is only a fallback used when the bitstream is silent. */
+template <typename T>
+void assertOverridableField(const T& actual, bool bitstreamProvidesField, const T& bitstreamValue,
+                             bool afterOverride, const std::optional<T>& overrideValue,
+                             const char* fieldName, const char* codecName)
+{
+    T expected;
+    if (bitstreamProvidesField)
+    {
+        expected = bitstreamValue;
+    }
+    else if (afterOverride && overrideValue.has_value())
+    {
+        expected = overrideValue.value();
+    }
+    else
+    {
+        expected = T{};
+    }
+    UT_ASSERT_EQUAL(actual, expected) << fieldName << " mismatch, for Codec " << codecName;
+}
+
+/* Same precedence rule, for output fields that are @nullable in FrameMetadata.aidl
+ * (MasteringDisplayInfo, ContentLightLevel) instead of carrying an in-band sentinel. */
+template <typename T>
+void assertOverridableNullableField(const std::optional<T>& actual, const std::optional<T>& bitstreamValue,
+                                     bool afterOverride, const std::optional<T>& overrideValue,
+                                     const char* fieldName, const char* codecName)
+{
+    std::optional<T> expected;
+    if (bitstreamValue.has_value())
+    {
+        expected = bitstreamValue;
+    }
+    else if (afterOverride && overrideValue.has_value())
+    {
+        expected = overrideValue;
+    }
+    else
+    {
+        expected = std::nullopt;
+    }
+    UT_ASSERT_EQUAL(actual, expected) << fieldName << " mismatch, for Codec " << codecName;
+}
+
+}  // namespace
+
 void videoDecoderTest::validateFrameMetadata(const DecodedVideoFrame_t& decodedFrame, int32_t& discontinuityFramesReceived)
 {
     UT_LOG_DEBUG("Validating metadata for PTS=%lld", decodedFrame.framePTS);
@@ -558,19 +613,13 @@ void videoDecoderTest::validateFrameMetadata(const DecodedVideoFrame_t& decodedF
         << ", actual=" << static_cast<int>(decodedFrame.metadata->dynamicRange)
         << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
 
-    // Validate colorimetry — use override values for frames at or after metadataOverridePts
-    if (afterOverride && mTestConfiguration.overrideColorimetry.has_value())
+    // Validate colorimetry — bitstream wins if the stream's config declares a non-default
+    // (non-silent) value; otherwise the override applies from metadataOverridePts onward.
     {
-        UT_ASSERT_EQUAL(decodedFrame.metadata->colorimetry, mTestConfiguration.overrideColorimetry.value())
-            << "Colorimetry override mismatch after metadataOverridePts="
-            << mTestConfiguration.metadataOverridePts;
-    }
-    else
-    {
-        UT_ASSERT_EQUAL(decodedFrame.metadata->colorimetry, mTestConfiguration.colorimetry)
-            << "Colorimetry mismatch: expected=" << mTestConfiguration.colorimetry.toString()
-            << ", got=" << decodedFrame.metadata->colorimetry.toString()
-            << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+        const bool bitstreamProvidesColorimetry = !(mTestConfiguration.colorimetry == videodecoder::Colorimetry{});
+        assertOverridableField(decodedFrame.metadata->colorimetry, bitstreamProvidesColorimetry,
+                                mTestConfiguration.colorimetry, afterOverride, mTestConfiguration.overrideColorimetry,
+                                "Colorimetry", videodecoder::toString(mTestConfiguration.codec).c_str());
     }
 
     // Validate frame rate
@@ -589,35 +638,22 @@ void videoDecoderTest::validateFrameMetadata(const DecodedVideoFrame_t& decodedF
         << ", actual=" << static_cast<int>(decodedFrame.metadata->scanType)
         << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
 
-    {
-        const auto& expectedMdiOpt = (afterOverride && mTestConfiguration.overrideMasteringDisplayInfo.has_value())
-            ? mTestConfiguration.overrideMasteringDisplayInfo
-            : mTestConfiguration.masteringDisplayInfo;
-        UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo, expectedMdiOpt)
-            << "MasteringDisplayInfo mismatch for Codec "
-            << videodecoder::toString(mTestConfiguration.codec).c_str();
-    }
+    assertOverridableNullableField(decodedFrame.metadata->masteringDisplayInfo, mTestConfiguration.masteringDisplayInfo,
+                                    afterOverride, mTestConfiguration.overrideMasteringDisplayInfo,
+                                    "MasteringDisplayInfo", videodecoder::toString(mTestConfiguration.codec).c_str());
+
+    assertOverridableNullableField(decodedFrame.metadata->contentLightLevel, mTestConfiguration.contentLightLevel,
+                                    afterOverride, mTestConfiguration.overrideContentLightLevel,
+                                    "ContentLightLevel", videodecoder::toString(mTestConfiguration.codec).c_str());
 
     {
-        const auto& expectedCll = (afterOverride && mTestConfiguration.overrideContentLightLevel.has_value())
-            ? mTestConfiguration.overrideContentLightLevel
-            : mTestConfiguration.contentLightLevel;
-        UT_ASSERT_EQUAL(decodedFrame.metadata->contentLightLevel, expectedCll)
-            << "ContentLightLevel mismatch for Codec "
-            << videodecoder::toString(mTestConfiguration.codec).c_str();
-    }
-
-    if (afterOverride && mTestConfiguration.overridePixelAspectRatio.has_value())
-    {
-        const auto& expectedPar = mTestConfiguration.overridePixelAspectRatio.value();
-        UT_ASSERT_EQUAL(decodedFrame.metadata->parX, expectedPar.numerator)
-            << "PAR numerator mismatch after metadataOverridePts="
-            << mTestConfiguration.metadataOverridePts
-            << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-        UT_ASSERT_EQUAL(decodedFrame.metadata->parY, expectedPar.denominator)
-            << "PAR denominator mismatch after metadataOverridePts="
-            << mTestConfiguration.metadataOverridePts
-            << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+        videodecoder::Fraction actualPar;
+        actualPar.numerator = decodedFrame.metadata->parX;
+        actualPar.denominator = decodedFrame.metadata->parY;
+        assertOverridableField(actualPar, mTestConfiguration.pixelAspectRatio.has_value(),
+                                mTestConfiguration.pixelAspectRatio.value_or(videodecoder::Fraction{}),
+                                afterOverride, mTestConfiguration.overridePixelAspectRatio,
+                                "PixelAspectRatio", videodecoder::toString(mTestConfiguration.codec).c_str());
     }
 
     if(decodedFrame.metadata->discontinuity)

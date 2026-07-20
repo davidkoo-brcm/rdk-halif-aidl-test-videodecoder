@@ -1203,6 +1203,7 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, const char *m
         string colorimetry = prefix + "colorimetry";
         string masteringDisplayInfo = prefix + "masteringDisplayInfo";
         string contentLightLevel = prefix + "contentLightLevel";
+        string pixelAspectRatio = prefix + "pixel_aspect_ratio";
         string scanType = prefix + "scanType";
         string colorDepth = prefix + "colorDepth";
         string bit_rate = prefix + "bit_rate";
@@ -1311,6 +1312,16 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, const char *m
             ut_kvp_getStringField(kvpTestInstance, (colorimetry + ".primaries").c_str(),primariesKvp,UT_KVP_MAX_ELEMENT_SIZE);
             testDetails.colorimetry = videoDecoderStringToColorimetry(
                 string(rangeKvp), string(matrixKvp), string(transferKvp), string(primariesKvp));
+        }
+
+        // Bitstream-provided pixel aspect ratio (only set when the stream's SPS actually
+        // signals PAR - absent means the bitstream is silent on this field).
+        if (ut_kvp_fieldPresent(kvpTestInstance, (pixelAspectRatio + ".numerator").c_str()))
+        {
+            videodecoder::Fraction par{};
+            par.numerator   = static_cast<int32_t>(ut_kvp_getUInt32Field(kvpTestInstance, (pixelAspectRatio + ".numerator").c_str()));
+            par.denominator = static_cast<int32_t>(ut_kvp_getUInt32Field(kvpTestInstance, (pixelAspectRatio + ".denominator").c_str()));
+            testDetails.pixelAspectRatio = par;
         }
 
         // Mastering display info
