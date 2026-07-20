@@ -320,6 +320,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     frame_size:
       - 28
       - 47
@@ -379,6 +382,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     frame_size:
       - 28
       - 47
@@ -438,6 +444,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     frame_size:
       - 28
       - 47
@@ -497,6 +506,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     frame_size:
       - 28
       - 47
@@ -556,6 +568,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     frame_size:
       - 28
       - 47
@@ -615,6 +630,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     frame_size:
       - 28
       - 47
@@ -674,6 +692,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     frame_size:
       - 28
       - 47
@@ -733,6 +754,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     frame_size:
       - 28
       - 47
@@ -792,6 +816,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     frame_size:
       - 28
       - 47
@@ -851,6 +878,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     frame_size:
       - 28
       - 47
@@ -910,6 +940,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     frame_size:
       - 28
       - 47
@@ -969,6 +1002,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     frame_size:
       - 28
       - 47
@@ -1036,6 +1072,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     frame_size:
       - 3032
       - 109
@@ -1100,6 +1139,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     frame_size:
       - 3032
       - 109
@@ -1168,6 +1210,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     masteringDisplayInfo:
       redPrimaryX: 34000
       redPrimaryY: 16000
@@ -1243,6 +1288,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     frame_size:
       - 3161
       - 109
@@ -1310,6 +1358,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     contentLightLevel:
       maxCLL: 1000
       maxFALL: 400
@@ -1377,6 +1428,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     frame_size:
       - 3046
       - 109
@@ -1445,6 +1499,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     blPresent: 1
     elPresent: 0
     frame_size:
@@ -1570,6 +1627,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     metadata_override_pts: 133333000 #PTS at which HDR colorimetry override is applied mid-stream
     override_colorimetry:
       range: LIMITED
@@ -1649,6 +1709,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     metadata_override_pts: 100000000 #PTS at which ad-segment colorimetry override is applied (SSAI splice point)
     override_colorimetry:
       range: FULL
@@ -1714,6 +1777,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     metadata_override_pts: 66667000 #PTS at which pixel aspect ratio override is applied
     override_pixel_aspect_ratio:
       numerator: 40

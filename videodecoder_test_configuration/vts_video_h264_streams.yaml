@@ -248,6 +248,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     frame_size:
       - 733
       - 31
@@ -307,6 +310,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     frame_size:
       - 733
       - 31
@@ -366,9 +372,6 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
-    # Stream's SPS signals 1:1 SAR (same shared .es file as the PAR test - verified via
-    # `ffmpeg -bsf:v trace_headers`); no PAR override attempted here, so this is just the
-    # real value a decoder must report throughout.
     pixel_aspect_ratio:
       numerator: 1
       denominator: 1
@@ -452,9 +455,6 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
-    # Stream's SPS signals 1:1 SAR (same shared .es file as the PAR test - verified via
-    # `ffmpeg -bsf:v trace_headers`); no PAR override attempted here, so this is just the
-    # real value a decoder must report throughout.
     pixel_aspect_ratio:
       numerator: 1
       denominator: 1
@@ -527,12 +527,10 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
-    # Stream's SPS signals 1:1 SAR (verified via `ffmpeg -bsf:v trace_headers`), so the
-    # override below must be ignored - bitstream wins per InputBufferMetadata.aidl.
     pixel_aspect_ratio:
       numerator: 1
       denominator: 1
-    # Mid-stream pixel aspect ratio override attempt, simulating anamorphic content.
+    # Mid-stream pixel aspect ratio override, simulating anamorphic content.
     metadata_override_pts: 133333000
     override_pixel_aspect_ratio:
       numerator: 4
@@ -596,6 +594,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     frame_size:
       - 733
       - 31
@@ -655,6 +656,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     frame_size:
       - 733
       - 31
@@ -714,6 +718,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     frame_size:
       - 733
       - 31
@@ -773,6 +780,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     frame_size:
       - 733
       - 31
@@ -832,6 +842,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     frame_size:
       - 733
       - 31
@@ -891,6 +904,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     frame_size:
       - 733
       - 31
@@ -1170,6 +1186,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     frame_size:
       - 733
       - 31
@@ -1229,6 +1248,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     frame_size:
       - 733
       - 31
@@ -1288,6 +1310,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     frame_size:
       - 733
       - 31
@@ -1347,6 +1372,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     frame_size:
       - 733
       - 31
@@ -1406,6 +1434,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     frame_size:
       - 733
       - 31
