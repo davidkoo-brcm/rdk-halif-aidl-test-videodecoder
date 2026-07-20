@@ -600,11 +600,7 @@ bool VideoDecoderController::tryAcceptBufferIntoQueue() {
 }
 
 void VideoDecoderController::applyMetadataOverrides(const ::com::rdk::hal::videodecoder::InputBufferMetadata& metadata) {
-    /* Per-buffer metadata overrides; each persists from this buffer onward. A field already
-     * locked via setStreamConfig() (this mock's stand-in for bitstream-derived truth - see
-     * setStreamConfig() below) is left untouched here: InputBufferMetadata.aidl says
-     * bitstream-derived metadata always wins, the override is only a fallback for when the
-     * bitstream is silent. */
+    /* Per-buffer overrides; a field already locked via setStreamConfig() wins (bitstream-derived). */
     if (metadata.colorimetry.has_value() && mColorimetry == videodecoder::Colorimetry{}) {
         mColorimetry = metadata.colorimetry.value();
         mMetadataChanged = true;

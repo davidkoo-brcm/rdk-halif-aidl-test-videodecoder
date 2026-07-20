@@ -514,9 +514,7 @@ bool videoDecoderTest::validateFrameLatencyAndBuffer(const DecodedVideoFrame_t& 
 
 namespace {
 
-/* Shared InputBufferMetadata.aidl precedence rule for non-nullable, sentinel-defaulted
- * output fields (Colorimetry's per-axis UNKNOWN, PixelAspectRatio's 0/0): bitstream-derived
- * metadata always wins; the override is only a fallback used when the bitstream is silent. */
+/* InputBufferMetadata.aidl precedence: bitstream wins, override is a silent-bitstream fallback. */
 template <typename T>
 void assertOverridableField(const T& actual, bool bitstreamProvidesField, const T& bitstreamValue,
                              bool afterOverride, const std::optional<T>& overrideValue,
@@ -538,8 +536,7 @@ void assertOverridableField(const T& actual, bool bitstreamProvidesField, const 
     UT_ASSERT_EQUAL(actual, expected) << fieldName << " mismatch, for Codec " << codecName;
 }
 
-/* Same precedence rule, for output fields that are @nullable in FrameMetadata.aidl
- * (MasteringDisplayInfo, ContentLightLevel) instead of carrying an in-band sentinel. */
+/* Same rule, for @nullable output fields instead of a sentinel value. */
 template <typename T>
 void assertOverridableNullableField(const std::optional<T>& actual, const std::optional<T>& bitstreamValue,
                                      bool afterOverride, const std::optional<T>& overrideValue,
@@ -613,8 +610,6 @@ void videoDecoderTest::validateFrameMetadata(const DecodedVideoFrame_t& decodedF
         << ", actual=" << static_cast<int>(decodedFrame.metadata->dynamicRange)
         << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
 
-    // Validate colorimetry — bitstream wins if the stream's config declares a non-default
-    // (non-silent) value; otherwise the override applies from metadataOverridePts onward.
     {
         const bool bitstreamProvidesColorimetry = !(mTestConfiguration.colorimetry == videodecoder::Colorimetry{});
         assertOverridableField(decodedFrame.metadata->colorimetry, bitstreamProvidesColorimetry,
@@ -646,6 +641,9 @@ void videoDecoderTest::validateFrameMetadata(const DecodedVideoFrame_t& decodedF
                                     afterOverride, mTestConfiguration.overrideContentLightLevel,
                                     "ContentLightLevel", videodecoder::toString(mTestConfiguration.codec).c_str());
 
+    // FrameMetadata.aidl has no "unknown" value for parX/parY, so skip when we have no ground truth to check against.
+    if (mTestConfiguration.pixelAspectRatio.has_value() ||
+        (afterOverride && mTestConfiguration.overridePixelAspectRatio.has_value()))
     {
         videodecoder::Fraction actualPar;
         actualPar.numerator = decodedFrame.metadata->parX;
