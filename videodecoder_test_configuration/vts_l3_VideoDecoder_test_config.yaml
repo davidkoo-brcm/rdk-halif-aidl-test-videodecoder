@@ -39,42 +39,71 @@ videodecoder:
             Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: H265_HEVC
             Name: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: VP9
             Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
-          - codec: H265_HEVC
-            Name: H265_MAIN10_1920x1080_DR_DOLBY_VISION_300NITS_BT2020_23976p_PIXEL_FORMAT_YCBCR420
-            rms_diff_threshold: 0.5
-            decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          # Disabled: input asset Ves_ColorChecker_300nits_1920x1080_23976_dvhestn_L0_1000.265
+          # not present under assets/streams/input/ - re-enable once deployed.
+          # - codec: H265_HEVC
+          #   Name: H265_MAIN10_1920x1080_DR_DOLBY_VISION_300NITS_BT2020_23976p_PIXEL_FORMAT_YCBCR420
+          #   rms_diff_threshold: 0.5
+          #   decode_time_threshold: 10000000
           - codec: H265_HEVC
             Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_COLORIMETRY
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: H265_HEVC
             Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_COLORIMETRY_NOSET
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: H265_HEVC
             Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_MDI
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: H265_HEVC
             Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_MDI_NOSET
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: H265_HEVC
             Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_CLL
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: H265_HEVC
             Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_CLL_NOSET
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
     Decode_Sequential_NonTunnel_NonSecure_Error:
       Controls:
         delay_between_decode_calls: 1
@@ -84,14 +113,23 @@ videodecoder:
             Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_ERROR
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: H265_HEVC
             Name: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_ERROR
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: VP9
             Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_ERROR
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
     Decode_Sequential_NonTunnel_NonSecure_GOP:
       Controls:
         delay_between_decode_calls: 1
@@ -101,6 +139,9 @@ videodecoder:
             Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_GOP
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
     Decode_Sequential_NonTunnel_NonSecure_Discontinuity:
       Controls:
         delay_between_decode_calls: 1
@@ -110,14 +151,23 @@ videodecoder:
             Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_DISCONTINUITY
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: H265_HEVC
             Name: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_DISCONTINUITY
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: VP9
             Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_DISCONTINUITY
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
     Decode_Sequential_NonTunnel_NonSecure_EOS:
       Controls:
         delay_between_decode_calls: 1
@@ -127,14 +177,23 @@ videodecoder:
             Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_EOS
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: H265_HEVC
             Name: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_EOS
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: VP9
             Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_EOS
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
     Decode_Sequential_NonTunnel_NonSecure_Flush:
       Controls:
         delay_between_decode_calls: 1
@@ -144,14 +203,23 @@ videodecoder:
             Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_FLUSH
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: H265_HEVC
             Name: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_FLUSH
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: VP9
             Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_FLUSH
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
     Decode_Sequential_NonTunnel_NonSecure_FlushReset:
       Controls:
         delay_between_decode_calls: 1
@@ -161,14 +229,23 @@ videodecoder:
             Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_FLUSH_RESET
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: H265_HEVC
             Name: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_FLUSH_RESET
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: VP9
             Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_FLUSH_RESET
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
     Decode_Concurrent_NonTunnel_NonSecure:
       Controls:
         delay_between_decode_calls: 1
@@ -178,43 +255,72 @@ videodecoder:
             Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: H265_HEVC
             Name: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: VP9
             Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
-          - codec: H265_HEVC
-            Name: H265_MAIN10_1920x1080_DR_DOLBY_VISION_300NITS_BT2020_23976p_PIXEL_FORMAT_YCBCR420
-            rms_diff_threshold: 0.5
-            decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          # Disabled: input asset Ves_ColorChecker_300nits_1920x1080_23976_dvhestn_L0_1000.265
+          # not present under assets/streams/input/ - re-enable once deployed.
+          # - codec: H265_HEVC
+          #   Name: H265_MAIN10_1920x1080_DR_DOLBY_VISION_300NITS_BT2020_23976p_PIXEL_FORMAT_YCBCR420
+          #   rms_diff_threshold: 0.5
+          #   decode_time_threshold: 10000000
           - codec: H265_HEVC
             Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_COLORIMETRY
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: H265_HEVC
             Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_COLORIMETRY_NOSET
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: H265_HEVC
             Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_MDI
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: H265_HEVC
             Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_MDI_NOSET
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: H265_HEVC
             Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_CLL
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: H265_HEVC
             Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_CLL_NOSET
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
-    Decode_NonTunnel_NonSecure_Error_Discontinuity:
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+    Decode_Sequential_NonTunnel_NonSecure_Error_Discontinuity:
       Controls:
         delay_between_decode_calls: 1
       Inputs:
@@ -223,15 +329,24 @@ videodecoder:
             Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_ERROR_DISCONTINUITY
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: H265_HEVC
             Name: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_ERROR_DISCONTINUITY
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: VP9
             Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_ERROR_DISCONTINUITY
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
-    Decode_NonTunnel_NonSecure_Error_EOS:
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+    Decode_Sequential_NonTunnel_NonSecure_Error_EOS:
       Controls:
         delay_between_decode_calls: 1
       Inputs:
@@ -240,15 +355,24 @@ videodecoder:
             Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_ERROR_EOS
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: H265_HEVC
             Name: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_ERROR_EOS
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: VP9
             Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_ERROR_EOS
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
-    Decode_NonTunnel_NonSecure_Discontinuity_EOS:
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+    Decode_Sequential_NonTunnel_NonSecure_Discontinuity_EOS:
       Controls:
         delay_between_decode_calls: 1
       Inputs:
@@ -257,15 +381,24 @@ videodecoder:
             Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_DISCONTINUITY_EOS
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: H265_HEVC
             Name: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_DISCONTINUITY_EOS
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: VP9
             Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_DISCONTINUITY_EOS
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
-    Decode_NonTunnel_NonSecure_Flush_Error:
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+    Decode_Sequential_NonTunnel_NonSecure_Flush_Error:
       Controls:
         delay_between_decode_calls: 1
       Inputs:
@@ -274,15 +407,24 @@ videodecoder:
             Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_FLUSH_ERROR
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: H265_HEVC
             Name: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_FLUSH_ERROR
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: VP9
             Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_FLUSH_ERROR
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
-    Decode_NonTunnel_NonSecure_FlushReset_Error:
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+    Decode_Sequential_NonTunnel_NonSecure_FlushReset_Error:
       Controls:
         delay_between_decode_calls: 1
       Inputs:
@@ -291,14 +433,23 @@ videodecoder:
             Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_FLUSH_RESET_ERROR
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: H265_HEVC
             Name: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_FLUSH_RESET_ERROR
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: VP9
             Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_FLUSH_RESET_ERROR
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
     Decode_Concurrent_NonTunnel_NonSecure_Error:
       Controls:
         delay_between_decode_calls: 1
@@ -308,14 +459,23 @@ videodecoder:
             Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_ERROR
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: H265_HEVC
             Name: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_ERROR
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: VP9
             Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_ERROR
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
     Decode_Concurrent_NonTunnel_NonSecure_Discontinuity:
       Controls:
         delay_between_decode_calls: 1
@@ -325,14 +485,23 @@ videodecoder:
             Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_DISCONTINUITY
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: H265_HEVC
             Name: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_DISCONTINUITY
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: VP9
             Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_DISCONTINUITY
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
     Decode_Concurrent_NonTunnel_NonSecure_EOS:
       Controls:
         delay_between_decode_calls: 1
@@ -342,14 +511,23 @@ videodecoder:
             Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_EOS
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: H265_HEVC
             Name: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_EOS
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: VP9
             Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_EOS
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
     Decode_Concurrent_NonTunnel_NonSecure_Flush:
       Controls:
         delay_between_decode_calls: 1
@@ -359,14 +537,23 @@ videodecoder:
             Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_FLUSH
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: H265_HEVC
             Name: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_FLUSH
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: VP9
             Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_FLUSH
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
     Decode_Concurrent_NonTunnel_NonSecure_FlushReset:
       Controls:
         delay_between_decode_calls: 1
@@ -376,14 +563,23 @@ videodecoder:
             Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_FLUSH_RESET
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: H265_HEVC
             Name: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_FLUSH_RESET
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: VP9
             Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_FLUSH_RESET
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
     Decode_Sequential_NonTunnel_NonSecure_CODEC:
       Controls:
         delay_between_decode_calls: 1
@@ -393,65 +589,106 @@ videodecoder:
             Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: H265_HEVC
             Name: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: VP9
             Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
-    Decode_Sequential_NonTunnel_NonSecure_Resolutions:
-      Controls:
-        delay_between_decode_calls: 1
-      Inputs:
-        Streams:
-          - codec: H264_AVC
-            Name: H264_HIGH_1280x720_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_RESOLUTIONS
-            rms_diff_threshold: 0.5
-            decode_time_threshold: 10000000
-          - codec: H265_HEVC
-            Name: H265_HIGH_1280x720_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_RESOLUTIONS
-            rms_diff_threshold: 0.5
-            decode_time_threshold: 10000000
-          - codec: VP9
-            Name: VP9_HIGH_1280x720_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_RESOLUTIONS
-            rms_diff_threshold: 0.5
-            decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+    # Decodes real HDR10-encoded content (not an SDR override - MetadataOverride_HDR
+    # already covers the mid-stream-override case) and validates the decoder reports
+    # colorimetry/mastering-display-info/content-light-level straight from the
+    # bitstream. h264/vp9 have no real HDR-encoded stream yet - h265-only until
+    # equivalent content is provided, same as the ABR ladder streams were.
     Decode_Sequential_NonTunnel_NonSecure_HDRModes:
       Controls:
         delay_between_decode_calls: 1
       Inputs:
         Streams:
-          - codec: H264_AVC
-            Name: H264_HIGH_1920x1080_DR_HDR_DR_BT2020_60p_PIXEL_FORMAT_YCBCR420_734_HDR
-            rms_diff_threshold: 0.5
-            decode_time_threshold: 10000000
           - codec: H265_HEVC
-            Name: H265_HIGH_1920x1080_DR_HDR_DR_BT2020_30p_PIXEL_FORMAT_YCBCR420_734_HDR
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_COLORIMETRY
             rms_diff_threshold: 0.5
-            decode_time_threshold: 10000000
-          - codec: VP9
-            Name: VP9_HIGH_1920x1080_DR_HDR_DR_BT2020_30p_PIXEL_FORMAT_YCBCR420_734_HDR
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_COLORIMETRY_NOSET
             rms_diff_threshold: 0.5
-            decode_time_threshold: 10000000
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_MDI
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_MDI_NOSET
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_CLL
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_CLL_NOSET
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+    # Reuses the existing baseline _734 streams rather than dedicated framerate
+    # content: each codec's baseline is already at a distinct native fps (h264@60,
+    # h265@30, vp9@30), and frameRateNumerator/Denominator is already asserted
+    # unconditionally against decoded FrameMetadata (vts_videodecoder_test.cpp
+    # ~571-577) for every stream, so no new stream content is needed here.
     Decode_Sequential_NonTunnel_NonSecure_FrameRate:
       Controls:
         delay_between_decode_calls: 1
       Inputs:
         Streams:
           - codec: H264_AVC
-            Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_120p_PIXEL_FORMAT_YCBCR420_734_FRAMERATE
+            Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734
             rms_diff_threshold: 0.5
-            decode_time_threshold: 10000000
+            decode_time_threshold: 16666667
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: H265_HEVC
-            Name: H265_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_FRAMERATE
+            Name: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734
             rms_diff_threshold: 0.5
-            decode_time_threshold: 10000000
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: VP9
-            Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_FRAMERATE
+            Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734
             rms_diff_threshold: 0.5
-            decode_time_threshold: 10000000
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
     Decode_Sequential_NonTunnel_NonSecure_LowLatency:
       Controls:
         delay_between_decode_calls: 1
@@ -460,32 +697,50 @@ videodecoder:
           - codec: H264_AVC
             Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_LOWLATENCY
             rms_diff_threshold: 0.5
-            decode_time_threshold: 10000000
+            decode_time_threshold: 16666667
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: H265_HEVC
             Name: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_LOWLATENCY
             rms_diff_threshold: 0.5
-            decode_time_threshold: 10000000
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: VP9
             Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_LOWLATENCY
             rms_diff_threshold: 0.5
-            decode_time_threshold: 10000000
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
     Decode_Sequential_NonTunnel_NonSecure_AdaptiveBitrate:
       Controls:
         delay_between_decode_calls: 1
       Inputs:
         Streams:
           - codec: H264_AVC
-            Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_ADAPTIVEBITRATE
+            Name: H264_HIGH_RES_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_ABR
             rms_diff_threshold: 0.5
-            decode_time_threshold: 10000000
+            decode_time_threshold: 16666667
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: H265_HEVC
-            Name: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_ADAPTIVEBITRATE
+            Name: H265_HIGH_RES_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_ABR
             rms_diff_threshold: 0.5
-            decode_time_threshold: 10000000
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: VP9
-            Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_ADAPTIVEBITRATE
+            Name: VP9_HIGH_RES_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_ABR
             rms_diff_threshold: 0.5
-            decode_time_threshold: 10000000
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
     Decode_Concurrent_NonTunnel_NonSecure_CODEC:
       Controls:
         delay_between_decode_calls: 1
@@ -495,65 +750,122 @@ videodecoder:
             Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: H265_HEVC
             Name: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: VP9
             Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
-    Decode_Concurrent_NonTunnel_NonSecure_Resolutions:
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+    Decode_Concurrent_NonTunnel_NonSecure_AdaptiveBitrate:
       Controls:
         delay_between_decode_calls: 1
       Inputs:
         Streams:
           - codec: H264_AVC
-            Name: H264_HIGH_1280x720_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_RESOLUTIONS
+            Name: H264_HIGH_RES_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_ABR
             rms_diff_threshold: 0.5
-            decode_time_threshold: 10000000
+            decode_time_threshold: 16666667
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: H265_HEVC
-            Name: H265_HIGH_1280x720_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_RESOLUTIONS
+            Name: H265_HIGH_RES_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_ABR
             rms_diff_threshold: 0.5
-            decode_time_threshold: 10000000
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: VP9
-            Name: VP9_HIGH_1280x720_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_RESOLUTIONS
+            Name: VP9_HIGH_RES_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_ABR
             rms_diff_threshold: 0.5
-            decode_time_threshold: 10000000
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
     Decode_Concurrent_NonTunnel_NonSecure_HDRModes:
       Controls:
         delay_between_decode_calls: 1
       Inputs:
         Streams:
-          - codec: H264_AVC
-            Name: H264_HIGH_1920x1080_DR_HDR_DR_BT2020_60p_PIXEL_FORMAT_YCBCR420_734_HDR
-            rms_diff_threshold: 0.5
-            decode_time_threshold: 10000000
           - codec: H265_HEVC
-            Name: H265_HIGH_1920x1080_DR_HDR_DR_BT2020_30p_PIXEL_FORMAT_YCBCR420_734_HDR
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_COLORIMETRY
             rms_diff_threshold: 0.5
-            decode_time_threshold: 10000000
-          - codec: VP9
-            Name: VP9_HIGH_1920x1080_DR_HDR_DR_BT2020_30p_PIXEL_FORMAT_YCBCR420_734_HDR
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_COLORIMETRY_NOSET
             rms_diff_threshold: 0.5
-            decode_time_threshold: 10000000
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_MDI
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_MDI_NOSET
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_CLL
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_CLL_NOSET
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
     Decode_Concurrent_NonTunnel_NonSecure_FrameRate:
       Controls:
         delay_between_decode_calls: 1
       Inputs:
         Streams:
           - codec: H264_AVC
-            Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_120p_PIXEL_FORMAT_YCBCR420_734_FRAMERATE
+            Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734
             rms_diff_threshold: 0.5
-            decode_time_threshold: 10000000
+            decode_time_threshold: 16666667
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: H265_HEVC
-            Name: H265_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_FRAMERATE
+            Name: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734
             rms_diff_threshold: 0.5
-            decode_time_threshold: 10000000
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: VP9
-            Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_FRAMERATE
+            Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734
             rms_diff_threshold: 0.5
-            decode_time_threshold: 10000000
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
     Decode_Concurrent_NonTunnel_NonSecure_GOPStructure:
       Controls:
         delay_between_decode_calls: 1
@@ -563,6 +875,9 @@ videodecoder:
             Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_GOP
             rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
     Decode_Concurrent_NonTunnel_NonSecure_LowLatency:
       Controls:
         delay_between_decode_calls: 1
@@ -571,12 +886,694 @@ videodecoder:
           - codec: H264_AVC
             Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_LOWLATENCY
             rms_diff_threshold: 0.5
-            decode_time_threshold: 10000000
+            decode_time_threshold: 16666667
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: H265_HEVC
             Name: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_LOWLATENCY
             rms_diff_threshold: 0.5
-            decode_time_threshold: 10000000
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
           - codec: VP9
             Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_LOWLATENCY
             rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+    Decode_Sequential_NonTunnel_NonSecure_MetadataOverride_HDR:
+      Controls:
+        delay_between_decode_calls: 1
+      Inputs:
+        Streams:
+          - codec: H264_AVC
+            Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_METADATA_OVERRIDE_HDR
+            rms_diff_threshold: 0.5
             decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+    Decode_Sequential_NonTunnel_NonSecure_MetadataOverride_SSAI:
+      Controls:
+        delay_between_decode_calls: 1
+      Inputs:
+        Streams:
+          - codec: H264_AVC
+            Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_METADATA_OVERRIDE_SSAI
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+    Decode_Sequential_NonTunnel_NonSecure_MetadataOverride_PAR:
+      Controls:
+        delay_between_decode_calls: 1
+      Inputs:
+        Streams:
+          - codec: H264_AVC
+            Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_METADATA_OVERRIDE_PAR
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+    # The 5 sections below had no config at all before (Secure/Tunnel AdaptiveBitrate
+    # test cases were unconfigured placeholders) - wired to the same canonical ABR
+    # ladder streams as the NonTunnel/NonSecure AdaptiveBitrate sections above.
+    Decode_Sequential_NonTunnel_Secure_AdaptiveBitrate:
+      Controls:
+        delay_between_decode_calls: 1
+      Inputs:
+        Streams:
+          - codec: H264_AVC
+            Name: H264_HIGH_RES_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_ABR
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 16666667
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_RES_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_ABR
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: VP9
+            Name: VP9_HIGH_RES_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_ABR
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+    Decode_Concurrent_NonTunnel_Secure_AdaptiveBitrate:
+      Controls:
+        delay_between_decode_calls: 1
+      Inputs:
+        Streams:
+          - codec: H264_AVC
+            Name: H264_HIGH_RES_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_ABR
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 16666667
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_RES_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_ABR
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: VP9
+            Name: VP9_HIGH_RES_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_ABR
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+    Decode_Sequential_Tunnel_NonSecure_AdaptiveBitrate:
+      Controls:
+        delay_between_decode_calls: 1
+      Inputs:
+        Streams:
+          - codec: H264_AVC
+            Name: H264_HIGH_RES_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_ABR
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 16666667
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_RES_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_ABR
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: VP9
+            Name: VP9_HIGH_RES_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_ABR
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+    Decode_Concurrent_Tunnel_NonSecure_AdaptiveBitrate:
+      Controls:
+        delay_between_decode_calls: 1
+      Inputs:
+        Streams:
+          - codec: H264_AVC
+            Name: H264_HIGH_RES_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_ABR
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 16666667
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_RES_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_ABR
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: VP9
+            Name: VP9_HIGH_RES_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_ABR
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+    Decode_Sequential_Tunnel_Secure_AdaptiveBitrate:
+      Controls:
+        delay_between_decode_calls: 1
+      Inputs:
+        Streams:
+          - codec: H264_AVC
+            Name: H264_HIGH_RES_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_ABR
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 16666667
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_RES_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_ABR
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: VP9
+            Name: VP9_HIGH_RES_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_ABR
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+    # 5 sections below had no config at all before (Secure/Tunnel FrameRate test
+    # cases were unconfigured placeholders) - wired to the same baseline _734
+    # streams as the NonTunnel/NonSecure FrameRate sections above.
+    Decode_Sequential_NonTunnel_Secure_FrameRate:
+      Controls:
+        delay_between_decode_calls: 1
+      Inputs:
+        Streams:
+          - codec: H264_AVC
+            Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 16666667
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: VP9
+            Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+    Decode_Concurrent_NonTunnel_Secure_FrameRate:
+      Controls:
+        delay_between_decode_calls: 1
+      Inputs:
+        Streams:
+          - codec: H264_AVC
+            Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 16666667
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: VP9
+            Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+    Decode_Sequential_Tunnel_NonSecure_FrameRate:
+      Controls:
+        delay_between_decode_calls: 1
+      Inputs:
+        Streams:
+          - codec: H264_AVC
+            Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 16666667
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: VP9
+            Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+    Decode_Concurrent_Tunnel_NonSecure_FrameRate:
+      Controls:
+        delay_between_decode_calls: 1
+      Inputs:
+        Streams:
+          - codec: H264_AVC
+            Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 16666667
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: VP9
+            Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+    Decode_Sequential_Tunnel_Secure_FrameRate:
+      Controls:
+        delay_between_decode_calls: 1
+      Inputs:
+        Streams:
+          - codec: H264_AVC
+            Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 16666667
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: VP9
+            Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+    # 5 sections below had no config at all before (Secure/Tunnel HDRModes test
+    # cases were unconfigured placeholders) - wired to the same real h265 HDR10
+    # streams as the NonTunnel/NonSecure HDRModes sections above.
+    Decode_Sequential_NonTunnel_Secure_HDRModes:
+      Controls:
+        delay_between_decode_calls: 1
+      Inputs:
+        Streams:
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_COLORIMETRY
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_COLORIMETRY_NOSET
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_MDI
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_MDI_NOSET
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_CLL
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_CLL_NOSET
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+    Decode_Concurrent_NonTunnel_Secure_HDRModes:
+      Controls:
+        delay_between_decode_calls: 1
+      Inputs:
+        Streams:
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_COLORIMETRY
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_COLORIMETRY_NOSET
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_MDI
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_MDI_NOSET
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_CLL
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_CLL_NOSET
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+    Decode_Sequential_Tunnel_NonSecure_HDRModes:
+      Controls:
+        delay_between_decode_calls: 1
+      Inputs:
+        Streams:
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_COLORIMETRY
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_COLORIMETRY_NOSET
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_MDI
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_MDI_NOSET
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_CLL
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_CLL_NOSET
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+    Decode_Concurrent_Tunnel_NonSecure_HDRModes:
+      Controls:
+        delay_between_decode_calls: 1
+      Inputs:
+        Streams:
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_COLORIMETRY
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_COLORIMETRY_NOSET
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_MDI
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_MDI_NOSET
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_CLL
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_CLL_NOSET
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+    Decode_Sequential_Tunnel_Secure_HDRModes:
+      Controls:
+        delay_between_decode_calls: 1
+      Inputs:
+        Streams:
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_COLORIMETRY
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_COLORIMETRY_NOSET
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_MDI
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_MDI_NOSET
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_CLL
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_CLL_NOSET
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+    # 5 sections below had no config at all before (Secure/Tunnel LowLatency test
+    # cases were unconfigured placeholders) - wired to the same _LOWLATENCY streams
+    # as the NonTunnel/NonSecure LowLatency sections above.
+    Decode_Sequential_NonTunnel_Secure_LowLatency:
+      Controls:
+        delay_between_decode_calls: 1
+      Inputs:
+        Streams:
+          - codec: H264_AVC
+            Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_LOWLATENCY
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 16666667
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_LOWLATENCY
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: VP9
+            Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_LOWLATENCY
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+    Decode_Concurrent_NonTunnel_Secure_LowLatency:
+      Controls:
+        delay_between_decode_calls: 1
+      Inputs:
+        Streams:
+          - codec: H264_AVC
+            Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_LOWLATENCY
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 16666667
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_LOWLATENCY
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: VP9
+            Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_LOWLATENCY
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+    Decode_Sequential_Tunnel_NonSecure_LowLatency:
+      Controls:
+        delay_between_decode_calls: 1
+      Inputs:
+        Streams:
+          - codec: H264_AVC
+            Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_LOWLATENCY
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 16666667
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_LOWLATENCY
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: VP9
+            Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_LOWLATENCY
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+    Decode_Concurrent_Tunnel_NonSecure_LowLatency:
+      Controls:
+        delay_between_decode_calls: 1
+      Inputs:
+        Streams:
+          - codec: H264_AVC
+            Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_LOWLATENCY
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 16666667
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_LOWLATENCY
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: VP9
+            Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_LOWLATENCY
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+    Decode_Sequential_Tunnel_Secure_LowLatency:
+      Controls:
+        delay_between_decode_calls: 1
+      Inputs:
+        Streams:
+          - codec: H264_AVC
+            Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_LOWLATENCY
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 16666667
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H265_HEVC
+            Name: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_LOWLATENCY
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: VP9
+            Name: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_LOWLATENCY
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 33333333
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1

@@ -47,6 +47,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     frame_size:
       - 79916
       - 125
@@ -99,6 +102,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     frame_size:
       - 79916
       - 125
@@ -151,6 +157,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     frame_size:
       - 79916
       - 125
@@ -203,6 +212,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     frame_size:
       - 79916
       - 125
@@ -255,6 +267,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     frame_size:
       - 79916
       - 125
@@ -307,6 +322,9 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
     frame_size:
       - 79916
       - 125

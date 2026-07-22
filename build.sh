@@ -19,15 +19,28 @@
 #*
 #* ******************************************************************************
 
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+RESET='\033[0m'
+
 # Define the directory where the repository will be cloned
 declare -r TOP=`dirname $(realpath $0)`
 declare -r UT_CORE_DIR="${TOP}/ut-core"
 declare -r BUILD_DIR="${TOP}/build"
 declare -r BUILD_INSTALL_PREFIX=${BUILD_DIR}/usr
 declare -r MOCK_SERVICE_DIR="${TOP}/mockservice"
-declare -r AIDL_LIB_DIR=${TOP}/aidl_lib
 declare -r RDK_HAL_DIR=${TOP}/rdk-halif-aidl
 declare -r INSTALL_PATH=${BUILD_DIR}/bin
+
+# build_mock.sh owns mock-only flow and handles binder provisioning.
+if [ "${1:-}" == "mock" ]; then
+    shift
+    exec "${TOP}/build_mock.sh" "$@"
+fi
 
 DEF_LINUX_BINDER="`realpath ${TOP}/../`/linux_binder_idl"
 # AIDL_BIN: path of aidl compiler
@@ -55,6 +68,52 @@ declare -r AIDL_BIN=`realpath ${AIDL_BIN}`
 declare -r LINUX_BINDER_OUT_DIR=`realpath ${LINUX_BINDER_OUT_DIR}`
 RDK_HALIF_AIDL_VERSION="${RDK_HALIF_AIDL_VERSION="main"}"
 
+ensure_rdk_hal_repo()
+{
+    if [ ! -d "$RDK_HAL_DIR" ]; then
+        git clone -b $RDK_HALIF_AIDL_VERSION 'ssh://git@github.com/rdkcentral/rdk-halif-aidl.git' $RDK_HAL_DIR
+    fi
+}
+
+prepare_aidl_binder_sdk()
+{
+    # Ensure Python dependencies for the AIDL host tools are available
+    python3 -m pip install --quiet colorama 2>/dev/null || true
+
+    # Stage the Binder SDK inside rdk-halif-aidl/out/target/ so that
+    # rdk-halif-aidl/CMakeLists.txt can find it (it checks for .sdk_ready).
+    if [ ! -f "${RDK_HAL_DIR}/out/target/.sdk_ready" ]; then
+        echo "Preparing Binder SDK for AIDL generation..."
+        (
+            cd "${RDK_HAL_DIR}"
+            ./build_binder.sh
+        )
+    fi
+}
+
+find_host_cmake()
+{
+    # file(REAL_PATH) in rdk-halif-aidl CMakeLists requires cmake >= 3.19.
+    # When an OE/Yocto toolchain is active it may put an older cmake (e.g. 3.16)
+    # at the front of PATH. Search known locations for a cmake >= 3.19.
+    local candidates=("cmake" "/usr/bin/cmake" "/usr/local/bin/cmake")
+    for c in "${candidates[@]}"; do
+        if command -v "$c" &>/dev/null || [ -x "$c" ]; then
+            local ver
+            ver=$("$c" --version 2>/dev/null | awk 'NR==1{print $3}')
+            local major minor
+            IFS='.' read -r major minor _ <<< "$ver"
+            if [ "${major:-0}" -gt 3 ] || { [ "${major:-0}" -eq 3 ] && [ "${minor:-0}" -ge 19 ]; }; then
+                HOST_CMAKE="$c"
+                echo -e "${GREEN}Using cmake: $HOST_CMAKE (version $ver)${RESET}"
+                return 0
+            fi
+        fi
+    done
+    echo -e "${YELLOW}WARNING: cmake >= 3.19 not found, AIDL generation may fail${RESET}"
+    HOST_CMAKE="cmake"
+}
+
 install_linux_binder()
 {
     echo "Install linux-binder \`service manager, headers and libraries'"
@@ -71,13 +130,10 @@ generate_audiodecoder_hal()
     declare -r AIDL_GEN_DIR="${BUILD_DIR}/audiodecoder_gen/$AUDIODECODER_VERSION"
 
 
-    # Clone the repository if not already present
-    if [ ! -d "$RDK_HAL_DIR" ]; then
-        git clone -b $RDK_HALIF_AIDL_VERSION 'ssh://git@github.com/rdkcentral/rdk-halif-aidl.git' $RDK_HAL_DIR
-    fi
+    ensure_rdk_hal_repo
 
     # Prepare cmake build directories and configuration for each module
-    cmake \
+    ${HOST_CMAKE} \
         -DAIDL_BIN=$AIDL_BIN \
         -DAIDL_GEN_DIR=$AIDL_GEN_DIR \
         -DAIDL_SRC_VERSION=$AUDIODECODER_VERSION \
@@ -92,14 +148,10 @@ generate_avbuffer_hal()
     declare -r VERSION=current
     declare -r AIDL_GEN_DIR="${BUILD_DIR}/avbuffer_gen/$VERSION"
 
-    # Clone the repository if not already present
-    if [ ! -d "$RDK_HAL_DIR" ]; then
-        echo "Checking out HAL version: " $RDK_HALIF_AIDL_VERSION
-        git clone -b $RDK_HALIF_AIDL_VERSION 'ssh://git@github.com/rdkcentral/rdk-halif-aidl.git' $RDK_HAL_DIR
-    fi
+    ensure_rdk_hal_repo
 
     for m in avbuffer; do
-        cmake \
+        ${HOST_CMAKE} \
         -DAIDL_BIN=$AIDL_BIN \
         -DAIDL_GEN_DIR=$AIDL_GEN_DIR \
         -DAIDL_SRC_VERSION=$VERSION \
@@ -115,13 +167,9 @@ generate_videodecoder_hal()
     declare -r VIDEODECODER_VERSION=current
     declare -r AIDL_GEN_DIR="${BUILD_DIR}/videodecoder_gen/$VIDEODECODER_VERSION"
 
-    # Clone the repository if not already present
-    if [ ! -d "$RDK_HAL_DIR" ]; then
-        echo "Checking out HAL version: " $RDK_HALIF_AIDL_VERSION
-        git clone -b $RDK_HALIF_AIDL_VERSION 'ssh://git@github.com/rdkcentral/rdk-halif-aidl.git' $RDK_HAL_DIR
-    fi
+    ensure_rdk_hal_repo
 
-    cmake \
+    ${HOST_CMAKE} \
         -DAIDL_BIN=$AIDL_BIN \
         -DAIDL_GEN_DIR=$AIDL_GEN_DIR \
         -DAIDL_SRC_VERSION=$VIDEODECODER_VERSION \
@@ -147,10 +195,67 @@ generate_avbufferhelper_skeleton()
 
 build_aidl_libs()
 {
-    pushd ${AIDL_LIB_DIR}
-    make -j`nproc`
+    local halif_lib_dir="${RDK_HAL_DIR}/out/target/lib/halif"
+    local halif_inc_dir="${RDK_HAL_DIR}/out/target/include/halif"
+    local binder_lib_dir="${RDK_HAL_DIR}/out/target/lib"
+    local binder_sdk_inc="${RDK_HAL_DIR}/out/build/include/binder_sdk"
+
+    echo "Building AIDL interface libraries via cmake..."
+    # audiodecoder cmake was configured to build all modules (INTERFACE_TARGET=all)
+    ${HOST_CMAKE} --build "${BUILD_DIR}/audiodecoder_aidl" -j$(nproc)
+    echo "AIDL cmake build completed."
+
+    install -d "${BUILD_INSTALL_PREFIX}/lib" "${BUILD_INSTALL_PREFIX}/include"
+
+    # Overwrite binder runtime libs with x86_64 rdkcentral ones (matching the AIDL build)
+    install -t "${BUILD_INSTALL_PREFIX}/lib" "${binder_lib_dir}"/lib*.so
+
+    # Overwrite binder headers to match the rdkcentral binder the AIDL libs were built against
+    for d in binder utils android android-base cutils log; do
+        [ -d "${binder_lib_dir}/../include/${d}" ] && \
+            cp -apr "${binder_lib_dir}/../include/${d}" "${BUILD_INSTALL_PREFIX}/include/"
+    done
+    # binder_sdk build-time headers (android/binder_to_string.h etc.)
+    [ -d "${binder_sdk_inc}" ] && cp -apr "${binder_sdk_inc}"/. "${BUILD_INSTALL_PREFIX}/include/"
+
+    # Stage AIDL libs with the symlink names expected by mockservice Makefile
+    local audio_lib avbuffer_lib videodecoder_lib
+    audio_lib=$(ls "${halif_lib_dir}/libaudiodecoder-v"*"-cpp.so" 2>/dev/null | head -1)
+    avbuffer_lib=$(ls "${halif_lib_dir}/libavbuffer-v"*"-cpp.so" 2>/dev/null | head -1)
+    videodecoder_lib=$(ls "${halif_lib_dir}/libvideodecoder-v"*"-cpp.so" 2>/dev/null | head -1)
+
+    if [ -z "$audio_lib" ] || [ -z "$avbuffer_lib" ] || [ -z "$videodecoder_lib" ]; then
+        echo "ERROR: cmake did not produce expected AIDL libraries in ${halif_lib_dir}"
+        ls "${halif_lib_dir}" 2>/dev/null || true
+        exit 1
+    fi
+
+    cp -f "$audio_lib"        "${BUILD_INSTALL_PREFIX}/lib/$(basename "$audio_lib")"
+    cp -f "$avbuffer_lib"     "${BUILD_INSTALL_PREFIX}/lib/$(basename "$avbuffer_lib")"
+    cp -f "$videodecoder_lib" "${BUILD_INSTALL_PREFIX}/lib/$(basename "$videodecoder_lib")"
+
+    ln -sf "$(basename "$audio_lib")"        "${BUILD_INSTALL_PREFIX}/lib/libaudiodecoderaidl.so"
+    ln -sf "$(basename "$avbuffer_lib")"     "${BUILD_INSTALL_PREFIX}/lib/libavbufferaidl.so"
+    ln -sf "$(basename "$videodecoder_lib")" "${BUILD_INSTALL_PREFIX}/lib/libvideodecoderaidl.so"
+
+    # Copy ALL halif libs so transitive dependencies are resolvable
+    install -t "${BUILD_INSTALL_PREFIX}/lib" "${halif_lib_dir}"/lib*.so
+    # Refresh AIDL generated headers needed by mockservice compile
+    for module in audiodecoder avbuffer videodecoder; do
+        local gen_dir="${BUILD_DIR}/${module}_gen/current/h"
+        if [ -d "${halif_inc_dir}/com/rdk/hal/${module}" ]; then
+            install -d "${gen_dir}/com/rdk/hal/${module}"
+            cp -f "${halif_inc_dir}/com/rdk/hal/${module}/"*.h "${gen_dir}/com/rdk/hal/${module}/"
+        fi
+    done
+    # Common HAL headers (AVSource.h, State.h, etc.) go in the audiodecoder gen dir
+    if [ -d "${halif_inc_dir}/com/rdk/hal" ]; then
+        install -d "${BUILD_DIR}/audiodecoder_gen/current/h/com/rdk/hal"
+        cp -f "${halif_inc_dir}/com/rdk/hal/"*.h \
+              "${BUILD_DIR}/audiodecoder_gen/current/h/com/rdk/hal/" 2>/dev/null || true
+    fi
+
     echo "AIDL Build completed successfully."
-    popd
 }
 
 build_mockservice()
@@ -233,23 +338,21 @@ clean_test()
 
 help()
 {
-    # Colors
-    RED='\033[0;31m'
-    GREEN='\033[0;32m'
-    YELLOW='\033[1;33m'
-    CYAN='\033[0;36m'
-    BOLD='\033[1m'
-    RESET='\033[0m'
-
     echo -e "${BOLD}${CYAN}Usage:${RESET}"
 
     echo -e "${BOLD}╔════════════════════════════════════════════════════════════════════╗${RESET}"
     echo -e "${BOLD}* ${GREEN}$0 all${RESET}            ${YELLOW}- Builds the test${RESET}                        ${BOLD}*${RESET}"
+    echo -e "${BOLD}* ${GREEN}$0 mock${RESET}           ${YELLOW}- Builds mock service only (no UT/tests)${RESET} ${BOLD}*${RESET}"
     echo -e "${BOLD}* ${GREEN}$0 clean${RESET}          ${YELLOW}- Cleans the build folder${RESET}                ${BOLD}*${RESET}"
     echo -e "${BOLD}* ${GREEN}$0 dist_clean${RESET}     ${YELLOW}- Deletes all build and checkout folders${RESET} ${BOLD}*${RESET}"
     echo -e "${BOLD}* ${GREEN}$0 help/-h/--help${RESET} ${YELLOW}- Prints this message${RESET}                    ${BOLD}*${RESET}"
     echo -e "${BOLD}╚════════════════════════════════════════════════════════════════════╝${RESET}"
 }
+
+echo -e "${BOLD}${GREEN}VTS Version            : ${RESET}${YELLOW}$(git rev-parse --abbrev-ref HEAD)${RESET}"
+echo -e "${BOLD}${GREEN}RDK_HALIF_AIDL_VERSION : ${RESET}${YELLOW}$RDK_HALIF_AIDL_VERSION${RESET}"
+echo -e "${BOLD}${GREEN}AIDL_BIN               : ${RESET}${YELLOW}$AIDL_BIN${RESET}"
+echo -e "${BOLD}${GREEN}LINUX_BINDER_OUT_DIR   : ${RESET}${YELLOW}$LINUX_BINDER_OUT_DIR${RESET}"
 
 if [ "$1" == "clean" ]; then
     clean_test
@@ -259,6 +362,8 @@ elif [[ "$1" == "help" || "$1" == "--help" || "$1" == "-h" ]]; then
     help
 elif [ "$1" == "all" ]; then
     install_linux_binder
+    prepare_aidl_binder_sdk
+    find_host_cmake
     generate_avbuffer_hal
     generate_audiodecoder_hal
     generate_videodecoder_hal
@@ -271,10 +376,6 @@ elif [ "$1" == "all" ]; then
     make -j`nproc` -C ${TOP}
     install_test
 else
-    # Colors
-    RED='\033[0;31m'
-    BOLD='\033[1m'
-    RESET='\033[0m'
     echo -e "${BOLD}${RED}Invalid Arguments${RESET}"
     help
 fi

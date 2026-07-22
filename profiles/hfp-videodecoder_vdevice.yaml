@@ -29,116 +29,215 @@ videodecoder:           # Component object begins
     - 0:                        # Resource object begins
       supportedCodecs:          # Array of codec capabilities
         - MPEG2_VIDEO:
-            profile: MPEG2_MAIN
-            level: MPEG2_LEVEL_HIGH
+            profiles:
+              - profile: MPEG2_MAIN
+                maxLevel: MPEG2_LEVEL_HIGH
+                maxBitrateInBps: 0
             maxFrameRate: 60
             maxFrameWidth: 1920
             maxFrameHeight: 1080
+            supportedOutputPixelFormats:
+              - YCBCR420
         - H264_AVC:
-            profile: H264_HIGH
-            level: H264_LEVEL_4_1
+            profiles:
+              - profile: H264_HIGH
+                maxLevel: H264_LEVEL_4_1
+                maxBitrateInBps: 0
             maxFrameRate: 60
             maxFrameWidth: 1920
             maxFrameHeight: 1080
+            supportedOutputPixelFormats:
+              - YCBCR420
         - H265_HEVC:
-            profile: H265_MAIN_10
-            level: H265_LEVEL_5_1
+            profiles:
+              - profile: H265_MAIN_10
+                maxLevel: H265_LEVEL_5_1
+                maxBitrateInBps: 0
             maxFrameRate: 60
             maxFrameWidth: 3840
             maxFrameHeight: 2160
+            supportedOutputPixelFormats:
+              - YCBCR420
         - VP9:
-            profile: VP9_PROFILE_2
-            level: VP9_LEVEL_5_1
+            profiles:
+              - profile: VP9_PROFILE_2
+                maxLevel: VP9_LEVEL_5_1
+                maxBitrateInBps: 0
             maxFrameRate: 60
             maxFrameWidth: 3840
             maxFrameHeight: 2160
+            supportedOutputPixelFormats:
+              - YCBCR420
         - AV1:
-            profile: AV1_MAIN
-            level: AV1_LEVEL_5_1
+            profiles:
+              - profile: AV1_MAIN
+                maxLevel: AV1_LEVEL_5_1
+                maxBitrateInBps: 0
             maxFrameRate: 60
             maxFrameWidth: 3840
             maxFrameHeight: 2160
+            supportedOutputPixelFormats:
+              - YCBCR420
       supportedDynamicRanges:
         - SDR
         - HLG
         - HDR10
         - DOLBY_VISION
       supportedColorimetries:
-        - BT601_525
-        - BT601_625
-        - BT709
+        - range: LIMITED
+          matrix: BT601_525
+          transfer: SMPTE170M
+          primaries: BT601_525
+        - range: LIMITED
+          matrix: BT601_625
+          transfer: BT470BG_GAMMA28
+          primaries: BT470BG
+        - range: LIMITED
+          matrix: BT709
+          transfer: BT709
+          primaries: BT709
+        - range: LIMITED
+          matrix: BT2020_NCL
+          transfer: ARIB_STD_B67_HLG
+          primaries: BT2020
+        - range: LIMITED
+          matrix: BT2020_NCL
+          transfer: SMPTE2084_PQ
+          primaries: BT2020
       supportsSecure: true
     - 1:                          # Resource object begins
       supportedCodecs:          # Array of codec capabilities
         - MPEG2_VIDEO:
-            profile: MPEG2_MAIN
-            level: MPEG2_LEVEL_HIGH
+            profiles:
+              - profile: MPEG2_MAIN
+                maxLevel: MPEG2_LEVEL_HIGH
+                maxBitrateInBps: 0
             maxFrameRate: 60
             maxFrameWidth: 1920
             maxFrameHeight: 1080
+            supportedOutputPixelFormats:
+              - YCBCR420
         - H264_AVC:
-            profile: H264_HIGH
-            level: H264_LEVEL_4_1
+            profiles:
+              - profile: H264_HIGH
+                maxLevel: H264_LEVEL_4_1
+                maxBitrateInBps: 0
             maxFrameRate: 60
             maxFrameWidth: 1920
             maxFrameHeight: 1080
+            supportedOutputPixelFormats:
+              - YCBCR420
         - H265_HEVC:
-            profile: H265_MAIN
-            level: H265_LEVEL_4_1
+            profiles:
+              - profile: H265_MAIN
+                maxLevel: H265_LEVEL_4_1
+                maxBitrateInBps: 0
             maxFrameRate: 60
             maxFrameWidth: 1920
             maxFrameHeight: 1080
+            supportedOutputPixelFormats:
+              - YCBCR420
         - VP9:
-            profile: VP9_PROFILE_0
-            level: VP9_LEVEL_4_1
+            profiles:
+              - profile: VP9_PROFILE_0
+                maxLevel: VP9_LEVEL_4_1
+                maxBitrateInBps: 0
             maxFrameRate: 60
             maxFrameWidth: 1920
             maxFrameHeight: 1080
+            supportedOutputPixelFormats:
+              - YCBCR420
         - AV1:
-            profile: AV1_MAIN
-            level: AV1_LEVEL_4_1
+            profiles:
+              - profile: AV1_MAIN
+                maxLevel: AV1_LEVEL_4_1
+                maxBitrateInBps: 0
             maxFrameRate: 60
             maxFrameWidth: 1920
             maxFrameHeight: 1080
+            supportedOutputPixelFormats:
+              - YCBCR420
       supportedDynamicRanges:
         - SDR
       supportedColorimetries:
-        - BT601_525
-        - BT601_625
-        - BT709
+        - range: LIMITED
+          matrix: BT601_525
+          transfer: SMPTE170M
+          primaries: BT601_525
+        - range: LIMITED
+          matrix: BT601_625
+          transfer: BT470BG_GAMMA28
+          primaries: BT470BG
+        - range: LIMITED
+          matrix: BT709
+          transfer: BT709
+          primaries: BT709
       supportsSecure: true
     - 2:
       supportedCodecs:
         - H264_AVC:
-            profile: H264_HIGH
-            level: H264_LEVEL_4_1
+            profiles:
+              - profile: H264_HIGH
+                maxLevel: H264_LEVEL_4_1
+                maxBitrateInBps: 0
             maxFrameRate: 60
             maxFrameWidth: 1920
             maxFrameHeight: 1080
+            supportedOutputPixelFormats:
+              - YCBCR420
         - H265_HEVC:
-            profile: H265_MAIN
-            level: H265_LEVEL_5_1
+            profiles:
+              - profile: H265_MAIN
+                maxLevel: H265_LEVEL_5_1
+                maxBitrateInBps: 0
             maxFrameRate: 60
             maxFrameWidth: 3840
             maxFrameHeight: 2160
+            supportedOutputPixelFormats:
+              - YCBCR420
         - VP9:
-            profile: VP9_PROFILE_2
-            level: VP9_LEVEL_5_1
+            profiles:
+              - profile: VP9_PROFILE_2
+                maxLevel: VP9_LEVEL_5_1
+                maxBitrateInBps: 0
             maxFrameRate: 60
             maxFrameWidth: 3840
             maxFrameHeight: 2160
+            supportedOutputPixelFormats:
+              - YCBCR420
         - AV1:
-            profile: AV1_MAIN
-            level: AV1_LEVEL_5_1
+            profiles:
+              - profile: AV1_MAIN
+                maxLevel: AV1_LEVEL_5_1
+                maxBitrateInBps: 0
             maxFrameRate: 60
             maxFrameWidth: 3840
             maxFrameHeight: 2160
+            supportedOutputPixelFormats:
+              - YCBCR420
       supportedDynamicRanges:
         - SDR
         - HLG
         - HDR10
       supportedColorimetries:
-        - BT601_525
-        - BT601_625
-        - BT709
+        - range: LIMITED
+          matrix: BT601_525
+          transfer: SMPTE170M
+          primaries: BT601_525
+        - range: LIMITED
+          matrix: BT601_625
+          transfer: BT470BG_GAMMA28
+          primaries: BT470BG
+        - range: LIMITED
+          matrix: BT709
+          transfer: BT709
+          primaries: BT709
+        - range: LIMITED
+          matrix: BT2020_NCL
+          transfer: ARIB_STD_B67_HLG
+          primaries: BT2020
+        - range: LIMITED
+          matrix: BT2020_NCL
+          transfer: SMPTE2084_PQ
+          primaries: BT2020
       supportsSecure: false
