@@ -72,6 +72,7 @@ void videoDecoderTest::run(bool concurrentDecodeConsume)
 
     mFrameData.clear();
     mInputBuffer.clear();
+    mInputFrame.clear();
 
     bool status = makeFrame();
     if (!status)
@@ -155,7 +156,7 @@ void videoDecoderTest::getDecoderMetrics(int32_t &framesDecoded, int32_t &decode
     }
 }
 
-void videoDecoderTest::setupVideoDecoder()
+void videoDecoderTest::openOrReuseVideoDecoder()
 {
     if (mVideoDecoderController.get() == nullptr)
     {
@@ -186,14 +187,10 @@ void videoDecoderTest::setupVideoDecoder()
                     mTestConfiguration.streamName.c_str(),
                     videodecoder::toString(mTestConfiguration.codec).c_str());
     }
+}
 
-    if(mVideoDecoderController.get() == nullptr)
-    {
-        UT_LOG_ERROR("VideoDecoderController is null after open");
-        UT_ASSERT_TRUE(false) << "Failed to get VideoDecoderController after opening decoder";
-        return;
-    }
-
+void videoDecoderTest::applyTunnelModePropertyIfNeeded()
+{
     if (mTunnelMode)
     {
         std::vector<std::pair<videodecoder::Property, int32_t>> startedIntProps = {
@@ -202,34 +199,106 @@ void videoDecoderTest::setupVideoDecoder()
         UT_LOG_DEBUG("Set properties in TUNNELLED Mode");
         VIDEODECODER_SETPROPERTY_LIST_SUCCESS(mVideoDecoderController, startedIntProps, intValue);
     }
+}
 
-    if (mTestConfiguration.codedWidth > 0 && mTestConfiguration.codedHeight > 0)
+void videoDecoderTest::buildAndApplyStreamConfig()
+{
+    videodecoder::VideoDecoderStreamConfig streamConfig;
+
+    // AdaptiveBitrate streams: codedWidth/codedHeight is the ladder peak (used for
+    // capability checks), not the resolution the stream actually starts at. Seed the
+    // hint with the first rung instead, so it doesn't contradict the bitstream-signalled
+    // resolution changes FrameMetadata is expected to report as the ladder progresses.
+    if (!mTestConfiguration.resolutionChanges.empty())
     {
-        VIDEODECODER_SETSTREAMRESOLUTION_SUCCESS(mVideoDecoderController, mTestConfiguration.codedWidth, mTestConfiguration.codedHeight);
+        const auto& firstRung = mTestConfiguration.resolutionChanges.front();
+        videodecoder::Resolution res;
+        res.width  = firstRung.width;
+        res.height = firstRung.height;
+        streamConfig.resolution = res;
+    }
+    else if (mTestConfiguration.codedWidth > 0 && mTestConfiguration.codedHeight > 0)
+    {
+        videodecoder::Resolution res;
+        res.width  = mTestConfiguration.codedWidth;
+        res.height = mTestConfiguration.codedHeight;
+        streamConfig.resolution = res;
     }
     if (mTestConfiguration.frameRateDenominator > 0)
     {
-        VIDEODECODER_SETFRAMERATE_SUCCESS(mVideoDecoderController, mTestConfiguration.frameRateNumerator, mTestConfiguration.frameRateDenominator);
+        videodecoder::Fraction fr;
+        fr.numerator   = mTestConfiguration.frameRateNumerator;
+        fr.denominator = mTestConfiguration.frameRateDenominator;
+        streamConfig.frameRate = fr;
     }
-    if (mTestConfiguration.colorimetry != Colorimetry::UNKNOWN)
+    Colorimetry unknownColorimetry{};
+    if (mTestConfiguration.colorimetry != unknownColorimetry)
     {
-        VIDEODECODER_SETCOLORIMETRY_SUCCESS(mVideoDecoderController, mTestConfiguration.colorimetry);
+        streamConfig.colorimetry = mTestConfiguration.colorimetry;
     }
     if (mTestConfiguration.masteringDisplayInfo.has_value())
     {
-        VIDEODECODER_SETMASTERINGDISPLAYINFO_SUCCESS(mVideoDecoderController, mTestConfiguration.masteringDisplayInfo);
+        streamConfig.masteringDisplayInfo = mTestConfiguration.masteringDisplayInfo;
     }
     if (mTestConfiguration.contentLightLevel.has_value())
     {
-        VIDEODECODER_SETCONTENTLIGHTLEVEL_SUCCESS(mVideoDecoderController, mTestConfiguration.contentLightLevel);
+        streamConfig.contentLightLevel = mTestConfiguration.contentLightLevel;
+    }
+    if (mTestConfiguration.pixelAspectRatio.has_value())
+    {
+        streamConfig.pixelAspectRatio = mTestConfiguration.pixelAspectRatio;
+    }
+    UT_LOG_INFO("value of the dynamicRange %d", static_cast<int>(mTestConfiguration.dynamicRange));
+    if (mTestConfiguration.dynamicRange == videodecoder::DynamicRange::DOLBY_VISION)
+    {
+        videodecoder::DolbyVisionLayerFlags dvFlags;
+        dvFlags.blPresent = mTestConfiguration.blPresent;
+        dvFlags.elPresent = mTestConfiguration.elPresent;
+        streamConfig.dolbyVisionLayerFlags = dvFlags;
+    }
+    VIDEODECODER_SETSTREAMCONFIG_SUCCESS(mVideoDecoderController, streamConfig);
+}
+
+void videoDecoderTest::applyDecodeErrorPolicyIfNeeded()
+{
+    // Streams with expected decode errors need conceal mode, otherwise the HAL's
+    // default (output corrupt frames) makes expectedFrames/error-count checks below fail.
+    if (mTestConfiguration.decodeErrors > 0)
+    {
+        PropertyValue concealValue;
+        concealValue.value = PropertyValue::Value::make<PropertyValue::Value::Tag::intValue>(1);
+        VIDEODECODER_SETPROPERTY_SUCCESS(mVideoDecoderController, videodecoder::Property::DECODE_ERROR_POLICY, concealValue);
+    }
+}
+
+void videoDecoderTest::applyLowLatencyModeIfNeeded()
+{
+    // Streams flagged lowLatency:1 request LOW_LATENCY_MODE so the decoder skips/
+    // discards any B-frames and outputs decoded frames as soon as possible; the
+    // resulting FrameMetadata.lowLatency is verified per-frame further below.
+    if (mTestConfiguration.lowLatency)
+    {
+        PropertyValue lowLatencyValue;
+        lowLatencyValue.value = PropertyValue::Value::make<PropertyValue::Value::Tag::intValue>(1);
+        VIDEODECODER_SETPROPERTY_SUCCESS(mVideoDecoderController, videodecoder::Property::LOW_LATENCY_MODE, lowLatencyValue);
+    }
+}
+
+void videoDecoderTest::setupVideoDecoder()
+{
+    openOrReuseVideoDecoder();
+
+    if (mVideoDecoderController.get() == nullptr)
+    {
+        UT_LOG_ERROR("VideoDecoderController is null after open");
+        UT_ASSERT_TRUE(false) << "Failed to get VideoDecoderController after opening decoder";
+        return;
     }
 
-    /*Set Dolby Vision*/
-    UT_LOG_INFO("value of the dynamicRange %d", mTestConfiguration.dynamicRange);
-    if(mTestConfiguration.dynamicRange == videodecoder::DynamicRange::DOLBY_VISION)
-    {
-        VIDEODECODER_SETDOLBYVISIONLAYERFLAGS_SUCCESS(mVideoDecoderController, mTestConfiguration.blPresent, mTestConfiguration.elPresent);
-    }
+    applyTunnelModePropertyIfNeeded();
+    buildAndApplyStreamConfig();
+    applyDecodeErrorPolicyIfNeeded();
+    applyLowLatencyModeIfNeeded();
 
     // Start Decoder
     VIDEODECODER_START_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
@@ -254,6 +323,12 @@ void videoDecoderTest::startDecoding()
         // Allocate Buffer
         videoBufferHandle = 0;
         AVBUFFER_ALLOC_SUCCESS(mAVBufferManager, mVideoPool, frameSize, videoBufferHandle);
+
+        if (videoBufferHandle == 0)
+        {
+            UT_LOG_ERROR("Alloc failed for frame %zu, skipping", i);
+            continue;
+        }
 
         // Write Frame Data
         void* mapBuffer = nullptr;
@@ -335,220 +410,285 @@ void videoDecoderTest::startDecoding()
         videodecoder::InputBufferMetadata metadata = {};
         metadata.nsPresentationTime = framePTS;
         metadata.discontinuity = false;
-        const bool isEosControlPoint = (mTestConfiguration.eosPts == framePTS);
-        /* Always send EOS on the final buffer so the HAL can drain and deliver
-         * FrameMetadata.endOfStream = true exactly once per decode session.
-         * When eosPts is set the mid-stream EOS acts as the control point;
-         * after stop()+start() the last submitted buffer of the second run
-         * also carries EOS so the session ends cleanly. */
-        metadata.endOfStream = isEosControlPoint || (i == (mFrameData.size() - 1));
-
-        if (metadata.endOfStream)
+        if (mTestConfiguration.metadataOverridePts != -1 && mTestConfiguration.metadataOverridePts == framePTS)
         {
-            UT_LOG_INFO("Submitting final input buffer with metadata EOS at PTS:%lld", framePTS);
+            UT_LOG_INFO("Applying metadata override at PTS:%lld", framePTS);
+            metadata.colorimetry = mTestConfiguration.overrideColorimetry;
+            metadata.masteringDisplayInfo = mTestConfiguration.overrideMasteringDisplayInfo;
+            metadata.contentLightLevel = mTestConfiguration.overrideContentLightLevel;
+            metadata.dolbyVisionLayerFlags = mTestConfiguration.overrideDolbyVisionLayerFlags;
+            metadata.pixelAspectRatio = mTestConfiguration.overridePixelAspectRatio;
         }
+        const bool isEosControlPoint = (mTestConfiguration.eosPts == framePTS);
 
         VIDEODECODER_DECODEBUFFER_WITH_METADATA_SUCCESS(mVideoDecoderController, videoBufferHandle, metadata);
+
+        const bool isFinalFrame = (i == (mFrameData.size() - 1));
+        if (isEosControlPoint || isFinalFrame)
+        {
+            UT_LOG_INFO("Signaling EOS at PTS:%lld", framePTS);
+            VIDEODECODER_SIGNAL_EOS_SUCCESS(mVideoDecoderController);
+        }
 
         if (isEosControlPoint)
         {
             UT_LOG_INFO("Verifying post-EOS decode reject at PTS:%lld", framePTS);
-            VIDEODECODER_DECODEBUFFER_WITH_METADATA_FAILURE(mVideoDecoderController, framePTS, videoBufferHandle,
-                                                            false, false, Status::EX_NONE);
+            // Use a fresh handle: videoBufferHandle was already handed to the HAL above, so reusing it here could fail as an invalid handle instead of testing the EOS rejection.
+            int64_t postEosBufferHandle = 0;
+            AVBUFFER_ALLOC_SUCCESS(mAVBufferManager, mVideoPool, frameSize, postEosBufferHandle);
+            // Per spec, decodeBufferWithMetadata() must throw EX_ILLEGAL_STATE once called after signalEndOfStream().
+            VIDEODECODER_DECODEBUFFER_WITH_METADATA_FAILURE(mVideoDecoderController, framePTS, postEosBufferHandle,
+                                                            false, Status::EX_ILLEGAL_STATE);
             VIDEODECODER_STOP_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
             VIDEODECODER_START_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(mTestConfiguration.decoderDelay));
 
-        // EOS is now sent on the final real buffer via InputBufferMetadata.endOfStream.
+        // EOS is sent via signalEndOfStream().
     }
 
     UT_LOG_DEBUG("[PID: %d, TID: %d] startDecoding End", getpid(), syscall(SYS_gettid));
 }
 
-bool videoDecoderTest::validateDecodedFrame()
+bool videoDecoderTest::validateFrameLatencyAndBuffer(const DecodedVideoFrame_t& decodedFrame,
+                                                      std::set<int64_t>& receivedPts,
+                                                      int32_t& totalOnFramesDecoded)
 {
-    DecodedVideoFrame_t decodedFrame;
-    // Initialize PTS tracking
-    std::set<int64_t> receivedPts(mTestConfiguration.expectedPts.begin(), mTestConfiguration.expectedPts.end());
-    bool isBufferValid = false;
-    int32_t metricsFramesDecoded, metricsDecodeErrors, metricsFramesDropped;
-    int32_t totalOnFramesDecoded = 0;
-    int32_t totalOnErrorsReceived = 0;
-    int32_t eosFramesReceived = 0;
-    int32_t discontinuityFramesReceived = 0;
-
-    // Per contract, EOS fires exactly once per session (twice when eosPts triggers a mid-stream stop+restart).
-    // Compute this before the loop so we can break as soon as all EOS signals are received.
-    int32_t expectedEOSFrames = (mTestConfiguration.eosPts != -1) ? 2 : 1;
-
-    while (mControlListener->getNextFrame(decodedFrame, std::chrono::milliseconds(5000)))
+    auto it = receivedPts.find(decodedFrame.framePTS);
+    if (it == receivedPts.end())
     {
-        UT_LOG_DEBUG("Retrieved remaining output frame: PTS=%lld, handle=0x%llx, isMetaAvailable=%d",
-                decodedFrame.framePTS, decodedFrame.frameAVBufferHandle, decodedFrame.isMetaAvailable);
+        UT_LOG_DEBUG("Unexpected PTS received: %lld", decodedFrame.framePTS);
+        UT_ASSERT_TRUE(false);
+        return false;
+    }
+    UT_LOG_DEBUG("Validated PTS: %lld", decodedFrame.framePTS);
+    receivedPts.erase(it); // Remove to track received PTS
 
-        // Validate PTS
-        if(decodedFrame.framePTS != -1)
+    {
+        std::lock_guard<std::mutex> lock(mInputFrameMutex);
+        // Latency calculation: find matching input frame by PTS
+        auto inputIt = std::find_if(mInputFrame.begin(), mInputFrame.end(),
+            [&decodedFrame](const InputVideoFrame_t& inputFrame) {
+                return inputFrame.framePTS == decodedFrame.framePTS;
+            });
+        if (inputIt != mInputFrame.end())
         {
-            auto it = receivedPts.find(decodedFrame.framePTS);
-            if (it == receivedPts.end())
+            auto sendTime = inputIt->sendTime;
+            auto receiveTime = decodedFrame.receiveTime;
+            auto decodeTimeNs = std::chrono::duration_cast<std::chrono::nanoseconds>(receiveTime - sendTime).count();
+            if (decodeTimeNs > mTestConfiguration.decode_time_threshold)
             {
-                UT_LOG_DEBUG("Unexpected PTS received: %lld", decodedFrame.framePTS);
-                UT_ASSERT_TRUE(false);
-                continue;
-            }
-            else
-            {
-                UT_LOG_DEBUG("Validated PTS: %lld", decodedFrame.framePTS);
-                receivedPts.erase(it); // Remove to track received PTS
-            }
-
-            {
-                std::lock_guard<std::mutex> lock(mInputFrameMutex);
-                // Latency calculation: find matching input frame by PTS
-                auto inputIt = std::find_if(mInputFrame.begin(), mInputFrame.end(),
-                    [&decodedFrame](const InputVideoFrame_t& inputFrame) {
-                        return inputFrame.framePTS == decodedFrame.framePTS;
-                    });
-                if (inputIt != mInputFrame.end())
+                // AdaptiveBitrate streams have no decoder-reported bitrate field to assert
+                // against, so a breach here is a hard failure; other streams just warn.
+                if (!mTestConfiguration.resolutionChanges.empty())
                 {
-                    auto sendTime = inputIt->sendTime;
-                    auto receiveTime = decodedFrame.receiveTime;
-                    auto decodeTimeNs = std::chrono::duration_cast<std::chrono::nanoseconds>(receiveTime - sendTime).count();
-                    if (decodeTimeNs > mTestConfiguration.decode_time_threshold)
-                    {
-                        UT_LOG_WARNING("Frame PTS:%lld decode time: %lld ns exceeds threshold %lld ns",
-                                    decodedFrame.framePTS, decodeTimeNs, mTestConfiguration.decode_time_threshold);
-                    }
-                    mInputFrame.erase(inputIt);
+                    UT_ASSERT_TRUE(false)
+                        << "Frame PTS:" << decodedFrame.framePTS << " decode time: " << decodeTimeNs
+                        << " ns exceeds real-time threshold " << mTestConfiguration.decode_time_threshold
+                        << " ns (decoder could not keep up with this bitrate/resolution rung)";
+                }
+                else
+                {
+                    UT_LOG_WARNING("Frame PTS:%lld decode time: %lld ns exceeds threshold %lld ns",
+                                decodedFrame.framePTS, decodeTimeNs, mTestConfiguration.decode_time_threshold);
                 }
             }
-
-            if(decodedFrame.frameAVBufferHandle != -1)
-            {
-                //TODO: Need to validate buffer content as well. Currently just checking if buffer handle is valid and freeing it.
-                AVBUFFER_ISVALID_SUCCESS(mAVBufferManager, decodedFrame.frameAVBufferHandle, isBufferValid);
-                if (isBufferValid)
-                {
-                    AVBUFFER_FREE_SUCCESS(mAVBufferManager, decodedFrame.frameAVBufferHandle);
-                }
-            }
-            totalOnFramesDecoded++;
+            mInputFrame.erase(inputIt);
         }
-        if (decodedFrame.metadata)
-        {
-            UT_LOG_DEBUG("Validating metadata for PTS=%lld", decodedFrame.framePTS);
-            // Validate resolution
-            UT_ASSERT_EQUAL(decodedFrame.metadata->codedWidth, mTestConfiguration.codedWidth)
-                << "Width mismatch: expected=" << mTestConfiguration.codedWidth
-                << ", actual=" << decodedFrame.metadata->codedWidth
-                << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-            UT_ASSERT_EQUAL(decodedFrame.metadata->codedHeight, mTestConfiguration.codedHeight)
-                << "Height mismatch: expected=" << mTestConfiguration.codedHeight
-                << ", actual=" << decodedFrame.metadata->codedHeight
-                << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-
-            UT_ASSERT_EQUAL(decodedFrame.metadata->colorDepth, mTestConfiguration.colorDepth)
-                << "Color depth mismatch: expected=" << mTestConfiguration.colorDepth
-                << ", actual=" << decodedFrame.metadata->colorDepth
-                << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-
-            // Validate dynamic range
-            UT_ASSERT_EQUAL(decodedFrame.metadata->dynamicRange, mTestConfiguration.dynamicRange)
-                << "Dynamic range mismatch: expected=" << static_cast<int>(mTestConfiguration.dynamicRange)
-                << ", actual=" << static_cast<int>(decodedFrame.metadata->dynamicRange)
-                << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-
-            // Validate colorimetry
-            UT_ASSERT_EQUAL(decodedFrame.metadata->colorimetry, mTestConfiguration.colorimetry)
-                << "Colorimetry mismatch: expected=" << static_cast<int>(mTestConfiguration.colorimetry)
-                << ", actual=" << static_cast<int>(decodedFrame.metadata->colorimetry)
-                << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-
-            // Validate frame rate
-            UT_ASSERT_EQUAL(decodedFrame.metadata->frameRateNumerator, mTestConfiguration.frameRateNumerator)
-                << "Frame rate numerator mismatch: expected=" << mTestConfiguration.frameRateNumerator
-                << ", actual=" << decodedFrame.metadata->frameRateNumerator
-                << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-            UT_ASSERT_EQUAL(decodedFrame.metadata->frameRateDenominator, mTestConfiguration.frameRateDenominator)
-                << "Frame rate denominator mismatch: expected=" << mTestConfiguration.frameRateDenominator
-                << ", actual=" << decodedFrame.metadata->frameRateDenominator
-                << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-
-            // Validate scan type
-            UT_ASSERT_EQUAL(decodedFrame.metadata->scanType, mTestConfiguration.scanType)
-                << "Scan type mismatch: expected=" << static_cast<int>(mTestConfiguration.scanType)
-                << ", actual=" << static_cast<int>(decodedFrame.metadata->scanType)
-                << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-
-            if(decodedFrame.metadata->masteringDisplayInfo.has_value())
-            {
-                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->redPrimaryX, mTestConfiguration.masteringDisplayInfo->redPrimaryX);
-                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->redPrimaryY, mTestConfiguration.masteringDisplayInfo->redPrimaryY);
-                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->greenPrimaryX, mTestConfiguration.masteringDisplayInfo->greenPrimaryX);
-                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->greenPrimaryY, mTestConfiguration.masteringDisplayInfo->greenPrimaryY);
-                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->bluePrimaryX, mTestConfiguration.masteringDisplayInfo->bluePrimaryX);
-                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->bluePrimaryY, mTestConfiguration.masteringDisplayInfo->bluePrimaryY);
-                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->whitePointX, mTestConfiguration.masteringDisplayInfo->whitePointX);
-                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->whitePointY, mTestConfiguration.masteringDisplayInfo->whitePointY);
-                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->maxLuminance, mTestConfiguration.masteringDisplayInfo->maxLuminance);
-                UT_ASSERT_EQUAL(decodedFrame.metadata->masteringDisplayInfo->minLuminance, mTestConfiguration.masteringDisplayInfo->minLuminance);
-            }
-
-            UT_ASSERT_EQUAL(decodedFrame.metadata->contentLightLevel, mTestConfiguration.contentLightLevel)
-                << "ContentLightLevel mismatch for Codec "
-                << videodecoder::toString(mTestConfiguration.codec).c_str();
-
-            if (decodedFrame.metadata->endOfStream)
-            {
-                eosFramesReceived++;
-                UT_LOG_INFO("EOS validated: eosFramesReceived=%d, expectedEOSFrames=%d", eosFramesReceived, expectedEOSFrames);
-                if (eosFramesReceived >= expectedEOSFrames)
-                {
-                    // Contract: EOS is the last callback of the session; no need to wait further.
-                    break;
-                }
-            }
-
-            if(decodedFrame.metadata->discontinuity)
-            {
-                discontinuityFramesReceived++;
-            }
-
-            UT_ASSERT_EQUAL(decodedFrame.metadata->lowLatency, mTestConfiguration.lowLatency)
-                << "lowLatency mismatch: expected=" << mTestConfiguration.lowLatency
-                << ", actual=" << decodedFrame.metadata->lowLatency
-                << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
-        }
-        else
-        {
-            UT_LOG_INFO("No metadata available for PTS=%lld", decodedFrame.framePTS);
-        }
-
     }
 
-    int32_t expectedFrames = mTestConfiguration.no_of_frames - mTestConfiguration.decodeErrors;
-
-    if((mTestConfiguration.eosPts != -1))
+    if(decodedFrame.frameAVBufferHandle != -1)
     {
-        // expectedEOSFrames already set to 2 above.
+        //TODO: Need to validate buffer content as well. Currently just checking if buffer handle is valid and freeing it.
+        bool isBufferValid = false;
+        AVBUFFER_ISVALID_SUCCESS(mAVBufferManager, decodedFrame.frameAVBufferHandle, isBufferValid);
+        if (isBufferValid)
+        {
+            AVBUFFER_FREE_SUCCESS(mAVBufferManager, decodedFrame.frameAVBufferHandle);
+        }
     }
+    totalOnFramesDecoded++;
+    return true;
+}
+
+namespace {
+
+/* InputBufferMetadata.aidl precedence: bitstream wins, override is a silent-bitstream fallback. */
+template <typename T>
+void assertOverridableField(const T& actual, bool bitstreamProvidesField, const T& bitstreamValue,
+                             bool afterOverride, const std::optional<T>& overrideValue,
+                             const char* fieldName, const char* codecName)
+{
+    T expected;
+    if (bitstreamProvidesField)
+    {
+        expected = bitstreamValue;
+    }
+    else if (afterOverride && overrideValue.has_value())
+    {
+        expected = overrideValue.value();
+    }
+    else
+    {
+        expected = T{};
+    }
+    UT_ASSERT_EQUAL(actual, expected) << fieldName << " mismatch, for Codec " << codecName;
+}
+
+/* Same rule, for @nullable output fields instead of a sentinel value. */
+template <typename T>
+void assertOverridableNullableField(const std::optional<T>& actual, const std::optional<T>& bitstreamValue,
+                                     bool afterOverride, const std::optional<T>& overrideValue,
+                                     const char* fieldName, const char* codecName)
+{
+    std::optional<T> expected;
+    if (bitstreamValue.has_value())
+    {
+        expected = bitstreamValue;
+    }
+    else if (afterOverride && overrideValue.has_value())
+    {
+        expected = overrideValue;
+    }
+    else
+    {
+        expected = std::nullopt;
+    }
+    UT_ASSERT_EQUAL(actual, expected) << fieldName << " mismatch, for Codec " << codecName;
+}
+
+}  // namespace
+
+void videoDecoderTest::validateFrameMetadata(const DecodedVideoFrame_t& decodedFrame, int32_t& discontinuityFramesReceived)
+{
+    UT_LOG_DEBUG("Validating metadata for PTS=%lld", decodedFrame.framePTS);
+    // AdaptiveBitrate streams: expected resolution is the ladder segment active at this
+    // frame's PTS, not the stream-level codedWidth/codedHeight (which holds the ladder's peak).
+    int32_t expectedResWidth = mTestConfiguration.codedWidth;
+    int32_t expectedResHeight = mTestConfiguration.codedHeight;
+    bool isAdaptiveBitrate = !mTestConfiguration.resolutionChanges.empty();
+    if (isAdaptiveBitrate)
+    {
+        for (const auto& change : mTestConfiguration.resolutionChanges)
+        {
+            if (change.pts <= decodedFrame.framePTS)
+            {
+                expectedResWidth = change.width;
+                expectedResHeight = change.height;
+            }
+        }
+    }
+    // ABR ladder resolutions are nominal/display size, so compare against active dims, not the macroblock-padded coded dims
+    int32_t actualResWidth = isAdaptiveBitrate ? decodedFrame.metadata->activeWidth : decodedFrame.metadata->codedWidth;
+    int32_t actualResHeight = isAdaptiveBitrate ? decodedFrame.metadata->activeHeight : decodedFrame.metadata->codedHeight;
+    UT_ASSERT_EQUAL(actualResWidth, expectedResWidth)
+        << "Width mismatch: expected=" << expectedResWidth
+        << ", actual=" << actualResWidth
+        << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+    UT_ASSERT_EQUAL(actualResHeight, expectedResHeight)
+        << "Height mismatch: expected=" << expectedResHeight
+        << ", actual=" << actualResHeight
+        << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+
+    // colorDepth and dynamicRange are bitstream-derived only (see FrameMetadata.aidl);
+    // InputBufferMetadata has no override field for either, so a colorimetry override
+    // does not change them regardless of the overridden TransferCharacteristics.
+    const bool afterOverride = (mTestConfiguration.metadataOverridePts != -1 &&
+                                decodedFrame.framePTS >= mTestConfiguration.metadataOverridePts);
+    int32_t expectedColorDepth = mTestConfiguration.colorDepth;
+    videodecoder::DynamicRange expectedDynamicRange = mTestConfiguration.dynamicRange;
+
+    UT_ASSERT_EQUAL(decodedFrame.metadata->colorDepth, expectedColorDepth)
+        << "Color depth mismatch: expected=" << expectedColorDepth
+        << ", actual=" << decodedFrame.metadata->colorDepth
+        << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+
+    // Validate dynamic range
+    UT_ASSERT_EQUAL(decodedFrame.metadata->dynamicRange, expectedDynamicRange)
+        << "Dynamic range mismatch: expected=" << static_cast<int>(expectedDynamicRange)
+        << ", actual=" << static_cast<int>(decodedFrame.metadata->dynamicRange)
+        << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+
+    {
+        const bool bitstreamProvidesColorimetry = !(mTestConfiguration.colorimetry == videodecoder::Colorimetry{});
+        assertOverridableField(decodedFrame.metadata->colorimetry, bitstreamProvidesColorimetry,
+                                mTestConfiguration.colorimetry, afterOverride, mTestConfiguration.overrideColorimetry,
+                                "Colorimetry", videodecoder::toString(mTestConfiguration.codec).c_str());
+    }
+
+    // Validate frame rate
+    UT_ASSERT_EQUAL(decodedFrame.metadata->frameRateNumerator, mTestConfiguration.frameRateNumerator)
+        << "Frame rate numerator mismatch: expected=" << mTestConfiguration.frameRateNumerator
+        << ", actual=" << decodedFrame.metadata->frameRateNumerator
+        << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+    UT_ASSERT_EQUAL(decodedFrame.metadata->frameRateDenominator, mTestConfiguration.frameRateDenominator)
+        << "Frame rate denominator mismatch: expected=" << mTestConfiguration.frameRateDenominator
+        << ", actual=" << decodedFrame.metadata->frameRateDenominator
+        << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+
+    // Validate scan type
+    UT_ASSERT_EQUAL(decodedFrame.metadata->scanType, mTestConfiguration.scanType)
+        << "Scan type mismatch: expected=" << static_cast<int>(mTestConfiguration.scanType)
+        << ", actual=" << static_cast<int>(decodedFrame.metadata->scanType)
+        << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+
+    assertOverridableNullableField(decodedFrame.metadata->masteringDisplayInfo, mTestConfiguration.masteringDisplayInfo,
+                                    afterOverride, mTestConfiguration.overrideMasteringDisplayInfo,
+                                    "MasteringDisplayInfo", videodecoder::toString(mTestConfiguration.codec).c_str());
+
+    assertOverridableNullableField(decodedFrame.metadata->contentLightLevel, mTestConfiguration.contentLightLevel,
+                                    afterOverride, mTestConfiguration.overrideContentLightLevel,
+                                    "ContentLightLevel", videodecoder::toString(mTestConfiguration.codec).c_str());
+
+    // FrameMetadata.aidl has no "unknown" value for parX/parY, so skip when we have no ground truth to check against.
+    if (mTestConfiguration.pixelAspectRatio.has_value() ||
+        (afterOverride && mTestConfiguration.overridePixelAspectRatio.has_value()))
+    {
+        videodecoder::Fraction actualPar;
+        actualPar.numerator = decodedFrame.metadata->parX;
+        actualPar.denominator = decodedFrame.metadata->parY;
+        assertOverridableField(actualPar, mTestConfiguration.pixelAspectRatio.has_value(),
+                                mTestConfiguration.pixelAspectRatio.value_or(videodecoder::Fraction{}),
+                                afterOverride, mTestConfiguration.overridePixelAspectRatio,
+                                "PixelAspectRatio", videodecoder::toString(mTestConfiguration.codec).c_str());
+    }
+
+    if(decodedFrame.metadata->discontinuity)
+    {
+        discontinuityFramesReceived++;
+    }
+
+    UT_ASSERT_EQUAL(decodedFrame.metadata->lowLatency, mTestConfiguration.lowLatency)
+        << "lowLatency mismatch: expected=" << mTestConfiguration.lowLatency
+        << ", actual=" << decodedFrame.metadata->lowLatency
+        << ", for Codec " << videodecoder::toString(mTestConfiguration.codec).c_str();
+}
+
+void videoDecoderTest::validateDiscontinuityAndEndOfStream(int32_t discontinuityFramesReceived, int32_t expectedFrames,
+                                                            int32_t expectedEOSFrames)
+{
     if((mTestConfiguration.discontinuityPts != -1) || (mTestConfiguration.flushPts !=-1))
     {
         UT_ASSERT_TRUE((discontinuityFramesReceived > 0 && discontinuityFramesReceived < expectedFrames));
     }
 
-    UT_ASSERT_EQUAL(eosFramesReceived, expectedEOSFrames);
+    UT_ASSERT_TRUE(mControlListener->waitForEndOfStream(expectedEOSFrames, std::chrono::milliseconds(5000)));
+    int32_t eosCallbacksReceived = mControlListener->getEndOfStreamCount(false);
+    UT_ASSERT_EQUAL(eosCallbacksReceived, expectedEOSFrames);
+}
 
-    totalOnErrorsReceived = mEventListener->getErrorCount();
-
-    // Get final metrics
+void videoDecoderTest::validateFinalMetrics(int32_t totalOnFramesDecoded, int32_t totalOnErrorsReceived, int32_t expectedFrames)
+{
+    int32_t metricsFramesDecoded, metricsDecodeErrors, metricsFramesDropped;
     getDecoderMetrics(metricsFramesDecoded, metricsDecodeErrors, metricsFramesDropped);
     UT_LOG_DEBUG("Final Decoder Metrics: Codec: %d, Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
                     mTestConfiguration.codec, metricsFramesDecoded, metricsDecodeErrors, metricsFramesDropped);
 
-    if((mTestConfiguration.flushResetPts == -1) && (mTestConfiguration.flushPts==-1))
+    // eosPts triggers a mid-session stop()+start() (see the isEosControlPoint block above),
+    // and Property.aidl documents METRIC_FRAMES_DECODED/METRIC_DECODE_ERRORS as reset on stop() -
+    // so exact-total assertions don't hold for it, same as the existing flush cases.
+    if((mTestConfiguration.flushResetPts == -1) && (mTestConfiguration.flushPts==-1) && (mTestConfiguration.eosPts == -1))
     {
         if(metricsFramesDecoded != -1)
         {
@@ -586,6 +726,47 @@ bool videoDecoderTest::validateDecodedFrame()
             UT_ASSERT_TRUE(metricsFramesDropped <= mTestConfiguration.framesDropped);
         }
     }
+}
+
+bool videoDecoderTest::validateDecodedFrame()
+{
+    DecodedVideoFrame_t decodedFrame;
+    // Initialize PTS tracking
+    std::set<int64_t> receivedPts(mTestConfiguration.expectedPts.begin(), mTestConfiguration.expectedPts.end());
+    int32_t totalOnFramesDecoded = 0;
+    int32_t discontinuityFramesReceived = 0;
+
+    // Per contract, EOS fires exactly once per session (twice when eosPts triggers a mid-stream stop+restart).
+    // Compute this before the loop so we can break as soon as all EOS signals are received.
+    int32_t expectedEOSFrames = (mTestConfiguration.eosPts != -1) ? 2 : 1;
+
+    while (mControlListener->getNextFrame(decodedFrame, std::chrono::milliseconds(5000)))
+    {
+        UT_LOG_DEBUG("Retrieved remaining output frame: PTS=%lld, handle=0x%llx, isMetaAvailable=%d",
+                decodedFrame.framePTS, decodedFrame.frameAVBufferHandle, decodedFrame.isMetaAvailable);
+
+        if(decodedFrame.framePTS != -1)
+        {
+            if (!validateFrameLatencyAndBuffer(decodedFrame, receivedPts, totalOnFramesDecoded))
+            {
+                continue;
+            }
+        }
+        if (decodedFrame.metadata)
+        {
+            validateFrameMetadata(decodedFrame, discontinuityFramesReceived);
+        }
+        else
+        {
+            UT_LOG_INFO("No metadata available for PTS=%lld", decodedFrame.framePTS);
+        }
+    }
+
+    int32_t expectedFrames = mTestConfiguration.no_of_frames - mTestConfiguration.decodeErrors;
+    validateDiscontinuityAndEndOfStream(discontinuityFramesReceived, expectedFrames, expectedEOSFrames);
+
+    int32_t totalOnErrorsReceived = mEventListener->getErrorCount();
+    validateFinalMetrics(totalOnFramesDecoded, totalOnErrorsReceived, expectedFrames);
 
     return true;
 }
@@ -635,7 +816,6 @@ bool videoDecoderTest::runBackPressureTest()
 
         videodecoder::InputBufferMetadata metadata = {};
         metadata.nsPresentationTime = pts;
-        metadata.endOfStream = false;
         metadata.discontinuity = false;
 
         bool decodeResult = false;
@@ -683,14 +863,14 @@ void videoDecoderTest::releaseDecoderSession(bool closeController)
         return;
     }
 
-    ::com::rdk::hal::State currentState = ::com::rdk::hal::State::UNKNOWN;
+    ::com::rdk::hal::videodecoder::State currentState = ::com::rdk::hal::videodecoder::State::UNKNOWN;
     Status getStateStatus = mDecoderHandle->getState(&currentState);
     if (getStateStatus.isOk() && getStateStatus.exceptionCode() == Status::EX_NONE)
     {
-        if (currentState == ::com::rdk::hal::State::STARTED ||
-            currentState == ::com::rdk::hal::State::STARTING ||
-            currentState == ::com::rdk::hal::State::FLUSHING ||
-            currentState == ::com::rdk::hal::State::STOPPING)
+        if (currentState == ::com::rdk::hal::videodecoder::State::STARTED ||
+            currentState == ::com::rdk::hal::videodecoder::State::STARTING ||
+            currentState == ::com::rdk::hal::videodecoder::State::FLUSHING ||
+            currentState == ::com::rdk::hal::videodecoder::State::STOPPING)
         {
             VIDEODECODER_STOP_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
         }

@@ -79,12 +79,18 @@ export INC_DIRS
 export XLDFLAGS
 export CXXFLAGS
 
-.PHONY: all clean
+.PHONY: all build_mock clean_mock clean
 
 all: $(TARGET_EXEC)
 
 $(TARGET_EXEC):
 	make -C $(UT_CORE_DIR) -j $(shell nproc) TARGET=$(TARGET) VARIANT=$(VARIANT)
+
+build_mock:
+	$(ROOT_DIR)/build.sh mock
+
+clean_mock:
+	make -C $(ROOT_DIR)/mockservice clean
 
 clean:
 	make -C $(UT_CORE_DIR) -j TARGET=$(TARGET) VARIANT=$(VARIANT) clean
