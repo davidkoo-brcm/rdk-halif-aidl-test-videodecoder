@@ -1658,6 +1658,10 @@ public:
     Status onStateChanged(::com::rdk::hal::videodecoder::State oldState, ::com::rdk::hal::videodecoder::State newState) override
     {
         UT_LOG_INFO("[Video DecoderID: %d] onStateChanged: %s -> %s", mDecoderID, ::com::rdk::hal::videodecoder::toString(oldState).c_str(), ::com::rdk::hal::videodecoder::toString(newState).c_str());
+        if(oldState == ::com::rdk::hal::videodecoder::State::CLOSED && newState == ::com::rdk::hal::videodecoder::State::OPENING)
+        {
+            mUsedDecoderID = mDecoderID;
+        }
         std::lock_guard<std::mutex> lock(mMutex);
         mStateChanges.push_back({oldState, newState});
         mCond.notify_one();
