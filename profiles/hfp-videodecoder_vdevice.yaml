@@ -35,7 +35,7 @@ videodecoder:           # Component object begins
                 maxBitrateInBps: 0
             maxFrameRate: 60
             maxFrameWidth: 1920
-            maxFrameHeight: 1080
+            maxFrameHeight: 1088
             supportedOutputPixelFormats:
               - YCBCR420
         - H264_AVC:
@@ -45,7 +45,7 @@ videodecoder:           # Component object begins
                 maxBitrateInBps: 0
             maxFrameRate: 60
             maxFrameWidth: 1920
-            maxFrameHeight: 1080
+            maxFrameHeight: 1088
             supportedOutputPixelFormats:
               - YCBCR420
         - H265_HEVC:
@@ -114,7 +114,7 @@ videodecoder:           # Component object begins
                 maxBitrateInBps: 0
             maxFrameRate: 60
             maxFrameWidth: 1920
-            maxFrameHeight: 1080
+            maxFrameHeight: 1088
             supportedOutputPixelFormats:
               - YCBCR420
         - H264_AVC:
@@ -124,7 +124,7 @@ videodecoder:           # Component object begins
                 maxBitrateInBps: 0
             maxFrameRate: 60
             maxFrameWidth: 1920
-            maxFrameHeight: 1080
+            maxFrameHeight: 1088
             supportedOutputPixelFormats:
               - YCBCR420
         - H265_HEVC:
@@ -134,7 +134,7 @@ videodecoder:           # Component object begins
                 maxBitrateInBps: 0
             maxFrameRate: 60
             maxFrameWidth: 1920
-            maxFrameHeight: 1080
+            maxFrameHeight: 1088
             supportedOutputPixelFormats:
               - YCBCR420
         - VP9:
@@ -144,7 +144,7 @@ videodecoder:           # Component object begins
                 maxBitrateInBps: 0
             maxFrameRate: 60
             maxFrameWidth: 1920
-            maxFrameHeight: 1080
+            maxFrameHeight: 1088
             supportedOutputPixelFormats:
               - YCBCR420
         - AV1:
@@ -154,7 +154,7 @@ videodecoder:           # Component object begins
                 maxBitrateInBps: 0
             maxFrameRate: 60
             maxFrameWidth: 1920
-            maxFrameHeight: 1080
+            maxFrameHeight: 1088
             supportedOutputPixelFormats:
               - YCBCR420
       supportedDynamicRanges:
@@ -182,7 +182,7 @@ videodecoder:           # Component object begins
                 maxBitrateInBps: 0
             maxFrameRate: 60
             maxFrameWidth: 1920
-            maxFrameHeight: 1080
+            maxFrameHeight: 1088
             supportedOutputPixelFormats:
               - YCBCR420
         - H265_HEVC:
