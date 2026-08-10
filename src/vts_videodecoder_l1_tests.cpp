@@ -926,11 +926,7 @@ UT_ADD_TEST(VTS_L1_VideoDecoder, open_neg)
             isCodecFound = false;
         }
 
-        // Test 3: Unsupported secure mode.
-        // Only meaningful when the platform does NOT support secure decode; on a
-        // secure-capable decoder `!supportsSecure` is a *supported* (non-secure)
-        // mode, so opening it must not be treated as a negative case.
-        // (Matches audiodecoder open_neg.)
+        // Test 3: Test  Unsupported secure mode only if platform dosen't support secure
         if (!capabilities.supportsSecure)
         {
             VIDEODECODER_OPEN_FAILURE(videoDecoder, validCodec, true, controllerListener,
