@@ -429,6 +429,7 @@ void videoDecoderTest::startDecoding()
             // Per spec, decodeBufferWithMetadata() must throw EX_ILLEGAL_STATE once called after signalEndOfStream()
             UT_LOG_INFO("Verifying post-EOS decode reject at PTS:%lld", framePTS);
             VIDEODECODER_DECODEBUFFER_WITH_METADATA_FAILURE(mVideoDecoderController, framePTS, videoBufferHandle, false, Status::EX_ILLEGAL_STATE);
+            AVBUFFER_FREE_SUCCESS(mAVBufferManager, videoBufferHandle);
         }
 
         const bool isFinalFrame = (i == (mFrameData.size() - 1));
