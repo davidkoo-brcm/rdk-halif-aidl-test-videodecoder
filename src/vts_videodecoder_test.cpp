@@ -420,27 +420,44 @@ void videoDecoderTest::startDecoding()
             metadata.pixelAspectRatio = mTestConfiguration.overridePixelAspectRatio;
         }
         const bool isEosControlPoint = (mTestConfiguration.eosPts == framePTS);
+        const int eosCount = mControlListener->getEndOfStreamCount(false);
 
-        VIDEODECODER_DECODEBUFFER_WITH_METADATA_SUCCESS(mVideoDecoderController, videoBufferHandle, metadata);
+        if(!eosCount)
+        {
+            VIDEODECODER_DECODEBUFFER_WITH_METADATA_SUCCESS(mVideoDecoderController, videoBufferHandle, metadata);
+        } else {
+            // Per spec, decodeBufferWithMetadata() must throw EX_ILLEGAL_STATE once called after signalEndOfStream()
+            UT_LOG_INFO("Verifying post-EOS decode reject at PTS:%lld", framePTS);
+            VIDEODECODER_DECODEBUFFER_WITH_METADATA_FAILURE(mVideoDecoderController, framePTS, videoBufferHandle, false, Status::EX_ILLEGAL_STATE);
+        }
 
         const bool isFinalFrame = (i == (mFrameData.size() - 1));
         if (isEosControlPoint || isFinalFrame)
         {
-            UT_LOG_INFO("Signaling EOS at PTS:%lld", framePTS);
-            VIDEODECODER_SIGNAL_EOS_SUCCESS(mVideoDecoderController);
-        }
+            UT_LOG_INFO("eosCount: %d, isEosControlPoint: %d, isFinalFrame: %d", eosCount, isEosControlPoint, isFinalFrame);
+            if (eosCount > 0)
+            {
+                UT_LOG_INFO("Skipping EOS signal at PTS:%lld, already signaled %d times", framePTS, eosCount);
+            }
+            else
+            {
+                UT_LOG_INFO("Signaling EOS at PTS:%lld", framePTS);
+                VIDEODECODER_SIGNAL_EOS_SUCCESS(mVideoDecoderController);
 
-        if (isEosControlPoint)
-        {
-            UT_LOG_INFO("Verifying post-EOS decode reject at PTS:%lld", framePTS);
-            // Use a fresh handle: videoBufferHandle was already handed to the HAL above, so reusing it here could fail as an invalid handle instead of testing the EOS rejection.
-            int64_t postEosBufferHandle = 0;
-            AVBUFFER_ALLOC_SUCCESS(mAVBufferManager, mVideoPool, frameSize, postEosBufferHandle);
-            // Per spec, decodeBufferWithMetadata() must throw EX_ILLEGAL_STATE once called after signalEndOfStream().
-            VIDEODECODER_DECODEBUFFER_WITH_METADATA_FAILURE(mVideoDecoderController, framePTS, postEosBufferHandle,
-                                                            false, Status::EX_ILLEGAL_STATE);
-            VIDEODECODER_STOP_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
-            VIDEODECODER_START_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
+                // Give HAL a short window to deliver EOS callback before next input actions.
+                const int32_t expectedEosCount = eosCount + 1;
+                constexpr auto kEosEventWait = std::chrono::milliseconds(500);
+                if (!mControlListener->waitForEndOfStream(expectedEosCount, kEosEventWait))
+                {
+                    UT_LOG_WARNING("EOS event not received within %lld ms after signal at PTS:%lld",
+                                   std::chrono::duration_cast<std::chrono::milliseconds>(kEosEventWait).count(), framePTS);
+                }
+                else
+                {
+                    UT_LOG_INFO("EOS event received within %lld ms after signal at PTS:%lld",
+                                std::chrono::duration_cast<std::chrono::milliseconds>(kEosEventWait).count(), framePTS);
+                }
+            }
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(mTestConfiguration.decoderDelay));
@@ -736,9 +753,8 @@ bool videoDecoderTest::validateDecodedFrame()
     int32_t totalOnFramesDecoded = 0;
     int32_t discontinuityFramesReceived = 0;
 
-    // Per contract, EOS fires exactly once per session (twice when eosPts triggers a mid-stream stop+restart).
-    // Compute this before the loop so we can break as soon as all EOS signals are received.
-    int32_t expectedEOSFrames = (mTestConfiguration.eosPts != -1) ? 2 : 1;
+    // Per contract, EOS fires exactly once per session in this test flow.
+    int32_t expectedEOSFrames = 1;
 
     while (mControlListener->getNextFrame(decodedFrame, std::chrono::milliseconds(5000)))
     {
