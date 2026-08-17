@@ -1334,10 +1334,6 @@ do { \
             UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
             UT_ASSERT_FALSE(decodeResult) << "decodeBufferWithMetadata returned true unexpectedly"; \
         } \
-        if(frameBufferHandle != -1) \
-        { \
-            AVBUFFER_FREE_SUCCESS(gAVBufferManager, frameBufferHandle);\
-        } \
     } while (0)
 
 #define VIDEODECODER_SETSTREAMCONFIG_SUCCESS(videoDecoderController, streamConfig) \

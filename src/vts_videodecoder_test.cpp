@@ -439,6 +439,7 @@ void videoDecoderTest::startDecoding()
             // Per spec, decodeBufferWithMetadata() must throw EX_ILLEGAL_STATE once called after signalEndOfStream().
             VIDEODECODER_DECODEBUFFER_WITH_METADATA_FAILURE(mVideoDecoderController, framePTS, postEosBufferHandle,
                                                             false, Status::EX_ILLEGAL_STATE);
+            AVBUFFER_FREE_SUCCESS(mAVBufferManager, postEosBufferHandle);
             VIDEODECODER_STOP_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
             VIDEODECODER_START_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
         }
