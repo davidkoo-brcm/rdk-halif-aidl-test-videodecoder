@@ -1076,7 +1076,7 @@ VideoStreams:
       numerator: 1
       denominator: 1
     frame_size:
-      - 3035
+      - 3034
       - 122
       - 112
       - 109
@@ -1087,7 +1087,7 @@ VideoStreams:
       - 110
       - 110
       - 109
-      - 125
+      - 126
     PTS:
       - 0
       - 33333333
@@ -1137,7 +1137,7 @@ VideoStreams:
       numerator: 1
       denominator: 1
     frame_size:
-      - 3035
+      - 3034
       - 122
       - 112
       - 109
@@ -1148,7 +1148,7 @@ VideoStreams:
       - 110
       - 110
       - 109
-      - 125
+      - 126
     PTS:
       - 0
       - 33333333
@@ -1213,7 +1213,7 @@ VideoStreams:
       maxLuminance: 10000000
       minLuminance: 50
     frame_size:
-      - 3159
+      - 3158
       - 122
       - 112
       - 109
@@ -1224,7 +1224,7 @@ VideoStreams:
       - 110
       - 110
       - 109
-      - 125
+      - 126
     PTS:
       - 0
       - 33333333
@@ -1274,7 +1274,7 @@ VideoStreams:
       numerator: 1
       denominator: 1
     frame_size:
-      - 3159
+      - 3158
       - 122
       - 112
       - 109
@@ -1285,7 +1285,7 @@ VideoStreams:
       - 110
       - 110
       - 109
-      - 125
+      - 126
     PTS:
       - 0
       - 33333333
@@ -1341,7 +1341,7 @@ VideoStreams:
       maxCLL: 1000
       maxFALL: 400
     frame_size:
-      - 3045
+      - 3044
       - 122
       - 112
       - 109
@@ -1352,7 +1352,7 @@ VideoStreams:
       - 110
       - 110
       - 109
-      - 125
+      - 126
     PTS:
       - 0
       - 33333333
@@ -1402,7 +1402,7 @@ VideoStreams:
       numerator: 1
       denominator: 1
     frame_size:
-      - 3045
+      - 3044
       - 122
       - 112
       - 109
@@ -1413,7 +1413,7 @@ VideoStreams:
       - 110
       - 110
       - 109
-      - 125
+      - 126
     PTS:
       - 0
       - 33333333
