@@ -176,6 +176,31 @@ Colorimetry videoDecoderStringToColorimetry(const std::string& rangeStr, const s
     return c;
 }
 
+// Some HFP yaml variants declare supportedColorimetries as scalar presets
+// (e.g. BT601_525, BT601_625, BT709, BT2020) instead of the 4-field
+// range/matrix/transfer/primaries map; map those presets to their canonical Colorimetry.
+Colorimetry videoDecoderColorimetryPresetToColorimetry(const std::string& presetStr) {
+    auto makeColorimetry = [](ColorRange range, ColorMatrix matrix, TransferCharacteristics transfer, ColorPrimaries primaries) {
+        Colorimetry c;
+        c.range = range;
+        c.matrix = matrix;
+        c.transfer = transfer;
+        c.primaries = primaries;
+        return c;
+    };
+    static const std::unordered_map<std::string, Colorimetry> presetMap = {
+        {"BT601_525", makeColorimetry(ColorRange::LIMITED, ColorMatrix::BT601_525,  TransferCharacteristics::SMPTE170M, ColorPrimaries::BT601_525)},
+        {"BT601_625", makeColorimetry(ColorRange::LIMITED, ColorMatrix::BT601_625,  TransferCharacteristics::SMPTE170M, ColorPrimaries::BT470BG)},
+        {"BT709",     makeColorimetry(ColorRange::LIMITED, ColorMatrix::BT709,      TransferCharacteristics::BT709,     ColorPrimaries::BT709)},
+        {"BT2020",    makeColorimetry(ColorRange::LIMITED, ColorMatrix::BT2020_NCL, TransferCharacteristics::BT2020_10, ColorPrimaries::BT2020)}
+    };
+    auto it = presetMap.find(presetStr);
+    if (it != presetMap.end()) {
+        return it->second;
+    }
+    throw std::invalid_argument("Unknown colorimetry preset: " + presetStr);
+}
+
 ScanType videoDecoderStringToScanType(const std::string& scanTypeStr) {
     static const std::unordered_map<std::string, ScanType> scanTypeMap = {
         {"PROGRESSIVE_FRAME", ScanType::PROGRESSIVE_FRAME},
@@ -281,11 +306,11 @@ videodecoder::CodecLevel videoDecoderStringToCodecLevel(const std::string& level
     return (it != levelMap.end()) ? it->second : static_cast<videodecoder::CodecLevel>(0);
 }
 
-videodecoder::Profile videoDecoderStringToProfile(const std::string& profileStr, const std::string& levelStr) {
+videodecoder::Profile videoDecoderStringToProfile(const std::string& profileStr, const std::string& levelStr, int64_t maxBitrateInBps) {
     videodecoder::Profile prof;
     prof.profile = videoDecoderStringToCodecProfile(profileStr);
     prof.maxLevel = videoDecoderStringToCodecLevel(levelStr);
-    prof.maxBitrateInBps = 0;
+    prof.maxBitrateInBps = maxBitrateInBps;
     return prof;
 }
 
@@ -559,12 +584,13 @@ UT_status_t vts_videodecoder_parseVideoDecoderHFP()
 
                 UT_KVP_PROFILE_GET_STRING((profileEntryPath + ".profile").c_str(), profile_kvp);
                 UT_KVP_PROFILE_GET_STRING((profileEntryPath + ".maxLevel").c_str(), level_kvp);
+                int64_t maxBitrateInBps = static_cast<int64_t>(UT_KVP_PROFILE_GET_UINT64((profileEntryPath + ".maxBitrateInBps").c_str()));
 
                 std::string profileStr = std::string(profile_kvp);
                 std::string levelStr   = std::string(level_kvp);
 
                 if (!profileStr.empty()) {
-                    cap.profiles.push_back(videoDecoderStringToProfile(profileStr, levelStr));
+                    cap.profiles.push_back(videoDecoderStringToProfile(profileStr, levelStr, maxBitrateInBps));
                 } else {
                     UT_LOG_WARNING("Empty profile entry %d for codec %s", p, detected_codec.c_str());
                 }
@@ -628,22 +654,44 @@ UT_status_t vts_videodecoder_parseVideoDecoderHFP()
         for (int32_t j = 0; j < supportedcolor_count; ++j)
         {
             std::string colorpath = supportedcolorpath + "." + std::to_string(j);
-            char range_kvp[UT_KVP_MAX_ELEMENT_SIZE]    = {0};
-            char matrix_kvp[UT_KVP_MAX_ELEMENT_SIZE]   = {0};
-            char transfer_kvp[UT_KVP_MAX_ELEMENT_SIZE] = {0};
-            char primaries_kvp[UT_KVP_MAX_ELEMENT_SIZE]= {0};
-            UT_KVP_PROFILE_GET_STRING((colorpath + ".range").c_str(),    range_kvp);
-            UT_KVP_PROFILE_GET_STRING((colorpath + ".matrix").c_str(),   matrix_kvp);
-            UT_KVP_PROFILE_GET_STRING((colorpath + ".transfer").c_str(), transfer_kvp);
-            UT_KVP_PROFILE_GET_STRING((colorpath + ".primaries").c_str(),primaries_kvp);
-            UT_LOG_INFO("Reading colorimetry path: %s, range=%s, matrix=%s, transfer=%s, primaries=%s",
-                        colorpath.c_str(), range_kvp, matrix_kvp, transfer_kvp, primaries_kvp);
-            try {
-                temporary.supportedColorimetries.push_back(videoDecoderStringToColorimetry(
-                    std::string(range_kvp), std::string(matrix_kvp),
-                    std::string(transfer_kvp), std::string(primaries_kvp)));
-            } catch (const std::invalid_argument& e) {
-                UT_LOG_WARNING("Invalid colorimetry at path: %s, error: %s", colorpath.c_str(), e.what());
+            if (vts_videodecoder_helper_profileFieldPresent(colorpath + ".range"))
+            {
+                // Structured range/matrix/transfer/primaries map (e.g. amlogic/mock/vdevice HFP variants).
+                char range_kvp[UT_KVP_MAX_ELEMENT_SIZE]    = {0};
+                char matrix_kvp[UT_KVP_MAX_ELEMENT_SIZE]   = {0};
+                char transfer_kvp[UT_KVP_MAX_ELEMENT_SIZE] = {0};
+                char primaries_kvp[UT_KVP_MAX_ELEMENT_SIZE]= {0};
+                UT_KVP_PROFILE_GET_STRING((colorpath + ".range").c_str(),    range_kvp);
+                UT_KVP_PROFILE_GET_STRING((colorpath + ".matrix").c_str(),   matrix_kvp);
+                UT_KVP_PROFILE_GET_STRING((colorpath + ".transfer").c_str(), transfer_kvp);
+                UT_KVP_PROFILE_GET_STRING((colorpath + ".primaries").c_str(),primaries_kvp);
+                UT_LOG_INFO("Reading colorimetry path: %s, range=%s, matrix=%s, transfer=%s, primaries=%s",
+                            colorpath.c_str(), range_kvp, matrix_kvp, transfer_kvp, primaries_kvp);
+                try {
+                    temporary.supportedColorimetries.push_back(videoDecoderStringToColorimetry(
+                        std::string(range_kvp), std::string(matrix_kvp),
+                        std::string(transfer_kvp), std::string(primaries_kvp)));
+                } catch (const std::invalid_argument& e) {
+                    UT_LOG_WARNING("Invalid colorimetry at path: %s, error: %s", colorpath.c_str(), e.what());
+                }
+            }
+            else
+            {
+                // Scalar colorimetry preset (e.g. hfp-videodecoder.yaml, ID0/ID1/ID2 variants).
+                char preset_kvp[UT_KVP_MAX_ELEMENT_SIZE] = {0};
+                UT_KVP_PROFILE_GET_STRING(colorpath.c_str(), preset_kvp);
+                std::string presetStr = std::string(preset_kvp);
+                UT_LOG_INFO("Reading colorimetry path: %s, preset=%s", colorpath.c_str(), presetStr.c_str());
+                if (!presetStr.empty()) {
+                    try {
+                        temporary.supportedColorimetries.push_back(videoDecoderColorimetryPresetToColorimetry(presetStr));
+                    } catch (const std::invalid_argument& e) {
+                        UT_LOG_WARNING("Invalid colorimetry preset at path: %s, value: %s, error: %s",
+                                      colorpath.c_str(), presetStr.c_str(), e.what());
+                    }
+                } else {
+                    UT_LOG_WARNING("Empty colorimetry preset at path: %s", colorpath.c_str());
+                }
             }
         }
 
@@ -1016,7 +1064,8 @@ void vts_videodecoder_helper_validateCapabilities(
             {
                 UT_LOG_ERROR("Codec size mismatch: capabilities=%zu, hfpDecoder=%zu",
                              capabilities.supportedCodecs.size(), hfpDecoder.supportedCodecs.size());
-                return; // Avoid out-of-bounds
+                UT_ASSERT_EQUAL(capabilities.supportedCodecs.size(), hfpDecoder.supportedCodecs.size());
+                //return; // Avoid out-of-bounds
             }
             UT_ASSERT_EQUAL(capabilities.supportedCodecs.size(), hfpDecoder.supportedCodecs.size());
 
@@ -1024,7 +1073,8 @@ void vts_videodecoder_helper_validateCapabilities(
             {
                 UT_LOG_ERROR("Dynamic range size mismatch: capabilities=%zu, hfpDecoder=%zu",
                              capabilities.supportedDynamicRanges.size(), hfpDecoder.supportedDynamicRanges.size());
-                return; // Avoid out-of-bounds
+                UT_ASSERT_EQUAL(capabilities.supportedDynamicRanges.size(), hfpDecoder.supportedDynamicRanges.size());
+                //return; // Avoid out-of-bounds
             }
             UT_ASSERT_EQUAL(capabilities.supportedDynamicRanges.size(), hfpDecoder.supportedDynamicRanges.size());
 
@@ -1070,6 +1120,7 @@ void vts_videodecoder_helper_validateCapabilities(
                         UT_ASSERT_TRUE(false) << "supportedOutputPixelFormats mismatch with HFP";
                     }
                 }
+                UT_LOG_INFO("Validated codec: %d", static_cast<int32_t>(cap.codec));
             }
 
             // Validate dynamic ranges (order-independent)

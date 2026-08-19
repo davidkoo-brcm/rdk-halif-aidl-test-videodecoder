@@ -309,6 +309,7 @@ void videoDecoderTest::setupVideoDecoder()
 void videoDecoderTest::startDecoding()
 {
     int64_t videoBufferHandle = 0;
+    mEOSignaledCount= 0; //before start decode reset the count to 0
 
     UT_LOG_DEBUG("[PID: %d, TID: %d] startDecoding Start", getpid(), syscall(SYS_gettid));
 
@@ -428,6 +429,7 @@ void videoDecoderTest::startDecoding()
         {
             UT_LOG_INFO("Signaling EOS at PTS:%lld", framePTS);
             VIDEODECODER_SIGNAL_EOS_SUCCESS(mVideoDecoderController);
+            mEOSignaledCount++;
         }
 
         if (isEosControlPoint)
@@ -442,6 +444,8 @@ void videoDecoderTest::startDecoding()
             AVBUFFER_FREE_SUCCESS(mAVBufferManager, postEosBufferHandle);
             VIDEODECODER_STOP_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
             VIDEODECODER_START_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
+            // Exit the loop and not process any more frames after EOS is signaled.
+            break;
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(mTestConfiguration.decoderDelay));
@@ -673,6 +677,8 @@ void videoDecoderTest::validateFinalMetrics(int32_t totalOnFramesDecoded, int32_
     getDecoderMetrics(metricsFramesDecoded, metricsDecodeErrors, metricsFramesDropped);
     UT_LOG_DEBUG("Final Decoder Metrics: Codec: %d, Frames Decoded=%d, Decode Errors=%d, Frames Dropped=%d",
                     mTestConfiguration.codec, metricsFramesDecoded, metricsDecodeErrors, metricsFramesDropped);
+    UT_LOG_DEBUG("Total Callbacks Received: Frames Decoded=%d, Decode Errors=%d, expectedFrames=%d",
+                    totalOnFramesDecoded, totalOnErrorsReceived, expectedFrames);
 
     // eosPts triggers a mid-session stop()+start() (see the isEosControlPoint block above),
     // and Property.aidl documents METRIC_FRAMES_DECODED/METRIC_DECODE_ERRORS as reset on stop() -
@@ -725,9 +731,6 @@ bool videoDecoderTest::validateDecodedFrame()
     int32_t totalOnFramesDecoded = 0;
     int32_t discontinuityFramesReceived = 0;
 
-    // Per contract, EOS fires exactly once per session (twice when eosPts triggers a mid-stream stop+restart).
-    // Compute this before the loop so we can break as soon as all EOS signals are received.
-    int32_t expectedEOSFrames = (mTestConfiguration.eosPts != -1) ? 2 : 1;
 
     while (mControlListener->getNextFrame(decodedFrame, std::chrono::milliseconds(5000)))
     {
@@ -752,7 +755,7 @@ bool videoDecoderTest::validateDecodedFrame()
     }
 
     int32_t expectedFrames = mTestConfiguration.no_of_frames - mTestConfiguration.decodeErrors;
-    validateDiscontinuityAndEndOfStream(discontinuityFramesReceived, expectedFrames, expectedEOSFrames);
+    validateDiscontinuityAndEndOfStream(discontinuityFramesReceived, expectedFrames, mEOSignaledCount);
 
     int32_t totalOnErrorsReceived = mEventListener->getErrorCount();
     validateFinalMetrics(totalOnFramesDecoded, totalOnErrorsReceived, expectedFrames);

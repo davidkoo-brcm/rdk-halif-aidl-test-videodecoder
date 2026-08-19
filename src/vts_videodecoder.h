@@ -333,8 +333,9 @@ OperationalMode videoDecoderStringToOperationalMode(const std::string& modeStr);
 PixelFormat videoDecoderStringToPixelFormat(const std::string& formatStr);
 videodecoder::CodecProfile videoDecoderStringToCodecProfile(const std::string& profileStr);
 videodecoder::CodecLevel videoDecoderStringToCodecLevel(const std::string& levelStr);
-videodecoder::Profile videoDecoderStringToProfile(const std::string& profileStr, const std::string& levelStr);
+videodecoder::Profile videoDecoderStringToProfile(const std::string& profileStr, const std::string& levelStr, int64_t maxBitrateInBps = 0);
 videodecoder::Colorimetry videoDecoderStringToColorimetry(const std::string& rangeStr, const std::string& matrixStr, const std::string& transferStr, const std::string& primariesStr);
+videodecoder::Colorimetry videoDecoderColorimetryPresetToColorimetry(const std::string& presetStr);
 bool vts_videodecoder_helper_validatePropertyValue(int decoder_id,const std::optional<PropertyValue>& propertyValue, const videodecoder::Property property);
 void vts_videodecoder_helper_validateCapabilities(int32_t decoderId,const videodecoder::Capabilities& capabilities);
 bool vts_videodecoder_helper_checkCodecAttributeExists(const std::string& attrpath, const std::string& codec_name);
@@ -1724,6 +1725,7 @@ public:
 // DecoderTest declaration
 class videoDecoderTest {
 public:
+    int32_t mEOSignaledCount = 0;
     videoDecoderTest(IVideoDecoder::Id decoderId, sp<IVideoDecoder> decoderHandle,
                 sp<VideoDecoderControllerListener> controlListener,
                 sp<VideoDecoderEventListener> eventListener,
