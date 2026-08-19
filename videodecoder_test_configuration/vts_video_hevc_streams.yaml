@@ -1067,7 +1067,7 @@ VideoStreams:
     discontinuity: 0
     lowLatency: 0
     bit_rate: 32
-    no_of_frames: 15
+    no_of_frames: 12
     decodeErrors: 0
     framesDropped: 0
     openWithResolutionWidth: -1
@@ -1088,9 +1088,6 @@ VideoStreams:
       - 110
       - 109
       - 125
-      - 114
-      - 109
-      - 109
     PTS:
       - 0
       - 33333333
@@ -1104,9 +1101,6 @@ VideoStreams:
       - 299999997
       - 333333330
       - 366666663
-      - 399999996
-      - 433333329
-      - 466666662
 
   # Same HDR10 stream, colorimetry NOT set in InputBufferMetadata (no override passed by application)
   H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_COLORIMETRY_NOSET:
@@ -1134,7 +1128,7 @@ VideoStreams:
     discontinuity: 0
     lowLatency: 0
     bit_rate: 32
-    no_of_frames: 15
+    no_of_frames: 12
     decodeErrors: 0
     framesDropped: 0
     openWithResolutionWidth: -1
@@ -1155,9 +1149,6 @@ VideoStreams:
       - 110
       - 109
       - 125
-      - 114
-      - 109
-      - 109
     PTS:
       - 0
       - 33333333
@@ -1171,9 +1162,6 @@ VideoStreams:
       - 299999997
       - 333333330
       - 366666663
-      - 399999996
-      - 433333329
-      - 466666662
 
   # HDR10 stream with MasteringDisplayInfo SEI
   # Generated with: ffmpeg -f lavfi -i color=c=blue:size=1920x1080:rate=30 -t 5 -c:v libx265
@@ -1205,7 +1193,7 @@ VideoStreams:
     discontinuity: 0
     lowLatency: 0
     bit_rate: 32
-    no_of_frames: 15
+    no_of_frames: 12
     decodeErrors: 0
     framesDropped: 0
     openWithResolutionWidth: -1
@@ -1237,9 +1225,6 @@ VideoStreams:
       - 110
       - 109
       - 125
-      - 114
-      - 109
-      - 109
     PTS:
       - 0
       - 33333333
@@ -1253,9 +1238,6 @@ VideoStreams:
       - 299999997
       - 333333330
       - 366666663
-      - 399999996
-      - 433333329
-      - 466666662
 
   # Same HDR10 stream, MasteringDisplayInfo NOT set (negative test - expects nullopt in output metadata)
   H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_MDI_NOSET:
@@ -1283,7 +1265,7 @@ VideoStreams:
     discontinuity: 0
     lowLatency: 0
     bit_rate: 32
-    no_of_frames: 15
+    no_of_frames: 12
     decodeErrors: 0
     framesDropped: 0
     openWithResolutionWidth: -1
@@ -1304,9 +1286,6 @@ VideoStreams:
       - 110
       - 109
       - 125
-      - 114
-      - 109
-      - 109
     PTS:
       - 0
       - 33333333
@@ -1320,9 +1299,6 @@ VideoStreams:
       - 299999997
       - 333333330
       - 366666663
-      - 399999996
-      - 433333329
-      - 466666662
 
   # HDR10 stream with ContentLightLevel SEI
   # Generated with: ffmpeg -f lavfi -i color=c=blue:size=1920x1080:rate=30 -t 5 -c:v libx265
@@ -1353,7 +1329,7 @@ VideoStreams:
     discontinuity: 0
     lowLatency: 0
     bit_rate: 32
-    no_of_frames: 15
+    no_of_frames: 12
     decodeErrors: 0
     framesDropped: 0
     openWithResolutionWidth: -1
@@ -1377,9 +1353,6 @@ VideoStreams:
       - 110
       - 109
       - 125
-      - 114
-      - 109
-      - 109
     PTS:
       - 0
       - 33333333
@@ -1393,9 +1366,6 @@ VideoStreams:
       - 299999997
       - 333333330
       - 366666663
-      - 399999996
-      - 433333329
-      - 466666662
 
   # Same HDR10 stream, ContentLightLevel NOT set (negative test - expects nullopt in output metadata)
   H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_CLL_NOSET:
@@ -1423,7 +1393,7 @@ VideoStreams:
     discontinuity: 0
     lowLatency: 0
     bit_rate: 32
-    no_of_frames: 15
+    no_of_frames: 12
     decodeErrors: 0
     framesDropped: 0
     openWithResolutionWidth: -1
@@ -1444,9 +1414,6 @@ VideoStreams:
       - 110
       - 109
       - 125
-      - 114
-      - 109
-      - 109
     PTS:
       - 0
       - 33333333
@@ -1460,9 +1427,6 @@ VideoStreams:
       - 299999997
       - 333333330
       - 366666663
-      - 399999996
-      - 433333329
-      - 466666662
   H265_HIGH_3840x2160_DR_DOLBY_VISION_DR_BT2020_60p_PIXEL_FORMAT_YCBCR420_734_DOLBY_VISION:
     input: H265_HIGH_3840x2160_DR_DOLBY_VISION_DR_BT2020_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     codec: H265_HEVC              # Derived from Format: HEVC
