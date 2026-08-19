@@ -92,108 +92,157 @@ VideoStreams:
         width: 720
         height: 480
         bit_rate: 466680
+    # frame_size/PTS are per-NAL-unit (not per-picture): each of the 10 resolution-switch
+    # points carries its own VPS/SPS/PPS/SEI as separate entries sharing that picture's
+    # PTS, same convention as H265_HIGH_1920x1080_..._734 below. 140 entries = 100 real
+    # pictures (matches no_of_frames) + 40 header NALs. Order and sizes verified against
+    # the real .es file via NAL-unit scan (prior manual entry had these merged/shuffled).
     frame_size:
-      - 2547
-      - 38
+      - 28
+      - 49
+      - 11
+      - 2345
+      - 113
       - 41
+      - 38
       - 753
       - 1540
-      - 206
       - 5018
+      - 206
       - 2810
-      - 341
       - 1096
-      - 2601
-      - 45
+      - 341
+      - 28
+      - 53
+      - 11
+      - 2377
+      - 132
       - 49
+      - 45
       - 969
       - 2069
-      - 371
       - 6598
+      - 371
       - 4048
-      - 575
       - 2121
-      - 2722
-      - 70
+      - 575
+      - 28
+      - 50
+      - 11
+      - 2347
+      - 286
       - 78
+      - 70
       - 2249
       - 3881
       - 10264
-      - 1282
       - 12987
-      - 1355
+      - 1282
       - 8865
-      - 3041
-      - 107
+      - 1355
+      - 28
+      - 49
+      - 11
+      - 2348
+      - 605
       - 122
+      - 107
       - 1995
       - 3776
       - 6415
-      - 529
       - 15764
-      - 1380
+      - 529
       - 14881
-      - 3337
+      - 1380
+      - 28
+      - 50
+      - 11
+      - 2348
+      - 900
       - 158
       - 158
       - 3156
       - 5347
       - 13623
-      - 2659
       - 24622
-      - 2408
+      - 2659
       - 17247
-      - 4398
-      - 270
+      - 2408
+      - 28
+      - 51
+      - 11
+      - 2349
+      - 1959
       - 271
+      - 270
       - 4449
       - 6957
       - 11398
-      - 1715
       - 28572
-      - 3037
+      - 1715
       - 29463
-      - 3337
+      - 3037
+      - 28
+      - 50
+      - 11
+      - 2348
+      - 900
       - 158
       - 158
       - 3156
       - 5347
       - 13623
-      - 2659
       - 24622
-      - 2408
+      - 2659
       - 17247
-      - 3041
-      - 107
+      - 2408
+      - 28
+      - 49
+      - 11
+      - 2348
+      - 605
       - 122
+      - 107
       - 1995
       - 3776
       - 6415
-      - 529
       - 15764
-      - 1380
+      - 529
       - 14881
-      - 2722
-      - 70
+      - 1380
+      - 28
+      - 50
+      - 11
+      - 2347
+      - 286
       - 78
+      - 70
       - 2249
       - 3881
       - 10264
-      - 1282
       - 12987
-      - 1355
+      - 1282
       - 8865
-      - 2601
-      - 45
+      - 1355
+      - 28
+      - 53
+      - 11
+      - 2377
+      - 132
       - 49
+      - 45
       - 969
       - 2069
-      - 371
       - 6598
+      - 371
       - 4048
-      - 574
       - 2121
+      - 575
     PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
+      - 0
+      - 0
+      - 0
+      - 0
       - 0
       - 33333333
       - 66666666
@@ -205,6 +254,10 @@ VideoStreams:
       - 266666664
       - 299999997
       - 333333330
+      - 333333330
+      - 333333330
+      - 333333330
+      - 333333330
       - 366666663
       - 399999996
       - 433333329
@@ -214,6 +267,10 @@ VideoStreams:
       - 566666661
       - 599999994
       - 633333327
+      - 666666660
+      - 666666660
+      - 666666660
+      - 666666660
       - 666666660
       - 699999993
       - 733333326
@@ -225,6 +282,10 @@ VideoStreams:
       - 933333324
       - 966666657
       - 999999990
+      - 999999990
+      - 999999990
+      - 999999990
+      - 999999990
       - 1033333323
       - 1066666656
       - 1099999989
@@ -234,6 +295,10 @@ VideoStreams:
       - 1233333321
       - 1266666654
       - 1299999987
+      - 1333333320
+      - 1333333320
+      - 1333333320
+      - 1333333320
       - 1333333320
       - 1366666653
       - 1399999986
@@ -245,6 +310,10 @@ VideoStreams:
       - 1599999984
       - 1633333317
       - 1666666650
+      - 1666666650
+      - 1666666650
+      - 1666666650
+      - 1666666650
       - 1699999983
       - 1733333316
       - 1766666649
@@ -254,6 +323,10 @@ VideoStreams:
       - 1899999981
       - 1933333314
       - 1966666647
+      - 1999999980
+      - 1999999980
+      - 1999999980
+      - 1999999980
       - 1999999980
       - 2033333313
       - 2066666646
@@ -265,6 +338,10 @@ VideoStreams:
       - 2266666644
       - 2299999977
       - 2333333310
+      - 2333333310
+      - 2333333310
+      - 2333333310
+      - 2333333310
       - 2366666643
       - 2399999976
       - 2433333309
@@ -275,6 +352,10 @@ VideoStreams:
       - 2599999974
       - 2633333307
       - 2666666640
+      - 2666666640
+      - 2666666640
+      - 2666666640
+      - 2666666640
       - 2699999973
       - 2733333306
       - 2766666639
@@ -284,6 +365,10 @@ VideoStreams:
       - 2899999971
       - 2933333304
       - 2966666637
+      - 2999999970
+      - 2999999970
+      - 2999999970
+      - 2999999970
       - 2999999970
       - 3033333303
       - 3066666636
@@ -1075,8 +1160,16 @@ VideoStreams:
     pixel_aspect_ratio:
       numerator: 1
       denominator: 1
+    # frame_size/PTS split into individual NAL units (VPS/SPS/PPS/SEI, then the IDR
+    # slice), all sharing the first picture's PTS, same convention as _734 below.
+    # 16 entries = 12 real pictures (matches no_of_frames) + 4 header NALs, verified
+    # against the real .es file (prior entry had the header glued into frame 0).
     frame_size:
-      - 3034
+      - 28
+      - 51
+      - 11
+      - 2329
+      - 615
       - 122
       - 112
       - 109
@@ -1089,6 +1182,10 @@ VideoStreams:
       - 109
       - 126
     PTS:
+      - 0
+      - 0
+      - 0
+      - 0
       - 0
       - 33333333
       - 66666666
@@ -1136,8 +1233,16 @@ VideoStreams:
     pixel_aspect_ratio:
       numerator: 1
       denominator: 1
+    # frame_size/PTS split into individual NAL units (VPS/SPS/PPS/SEI, then the IDR
+    # slice), all sharing the first picture's PTS, same convention as _734 below.
+    # 16 entries = 12 real pictures (matches no_of_frames) + 4 header NALs, verified
+    # against the real .es file (prior entry had the header glued into frame 0).
     frame_size:
-      - 3034
+      - 28
+      - 51
+      - 11
+      - 2329
+      - 615
       - 122
       - 112
       - 109
@@ -1150,6 +1255,10 @@ VideoStreams:
       - 109
       - 126
     PTS:
+      - 0
+      - 0
+      - 0
+      - 0
       - 0
       - 33333333
       - 66666666
@@ -1212,8 +1321,18 @@ VideoStreams:
       whitePointY: 16450
       maxLuminance: 10000000
       minLuminance: 50
+    # frame_size/PTS split into individual NAL units (VPS/SPS/PPS/3xSEI incl. MDI, then
+    # the IDR slice), all sharing the first picture's PTS, same convention as _734 below.
+    # 18 entries = 12 real pictures (matches no_of_frames) + 6 header NALs, verified
+    # against the real .es file (prior entry had the header glued into frame 0).
     frame_size:
-      - 3158
+      - 28
+      - 48
+      - 11
+      - 13
+      - 33
+      - 2410
+      - 615
       - 122
       - 112
       - 109
@@ -1226,6 +1345,12 @@ VideoStreams:
       - 109
       - 126
     PTS:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
       - 0
       - 33333333
       - 66666666
@@ -1273,8 +1398,18 @@ VideoStreams:
     pixel_aspect_ratio:
       numerator: 1
       denominator: 1
+    # frame_size/PTS split into individual NAL units (VPS/SPS/PPS/3xSEI incl. MDI, then
+    # the IDR slice), all sharing the first picture's PTS, same convention as _734 below.
+    # 18 entries = 12 real pictures (matches no_of_frames) + 6 header NALs, verified
+    # against the real .es file (prior entry had the header glued into frame 0).
     frame_size:
-      - 3158
+      - 28
+      - 48
+      - 11
+      - 13
+      - 33
+      - 2410
+      - 615
       - 122
       - 112
       - 109
@@ -1287,6 +1422,12 @@ VideoStreams:
       - 109
       - 126
     PTS:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
       - 0
       - 33333333
       - 66666666
@@ -1340,8 +1481,17 @@ VideoStreams:
     contentLightLevel:
       maxCLL: 1000
       maxFALL: 400
+    # frame_size/PTS split into individual NAL units (VPS/SPS/PPS/2xSEI incl. CLL, then
+    # the IDR slice), all sharing the first picture's PTS, same convention as _734 below.
+    # 17 entries = 12 real pictures (matches no_of_frames) + 5 header NALs, verified
+    # against the real .es file (prior entry had the header glued into frame 0).
     frame_size:
-      - 3044
+      - 28
+      - 48
+      - 11
+      - 12
+      - 2330
+      - 615
       - 122
       - 112
       - 109
@@ -1354,6 +1504,11 @@ VideoStreams:
       - 109
       - 126
     PTS:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
       - 0
       - 33333333
       - 66666666
@@ -1401,8 +1556,17 @@ VideoStreams:
     pixel_aspect_ratio:
       numerator: 1
       denominator: 1
+    # frame_size/PTS split into individual NAL units (VPS/SPS/PPS/2xSEI incl. CLL, then
+    # the IDR slice), all sharing the first picture's PTS, same convention as _734 below.
+    # 17 entries = 12 real pictures (matches no_of_frames) + 5 header NALs, verified
+    # against the real .es file (prior entry had the header glued into frame 0).
     frame_size:
-      - 3044
+      - 28
+      - 48
+      - 11
+      - 12
+      - 2330
+      - 615
       - 122
       - 112
       - 109
@@ -1415,6 +1579,11 @@ VideoStreams:
       - 109
       - 126
     PTS:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
       - 0
       - 33333333
       - 66666666
