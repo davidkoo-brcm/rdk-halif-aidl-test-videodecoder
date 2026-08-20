@@ -3,7 +3,7 @@
 # * If not stated otherwise in this file or this component's LICENSE file the
 # * following copyright and licenses apply:
 # *
-# * Copyright 2025 RDK Management
+# * Copyright 2026 RDK Management
 # *
 # * Licensed under the Apache License, Version 2.0 (the "License");
 # * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@
 # * limitations under the License.
 # *
 #** ******************************************************************************
+
 # HAL Feature Profile for videodecoder
 
 videodecoder:           # Component object begins
@@ -31,18 +32,24 @@ videodecoder:           # Component object begins
         - MPEG2_VIDEO:
             profiles:
               - profile: MPEG2_MAIN
-                maxLevel: MPEG2_LEVEL_HIGH
-                maxBitrateInBps: 0
+                maxLevel: MPEG2_LEVEL_MAIN
+                maxBitrateInBps: 15000000
             maxFrameRate: 60
             maxFrameWidth: 1920
-            maxFrameHeight: 1088
+            maxFrameHeight: 1080
             supportedOutputPixelFormats:
               - YCBCR420
         - H264_AVC:
             profiles:
+              - profile: H264_BASELINE
+                maxLevel: H264_LEVEL_4_1
+                maxBitrateInBps: 50000000
+              - profile: H264_MAIN
+                maxLevel: H264_LEVEL_4_1
+                maxBitrateInBps: 50000000
               - profile: H264_HIGH
                 maxLevel: H264_LEVEL_4_1
-                maxBitrateInBps: 0
+                maxBitrateInBps: 50000000
             maxFrameRate: 60
             maxFrameWidth: 1920
             maxFrameHeight: 1088
@@ -50,9 +57,15 @@ videodecoder:           # Component object begins
               - YCBCR420
         - H265_HEVC:
             profiles:
+              - profile: H265_MAIN
+                maxLevel: H265_LEVEL_5_2
+                maxBitrateInBps: 150000000
               - profile: H265_MAIN_10
-                maxLevel: H265_LEVEL_5_1
-                maxBitrateInBps: 0
+                maxLevel: H265_LEVEL_5_2
+                maxBitrateInBps: 150000000
+              - profile: H265_MAIN_10_HDR10
+                maxLevel: H265_LEVEL_5_2
+                maxBitrateInBps: 150000000
             maxFrameRate: 60
             maxFrameWidth: 3840
             maxFrameHeight: 2160
@@ -60,9 +73,12 @@ videodecoder:           # Component object begins
               - YCBCR420
         - VP9:
             profiles:
+              - profile: VP9_PROFILE_0
+                maxLevel: VP9_LEVEL_5_1
+                maxBitrateInBps: 150000000
               - profile: VP9_PROFILE_2
                 maxLevel: VP9_LEVEL_5_1
-                maxBitrateInBps: 0
+                maxBitrateInBps: 150000000
             maxFrameRate: 60
             maxFrameWidth: 3840
             maxFrameHeight: 2160
@@ -72,7 +88,7 @@ videodecoder:           # Component object begins
             profiles:
               - profile: AV1_MAIN
                 maxLevel: AV1_LEVEL_5_1
-                maxBitrateInBps: 0
+                maxBitrateInBps: 150000000
             maxFrameRate: 60
             maxFrameWidth: 3840
             maxFrameHeight: 2160
@@ -82,46 +98,37 @@ videodecoder:           # Component object begins
         - SDR
         - HLG
         - HDR10
+        - HDR10_PLUS
         - DOLBY_VISION
       supportedColorimetries:
-        - range: LIMITED
-          matrix: BT601_525
-          transfer: SMPTE170M
-          primaries: BT601_525
-        - range: LIMITED
-          matrix: BT601_625
-          transfer: BT470BG_GAMMA28
-          primaries: BT470BG
-        - range: LIMITED
-          matrix: BT709
-          transfer: BT709
-          primaries: BT709
-        - range: LIMITED
-          matrix: BT2020_NCL
-          transfer: ARIB_STD_B67_HLG
-          primaries: BT2020
-        - range: LIMITED
-          matrix: BT2020_NCL
-          transfer: SMPTE2084_PQ
-          primaries: BT2020
-      supportsSecure: true
+        - BT601_525
+        - BT601_625
+        - BT709
+        - BT2020
+      supportsSecure: false
     - 1:                          # Resource object begins
       supportedCodecs:          # Array of codec capabilities
         - MPEG2_VIDEO:
             profiles:
               - profile: MPEG2_MAIN
-                maxLevel: MPEG2_LEVEL_HIGH
-                maxBitrateInBps: 0
+                maxLevel: MPEG2_LEVEL_MAIN
+                maxBitrateInBps: 15000000
             maxFrameRate: 60
             maxFrameWidth: 1920
-            maxFrameHeight: 1088
+            maxFrameHeight: 1080
             supportedOutputPixelFormats:
               - YCBCR420
         - H264_AVC:
             profiles:
+              - profile: H264_BASELINE
+                maxLevel: H264_LEVEL_4_1
+                maxBitrateInBps: 50000000
+              - profile: H264_MAIN
+                maxLevel: H264_LEVEL_4_1
+                maxBitrateInBps: 50000000
               - profile: H264_HIGH
                 maxLevel: H264_LEVEL_4_1
-                maxBitrateInBps: 0
+                maxBitrateInBps: 50000000
             maxFrameRate: 60
             maxFrameWidth: 1920
             maxFrameHeight: 1088
@@ -131,7 +138,10 @@ videodecoder:           # Component object begins
             profiles:
               - profile: H265_MAIN
                 maxLevel: H265_LEVEL_4_1
-                maxBitrateInBps: 0
+                maxBitrateInBps: 50000000
+              - profile: H265_MAIN_10
+                maxLevel: H265_LEVEL_4_1
+                maxBitrateInBps: 50000000
             maxFrameRate: 60
             maxFrameWidth: 1920
             maxFrameHeight: 1088
@@ -141,7 +151,7 @@ videodecoder:           # Component object begins
             profiles:
               - profile: VP9_PROFILE_0
                 maxLevel: VP9_LEVEL_4_1
-                maxBitrateInBps: 0
+                maxBitrateInBps: 50000000
             maxFrameRate: 60
             maxFrameWidth: 1920
             maxFrameHeight: 1088
@@ -151,35 +161,42 @@ videodecoder:           # Component object begins
             profiles:
               - profile: AV1_MAIN
                 maxLevel: AV1_LEVEL_4_1
-                maxBitrateInBps: 0
+                maxBitrateInBps: 50000000
             maxFrameRate: 60
             maxFrameWidth: 1920
-            maxFrameHeight: 1088
+            maxFrameHeight: 1080
             supportedOutputPixelFormats:
               - YCBCR420
       supportedDynamicRanges:
         - SDR
       supportedColorimetries:
-        - range: LIMITED
-          matrix: BT601_525
-          transfer: SMPTE170M
-          primaries: BT601_525
-        - range: LIMITED
-          matrix: BT601_625
-          transfer: BT470BG_GAMMA28
-          primaries: BT470BG
-        - range: LIMITED
-          matrix: BT709
-          transfer: BT709
-          primaries: BT709
-      supportsSecure: true
-    - 2:
+        - BT601_525
+        - BT601_625
+        - BT709
+      supportsSecure: false
+    - 2:                          # Resource object begins (secondary HD decoder)
       supportedCodecs:
+        - MPEG2_VIDEO:
+            profiles:
+              - profile: MPEG2_MAIN
+                maxLevel: MPEG2_LEVEL_MAIN
+                maxBitrateInBps: 15000000
+            maxFrameRate: 60
+            maxFrameWidth: 1920
+            maxFrameHeight: 1080
+            supportedOutputPixelFormats:
+              - YCBCR420
         - H264_AVC:
             profiles:
+              - profile: H264_BASELINE
+                maxLevel: H264_LEVEL_4_1
+                maxBitrateInBps: 50000000
+              - profile: H264_MAIN
+                maxLevel: H264_LEVEL_4_1
+                maxBitrateInBps: 50000000
               - profile: H264_HIGH
                 maxLevel: H264_LEVEL_4_1
-                maxBitrateInBps: 0
+                maxBitrateInBps: 50000000
             maxFrameRate: 60
             maxFrameWidth: 1920
             maxFrameHeight: 1088
@@ -188,56 +205,40 @@ videodecoder:           # Component object begins
         - H265_HEVC:
             profiles:
               - profile: H265_MAIN
-                maxLevel: H265_LEVEL_5_1
-                maxBitrateInBps: 0
+                maxLevel: H265_LEVEL_4_1
+                maxBitrateInBps: 50000000
+              - profile: H265_MAIN_10
+                maxLevel: H265_LEVEL_4_1
+                maxBitrateInBps: 50000000
             maxFrameRate: 60
-            maxFrameWidth: 3840
-            maxFrameHeight: 2160
+            maxFrameWidth: 1920
+            maxFrameHeight: 1088
             supportedOutputPixelFormats:
               - YCBCR420
         - VP9:
             profiles:
-              - profile: VP9_PROFILE_2
-                maxLevel: VP9_LEVEL_5_1
-                maxBitrateInBps: 0
+              - profile: VP9_PROFILE_0
+                maxLevel: VP9_LEVEL_4_1
+                maxBitrateInBps: 50000000
             maxFrameRate: 60
-            maxFrameWidth: 3840
-            maxFrameHeight: 2160
+            maxFrameWidth: 1920
+            maxFrameHeight: 1088
             supportedOutputPixelFormats:
               - YCBCR420
         - AV1:
             profiles:
               - profile: AV1_MAIN
-                maxLevel: AV1_LEVEL_5_1
-                maxBitrateInBps: 0
+                maxLevel: AV1_LEVEL_4_1
+                maxBitrateInBps: 50000000
             maxFrameRate: 60
-            maxFrameWidth: 3840
-            maxFrameHeight: 2160
+            maxFrameWidth: 1920
+            maxFrameHeight: 1080
             supportedOutputPixelFormats:
               - YCBCR420
       supportedDynamicRanges:
         - SDR
-        - HLG
-        - HDR10
       supportedColorimetries:
-        - range: LIMITED
-          matrix: BT601_525
-          transfer: SMPTE170M
-          primaries: BT601_525
-        - range: LIMITED
-          matrix: BT601_625
-          transfer: BT470BG_GAMMA28
-          primaries: BT470BG
-        - range: LIMITED
-          matrix: BT709
-          transfer: BT709
-          primaries: BT709
-        - range: LIMITED
-          matrix: BT2020_NCL
-          transfer: ARIB_STD_B67_HLG
-          primaries: BT2020
-        - range: LIMITED
-          matrix: BT2020_NCL
-          transfer: SMPTE2084_PQ
-          primaries: BT2020
+        - BT601_525
+        - BT601_625
+        - BT709
       supportsSecure: false
