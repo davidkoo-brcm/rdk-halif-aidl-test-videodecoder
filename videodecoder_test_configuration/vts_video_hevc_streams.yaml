@@ -1160,16 +1160,8 @@ VideoStreams:
     pixel_aspect_ratio:
       numerator: 1
       denominator: 1
-    # frame_size/PTS split into individual NAL units (VPS/SPS/PPS/SEI, then the IDR
-    # slice), all sharing the first picture's PTS, same convention as _734 below.
-    # 16 entries = 12 real pictures (matches no_of_frames) + 4 header NALs, verified
-    # against the real .es file (prior entry had the header glued into frame 0).
     frame_size:
-      - 28
-      - 51
-      - 11
-      - 2329
-      - 615
+      - 3035
       - 122
       - 112
       - 109
@@ -1180,23 +1172,19 @@ VideoStreams:
       - 110
       - 110
       - 109
-      - 126
+      - 125
     PTS:
       - 0
-      - 0
-      - 0
-      - 0
-      - 0
+      - 166666665
+      - 99999999
       - 33333333
       - 66666666
-      - 99999999
       - 133333332
-      - 166666665
+      - 333333330
+      - 266666664
       - 199999998
       - 233333331
-      - 266666664
       - 299999997
-      - 333333330
       - 366666663
 
   # Same HDR10 stream, colorimetry NOT set in InputBufferMetadata (no override passed by application)
@@ -1233,16 +1221,8 @@ VideoStreams:
     pixel_aspect_ratio:
       numerator: 1
       denominator: 1
-    # frame_size/PTS split into individual NAL units (VPS/SPS/PPS/SEI, then the IDR
-    # slice), all sharing the first picture's PTS, same convention as _734 below.
-    # 16 entries = 12 real pictures (matches no_of_frames) + 4 header NALs, verified
-    # against the real .es file (prior entry had the header glued into frame 0).
     frame_size:
-      - 28
-      - 51
-      - 11
-      - 2329
-      - 615
+      - 3035
       - 122
       - 112
       - 109
@@ -1253,23 +1233,19 @@ VideoStreams:
       - 110
       - 110
       - 109
-      - 126
+      - 125
     PTS:
       - 0
-      - 0
-      - 0
-      - 0
-      - 0
+      - 166666665
+      - 99999999
       - 33333333
       - 66666666
-      - 99999999
       - 133333332
-      - 166666665
+      - 333333330
+      - 266666664
       - 199999998
       - 233333331
-      - 266666664
       - 299999997
-      - 333333330
       - 366666663
 
   # HDR10 stream with MasteringDisplayInfo SEI
@@ -1321,18 +1297,8 @@ VideoStreams:
       whitePointY: 16450
       maxLuminance: 10000000
       minLuminance: 50
-    # frame_size/PTS split into individual NAL units (VPS/SPS/PPS/3xSEI incl. MDI, then
-    # the IDR slice), all sharing the first picture's PTS, same convention as _734 below.
-    # 18 entries = 12 real pictures (matches no_of_frames) + 6 header NALs, verified
-    # against the real .es file (prior entry had the header glued into frame 0).
     frame_size:
-      - 28
-      - 48
-      - 11
-      - 13
-      - 33
-      - 2410
-      - 615
+      - 3159
       - 122
       - 112
       - 109
@@ -1343,25 +1309,19 @@ VideoStreams:
       - 110
       - 110
       - 109
-      - 126
+      - 125
     PTS:
       - 0
-      - 0
-      - 0
-      - 0
-      - 0
-      - 0
-      - 0
+      - 166666665
+      - 99999999
       - 33333333
       - 66666666
-      - 99999999
       - 133333332
-      - 166666665
+      - 333333330
+      - 266666664
       - 199999998
       - 233333331
-      - 266666664
       - 299999997
-      - 333333330
       - 366666663
 
   # Same HDR10 stream, MasteringDisplayInfo NOT set (negative test - expects nullopt in output metadata)
@@ -1398,18 +1358,8 @@ VideoStreams:
     pixel_aspect_ratio:
       numerator: 1
       denominator: 1
-    # frame_size/PTS split into individual NAL units (VPS/SPS/PPS/3xSEI incl. MDI, then
-    # the IDR slice), all sharing the first picture's PTS, same convention as _734 below.
-    # 18 entries = 12 real pictures (matches no_of_frames) + 6 header NALs, verified
-    # against the real .es file (prior entry had the header glued into frame 0).
     frame_size:
-      - 28
-      - 48
-      - 11
-      - 13
-      - 33
-      - 2410
-      - 615
+      - 3159
       - 122
       - 112
       - 109
@@ -1420,25 +1370,19 @@ VideoStreams:
       - 110
       - 110
       - 109
-      - 126
+      - 125
     PTS:
       - 0
-      - 0
-      - 0
-      - 0
-      - 0
-      - 0
-      - 0
+      - 166666665
+      - 99999999
       - 33333333
       - 66666666
-      - 99999999
       - 133333332
-      - 166666665
+      - 333333330
+      - 266666664
       - 199999998
       - 233333331
-      - 266666664
       - 299999997
-      - 333333330
       - 366666663
 
   # HDR10 stream with ContentLightLevel SEI
@@ -1481,17 +1425,8 @@ VideoStreams:
     contentLightLevel:
       maxCLL: 1000
       maxFALL: 400
-    # frame_size/PTS split into individual NAL units (VPS/SPS/PPS/2xSEI incl. CLL, then
-    # the IDR slice), all sharing the first picture's PTS, same convention as _734 below.
-    # 17 entries = 12 real pictures (matches no_of_frames) + 5 header NALs, verified
-    # against the real .es file (prior entry had the header glued into frame 0).
     frame_size:
-      - 28
-      - 48
-      - 11
-      - 12
-      - 2330
-      - 615
+      - 3045
       - 122
       - 112
       - 109
@@ -1502,24 +1437,19 @@ VideoStreams:
       - 110
       - 110
       - 109
-      - 126
+      - 125
     PTS:
       - 0
-      - 0
-      - 0
-      - 0
-      - 0
-      - 0
+      - 166666665
+      - 99999999
       - 33333333
       - 66666666
-      - 99999999
       - 133333332
-      - 166666665
+      - 333333330
+      - 266666664
       - 199999998
       - 233333331
-      - 266666664
       - 299999997
-      - 333333330
       - 366666663
 
   # Same HDR10 stream, ContentLightLevel NOT set (negative test - expects nullopt in output metadata)
@@ -1556,17 +1486,8 @@ VideoStreams:
     pixel_aspect_ratio:
       numerator: 1
       denominator: 1
-    # frame_size/PTS split into individual NAL units (VPS/SPS/PPS/2xSEI incl. CLL, then
-    # the IDR slice), all sharing the first picture's PTS, same convention as _734 below.
-    # 17 entries = 12 real pictures (matches no_of_frames) + 5 header NALs, verified
-    # against the real .es file (prior entry had the header glued into frame 0).
     frame_size:
-      - 28
-      - 48
-      - 11
-      - 12
-      - 2330
-      - 615
+      - 3045
       - 122
       - 112
       - 109
@@ -1577,24 +1498,19 @@ VideoStreams:
       - 110
       - 110
       - 109
-      - 126
+      - 125
     PTS:
       - 0
-      - 0
-      - 0
-      - 0
-      - 0
-      - 0
+      - 166666665
+      - 99999999
       - 33333333
       - 66666666
-      - 99999999
       - 133333332
-      - 166666665
+      - 333333330
+      - 266666664
       - 199999998
       - 233333331
-      - 266666664
       - 299999997
-      - 333333330
       - 366666663
   H265_HIGH_3840x2160_DR_DOLBY_VISION_DR_BT2020_60p_PIXEL_FORMAT_YCBCR420_734_DOLBY_VISION:
     input: H265_HIGH_3840x2160_DR_DOLBY_VISION_DR_BT2020_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
@@ -1639,102 +1555,102 @@ VideoStreams:
     elPresent: 0
     frame_size:
       - 20208
-      - 776
-      - 1030
-      - 825
-      - 1496
-      - 700
-      - 961
-      - 779
       - 2462
-      - 722
-      - 818
-      - 674
-      - 799
-      - 664
-      - 784
-      - 657
+      - 1496
+      - 1030
+      - 776
+      - 825
+      - 961
+      - 700
+      - 779
       - 928
+      - 799
+      - 818
+      - 722
       - 674
-      - 732
-      - 646
-      - 735
-      - 646
-      - 717
-      - 646
+      - 784
+      - 664
+      - 657
       - 774
-      - 661
-      - 718
-      - 646
-      - 712
+      - 735
+      - 732
+      - 674
       - 646
       - 717
+      - 646
       - 646
       - 729
-      - 661
-      - 718
-      - 646
       - 712
+      - 718
+      - 661
       - 646
       - 717
       - 646
+      - 646
       - 737
-      - 647
-      - 725
-      - 656
-      - 708
-      - 654
-      - 639
+      - 712
+      - 718
+      - 661
+      - 646
+      - 717
+      - 646
+      - 646
       - 638
+      - 708
+      - 725
+      - 647
+      - 656
+      - 639
+      - 654
     PTS:
       - 0
-      - 50050
-      - 100100
-      - 150150
       - 200200
-      - 250250
-      - 300300
-      - 350350
+      - 100100
+      - 50050
+      - 150150
       - 400400
-      - 450450
-      - 500500
-      - 550550
+      - 300300
+      - 250250
+      - 350350
       - 600600
-      - 650650
-      - 700700
-      - 750750
+      - 500500
+      - 450450
+      - 550550
       - 800800
-      - 850850
-      - 900900
-      - 950950
+      - 700700
+      - 650650
+      - 750750
       - 1001000
-      - 1051050
-      - 1101100
-      - 1151150
+      - 900900
+      - 850850
+      - 950950
       - 1201200
-      - 1251250
-      - 1301300
-      - 1351350
+      - 1101100
+      - 1051050
+      - 1151150
       - 1401400
-      - 1451450
-      - 1501500
-      - 1551550
+      - 1301300
+      - 1251250
+      - 1351350
       - 1601600
-      - 1651650
-      - 1701700
-      - 1751750
+      - 1501500
+      - 1451450
+      - 1551550
       - 1801800
-      - 1851850
-      - 1901900
-      - 1951950
+      - 1701700
+      - 1651650
+      - 1751750
       - 2002000
-      - 2052050
-      - 2102100
-      - 2152150
+      - 1901900
+      - 1851850
+      - 1951950
       - 2202200
+      - 2102100
+      - 2052050
+      - 2152150
+      - 2352350
       - 2252250
       - 2302300
-      - 2352350
   H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_METADATA_OVERRIDE_HDR:
     input: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     codec: H265_HEVC  #Video codec information, Refer `Codec` enum
