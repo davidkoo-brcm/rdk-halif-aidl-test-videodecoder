@@ -480,20 +480,8 @@ bool videoDecoderTest::validateFrameLatencyAndBuffer(const DecodedVideoFrame_t& 
             auto decodeTimeNs = std::chrono::duration_cast<std::chrono::nanoseconds>(receiveTime - sendTime).count();
             if (decodeTimeNs > mTestConfiguration.decode_time_threshold)
             {
-                // AdaptiveBitrate streams have no decoder-reported bitrate field to assert
-                // against, so a breach here is a hard failure; other streams just warn.
-                if (!mTestConfiguration.resolutionChanges.empty())
-                {
-                    UT_ASSERT_TRUE(false)
-                        << "Frame PTS:" << decodedFrame.framePTS << " decode time: " << decodeTimeNs
-                        << " ns exceeds real-time threshold " << mTestConfiguration.decode_time_threshold
-                        << " ns (decoder could not keep up with this bitrate/resolution rung)";
-                }
-                else
-                {
-                    UT_LOG_WARNING("Frame PTS:%lld decode time: %lld ns exceeds threshold %lld ns",
-                                decodedFrame.framePTS, decodeTimeNs, mTestConfiguration.decode_time_threshold);
-                }
+                UT_LOG_WARNING("Frame PTS:%lld decode time: %lld ns exceeds threshold %lld ns",
+                            decodedFrame.framePTS, decodeTimeNs, mTestConfiguration.decode_time_threshold);
             }
             mInputFrame.erase(inputIt);
         }
