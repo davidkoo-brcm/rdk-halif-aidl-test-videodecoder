@@ -1503,6 +1503,9 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, const char *m
         testDetails.sink_backpressure = ut_kvp_getBoolField(kvpTestInstance, key.c_str());
         key = streamList + "." + to_string(i) + ".sink_discardFramesUntilPts";
         testDetails.sink_discardFramesUntilPts = static_cast<int64_t>(ut_kvp_getUInt64Field(kvpTestInstance, key.c_str()));
+        key = streamList + "." + to_string(i) + ".frames_to_discard";
+        testDetails.frames_to_discard = ut_kvp_fieldPresent(kvpTestInstance, key.c_str())
+            ? static_cast<int32_t>(ut_kvp_getUInt32Field(kvpTestInstance, key.c_str())) : 0;
         key = streamList + "." + to_string(i) + ".sink_underflow_pts";
         testDetails.sink_underflow_pts = static_cast<int64_t>(ut_kvp_getUInt64Field(kvpTestInstance, key.c_str()));
 

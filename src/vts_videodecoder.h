@@ -285,6 +285,7 @@ struct videoDecoderTestConfiguration_t {
     uint32_t bit_rate; // Bit rate
     uint32_t no_of_frames; // Total frames
     uint32_t decodeErrors;
+    uint32_t frames_to_discard;
     uint32_t framesDropped;
     std::vector<std::tuple<int32_t, int64_t, bool>> frameDetails; // {size, PTS, isErrorFrame}
     std::vector<int64_t> expectedPts; // Added for PTS validation
