@@ -285,6 +285,7 @@ struct videoDecoderTestConfiguration_t {
     uint32_t bit_rate; // Bit rate
     uint32_t no_of_frames; // Total frames
     uint32_t decodeErrors;
+    uint32_t frames_to_discard;
     uint32_t framesDropped;
     std::vector<std::tuple<int32_t, int64_t, bool>> frameDetails; // {size, PTS, isErrorFrame}
     std::vector<int64_t> expectedPts; // Added for PTS validation
@@ -333,8 +334,9 @@ OperationalMode videoDecoderStringToOperationalMode(const std::string& modeStr);
 PixelFormat videoDecoderStringToPixelFormat(const std::string& formatStr);
 videodecoder::CodecProfile videoDecoderStringToCodecProfile(const std::string& profileStr);
 videodecoder::CodecLevel videoDecoderStringToCodecLevel(const std::string& levelStr);
-videodecoder::Profile videoDecoderStringToProfile(const std::string& profileStr, const std::string& levelStr);
+videodecoder::Profile videoDecoderStringToProfile(const std::string& profileStr, const std::string& levelStr, int64_t maxBitrateInBps = 0);
 videodecoder::Colorimetry videoDecoderStringToColorimetry(const std::string& rangeStr, const std::string& matrixStr, const std::string& transferStr, const std::string& primariesStr);
+videodecoder::Colorimetry videoDecoderColorimetryPresetToColorimetry(const std::string& presetStr);
 bool vts_videodecoder_helper_validatePropertyValue(int decoder_id,const std::optional<PropertyValue>& propertyValue, const videodecoder::Property property);
 void vts_videodecoder_helper_validateCapabilities(int32_t decoderId,const videodecoder::Capabilities& capabilities);
 bool vts_videodecoder_helper_checkCodecAttributeExists(const std::string& attrpath, const std::string& codec_name);
@@ -1724,6 +1726,7 @@ public:
 // DecoderTest declaration
 class videoDecoderTest {
 public:
+    int32_t mEOSignaledCount = 0;
     videoDecoderTest(IVideoDecoder::Id decoderId, sp<IVideoDecoder> decoderHandle,
                 sp<VideoDecoderControllerListener> controlListener,
                 sp<VideoDecoderEventListener> eventListener,
