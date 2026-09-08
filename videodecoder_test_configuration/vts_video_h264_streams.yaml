@@ -1518,3 +1518,124 @@ VideoStreams:
       - 166667000
       - 133333000
       - 150000000
+  H264_HIGH_720x480_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420:
+    input: H264_HIGH_720x480_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420.es #Stream Name
+    codec: H264_AVC #Video codec information, Refer `Codec` enum
+    codedWidth: 720
+    codedHeight: 480
+    colorDepth: 8
+    pixelFormat: YCBCR420
+    dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
+    scanType: PROGRESSIVE_FRAME
+    frameRateNumerator: 30 #Frame Rate
+    frameRateDenominator: 1
+    endOfStream: 0
+    stop_start_pts: -1 #`pts` value in nano seconds at which the decoder should be stopped and restarted during the test. -1 indicates that decoder should not be restarted
+    signal_discontinuity_pts: -1 #`pts` value in nano seconds at which the test should signal discontinuity to the decoder. -1 indicates that no discontinuity signal should be sent
+    flush_pts: -1 #`pts` value in nano seconds that determine when the test should flush the decoder. -1 indicates that test should not flush
+    flush_reset_pts: -1 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
+    eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
+    discontinuity: 0
+    lowLatency: 0
+    bit_rate: 2500
+    no_of_frames: 12
+    decodeErrors: 0
+    framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
+    frame_size:
+      - 691
+      - 33
+      - 9
+      - 6859
+      - 810
+      - 168
+      - 219
+      - 184
+      - 723
+      - 212
+      - 230
+      - 215
+      - 775
+      - 206
+      - 247
+    PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
+      - 00000000
+      - 00000000
+      - 00000000
+      - 00000000
+      - 133333000
+      - 66667000
+      - 33333000
+      - 100000000
+      - 166667000
+      - 233333000
+      - 200000000
+      - 300000000
+      - 266667000
+      - 333333000
+      - 400000000
+
+  H264_HIGH_1280x720_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420:
+    input: H264_HIGH_1280x720_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420.es #Stream Name
+    codec: H264_AVC #Video codec information, Refer `Codec` enum
+    codedWidth: 1280
+    codedHeight: 720
+    colorDepth: 8
+    pixelFormat: YCBCR420
+    dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
+    scanType: PROGRESSIVE_FRAME
+    frameRateNumerator: 30 #Frame Rate
+    frameRateDenominator: 1
+    endOfStream: 0
+    stop_start_pts: -1 #`pts` value in nano seconds at which the decoder should be stopped and restarted during the test. -1 indicates that decoder should not be restarted
+    signal_discontinuity_pts: -1 #`pts` value in nano seconds at which the test should signal discontinuity to the decoder. -1 indicates that no discontinuity signal should be sent
+    flush_pts: -1 #`pts` value in nano seconds that determine when the test should flush the decoder. -1 indicates that test should not flush
+    flush_reset_pts: -1 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
+    eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
+    discontinuity: 0
+    lowLatency: 0
+    bit_rate: 5000
+    no_of_frames: 12
+    decodeErrors: 0
+    framesDropped: 0
+    openWithResolutionWidth: -1
+    openWithResolutionHeight: -1
+    pixel_aspect_ratio:
+      numerator: 1
+      denominator: 1
+    frame_size:
+      - 691
+      - 32
+      - 9
+      - 10191
+      - 1377
+      - 395
+      - 524
+      - 1275
+      - 527
+      - 477
+      - 466
+      - 1270
+      - 548
+      - 481
+      - 513
+    PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
+      - 00000000
+      - 00000000
+      - 00000000
+      - 00000000
+      - 133333000
+      - 66667000
+      - 33333000
+      - 100000000
+      - 166667000
+      - 233333000
+      - 200000000
+      - 300000000
+      - 266667000
+      - 333333000
+      - 400000000

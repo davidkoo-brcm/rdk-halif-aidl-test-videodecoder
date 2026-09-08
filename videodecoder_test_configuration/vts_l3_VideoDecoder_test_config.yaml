@@ -104,6 +104,20 @@ videodecoder:
             sink_backpressure: false # Enable backpressure to the sink
             sink_discardFramesUntilPts: -1
             sink_underflow_pts: -1
+          - codec: H264_AVC
+            Name: H264_HIGH_720x480_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
+          - codec: H264_AVC
+            Name: H264_HIGH_1280x720_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420
+            rms_diff_threshold: 0.5
+            decode_time_threshold: 10000000
+            sink_backpressure: false # Enable backpressure to the sink
+            sink_discardFramesUntilPts: -1
+            sink_underflow_pts: -1
     Decode_Sequential_NonTunnel_NonSecure_Error:
       Controls:
         delay_between_decode_calls: 1
