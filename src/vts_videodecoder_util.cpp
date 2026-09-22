@@ -440,6 +440,16 @@ bool vts_videodecoder_helper_validatePropertyValue(int decoder_id,const std::opt
     }
 }
 
+void vts_videodecoder_get_available_id(std::vector<int32_t> &availableIds)
+{
+    string videodecoderpath = VIDEODECODERMGR_IVIDEODECODER;
+    int32_t number_of_videodecoders = UT_KVP_PROFILE_GET_LIST_COUNT(videodecoderpath.c_str());
+    availableIds.clear();
+    for (int32_t i = 0; i < number_of_videodecoders; ++i)
+    {
+        availableIds.push_back(i);
+    }
+}
 
 UT_status_t vts_videodecoder_parseVideoDecoderHFP()
 {

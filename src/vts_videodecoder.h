@@ -347,6 +347,7 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, const char *m
                                               const char *testGroup, const char *testName,
                                               std::vector<videoDecoderTestConfiguration_t>& testConfiguration);
 
+void vts_videodecoder_get_available_id(std::vector<int32_t> &availableIds);
 UT_status_t vts_videodecoder_parseVideoDecoderHFP();
 
 size_t vts_bytesPerPixel(PixelFormat format);
