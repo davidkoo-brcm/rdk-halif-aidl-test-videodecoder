@@ -444,8 +444,6 @@ void videoDecoderTest::startDecoding()
             AVBUFFER_FREE_SUCCESS(mAVBufferManager, postEosBufferHandle);
             VIDEODECODER_STOP_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
             VIDEODECODER_START_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
-            // Exit the loop and not process any more frames after EOS is signaled.
-            break;
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(mTestConfiguration.decoderDelay));
