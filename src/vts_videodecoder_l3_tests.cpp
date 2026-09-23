@@ -417,7 +417,7 @@ public:
  *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 001
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_NonTunnel_NonSecure)
 {
     const char *testName = "Decode_Sequential_NonTunnel_NonSecure";
     bool secureMode = false;
@@ -431,7 +431,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure)
  *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 002
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_CODEC)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_NonTunnel_NonSecure_CODEC)
 {
     const char *testName = "Decode_Sequential_NonTunnel_NonSecure_CODEC";
     bool secureMode = false;
@@ -445,7 +445,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_CODEC)
  *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 004
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_HDRModes)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_NonTunnel_NonSecure_HDRModes)
 {
     const char *testName = "Decode_Sequential_NonTunnel_NonSecure_HDRModes";
     bool secureMode = false;
@@ -459,7 +459,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_HDRModes)
  *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 005
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_FrameRate)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_NonTunnel_NonSecure_FrameRate)
 {
     const char *testName = "Decode_Sequential_NonTunnel_NonSecure_FrameRate";
     bool secureMode = false;
@@ -473,7 +473,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_FrameRate
  *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 006
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_LowLatency)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_NonTunnel_NonSecure_LowLatency)
 {
     const char *testName = "Decode_Sequential_NonTunnel_NonSecure_LowLatency";
     bool secureMode = false;
@@ -487,7 +487,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_LowLatenc
  *        as the decoder switches mid-stream. Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 007
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_AdaptiveBitrate)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_NonTunnel_NonSecure_AdaptiveBitrate)
 {
     const char *testName = "Decode_Sequential_NonTunnel_NonSecure_AdaptiveBitrate";
     bool secureMode = false;
@@ -502,7 +502,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_AdaptiveB
  *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 008
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_GOP)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_NonTunnel_NonSecure_GOP)
 {
     const char *testName = "Decode_Sequential_NonTunnel_NonSecure_GOP";
     bool secureMode = false;
@@ -516,7 +516,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_GOP)
  *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 009
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_Discontinuity)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_NonTunnel_NonSecure_Discontinuity)
 {
     const char *testName = "Decode_Sequential_NonTunnel_NonSecure_Discontinuity";
     bool secureMode = false;
@@ -530,7 +530,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_Discontin
  *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 010
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_EOS)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_NonTunnel_NonSecure_EOS)
 {
     const char *testName = "Decode_Sequential_NonTunnel_NonSecure_EOS";
     bool secureMode = false;
@@ -544,7 +544,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_EOS)
  *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 011
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_Flush)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_NonTunnel_NonSecure_Flush)
 {
     const char *testName = "Decode_Sequential_NonTunnel_NonSecure_Flush";
     bool secureMode = false;
@@ -558,7 +558,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_Flush)
  *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 012
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_FlushReset)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_NonTunnel_NonSecure_FlushReset)
 {
     const char *testName = "Decode_Sequential_NonTunnel_NonSecure_FlushReset";
     bool secureMode = false;
@@ -572,7 +572,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_FlushRese
  *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 013
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_Error)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_NonTunnel_NonSecure_Error)
 {
     const char *testName = "Decode_Sequential_NonTunnel_NonSecure_Error";
     bool secureMode = false;
@@ -586,7 +586,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_Error)
  *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 014
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_Error_Discontinuity)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_NonTunnel_NonSecure_Error_Discontinuity)
 {
     const char *testName = "Decode_Sequential_NonTunnel_NonSecure_Error_Discontinuity";
     bool secureMode = false;
@@ -600,7 +600,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_Error_Dis
  *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 015
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_Error_EOS)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_NonTunnel_NonSecure_Error_EOS)
 {
     const char *testName = "Decode_Sequential_NonTunnel_NonSecure_Error_EOS";
     bool secureMode = false;
@@ -614,7 +614,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_Error_EOS
  *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 016
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_Discontinuity_EOS)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_NonTunnel_NonSecure_Discontinuity_EOS)
 {
     const char *testName = "Decode_Sequential_NonTunnel_NonSecure_Discontinuity_EOS";
     bool secureMode = false;
@@ -628,7 +628,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_Discontin
  *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 017
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_Flush_Error)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_NonTunnel_NonSecure_Flush_Error)
 {
     const char *testName = "Decode_Sequential_NonTunnel_NonSecure_Flush_Error";
     bool secureMode = false;
@@ -642,7 +642,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_Flush_Err
  *        Decoding type: Sequential, Modes: Non-Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 018
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_FlushReset_Error)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_NonTunnel_NonSecure_FlushReset_Error)
 {
     const char *testName = "Decode_Sequential_NonTunnel_NonSecure_FlushReset_Error";
     bool secureMode = false;
@@ -660,7 +660,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_FlushRese
  * **Test Case ID:** 019 @n
  * **Priority:** High @n
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_MetadataOverride_HDR)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_NonTunnel_NonSecure_MetadataOverride_HDR)
 {
     const char *testName = "Decode_Sequential_NonTunnel_NonSecure_MetadataOverride_HDR";
     bool secureMode = false;
@@ -677,7 +677,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_MetadataO
  * **Test Case ID:** 020 @n
  * **Priority:** High @n
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_MetadataOverride_SSAI)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_NonTunnel_NonSecure_MetadataOverride_SSAI)
 {
     const char *testName = "Decode_Sequential_NonTunnel_NonSecure_MetadataOverride_SSAI";
     bool secureMode = false;
@@ -694,7 +694,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_MetadataO
  * **Test Case ID:** 021 @n
  * **Priority:** Medium @n
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_MetadataOverride_PAR)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_NonTunnel_NonSecure_MetadataOverride_PAR)
 {
     const char *testName = "Decode_Sequential_NonTunnel_NonSecure_MetadataOverride_PAR";
     bool secureMode = false;
@@ -708,7 +708,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_NonSecure_MetadataO
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 022
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Concurrent_NonTunnel_NonSecure)
 {
     const char *testName = "Decode_Concurrent_NonTunnel_NonSecure";
     bool secureMode = false;
@@ -722,7 +722,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure)
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 023
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_CODEC)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Concurrent_NonTunnel_NonSecure_CODEC)
 {
     const char *testName = "Decode_Concurrent_NonTunnel_NonSecure_CODEC";
     bool secureMode = false;
@@ -736,7 +736,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_CODEC)
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 024
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_AdaptiveBitrate)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Concurrent_NonTunnel_NonSecure_AdaptiveBitrate)
 {
     const char *testName = "Decode_Concurrent_NonTunnel_NonSecure_AdaptiveBitrate";
     bool secureMode = false;
@@ -750,7 +750,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_AdaptiveB
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 025
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_HDRModes)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Concurrent_NonTunnel_NonSecure_HDRModes)
 {
     const char *testName = "Decode_Concurrent_NonTunnel_NonSecure_HDRModes";
     bool secureMode = false;
@@ -764,7 +764,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_HDRModes)
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 026
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_FrameRate)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Concurrent_NonTunnel_NonSecure_FrameRate)
 {
     const char *testName = "Decode_Concurrent_NonTunnel_NonSecure_FrameRate";
     bool secureMode = false;
@@ -778,7 +778,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_FrameRate
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 027
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_LowLatency)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Concurrent_NonTunnel_NonSecure_LowLatency)
 {
     const char *testName = "Decode_Concurrent_NonTunnel_NonSecure_LowLatency";
     bool secureMode = false;
@@ -792,7 +792,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_LowLatenc
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 028
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_GOPStructure)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Concurrent_NonTunnel_NonSecure_GOPStructure)
 {
     const char *testName = "Decode_Concurrent_NonTunnel_NonSecure_GOPStructure";
     bool secureMode = false;
@@ -806,7 +806,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_GOPStruct
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 029
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_Discontinuity)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Concurrent_NonTunnel_NonSecure_Discontinuity)
 {
     const char *testName = "Decode_Concurrent_NonTunnel_NonSecure_Discontinuity";
     bool secureMode = false;
@@ -820,7 +820,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_Discontin
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 030
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_EOS)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Concurrent_NonTunnel_NonSecure_EOS)
 {
     const char *testName = "Decode_Concurrent_NonTunnel_NonSecure_EOS";
     bool secureMode = false;
@@ -834,7 +834,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_EOS)
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 031
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_Flush)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Concurrent_NonTunnel_NonSecure_Flush)
 {
     const char *testName = "Decode_Concurrent_NonTunnel_NonSecure_Flush";
     bool secureMode = false;
@@ -848,7 +848,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_Flush)
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 032
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_FlushReset)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Concurrent_NonTunnel_NonSecure_FlushReset)
 {
     const char *testName = "Decode_Concurrent_NonTunnel_NonSecure_FlushReset";
     bool secureMode = false;
@@ -862,7 +862,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_FlushRese
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 033
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_Error)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Concurrent_NonTunnel_NonSecure_Error)
 {
     const char *testName = "Decode_Concurrent_NonTunnel_NonSecure_Error";
     bool secureMode = false;
@@ -876,7 +876,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_NonSecure_Error)
  *        Decoding type: Sequential, Modes: Non-Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 034
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_NonTunnel_Secure)
 {
     const char *testName = "Decode_Sequential_NonTunnel_Secure";
     bool secureMode = true;
@@ -890,7 +890,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure)
  *        Decoding type: Sequential, Modes: Non-Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 035
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_CODEC)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_NonTunnel_Secure_CODEC)
 {
     const char *testName = "Decode_Sequential_NonTunnel_Secure_CODEC";
     bool secureMode = true;
@@ -904,7 +904,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_CODEC)
  *        Decoding type: Sequential, Modes: Non-Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 036
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_AdaptiveBitrate)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_NonTunnel_Secure_AdaptiveBitrate)
 {
     const char *testName = "Decode_Sequential_NonTunnel_Secure_AdaptiveBitrate";
     bool secureMode = true;
@@ -918,7 +918,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_AdaptiveBitr
  *        Decoding type: Sequential, Modes: Non-Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 037
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_HDRModes)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_NonTunnel_Secure_HDRModes)
 {
     const char *testName = "Decode_Sequential_NonTunnel_Secure_HDRModes";
     bool secureMode = true;
@@ -932,7 +932,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_HDRModes)
  *        Decoding type: Sequential, Modes: Non-Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 038
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_FrameRate)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_NonTunnel_Secure_FrameRate)
 {
     const char *testName = "Decode_Sequential_NonTunnel_Secure_FrameRate";
     bool secureMode = true;
@@ -946,7 +946,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_FrameRate)
  *        Decoding type: Sequential, Modes: Non-Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 039
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_LowLatency)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_NonTunnel_Secure_LowLatency)
 {
     const char *testName = "Decode_Sequential_NonTunnel_Secure_LowLatency";
     bool secureMode = true;
@@ -960,7 +960,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_LowLatency)
  *        Decoding type: Sequential, Modes: Non-Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 040
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_GOP)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_NonTunnel_Secure_GOP)
 {
     const char *testName = "Decode_Sequential_NonTunnel_Secure_GOP";
     bool secureMode = true;
@@ -974,7 +974,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_GOP)
  *        Decoding type: Sequential, Modes: Non-Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 041
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_Discontinuity)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_NonTunnel_Secure_Discontinuity)
 {
     const char *testName = "Decode_Sequential_NonTunnel_Secure_Discontinuity";
     bool secureMode = true;
@@ -988,7 +988,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_Discontinuit
  *        Decoding type: Sequential, Modes: Non-Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 042
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_EOS)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_NonTunnel_Secure_EOS)
 {
     const char *testName = "Decode_Sequential_NonTunnel_Secure_EOS";
     bool secureMode = true;
@@ -1002,7 +1002,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_EOS)
  *        Decoding type: Sequential, Modes: Non-Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 043
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_Flush)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_NonTunnel_Secure_Flush)
 {
     const char *testName = "Decode_Sequential_NonTunnel_Secure_Flush";
     bool secureMode = true;
@@ -1016,7 +1016,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_Flush)
  *        Decoding type: Sequential, Modes: Non-Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 044
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_FlushReset)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_NonTunnel_Secure_FlushReset)
 {
     const char *testName = "Decode_Sequential_NonTunnel_Secure_FlushReset";
     bool secureMode = true;
@@ -1030,7 +1030,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_FlushReset)
  *        Decoding type: Sequential, Modes: Non-Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 045
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_Error)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_NonTunnel_Secure_Error)
 {
     const char *testName = "Decode_Sequential_NonTunnel_Secure_Error";
     bool secureMode = true;
@@ -1044,7 +1044,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_NonTunnel_Secure_Error)
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 046
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Concurrent_NonTunnel_Secure)
 {
     const char *testName = "Decode_Concurrent_NonTunnel_Secure";
     bool secureMode = true;
@@ -1058,7 +1058,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure)
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 047
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_CODEC)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Concurrent_NonTunnel_Secure_CODEC)
 {
     const char *testName = "Decode_Concurrent_NonTunnel_Secure_CODEC";
     bool secureMode = true;
@@ -1072,7 +1072,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_CODEC)
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 048
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_AdaptiveBitrate)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Concurrent_NonTunnel_Secure_AdaptiveBitrate)
 {
     const char *testName = "Decode_Concurrent_NonTunnel_Secure_AdaptiveBitrate";
     bool secureMode = true;
@@ -1086,7 +1086,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_AdaptiveBitr
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 049
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_HDRModes)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Concurrent_NonTunnel_Secure_HDRModes)
 {
     const char *testName = "Decode_Concurrent_NonTunnel_Secure_HDRModes";
     bool secureMode = true;
@@ -1100,7 +1100,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_HDRModes)
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 050
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_FrameRate)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Concurrent_NonTunnel_Secure_FrameRate)
 {
     const char *testName = "Decode_Concurrent_NonTunnel_Secure_FrameRate";
     bool secureMode = true;
@@ -1114,7 +1114,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_FrameRate)
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 051
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_LowLatency)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Concurrent_NonTunnel_Secure_LowLatency)
 {
     const char *testName = "Decode_Concurrent_NonTunnel_Secure_LowLatency";
     bool secureMode = true;
@@ -1129,7 +1129,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_LowLatency)
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 052
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_GOPStructure)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Concurrent_NonTunnel_Secure_GOPStructure)
 {
     const char *testName = "Decode_Concurrent_NonTunnel_Secure_GOPStructure";
     bool secureMode = true;
@@ -1143,7 +1143,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_GOPStructure
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 053
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_Discontinuity)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Concurrent_NonTunnel_Secure_Discontinuity)
 {
     const char *testName = "Decode_Concurrent_NonTunnel_Secure_Discontinuity";
     bool secureMode = true;
@@ -1157,7 +1157,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_Discontinuit
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 054
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_EOS)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Concurrent_NonTunnel_Secure_EOS)
 {
     const char *testName = "Decode_Concurrent_NonTunnel_Secure_EOS";
     bool secureMode = true;
@@ -1171,7 +1171,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_EOS)
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 055
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_Flush)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Concurrent_NonTunnel_Secure_Flush)
 {
     const char *testName = "Decode_Concurrent_NonTunnel_Secure_Flush";
     bool secureMode = true;
@@ -1185,7 +1185,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_Flush)
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 056
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_FlushReset)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Concurrent_NonTunnel_Secure_FlushReset)
 {
     const char *testName = "Decode_Concurrent_NonTunnel_Secure_FlushReset";
     bool secureMode = true;
@@ -1199,7 +1199,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_FlushReset)
  *        Decoding type: Concurrent, Modes: Non-Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 057
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_Error)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Concurrent_NonTunnel_Secure_Error)
 {
     const char *testName = "Decode_Concurrent_NonTunnel_Secure_Error";
     bool secureMode = true;
@@ -1213,7 +1213,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_NonTunnel_Secure_Error)
  *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 058
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_Tunnel_NonSecure)
 {
     const char *testName = "Decode_Sequential_Tunnel_NonSecure";
     bool secureMode = false;
@@ -1227,7 +1227,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure)
  *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 059
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_CODEC)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_Tunnel_NonSecure_CODEC)
 {
     const char *testName = "Decode_Sequential_Tunnel_NonSecure_CODEC";
     bool secureMode = false;
@@ -1241,7 +1241,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_CODEC)
  *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 060
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_AdaptiveBitrate)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_Tunnel_NonSecure_AdaptiveBitrate)
 {
     const char *testName = "Decode_Sequential_Tunnel_NonSecure_AdaptiveBitrate";
     bool secureMode = false;
@@ -1255,7 +1255,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_AdaptiveBitr
  *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 061
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_HDRModes)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_Tunnel_NonSecure_HDRModes)
 {
     const char *testName = "Decode_Sequential_Tunnel_NonSecure_HDRModes";
     bool secureMode = false;
@@ -1269,7 +1269,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_HDRModes)
  *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 062
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_FrameRate)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_Tunnel_NonSecure_FrameRate)
 {
     const char *testName = "Decode_Sequential_Tunnel_NonSecure_FrameRate";
     bool secureMode = false;
@@ -1283,7 +1283,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_FrameRate)
  *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 063
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_LowLatency)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_Tunnel_NonSecure_LowLatency)
 {
     const char *testName = "Decode_Sequential_Tunnel_NonSecure_LowLatency";
     bool secureMode = false;
@@ -1297,7 +1297,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_LowLatency)
  *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 064
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_GOPStructure)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_Tunnel_NonSecure_GOPStructure)
 {
     const char *testName = "Decode_Sequential_Tunnel_NonSecure_GOPStructure";
     bool secureMode = false;
@@ -1311,7 +1311,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_GOPStructure
  *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 065
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_Discontinuity)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_Tunnel_NonSecure_Discontinuity)
 {
     const char *testName = "Decode_Sequential_Tunnel_NonSecure_Discontinuity";
     bool secureMode = false;
@@ -1325,7 +1325,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_Discontinuit
  *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 066
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_EOS)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_Tunnel_NonSecure_EOS)
 {
     const char *testName = "Decode_Sequential_Tunnel_NonSecure_EOS";
     bool secureMode = false;
@@ -1339,7 +1339,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_EOS)
  *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 067
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_Flush)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_Tunnel_NonSecure_Flush)
 {
     const char *testName = "Decode_Sequential_Tunnel_NonSecure_Flush";
     bool secureMode = false;
@@ -1353,7 +1353,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_Flush)
  *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 068
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_FlushReset)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_Tunnel_NonSecure_FlushReset)
 {
     const char *testName = "Decode_Sequential_Tunnel_NonSecure_FlushReset";
     bool secureMode = false;
@@ -1367,7 +1367,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_FlushReset)
  *        Decoding type: Sequential, Modes: Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 069
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_Error)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_Tunnel_NonSecure_Error)
 {
     const char *testName = "Decode_Sequential_Tunnel_NonSecure_Error";
     bool secureMode = false;
@@ -1381,7 +1381,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_NonSecure_Error)
  *        Decoding type: Concurrent, Modes: Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 070
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Concurrent_Tunnel_NonSecure)
 {
     const char *testName = "Decode_Concurrent_Tunnel_NonSecure";
     bool secureMode = false;
@@ -1395,7 +1395,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure)
  *        Decoding type: Concurrent, Modes: Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 071
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_CODEC)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Concurrent_Tunnel_NonSecure_CODEC)
 {
     const char *testName = "Decode_Concurrent_Tunnel_NonSecure_CODEC";
     bool secureMode = false;
@@ -1409,7 +1409,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_CODEC)
  *        Decoding type: Concurrent, Modes: Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 072
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_AdaptiveBitrate)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Concurrent_Tunnel_NonSecure_AdaptiveBitrate)
 {
     const char *testName = "Decode_Concurrent_Tunnel_NonSecure_AdaptiveBitrate";
     bool secureMode = false;
@@ -1423,7 +1423,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_AdaptiveBitr
  *        Decoding type: Concurrent, Modes: Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 073
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_HDRModes)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Concurrent_Tunnel_NonSecure_HDRModes)
 {
     const char *testName = "Decode_Concurrent_Tunnel_NonSecure_HDRModes";
     bool secureMode = false;
@@ -1437,7 +1437,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_HDRModes)
  *        Decoding type: Concurrent, Modes: Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 074
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_FrameRate)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Concurrent_Tunnel_NonSecure_FrameRate)
 {
     const char *testName = "Decode_Concurrent_Tunnel_NonSecure_FrameRate";
     bool secureMode = false;
@@ -1451,7 +1451,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_FrameRate)
  *        Decoding type: Concurrent, Modes: Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 075
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_LowLatency)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Concurrent_Tunnel_NonSecure_LowLatency)
 {
     const char *testName = "Decode_Concurrent_Tunnel_NonSecure_LowLatency";
     bool secureMode = false;
@@ -1465,7 +1465,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_LowLatency)
  *        Decoding type: Concurrent, Modes: Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 076
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_GOPStructure)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Concurrent_Tunnel_NonSecure_GOPStructure)
 {
     const char *testName = "Decode_Concurrent_Tunnel_NonSecure_GOPStructure";
     bool secureMode = false;
@@ -1479,7 +1479,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_GOPStructure
  *        Decoding type: Concurrent, Modes: Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 077
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_Discontinuity)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Concurrent_Tunnel_NonSecure_Discontinuity)
 {
     const char *testName = "Decode_Concurrent_Tunnel_NonSecure_Discontinuity";
     bool secureMode = false;
@@ -1493,7 +1493,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_Discontinuit
  *        Decoding type: Concurrent, Modes: Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 078
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_EOS)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Concurrent_Tunnel_NonSecure_EOS)
 {
     const char *testName = "Decode_Concurrent_Tunnel_NonSecure_EOS";
     bool secureMode = false;
@@ -1507,7 +1507,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_EOS)
  *        Decoding type: Concurrent, Modes: Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 079
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_Flush)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Concurrent_Tunnel_NonSecure_Flush)
 {
     const char *testName = "Decode_Concurrent_Tunnel_NonSecure_Flush";
     bool secureMode = false;
@@ -1521,7 +1521,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_Flush)
  *        Decoding type: Concurrent, Modes: Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 080
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_FlushReset)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Concurrent_Tunnel_NonSecure_FlushReset)
 {
     const char *testName = "Decode_Concurrent_Tunnel_NonSecure_FlushReset";
     bool secureMode = false;
@@ -1535,7 +1535,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_FlushReset)
  *        Decoding type: Concurrent, Modes: Tunnel, Non-Secure
  * **Test Group ID:** 01 **Test Case ID:** 081
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_Error)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Concurrent_Tunnel_NonSecure_Error)
 {
     const char *testName = "Decode_Concurrent_Tunnel_NonSecure_Error";
     bool secureMode = false;
@@ -1549,7 +1549,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_NonSecure_Error)
  *        Decoding type: Sequential, Modes: Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 082
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_Tunnel_Secure)
 {
     const char *testName = "Decode_Sequential_Tunnel_Secure";
     bool secureMode = true;
@@ -1563,7 +1563,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure)
  *        Decoding type: Sequential, Modes: Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 083
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_CODEC)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_Tunnel_Secure_CODEC)
 {
     const char *testName = "Decode_Sequential_Tunnel_Secure_CODEC";
     bool secureMode = true;
@@ -1577,7 +1577,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_CODEC)
  *        Decoding type: Sequential, Modes: Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 084
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_AdaptiveBitrate)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_Tunnel_Secure_AdaptiveBitrate)
 {
     const char *testName = "Decode_Sequential_Tunnel_Secure_AdaptiveBitrate";
     bool secureMode = true;
@@ -1591,7 +1591,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_AdaptiveBitrate
  *        Decoding type: Sequential, Modes: Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 085
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_HDRModes)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_Tunnel_Secure_HDRModes)
 {
     const char *testName = "Decode_Sequential_Tunnel_Secure_HDRModes";
     bool secureMode = true;
@@ -1605,7 +1605,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_HDRModes)
  *        Decoding type: Sequential, Modes: Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 086
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_FrameRate)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_Tunnel_Secure_FrameRate)
 {
     const char *testName = "Decode_Sequential_Tunnel_Secure_FrameRate";
     bool secureMode = true;
@@ -1619,7 +1619,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_FrameRate)
  *        Decoding type: Sequential, Modes: Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 087
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_LowLatency)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_Tunnel_Secure_LowLatency)
 {
     const char *testName = "Decode_Sequential_Tunnel_Secure_LowLatency";
     bool secureMode = true;
@@ -1633,7 +1633,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_LowLatency)
  *        Decoding type: Sequential, Modes: Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 088
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_GOPStructure)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_Tunnel_Secure_GOPStructure)
 {
     const char *testName = "Decode_Sequential_Tunnel_Secure_GOPStructure";
     bool secureMode = true;
@@ -1647,7 +1647,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_GOPStructure)
  *        Decoding type: Sequential, Modes: Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 089
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_Discontinuity)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_Tunnel_Secure_Discontinuity)
 {
     const char *testName = "Decode_Sequential_Tunnel_Secure_Discontinuity";
     bool secureMode = true;
@@ -1661,7 +1661,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_Discontinuity)
  *        Decoding type: Sequential, Modes: Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 090
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_EOS)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_Tunnel_Secure_EOS)
 {
     const char *testName = "Decode_Sequential_Tunnel_Secure_EOS";
     bool secureMode = true;
@@ -1675,7 +1675,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_EOS)
  *        Decoding type: Sequential, Modes: Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 091
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_Flush)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_Tunnel_Secure_Flush)
 {
     const char *testName = "Decode_Sequential_Tunnel_Secure_Flush";
     bool secureMode = true;
@@ -1689,7 +1689,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_Flush)
  *        Decoding type: Sequential, Modes: Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 092
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_FlushReset)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_Tunnel_Secure_FlushReset)
 {
     const char *testName = "Decode_Sequential_Tunnel_Secure_FlushReset";
     bool secureMode = true;
@@ -1703,7 +1703,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_FlushReset)
  *        Decoding type: Sequential, Modes: Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 093
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_Error)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Sequential_Tunnel_Secure_Error)
 {
     const char *testName = "Decode_Sequential_Tunnel_Secure_Error";
     bool secureMode = true;
@@ -1717,7 +1717,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Sequential_Tunnel_Secure_Error)
  *        Decoding type: Concurrent, Modes: Tunnel, Secure
  * **Test Group ID:** 01 **Test Case ID:** 094
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_Secure)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_Concurrent_Tunnel_Secure)
 {
     const char *testName = "Decode_Concurrent_Tunnel_Secure";
     bool secureMode = true;
@@ -1731,7 +1731,7 @@ UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_Concurrent_Tunnel_Secure)
  *        Verifies one callback is emitted when queue transitions from full to has-space.
  * **Test Group ID:** 01 **Test Case ID:** 095
  */
-UT_ADD_TEST(VTS_L3_VideoDecoder, Decode_BackPressure_Callback)
+UT_ADD_TEST(VTS_L3_VideoDecoder, VDecode_BackPressure_Callback)
 {
     runTest("Decode_BackPressure_Callback", false, false, false);
 }
