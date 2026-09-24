@@ -285,6 +285,7 @@ struct videoDecoderTestConfiguration_t {
     uint32_t bit_rate; // Bit rate
     uint32_t no_of_frames; // Total frames
     uint32_t decodeErrors;
+    uint32_t frames_to_discard;
     uint32_t framesDropped;
     std::vector<std::tuple<int32_t, int64_t, bool>> frameDetails; // {size, PTS, isErrorFrame}
     std::vector<int64_t> expectedPts; // Added for PTS validation
@@ -333,8 +334,9 @@ OperationalMode videoDecoderStringToOperationalMode(const std::string& modeStr);
 PixelFormat videoDecoderStringToPixelFormat(const std::string& formatStr);
 videodecoder::CodecProfile videoDecoderStringToCodecProfile(const std::string& profileStr);
 videodecoder::CodecLevel videoDecoderStringToCodecLevel(const std::string& levelStr);
-videodecoder::Profile videoDecoderStringToProfile(const std::string& profileStr, const std::string& levelStr);
+videodecoder::Profile videoDecoderStringToProfile(const std::string& profileStr, const std::string& levelStr, int64_t maxBitrateInBps = 0);
 videodecoder::Colorimetry videoDecoderStringToColorimetry(const std::string& rangeStr, const std::string& matrixStr, const std::string& transferStr, const std::string& primariesStr);
+videodecoder::Colorimetry videoDecoderColorimetryPresetToColorimetry(const std::string& presetStr);
 bool vts_videodecoder_helper_validatePropertyValue(int decoder_id,const std::optional<PropertyValue>& propertyValue, const videodecoder::Property property);
 void vts_videodecoder_helper_validateCapabilities(int32_t decoderId,const videodecoder::Capabilities& capabilities);
 bool vts_videodecoder_helper_checkCodecAttributeExists(const std::string& attrpath, const std::string& codec_name);
@@ -345,6 +347,7 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, const char *m
                                               const char *testGroup, const char *testName,
                                               std::vector<videoDecoderTestConfiguration_t>& testConfiguration);
 
+void vts_videodecoder_get_available_id(std::vector<int32_t> &availableIds);
 UT_status_t vts_videodecoder_parseVideoDecoderHFP();
 
 size_t vts_bytesPerPixel(PixelFormat format);
@@ -1334,10 +1337,6 @@ do { \
             UT_ASSERT_EQUAL(status.exceptionCode(), Status::EX_NONE); \
             UT_ASSERT_FALSE(decodeResult) << "decodeBufferWithMetadata returned true unexpectedly"; \
         } \
-        if(frameBufferHandle != -1) \
-        { \
-            AVBUFFER_FREE_SUCCESS(gAVBufferManager, frameBufferHandle);\
-        } \
     } while (0)
 
 #define VIDEODECODER_SETSTREAMCONFIG_SUCCESS(videoDecoderController, streamConfig) \
@@ -1728,6 +1727,7 @@ public:
 // DecoderTest declaration
 class videoDecoderTest {
 public:
+    int32_t mEOSignaledCount = 0;
     videoDecoderTest(IVideoDecoder::Id decoderId, sp<IVideoDecoder> decoderHandle,
                 sp<VideoDecoderControllerListener> controlListener,
                 sp<VideoDecoderEventListener> eventListener,
