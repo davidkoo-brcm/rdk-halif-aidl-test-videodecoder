@@ -54,6 +54,21 @@
 using namespace std::chrono;
 using namespace std;
 
+/**
+ * @brief Returns the offset of the next start code after @p offset, or @p fileSize if none.
+ */
+static uint64_t findNextStartCode(const std::vector<uint8_t>& inputBuffer, uint64_t fileSize, uint64_t offset)
+{
+    for (uint64_t pos = offset + 3; pos + 3 <= fileSize; ++pos)
+    {
+        if (inputBuffer[pos] == 0 && inputBuffer[pos + 1] == 0 && inputBuffer[pos + 2] == 1)
+        {
+            return (inputBuffer[pos - 1] == 0 && pos - 1 > offset) ? pos - 1 : pos;
+        }
+    }
+    return fileSize;
+}
+
 std::vector<std::tuple<uint64_t, uint32_t, int64_t>> videoDecoderTest::parseFrames(const std::vector<uint8_t>& inputBuffer, uint64_t fileSize, com::rdk::hal::videodecoder::Codec codec)
 {
     std::vector<std::tuple<uint64_t, uint32_t, int64_t>> frames; // {offset, size, pts}
@@ -157,8 +172,20 @@ std::vector<std::tuple<uint64_t, uint32_t, int64_t>> videoDecoderTest::parseFram
                 int64_t pts = (frameIndex < mTestConfiguration.frameDetails.size()) ?
                               std::get<1>(mTestConfiguration.frameDetails[frameIndex]) :
                               static_cast<int64_t>(timestamp); // Use IVF timestamp
-                frames.emplace_back(frameStart, frameSize, pts);
-                UT_LOG_INFO("VP9 IVF frame: offset=%llu, size=%u, pts=%lld", frameStart, frameSize, pts);
+
+                // Error frame: send the smaller YAML size; the next frame still starts at the real size.
+                uint32_t sendSize = frameSize;
+                if (frameIndex < mTestConfiguration.frameDetails.size())
+                {
+                    int32_t yamlSize = std::get<0>(mTestConfiguration.frameDetails[frameIndex]);
+                    if (yamlSize > 0 && static_cast<uint32_t>(yamlSize) < frameSize)
+                    {
+                        UT_LOG_INFO("VP9 truncated frame %zu: sending %d of %u bytes", frameIndex, yamlSize, frameSize);
+                        sendSize = static_cast<uint32_t>(yamlSize);
+                    }
+                }
+                frames.emplace_back(frameStart, sendSize, pts);
+                UT_LOG_INFO("VP9 IVF frame: offset=%llu, size=%u, pts=%lld", frameStart, sendSize, pts);
 
                 pos = frameStart + frameSize;
                 frameIndex++;
@@ -287,7 +314,20 @@ bool videoDecoderTest::makeFrame()
             mFrameData.emplace_back(offset, size, pts, isErrorFrame);
             UT_LOG_DEBUG("Codec:%d Frame from frameDetails: offset=%llu, size=%u, pts=%lld, errorFrame=%d",
                         mTestConfiguration.codec, offset, size, pts, isErrorFrame);
-            offset += size;
+
+            // Error frame: skip to the real start of the next frame, so later frames stay aligned.
+            uint64_t nextStart = findNextStartCode(mInputBuffer, fileSize, offset);
+            uint64_t realSize = nextStart - offset;
+            if (nextStart < fileSize && static_cast<uint64_t>(size) < realSize)
+            {
+                UT_LOG_INFO("Codec:%d Truncated frame at offset=%llu: sending %u of %llu bytes",
+                            mTestConfiguration.codec, offset, size, realSize);
+                offset += realSize;
+            }
+            else
+            {
+                offset += size;
+            }
         }
     }
     else

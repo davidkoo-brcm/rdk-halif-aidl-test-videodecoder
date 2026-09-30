@@ -310,6 +310,7 @@ void videoDecoderTest::startDecoding()
 {
     int64_t videoBufferHandle = 0;
     mEOSignaledCount= 0; //before start decode reset the count to 0
+    mFramesSentBeforeFlush = 0;
 
     UT_LOG_DEBUG("[PID: %d, TID: %d] startDecoding Start", getpid(), syscall(SYS_gettid));
 
@@ -386,12 +387,16 @@ void videoDecoderTest::startDecoding()
         {
             UT_LOG_INFO("Flushing decoder at PTS:%lld", framePTS);
             VIDEODECODER_FLUSH_SUCCESS(mDecoderHandle, mVideoDecoderController, false, true);
+            mFramesSentBeforeFlush = i;
+            mFlushEndTime = std::chrono::steady_clock::now();
             VIDEODECODER_SIGNAL_DISCONTINUITY_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
         }
         if (mTestConfiguration.flushResetPts == framePTS)
         {
             UT_LOG_INFO("Flush reset at PTS:%lld", framePTS);
             VIDEODECODER_FLUSH_SUCCESS(mDecoderHandle, mVideoDecoderController, true, true);
+            mFramesSentBeforeFlush = i;
+            mFlushEndTime = std::chrono::steady_clock::now();
             VIDEODECODER_START_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
         }
 
@@ -458,6 +463,32 @@ bool videoDecoderTest::validateFrameLatencyAndBuffer(const DecodedVideoFrame_t& 
                                                       std::set<int64_t>& receivedPts,
                                                       int32_t& totalOnFramesDecoded)
 {
+    // Free the output buffer first, so a frame rejected below does not leak.
+    if(decodedFrame.frameAVBufferHandle != -1)
+    {
+        //TODO: Need to validate buffer content as well. Currently just checking if buffer handle is valid and freeing it.
+        bool isBufferValid = false;
+        AVBUFFER_ISVALID_SUCCESS(mAVBufferManager, decodedFrame.frameAVBufferHandle, isBufferValid);
+        if (isBufferValid)
+        {
+            AVBUFFER_FREE_SUCCESS(mAVBufferManager, decodedFrame.frameAVBufferHandle);
+        }
+    }
+
+    // Frames sent before a flush must not be output after it.
+    if (mFramesSentBeforeFlush > 0 && decodedFrame.receiveTime > mFlushEndTime)
+    {
+        for (size_t sentFrame = 0; sentFrame < mFramesSentBeforeFlush; ++sentFrame)
+        {
+            if (std::get<2>(mFrameData[sentFrame]) == decodedFrame.framePTS)
+            {
+                UT_LOG_ERROR("Frame PTS:%lld was sent before flush but output after flush", decodedFrame.framePTS);
+                UT_ASSERT_TRUE(false) << "Frame PTS " << decodedFrame.framePTS << " sent before flush was output after flush";
+                break;
+            }
+        }
+    }
+
     auto it = receivedPts.find(decodedFrame.framePTS);
     if (it == receivedPts.end())
     {
@@ -489,16 +520,6 @@ bool videoDecoderTest::validateFrameLatencyAndBuffer(const DecodedVideoFrame_t& 
         }
     }
 
-    if(decodedFrame.frameAVBufferHandle != -1)
-    {
-        //TODO: Need to validate buffer content as well. Currently just checking if buffer handle is valid and freeing it.
-        bool isBufferValid = false;
-        AVBUFFER_ISVALID_SUCCESS(mAVBufferManager, decodedFrame.frameAVBufferHandle, isBufferValid);
-        if (isBufferValid)
-        {
-            AVBUFFER_FREE_SUCCESS(mAVBufferManager, decodedFrame.frameAVBufferHandle);
-        }
-    }
     totalOnFramesDecoded++;
     return true;
 }

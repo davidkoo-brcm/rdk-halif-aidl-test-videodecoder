@@ -525,7 +525,7 @@ VideoStreams:
     lowLatency: 0
     bit_rate: 837
     no_of_frames: 12
-    decodeErrors: 3
+    decodeErrors: 2
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
@@ -835,7 +835,7 @@ VideoStreams:
     lowLatency: 0
     bit_rate: 837
     no_of_frames: 12
-    decodeErrors: 3
+    decodeErrors: 2
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
@@ -897,7 +897,7 @@ VideoStreams:
     lowLatency: 0
     bit_rate: 837
     no_of_frames: 12
-    decodeErrors: 3
+    decodeErrors: 2
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1

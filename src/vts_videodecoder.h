@@ -1780,6 +1780,10 @@ private:
 
     std::mutex mInputFrameMutex;
 
+    // Frames sent before the flush (0 = no flush) and when the flush finished.
+    size_t mFramesSentBeforeFlush = 0;
+    std::chrono::steady_clock::time_point mFlushEndTime{};
+
 private:
     bool makeFrame();
     void setupVideoDecoder();
