@@ -836,6 +836,8 @@ bool videoDecoderTest::runBackPressureTest()
 
     bool backPressureObserved = false;
     bool callbackObserved = false;
+    // Callback count just before the rejected send, so only a new callback counts.
+    int callbackBaseline = 0;
 
     auto freeIfRejected = [&](int64_t bufferHandle, const Status& decodeStatus, bool decodeAccepted)
     {
@@ -902,6 +904,7 @@ bool videoDecoderTest::runBackPressureTest()
         metadata.discontinuity = false;
 
         bool decodeResult = false;
+        callbackBaseline = mControlListener->getDecodeBufferAvailableCount();
         Status status = mVideoDecoderController->decodeBufferWithMetadata(videoBufferHandle, metadata, &decodeResult);
         freeIfRejected(videoBufferHandle, status, decodeResult);
         UT_ASSERT_TRUE(status.isOk()) << "decodeBufferWithMetadata binder call failed while probing back-pressure";
@@ -918,7 +921,7 @@ bool videoDecoderTest::runBackPressureTest()
     {
         // Release the held output frames so the decoder can drain its input queue.
         freeOutputFrames();
-        callbackObserved = mControlListener->waitForDecodeBufferAvailable(1, std::chrono::milliseconds(5000));
+        callbackObserved = mControlListener->waitForDecodeBufferAvailable(callbackBaseline + 1, std::chrono::milliseconds(5000));
         UT_ASSERT_TRUE(callbackObserved) << "onDecodeBufferAvailable was not received after back-pressure";
     }
 
