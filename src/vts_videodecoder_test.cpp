@@ -310,7 +310,12 @@ void videoDecoderTest::startDecoding()
 {
     int64_t videoBufferHandle = 0;
     mEOSignaledCount= 0; //before start decode reset the count to 0
-    mFramesSentBeforeFlush = 0;
+    {
+        // Shared with the consumer thread, so update under the lock.
+        std::lock_guard<std::mutex> lock(mInputFrameMutex);
+        mFramesSentBeforeFlush = 0;
+        mFlushEndTime = {};
+    }
 
     UT_LOG_DEBUG("[PID: %d, TID: %d] startDecoding Start", getpid(), syscall(SYS_gettid));
 
@@ -387,16 +392,22 @@ void videoDecoderTest::startDecoding()
         {
             UT_LOG_INFO("Flushing decoder at PTS:%lld", framePTS);
             VIDEODECODER_FLUSH_SUCCESS(mDecoderHandle, mVideoDecoderController, false, true);
-            mFramesSentBeforeFlush = i;
-            mFlushEndTime = std::chrono::steady_clock::now();
+            {
+                std::lock_guard<std::mutex> lock(mInputFrameMutex);
+                mFramesSentBeforeFlush = i;
+                mFlushEndTime = std::chrono::steady_clock::now();
+            }
             VIDEODECODER_SIGNAL_DISCONTINUITY_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
         }
         if (mTestConfiguration.flushResetPts == framePTS)
         {
             UT_LOG_INFO("Flush reset at PTS:%lld", framePTS);
             VIDEODECODER_FLUSH_SUCCESS(mDecoderHandle, mVideoDecoderController, true, true);
-            mFramesSentBeforeFlush = i;
-            mFlushEndTime = std::chrono::steady_clock::now();
+            {
+                std::lock_guard<std::mutex> lock(mInputFrameMutex);
+                mFramesSentBeforeFlush = i;
+                mFlushEndTime = std::chrono::steady_clock::now();
+            }
             VIDEODECODER_START_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
         }
 
@@ -476,9 +487,17 @@ bool videoDecoderTest::validateFrameLatencyAndBuffer(const DecodedVideoFrame_t& 
     }
 
     // Frames sent before a flush must not be output after it.
-    if (mFramesSentBeforeFlush > 0 && decodedFrame.receiveTime > mFlushEndTime)
+    // Copy both values together under the lock, so they always match.
+    size_t framesSentBeforeFlush = 0;
+    std::chrono::steady_clock::time_point flushEndTime{};
     {
-        for (size_t sentFrame = 0; sentFrame < mFramesSentBeforeFlush; ++sentFrame)
+        std::lock_guard<std::mutex> lock(mInputFrameMutex);
+        framesSentBeforeFlush = mFramesSentBeforeFlush;
+        flushEndTime = mFlushEndTime;
+    }
+    if (framesSentBeforeFlush > 0 && decodedFrame.receiveTime > flushEndTime)
+    {
+        for (size_t sentFrame = 0; sentFrame < framesSentBeforeFlush; ++sentFrame)
         {
             if (std::get<2>(mFrameData[sentFrame]) == decodedFrame.framePTS)
             {
