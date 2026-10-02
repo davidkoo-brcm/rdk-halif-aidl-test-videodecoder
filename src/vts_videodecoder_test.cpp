@@ -796,17 +796,27 @@ bool videoDecoderTest::validateDecodedFrame()
 
 bool videoDecoderTest::runBackPressureTest()
 {
-    static constexpr uint32_t kInputSizeBytes = 4096;
-    static constexpr int kMaxProbeSubmissions = 512;
-
     mControlListener->resetQueues();
     mControlListener->resetDecodeBufferAvailableCount();
 
+    mFrameData.clear();
+    mInputBuffer.clear();
+    if (!makeFrame())
+    {
+        UT_ASSERT_TRUE(false) << "Failed to prepare frame data for back-pressure test";
+        return false;
+    }
+
     setupVideoDecoder();
+    if (mVideoDecoderController.get() == nullptr)
+    {
+        // open() failed, so only the pool needs to be released.
+        AVBUFFER_DESTROY_POOL_SUCCESS(mAVBufferManager, mVideoPool);
+        return false;
+    }
 
     bool backPressureObserved = false;
     bool callbackObserved = false;
-    int64_t pts = 1000000;
 
     auto freeIfRejected = [&](int64_t bufferHandle, const Status& decodeStatus, bool decodeAccepted)
     {
@@ -816,17 +826,48 @@ bool videoDecoderTest::runBackPressureTest()
         }
     };
 
-    for (int i = 0; i < kMaxProbeSubmissions; ++i)
+    // Output frames are not freed while feeding, so the decoder stalls and its input queue fills up.
+    auto freeOutputFrames = [&]()
     {
+        DecodedVideoFrame_t decodedFrame;
+        while (mControlListener->getNextFrame(decodedFrame, std::chrono::milliseconds(0)))
+        {
+            if (decodedFrame.frameAVBufferHandle == -1)
+            {
+                continue;
+            }
+            bool isBufferValid = false;
+            AVBUFFER_ISVALID_SUCCESS(mAVBufferManager, decodedFrame.frameAVBufferHandle, isBufferValid);
+            if (isBufferValid)
+            {
+                AVBUFFER_FREE_SUCCESS(mAVBufferManager, decodedFrame.frameAVBufferHandle);
+            }
+        }
+    };
+
+    // The stream is short, so send it again in a loop with later PTS values until the decoder is full.
+    static constexpr size_t kMaxProbeSubmissions = 512;
+    int64_t maxPts = 0;
+    for (const auto& frame : mFrameData)
+    {
+        maxPts = std::max(maxPts, std::get<2>(frame));
+    }
+    const int64_t loopPtsStep = maxPts + 1000000000; // 1 second gap between loops
+
+    for (size_t i = 0; i < kMaxProbeSubmissions; ++i)
+    {
+        const auto& [frameOffset, frameSize, streamPTS, isErrorFrame] = mFrameData[i % mFrameData.size()];
+        const int64_t framePTS = streamPTS + static_cast<int64_t>(i / mFrameData.size()) * loopPtsStep;
+
         int64_t videoBufferHandle = 0;
-        AVBUFFER_ALLOC_SUCCESS(mAVBufferManager, mVideoPool, kInputSizeBytes, videoBufferHandle);
+        AVBUFFER_ALLOC_SUCCESS(mAVBufferManager, mVideoPool, frameSize, videoBufferHandle);
 
         void* mapBuffer = nullptr;
         uint32_t mapSize = 0;
         mapBuffer = mAVbufferHelper->mapHandle(videoBufferHandle, &mapSize);
-        if (mapBuffer && mapSize >= kInputSizeBytes)
+        if (mapBuffer && mapSize >= frameSize)
         {
-            memset(mapBuffer, 0, kInputSizeBytes);
+            memcpy(mapBuffer, mInputBuffer.data() + frameOffset, frameSize);
             mAVbufferHelper->unmapHandle(videoBufferHandle);
         }
         else
@@ -838,7 +879,7 @@ bool videoDecoderTest::runBackPressureTest()
         }
 
         videodecoder::InputBufferMetadata metadata = {};
-        metadata.nsPresentationTime = pts;
+        metadata.nsPresentationTime = framePTS;
         metadata.discontinuity = false;
 
         bool decodeResult = false;
@@ -852,24 +893,26 @@ bool videoDecoderTest::runBackPressureTest()
             backPressureObserved = true;
             break;
         }
-
-        ++pts;
     }
 
     if (backPressureObserved)
     {
+        // Release the held output frames so the decoder can drain its input queue.
+        freeOutputFrames();
         callbackObserved = mControlListener->waitForDecodeBufferAvailable(1, std::chrono::milliseconds(5000));
         UT_ASSERT_TRUE(callbackObserved) << "onDecodeBufferAvailable was not received after back-pressure";
     }
 
     teardownDecoder();
+    freeOutputFrames();
+    closeDecoderSession();
 
     if (backPressureObserved)
     {
         return true;
     }
 
-    UT_LOG_WARNING("[DecoderID: %d] Back-pressure not observed within %d submissions; callback semantics not asserted on this decoder",
+    UT_LOG_WARNING("[DecoderID: %d] Back-pressure not observed within %zu submissions; callback semantics not asserted on this decoder",
                    mDecoderId.value, kMaxProbeSubmissions);
     return false;
 }

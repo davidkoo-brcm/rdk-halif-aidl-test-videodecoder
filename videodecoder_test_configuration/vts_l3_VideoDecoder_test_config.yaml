@@ -1591,3 +1591,8 @@ videodecoder:
             sink_backpressure: false # Enable backpressure to the sink
             sink_discardFramesUntilPts: -1
             sink_underflow_pts: -1
+    Decode_BackPressure_Callback:
+      Inputs:
+        Streams:
+          - codec: H264_AVC
+            Name: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734
