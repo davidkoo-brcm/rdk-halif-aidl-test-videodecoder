@@ -388,7 +388,10 @@ void videoDecoderTest::startDecoding()
             UT_LOG_INFO("Signaling discontinuity at PTS:%lld", framePTS);
             VIDEODECODER_SIGNAL_DISCONTINUITY_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
         }
-        if (mTestConfiguration.flushPts == framePTS)
+        // Several NAL units of one picture share its PTS (e.g. SEI, SPS, PPS and the IDR slice).
+        // Flush only before the first of them, so the headers sent after the flush are kept.
+        const bool isFirstEntryOfPts = (i == 0) || (std::get<2>(mFrameData[i - 1]) != framePTS);
+        if (mTestConfiguration.flushPts == framePTS && isFirstEntryOfPts)
         {
             UT_LOG_INFO("Flushing decoder at PTS:%lld", framePTS);
             VIDEODECODER_FLUSH_SUCCESS(mDecoderHandle, mVideoDecoderController, false, true);
@@ -399,7 +402,7 @@ void videoDecoderTest::startDecoding()
             }
             VIDEODECODER_SIGNAL_DISCONTINUITY_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
         }
-        if (mTestConfiguration.flushResetPts == framePTS)
+        if (mTestConfiguration.flushResetPts == framePTS && isFirstEntryOfPts)
         {
             UT_LOG_INFO("Flush reset at PTS:%lld", framePTS);
             VIDEODECODER_FLUSH_SUCCESS(mDecoderHandle, mVideoDecoderController, true, true);
@@ -458,8 +461,17 @@ void videoDecoderTest::startDecoding()
             VIDEODECODER_DECODEBUFFER_WITH_METADATA_FAILURE(mVideoDecoderController, framePTS, postEosBufferHandle,
                                                             false, Status::EX_ILLEGAL_STATE);
             AVBUFFER_FREE_SUCCESS(mAVBufferManager, postEosBufferHandle);
-            VIDEODECODER_STOP_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
-            VIDEODECODER_START_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
+            // Let the drain finish before stop(), which would otherwise discard it along with its onEndOfStream().
+            UT_ASSERT_TRUE(mControlListener->waitForEndOfStream(mEOSignaledCount, std::chrono::milliseconds(5000)))
+                << "onEndOfStream not received for EOS at PTS " << framePTS;
+            // Restart only for a mid-stream EOS: the decoder resumes on the next keyframe and the
+            // final frame signals a 2nd EOS. At the last frame there is nothing left to send, and
+            // stop() would reset the metrics before they are checked.
+            if (!isFinalFrame)
+            {
+                VIDEODECODER_STOP_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
+                VIDEODECODER_START_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
+            }
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(mTestConfiguration.decoderDelay));
