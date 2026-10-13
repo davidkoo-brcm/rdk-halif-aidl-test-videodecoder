@@ -394,22 +394,36 @@ void videoDecoderTest::startDecoding()
         if (mTestConfiguration.flushPts == framePTS && isFirstEntryOfPts)
         {
             UT_LOG_INFO("Flushing decoder at PTS:%lld", framePTS);
-            VIDEODECODER_FLUSH_SUCCESS(mDecoderHandle, mVideoDecoderController, false, true);
+            VIDEODECODER_FLUSH_SUCCESS(mDecoderHandle, mVideoDecoderController, false, false);
             {
+                // Mark the flush end as soon as flush() returns, before the state wait below,
+                // so a pre-flush frame output during that wait is still caught.
                 std::lock_guard<std::mutex> lock(mInputFrameMutex);
                 mFramesSentBeforeFlush = i;
                 mFlushEndTime = std::chrono::steady_clock::now();
+            }
+            {
+                ::com::rdk::hal::videodecoder::State lastState;
+                VIDEODECODER_WAIT_FOR_STATE(mDecoderHandle, ::com::rdk::hal::videodecoder::State::STARTED, lastState);
+                UT_ASSERT_EQUAL(lastState, ::com::rdk::hal::videodecoder::State::STARTED) << "Decoder did not reach STARTED state";
             }
             VIDEODECODER_SIGNAL_DISCONTINUITY_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
         }
         if (mTestConfiguration.flushResetPts == framePTS && isFirstEntryOfPts)
         {
             UT_LOG_INFO("Flush reset at PTS:%lld", framePTS);
-            VIDEODECODER_FLUSH_SUCCESS(mDecoderHandle, mVideoDecoderController, true, true);
+            VIDEODECODER_FLUSH_SUCCESS(mDecoderHandle, mVideoDecoderController, true, false);
             {
+                // Mark the flush end as soon as flush() returns, before the state wait below,
+                // so a pre-flush frame output during that wait is still caught.
                 std::lock_guard<std::mutex> lock(mInputFrameMutex);
                 mFramesSentBeforeFlush = i;
                 mFlushEndTime = std::chrono::steady_clock::now();
+            }
+            {
+                ::com::rdk::hal::videodecoder::State lastState;
+                VIDEODECODER_WAIT_FOR_STATE(mDecoderHandle, ::com::rdk::hal::videodecoder::State::READY, lastState);
+                UT_ASSERT_EQUAL(lastState, ::com::rdk::hal::videodecoder::State::READY) << "Decoder did not reach READY state";
             }
             VIDEODECODER_START_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
         }
