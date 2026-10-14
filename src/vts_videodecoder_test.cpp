@@ -899,10 +899,23 @@ bool videoDecoderTest::runBackPressureTest()
 
     if (backPressureObserved)
     {
+        // Per spec, onDecodeBufferAvailable() is only fired after a refused buffer, so none may arrive
+        // while every earlier buffer was accepted.
+        UT_ASSERT_EQUAL(callbackBaseline, 0) << "onDecodeBufferAvailable fired before any buffer was refused";
+
         // Release the held output frames so the decoder can drain its input queue.
         freeOutputFrames();
         callbackObserved = mControlListener->waitForDecodeBufferAvailable(callbackBaseline + 1, std::chrono::milliseconds(5000));
         UT_ASSERT_TRUE(callbackObserved) << "onDecodeBufferAvailable was not received after back-pressure";
+
+        if (callbackObserved)
+        {
+            // Per spec, the callback fires exactly once per back-pressure episode. No buffer is sent after
+            // the refusal, so give any extra callback time to arrive, then check only one was delivered.
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            UT_ASSERT_EQUAL(mControlListener->getDecodeBufferAvailableCount(), callbackBaseline + 1)
+                << "onDecodeBufferAvailable fired more than once for one back-pressure episode";
+        }
     }
 
     teardownDecoder();

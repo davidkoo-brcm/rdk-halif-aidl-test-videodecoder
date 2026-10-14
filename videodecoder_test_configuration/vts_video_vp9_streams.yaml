@@ -1904,7 +1904,7 @@ VideoStreams:
       - 1966667000
       - 1983333000
 
-  # EOS stream: EOS at the last picture of GOP 1 (decode order), then stop/start resumes on the GOP 2 keyframe and a 2nd EOS is sent at the end.
+  # Flush-reset error stream: flush(reset=true) at the GOP 2 keyframe (1.0 s), then start() and decode resumes on that keyframe; frames in GOP 2 after the reset point are truncated to trigger decode errors. No EOS or stop/start.
   VP9_HIGH_1920x1080_SDR_BT709_60p_PIXEL_FORMAT_YCBCR420_FLUSH_RESET_ERROR:
     input: vts_vp9_1080p_sdr_60.0f_BT709_yuv420p_12M_a0_v120_2sec.ivf #Stream Name. Profile 0 4:2:0 (8-bit), progressive, IVF, 120 frames; keyframe every 60 frames, no hidden alt-ref frames. Encoded from the first 120 frames (deinterlaced) of vts_h264_1080i_sdr_60.0f_BT709_yuv422p_12M_a0_v3600_60sec.es
     codec: VP9  #Video codec information, Refer `Codec` enum
