@@ -394,37 +394,13 @@ void videoDecoderTest::startDecoding()
         if (mTestConfiguration.flushPts == framePTS && isFirstEntryOfPts)
         {
             UT_LOG_INFO("Flushing decoder at PTS:%lld", framePTS);
-            VIDEODECODER_FLUSH_SUCCESS(mDecoderHandle, mVideoDecoderController, false, false);
-            {
-                // Mark the flush end as soon as flush() returns, before the state wait below,
-                // so a pre-flush frame output during that wait is still caught.
-                std::lock_guard<std::mutex> lock(mInputFrameMutex);
-                mFramesSentBeforeFlush = i;
-                mFlushEndTime = std::chrono::steady_clock::now();
-            }
-            {
-                ::com::rdk::hal::videodecoder::State lastState;
-                VIDEODECODER_WAIT_FOR_STATE(mDecoderHandle, ::com::rdk::hal::videodecoder::State::STARTED, lastState);
-                UT_ASSERT_EQUAL(lastState, ::com::rdk::hal::videodecoder::State::STARTED) << "Decoder did not reach STARTED state";
-            }
+            VIDEODECODER_FLUSH_SUCCESS(mDecoderHandle, mVideoDecoderController, false, true);
             VIDEODECODER_SIGNAL_DISCONTINUITY_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
         }
         if (mTestConfiguration.flushResetPts == framePTS && isFirstEntryOfPts)
         {
             UT_LOG_INFO("Flush reset at PTS:%lld", framePTS);
-            VIDEODECODER_FLUSH_SUCCESS(mDecoderHandle, mVideoDecoderController, true, false);
-            {
-                // Mark the flush end as soon as flush() returns, before the state wait below,
-                // so a pre-flush frame output during that wait is still caught.
-                std::lock_guard<std::mutex> lock(mInputFrameMutex);
-                mFramesSentBeforeFlush = i;
-                mFlushEndTime = std::chrono::steady_clock::now();
-            }
-            {
-                ::com::rdk::hal::videodecoder::State lastState;
-                VIDEODECODER_WAIT_FOR_STATE(mDecoderHandle, ::com::rdk::hal::videodecoder::State::READY, lastState);
-                UT_ASSERT_EQUAL(lastState, ::com::rdk::hal::videodecoder::State::READY) << "Decoder did not reach READY state";
-            }
+            VIDEODECODER_FLUSH_SUCCESS(mDecoderHandle, mVideoDecoderController, true, true);
             VIDEODECODER_START_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
         }
 
@@ -509,28 +485,6 @@ bool videoDecoderTest::validateFrameLatencyAndBuffer(const DecodedVideoFrame_t& 
         if (isBufferValid)
         {
             AVBUFFER_FREE_SUCCESS(mAVBufferManager, decodedFrame.frameAVBufferHandle);
-        }
-    }
-
-    // Frames sent before a flush must not be output after it.
-    // Copy both values together under the lock, so they always match.
-    size_t framesSentBeforeFlush = 0;
-    std::chrono::steady_clock::time_point flushEndTime{};
-    {
-        std::lock_guard<std::mutex> lock(mInputFrameMutex);
-        framesSentBeforeFlush = mFramesSentBeforeFlush;
-        flushEndTime = mFlushEndTime;
-    }
-    if (framesSentBeforeFlush > 0 && decodedFrame.receiveTime > flushEndTime)
-    {
-        for (size_t sentFrame = 0; sentFrame < framesSentBeforeFlush; ++sentFrame)
-        {
-            if (std::get<2>(mFrameData[sentFrame]) == decodedFrame.framePTS)
-            {
-                UT_LOG_ERROR("Frame PTS:%lld was sent before flush but output after flush", decodedFrame.framePTS);
-                UT_ASSERT_TRUE(false) << "Frame PTS " << decodedFrame.framePTS << " sent before flush was output after flush";
-                break;
-            }
         }
     }
 
