@@ -310,12 +310,6 @@ void videoDecoderTest::startDecoding()
 {
     int64_t videoBufferHandle = 0;
     mEOSignaledCount= 0; //before start decode reset the count to 0
-    {
-        // Shared with the consumer thread, so update under the lock.
-        std::lock_guard<std::mutex> lock(mInputFrameMutex);
-        mFramesSentBeforeFlush = 0;
-        mFlushEndTime = {};
-    }
 
     UT_LOG_DEBUG("[PID: %d, TID: %d] startDecoding Start", getpid(), syscall(SYS_gettid));
 
