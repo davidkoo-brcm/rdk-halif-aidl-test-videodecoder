@@ -594,7 +594,9 @@ UT_status_t vts_videodecoder_parseVideoDecoderHFP()
 
                 UT_KVP_PROFILE_GET_STRING((profileEntryPath + ".profile").c_str(), profile_kvp);
                 UT_KVP_PROFILE_GET_STRING((profileEntryPath + ".maxLevel").c_str(), level_kvp);
-                int64_t maxBitrateInBps = static_cast<int64_t>(UT_KVP_PROFILE_GET_UINT64((profileEntryPath + ".maxBitrateInBps").c_str()));
+                // Read as UINT32: UT_KVP_PROFILE_GET_UINT64 returns the value in the wrong word with
+                // stack garbage in the other on this 32-bit target (bitrates here fit in 32 bits).
+                int64_t maxBitrateInBps = static_cast<int64_t>(UT_KVP_PROFILE_GET_UINT32((profileEntryPath + ".maxBitrateInBps").c_str()));
 
                 std::string profileStr = std::string(profile_kvp);
                 std::string levelStr   = std::string(level_kvp);
