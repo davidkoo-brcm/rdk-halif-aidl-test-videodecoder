@@ -29,6 +29,11 @@ VideoStreams:
     colorDepth: 8
     pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
+    colorimetry:
+      range: LIMITED
+      matrix: BT709
+      transfer: UNKNOWN
+      primaries: UNKNOWN
     scanType: PROGRESSIVE_FRAME
     frameRateNumerator: 60 #Frame Rate
     frameRateDenominator: 1
@@ -637,13 +642,34 @@ VideoStreams:
     lowLatency: 0
     bit_rate: 837
     no_of_frames: 12
-    decodeErrors: 4
+    decodeErrors: 2
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
     pixel_aspect_ratio:
       numerator: 1
       denominator: 1
+    # Truncate selected slices without shifting subsequent source boundaries.
+    frame_offsets:
+      - 0
+      - 733
+      - 764
+      - 775
+      - 1507
+      - 110225
+      - 113122
+      - 114198
+      - 115241
+      - 116342
+      - 117540
+      - 118632
+      - 119347
+      - 123387
+      - 124647
+      - 126037
+    error_frames:
+      - 14
+      - 15
     frame_size:
       - 733
       - 31
@@ -816,7 +842,7 @@ VideoStreams:
     endOfStream: 0
     stop_start_pts: -1 #`pts` value in nano seconds at which the decoder should be stopped and restarted during the test. -1 indicates that decoder should not be restarted
     signal_discontinuity_pts: -1 #`pts` value in nano seconds at which the test should signal discontinuity to the decoder. -1 indicates that no discontinuity signal should be sent
-    flush_pts: 133333000 #`pts` value in nano seconds that determine when the test should flush the decoder. -1 indicates that test should not flush
+    flush_pts: 1000000000
     flush_reset_pts: -1 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
     eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
     discontinuity: 0
@@ -830,6 +856,28 @@ VideoStreams:
     pixel_aspect_ratio:
       numerator: 1
       denominator: 1
+    # After flush, restart at the original headers/keyframe with fresh PTS.
+    frame_offsets:
+      - 0
+      - 733
+      - 764
+      - 775
+      - 1507
+      - 110225
+      - 113122
+      - 114198
+      - 115241
+      - 116342
+      - 117540
+      - 118632
+      - 119347
+      - 123387
+      - 0
+      - 733
+      - 764
+      - 775
+      - 1507
+      - 110225
     frame_size:
       - 733
       - 31
@@ -845,14 +893,18 @@ VideoStreams:
       - 715
       - 4040
       - 1260
-      - 1390
-      - 1490
-    PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
-      - 00000000
-      - 00000000
-      - 00000000
-      - 00000000
-      - 00000000
+      - 733
+      - 31
+      - 11
+      - 732
+      - 108718
+      - 2897
+    PTS:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
       - 116667000
       - 50000000
       - 16667000
@@ -862,8 +914,12 @@ VideoStreams:
       - 100000000
       - 183333000
       - 166667000
-      - 133333000
-      - 150000000
+      - 1000000000
+      - 1000000000
+      - 1000000000
+      - 1000000000
+      - 1000000000
+      - 1116667000
   H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_FLUSH_RESET:
     input: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     codec: H264_AVC  #Video codec information, Refer `Codec` enum
@@ -879,7 +935,7 @@ VideoStreams:
     stop_start_pts: -1 #`pts` value in nano seconds at which the decoder should be stopped and restarted during the test. -1 indicates that decoder should not be restarted
     signal_discontinuity_pts: -1 #`pts` value in nano seconds at which the test should signal discontinuity to the decoder. -1 indicates that no discontinuity signal should be sent
     flush_pts: -1 #`pts` value in nano seconds that determine when the test should flush the decoder. -1 indicates that test should not flush
-    flush_reset_pts: 166667000 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
+    flush_reset_pts: 1000000000
     eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
     discontinuity: 0
     lowLatency: 0
@@ -892,6 +948,28 @@ VideoStreams:
     pixel_aspect_ratio:
       numerator: 1
       denominator: 1
+    # After flush, restart at the original headers/keyframe with fresh PTS.
+    frame_offsets:
+      - 0
+      - 733
+      - 764
+      - 775
+      - 1507
+      - 110225
+      - 113122
+      - 114198
+      - 115241
+      - 116342
+      - 117540
+      - 118632
+      - 119347
+      - 0
+      - 733
+      - 764
+      - 775
+      - 1507
+      - 110225
+      - 113122
     frame_size:
       - 733
       - 31
@@ -906,15 +984,19 @@ VideoStreams:
       - 1092
       - 715
       - 4040
-      - 1260
-      - 1390
-      - 1490
-    PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
-      - 00000000
-      - 00000000
-      - 00000000
-      - 00000000
-      - 00000000
+      - 733
+      - 31
+      - 11
+      - 732
+      - 108718
+      - 2897
+      - 1076
+    PTS:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
       - 116667000
       - 50000000
       - 16667000
@@ -923,9 +1005,13 @@ VideoStreams:
       - 83333000
       - 100000000
       - 183333000
-      - 166667000
-      - 133333000
-      - 150000000
+      - 1000000000
+      - 1000000000
+      - 1000000000
+      - 1000000000
+      - 1000000000
+      - 1116667000
+      - 1050000000
   H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_GOP:
     input: H264_HIGH_1920x1080_DR_SDR_DR_BT709_60p_PIXEL_FORMAT_YCBCR420_734_GOP.es #Stream Name
     codec: H264_AVC  #Video codec information, Refer `Codec` enum
@@ -1526,6 +1612,12 @@ VideoStreams:
     colorDepth: 8
     pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
+    # SPS signals LIMITED range and BT709 matrix, without transfer/primaries.
+    colorimetry:
+      range: LIMITED
+      matrix: BT709
+      transfer: UNKNOWN
+      primaries: UNKNOWN
     scanType: PROGRESSIVE_FRAME
     frameRateNumerator: 30 #Frame Rate
     frameRateDenominator: 1
@@ -1587,6 +1679,12 @@ VideoStreams:
     colorDepth: 8
     pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
+    # SPS signals LIMITED range and BT709 matrix, without transfer/primaries.
+    colorimetry:
+      range: LIMITED
+      matrix: BT709
+      transfer: UNKNOWN
+      primaries: UNKNOWN
     scanType: PROGRESSIVE_FRAME
     frameRateNumerator: 30 #Frame Rate
     frameRateDenominator: 1

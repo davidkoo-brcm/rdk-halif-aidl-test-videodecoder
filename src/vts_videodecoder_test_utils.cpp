@@ -268,7 +268,8 @@ bool videoDecoderTest::makeFrame()
     }
 
     // Determine frame data based on codec
-    if (mTestConfiguration.codec == com::rdk::hal::videodecoder::Codec::H264_AVC ||
+    if (!mTestConfiguration.frameOffsets.empty() ||
+        mTestConfiguration.codec == com::rdk::hal::videodecoder::Codec::H264_AVC ||
         mTestConfiguration.codec == com::rdk::hal::videodecoder::Codec::H265_HEVC)
     {
         if (mTestConfiguration.frameDetails.empty())
@@ -276,10 +277,22 @@ bool videoDecoderTest::makeFrame()
             UT_LOG_ERROR("frameDetails is empty for H.264/H.265");
             return false;
         }
+        if (!mTestConfiguration.frameOffsets.empty() &&
+            mTestConfiguration.frameOffsets.size() != mTestConfiguration.frameDetails.size())
+        {
+            UT_LOG_ERROR("frame_offsets and frame_size must have the same length");
+            return false;
+        }
         uint64_t offset = 0;
+        size_t frameIndex = 0;
         for (const auto& [size, pts, isErrorFrame] : mTestConfiguration.frameDetails)
         {
-            if (offset + size > fileSize)
+            if (!mTestConfiguration.frameOffsets.empty())
+            {
+                offset = mTestConfiguration.frameOffsets[frameIndex];
+            }
+            ++frameIndex;
+            if (size <= 0 || offset > fileSize || static_cast<uint64_t>(size) > fileSize - offset)
             {
                 UT_LOG_ERROR("Frame size at offset %llu exceeds file size %llu", offset + size, fileSize);
                 return false;

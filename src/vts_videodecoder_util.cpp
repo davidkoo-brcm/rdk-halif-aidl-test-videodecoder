@@ -757,8 +757,26 @@ bool checkDecoderSupportsConfig(const IVideoDecoder::Id& decoderId, const videod
     }
     const decoder_t& hfpDecoder = *hfpIt;
 
+    auto supportsDynamicRange = [&](const std::vector<videodecoder::DynamicRange>& ranges,
+                                    const char* source) -> bool
+    {
+        if (std::find(ranges.begin(), ranges.end(), testConfig.dynamicRange) == ranges.end())
+        {
+            UT_LOG_WARNING("Decoder [%d] skipping stream [%s]: dynamic range [%s] unsupported by %s",
+                           decoderId.value, testConfig.streamName.c_str(),
+                           videodecoder::toString(testConfig.dynamicRange).c_str(), source);
+            return false;
+        }
+        return true;
+    };
+
     auto supportsConfigFromHfp = [&](const char* fallbackReason) -> bool
     {
+        if (!supportsDynamicRange(hfpDecoder.supportedDynamicRanges, "HFP"))
+        {
+            return false;
+        }
+
         if (secureDecode && !hfpDecoder.supportsSecure)
         {
             UT_LOG_WARNING("Decoder [%d] doesn't support secure decoding (HFP fallback)", decoderId.value);
@@ -834,6 +852,16 @@ bool checkDecoderSupportsConfig(const IVideoDecoder::Id& decoderId, const videod
     if (capabilities == nullptr)
     {
         return supportsConfigFromHfp("decoder getCapabilities is unavailable");
+    }
+
+    // Some implementations omit this list. Use HFP for that field only;
+    // keep checking the remaining configuration against HAL capabilities.
+    const bool useHfpDynamicRanges = capabilities->supportedDynamicRanges.empty();
+    if (!supportsDynamicRange(useHfpDynamicRanges ? hfpDecoder.supportedDynamicRanges
+                                                : capabilities->supportedDynamicRanges,
+                              useHfpDynamicRanges ? "HFP (HAL list unavailable)" : "HAL"))
+    {
+        return false;
     }
 
     if (secureDecode && !capabilities->supportsSecure)
@@ -1377,6 +1405,10 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, const char *m
                 string(rangeKvp), string(matrixKvp), string(transferKvp), string(primariesKvp));
         }
 
+        const string omitStreamMetadata = prefix + "omit_stream_metadata";
+        testDetails.omitStreamMetadata = ut_kvp_fieldPresent(kvpTestInstance, omitStreamMetadata.c_str())
+            && ut_kvp_getBoolField(kvpTestInstance, omitStreamMetadata.c_str());
+
         // Bitstream-provided pixel aspect ratio (only set when the stream's SPS actually
         // signals PAR - absent means the bitstream is silent on this field).
         if (ut_kvp_fieldPresent(kvpTestInstance, (pixelAspectRatio + ".numerator").c_str()))
@@ -1455,6 +1487,9 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, const char *m
         // Number of Dropped frames
         testDetails.framesDropped = ut_kvp_getUInt32Field(kvpTestInstance, framesDropped.c_str());
 
+        // Error indices address submitted buffers, including separate parameter
+        // sets, rather than no_of_frames (which counts output pictures).
+        int32_t frameCount = ut_kvp_getListCount(kvpTestInstance, frameSize.c_str());
         // Error frames
         if (ut_kvp_fieldPresent(kvpTestInstance, errorFrames.c_str()))
         {
@@ -1463,19 +1498,18 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, const char *m
             {
                 string error = errorFrames + "." + to_string(j);
                 uint32_t frameNum = ut_kvp_getUInt32Field(kvpTestInstance, error.c_str());
-                if (frameNum >= 1 && frameNum <= testDetails.no_of_frames)
+                if (frameNum >= 1 && frameNum <= static_cast<uint32_t>(frameCount))
                 {
                     errorFrameNum.push_back(frameNum);
                 }
                 else
                 {
-                    UT_LOG_WARNING("Invalid error frame index: %d, max: %d", frameNum, testDetails.no_of_frames);
+                    UT_LOG_WARNING("Invalid error frame index: %d, max: %d", frameNum, frameCount);
                 }
             }
         }
 
         // Frame details
-        int32_t frameCount = ut_kvp_getListCount(kvpTestInstance, frameSize.c_str());
         UT_LOG_INFO("frameCount %d ", frameCount);
 
         for (int32_t j = 0; j < frameCount; j++)
@@ -1488,6 +1522,23 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, const char *m
             testDetails.frameDetails.push_back({size, PTS, errorFrame});
             testDetails.expectedPts.push_back(PTS);
             UT_LOG_INFO("Frame %d: size=%d, PTS=%lld, errorFrame=%d", j, size, PTS, errorFrame);
+        }
+
+        const string frameOffsets = prefix + "frame_offsets";
+        if (ut_kvp_fieldPresent(kvpTestInstance, frameOffsets.c_str()))
+        {
+            const int32_t offsetCount = ut_kvp_getListCount(kvpTestInstance, frameOffsets.c_str());
+            if (offsetCount != frameCount)
+            {
+                UT_ASSERT_TRUE(false) << "frame_offsets and frame_size must have the same length for "
+                                      << testDetails.streamName;
+                continue;
+            }
+            for (int32_t j = 0; j < offsetCount; ++j)
+            {
+                const string offsetKey = frameOffsets + "." + to_string(j);
+                testDetails.frameOffsets.push_back(ut_kvp_getUInt64Field(kvpTestInstance, offsetKey.c_str()));
+            }
         }
 
         // RMS difference threshold
@@ -1581,7 +1632,8 @@ UT_status_t vts_videodecoder_parse_testconfig(void* pTestInstance, const char *m
 
         // In-band resolution/bitrate ladder breakpoints (AdaptiveBitrate streams only)
         string resolutionChanges = prefix + "resolution_changes";
-        int32_t resolutionChangeCount = ut_kvp_getListCount(kvpTestInstance, resolutionChanges.c_str());
+        int32_t resolutionChangeCount = ut_kvp_fieldPresent(kvpTestInstance, resolutionChanges.c_str())
+            ? ut_kvp_getListCount(kvpTestInstance, resolutionChanges.c_str()) : 0;
         for (int32_t j = 0; j < resolutionChangeCount; j++)
         {
             string entryPrefix = resolutionChanges + "." + to_string(j) + ".";

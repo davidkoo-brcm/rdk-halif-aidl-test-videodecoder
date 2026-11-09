@@ -232,15 +232,15 @@ void videoDecoderTest::buildAndApplyStreamConfig()
         streamConfig.frameRate = fr;
     }
     Colorimetry unknownColorimetry{};
-    if (mTestConfiguration.colorimetry != unknownColorimetry)
+    if (!mTestConfiguration.omitStreamMetadata && mTestConfiguration.colorimetry != unknownColorimetry)
     {
         streamConfig.colorimetry = mTestConfiguration.colorimetry;
     }
-    if (mTestConfiguration.masteringDisplayInfo.has_value())
+    if (!mTestConfiguration.omitStreamMetadata && mTestConfiguration.masteringDisplayInfo.has_value())
     {
         streamConfig.masteringDisplayInfo = mTestConfiguration.masteringDisplayInfo;
     }
-    if (mTestConfiguration.contentLightLevel.has_value())
+    if (!mTestConfiguration.omitStreamMetadata && mTestConfiguration.contentLightLevel.has_value())
     {
         streamConfig.contentLightLevel = mTestConfiguration.contentLightLevel;
     }
@@ -310,6 +310,8 @@ void videoDecoderTest::startDecoding()
 {
     int64_t videoBufferHandle = 0;
     mEOSignaledCount= 0; //before start decode reset the count to 0
+    bool flushSignaled = false;
+    bool flushResetSignaled = false;
 
     UT_LOG_DEBUG("[PID: %d, TID: %d] startDecoding Start", getpid(), syscall(SYS_gettid));
 
@@ -382,14 +384,18 @@ void videoDecoderTest::startDecoding()
             UT_LOG_INFO("Signaling discontinuity at PTS:%lld", framePTS);
             VIDEODECODER_SIGNAL_DISCONTINUITY_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
         }
-        if (mTestConfiguration.flushPts == framePTS)
+        // Parameter sets can share the random-access frame's PTS. Execute
+        // each control point once, before feeding the first parameter set.
+        if (!flushSignaled && mTestConfiguration.flushPts == framePTS)
         {
+            flushSignaled = true;
             UT_LOG_INFO("Flushing decoder at PTS:%lld", framePTS);
             VIDEODECODER_FLUSH_SUCCESS(mDecoderHandle, mVideoDecoderController, false, true);
             VIDEODECODER_SIGNAL_DISCONTINUITY_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
         }
-        if (mTestConfiguration.flushResetPts == framePTS)
+        if (!flushResetSignaled && mTestConfiguration.flushResetPts == framePTS)
         {
+            flushResetSignaled = true;
             UT_LOG_INFO("Flush reset at PTS:%lld", framePTS);
             VIDEODECODER_FLUSH_SUCCESS(mDecoderHandle, mVideoDecoderController, true, true);
             VIDEODECODER_START_SUCCESS(mDecoderHandle, mVideoDecoderController, true);

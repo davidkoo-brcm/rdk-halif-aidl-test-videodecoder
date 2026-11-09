@@ -29,6 +29,11 @@ VideoStreams:
     colorDepth: 8
     pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
+    colorimetry:
+      range: LIMITED
+      matrix: BT709
+      transfer: BT709
+      primaries: BT709
     scanType: PROGRESSIVE_FRAME
     frameRateNumerator: 30 #Frame Rate
     frameRateDenominator: 1
@@ -568,7 +573,7 @@ VideoStreams:
     endOfStream: 0
     stop_start_pts: -1 #`pts` value in nano seconds at which the decoder should be stopped and restarted during the test. -1 indicates that decoder should not be restarted
     signal_discontinuity_pts: -1 #`pts` value in nano seconds at which the test should signal discontinuity to the decoder. -1 indicates that no discontinuity signal should be sent
-    flush_pts: 133333000 #`pts` value in nano seconds that determine when the test should flush the decoder. -1 indicates that test should not flush
+    flush_pts: 1000000000
     flush_reset_pts: -1 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
     eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
     discontinuity: 0
@@ -579,7 +584,25 @@ VideoStreams:
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    # After flush, restart at the original headers/keyframe with fresh PTS.
+    frame_offsets:
+      - 44
+      - 79972
+      - 80109
+      - 80312
+      - 44
+      - 79972
+      - 80109
+      - 80312
+      - 80734
+      - 81959
+      - 83267
+      - 84637
     frame_size:
+      - 79916
+      - 125
+      - 191
+      - 410
       - 79916
       - 125
       - 191
@@ -588,23 +611,19 @@ VideoStreams:
       - 1296
       - 1358
       - 1576
-      - 1035
-      - 2145
-      - 17142
-      - 463
-    PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
-      - 00000000
+    PTS:
+      - 0
       - 33333000
       - 66667000
       - 100000000
-      - 133333000
-      - 166667000
-      - 200000000
-      - 233333000
-      - 266667000
-      - 300000000
-      - 400000000
-      - 466667000
+      - 1000000000
+      - 1033333000
+      - 1066667000
+      - 1100000000
+      - 1133333000
+      - 1166667000
+      - 1200000000
+      - 1233333000
   VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_FLUSH_RESET:
     input: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     #reference: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.yuv #reference decoder output
@@ -621,16 +640,30 @@ VideoStreams:
     stop_start_pts: -1 #`pts` value in nano seconds at which the decoder should be stopped and restarted during the test. -1 indicates that decoder should not be restarted
     signal_discontinuity_pts: -1 #`pts` value in nano seconds at which the test should signal discontinuity to the decoder. -1 indicates that no discontinuity signal should be sent
     flush_pts: -1 #`pts` value in nano seconds that determine when the test should flush the decoder. -1 indicates that test should not flush
-    flush_reset_pts: 266667000 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
+    flush_reset_pts: 1000000000
     eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
     discontinuity: 0
     lowLatency: 0
     bit_rate: 801
     no_of_frames: 12
-    decodeErrors: 2
+    decodeErrors: 0
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
+    # After flush, restart at the original headers/keyframe with fresh PTS.
+    frame_offsets:
+      - 44
+      - 79972
+      - 80109
+      - 80312
+      - 80734
+      - 81959
+      - 83267
+      - 84637
+      - 44
+      - 79972
+      - 80109
+      - 80312
     frame_size:
       - 79916
       - 125
@@ -640,12 +673,12 @@ VideoStreams:
       - 1296
       - 1358
       - 1576
-      - 1035
-      - 2145
-      - 17142
-      - 463
-    PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
-      - 00000000
+      - 79916
+      - 125
+      - 191
+      - 410
+    PTS:
+      - 0
       - 33333000
       - 66667000
       - 100000000
@@ -653,10 +686,10 @@ VideoStreams:
       - 166667000
       - 200000000
       - 233333000
-      - 266667000
-      - 300000000
-      - 400000000
-      - 466667000
+      - 1000000000
+      - 1033333000
+      - 1066667000
+      - 1100000000
   VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_ERROR_DISCONTINUITY:
     input: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     #reference: VP9_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.yuv #reference decoder output

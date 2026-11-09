@@ -29,6 +29,11 @@ VideoStreams:
     colorDepth: 8
     pixelFormat: YCBCR420
     dynamic_range: SDR #com.rdk.hal.video.decoder.DynamicRange enum.
+    colorimetry:
+      range: LIMITED
+      matrix: BT709
+      transfer: UNKNOWN
+      primaries: UNKNOWN
     scanType: PROGRESSIVE_FRAME
     frameRateNumerator: 30 #Frame Rate
     frameRateDenominator: 1
@@ -525,13 +530,34 @@ VideoStreams:
     lowLatency: 0
     bit_rate: 837
     no_of_frames: 12
-    decodeErrors: 3
+    decodeErrors: 2
     framesDropped: 0
     openWithResolutionWidth: -1
     openWithResolutionHeight: -1
     pixel_aspect_ratio:
       numerator: 1
       denominator: 1
+    # Truncate selected slices without shifting subsequent source boundaries.
+    frame_offsets:
+      - 0
+      - 28
+      - 75
+      - 86
+      - 2000
+      - 133765
+      - 135282
+      - 135756
+      - 136067
+      - 136365
+      - 136565
+      - 137702
+      - 138008
+      - 138180
+      - 138344
+      - 140778
+    error_frames:
+      - 13
+      - 14
     frame_size:
       - 28
       - 47
@@ -704,7 +730,7 @@ VideoStreams:
     endOfStream: 0
     stop_start_pts: -1 #`pts` value in nano seconds at which the decoder should be stopped and restarted during the test. -1 indicates that decoder should not be restarted
     signal_discontinuity_pts: -1 #`pts` value in nano seconds at which the test should signal discontinuity to the decoder. -1 indicates that no discontinuity signal should be sent
-    flush_pts: 300000000 #`pts` value in nano seconds that determine when the test should flush the decoder. -1 indicates that test should not flush
+    flush_pts: 1000000000
     flush_reset_pts: -1 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
     eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
     discontinuity: 0
@@ -718,6 +744,28 @@ VideoStreams:
     pixel_aspect_ratio:
       numerator: 1
       denominator: 1
+    # After flush, restart at the original headers/keyframe with fresh PTS.
+    frame_offsets:
+      - 0
+      - 28
+      - 75
+      - 86
+      - 2000
+      - 133765
+      - 135282
+      - 135756
+      - 136067
+      - 136365
+      - 0
+      - 28
+      - 75
+      - 86
+      - 2000
+      - 133765
+      - 135282
+      - 135756
+      - 136067
+      - 136365
     frame_size:
       - 28
       - 47
@@ -729,29 +777,37 @@ VideoStreams:
       - 311
       - 298
       - 200
-      - 1137
-      - 306
-      - 172
-      - 164
-      - 2434
-      - 327
-    PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
-      - 00000000
-      - 00000000
-      - 00000000
-      - 00000000
-      - 00000000
+      - 28
+      - 47
+      - 11
+      - 1914
+      - 131765
+      - 1517
+      - 474
+      - 311
+      - 298
+      - 200
+    PTS:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
       - 166667000
       - 100000000
       - 33333000
       - 66667000
       - 133333000
-      - 300000000
-      - 233333000
-      - 200000000
-      - 266667000
-      - 366667000
-      - 333333000
+      - 1000000000
+      - 1000000000
+      - 1000000000
+      - 1000000000
+      - 1000000000
+      - 1166667000
+      - 1100000000
+      - 1033333000
+      - 1066667000
+      - 1133333000
   H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_FLUSH_RESET:
     input: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     codec: H265_HEVC  #Video codec information, Refer `Codec` enum
@@ -767,7 +823,7 @@ VideoStreams:
     stop_start_pts: -1 #`pts` value in nano seconds at which the decoder should be stopped and restarted during the test. -1 indicates that decoder should not be restarted
     signal_discontinuity_pts: -1 #`pts` value in nano seconds at which the test should signal discontinuity to the decoder. -1 indicates that no discontinuity signal should be sent
     flush_pts: -1 #`pts` value in nano seconds that determine when the test should flush the decoder. -1 indicates that test should not flush
-    flush_reset_pts: 266667000 #`pts` value in nano seconds that determine when the test should flush with reset the decoder. -1 indicates that test should not flush
+    flush_reset_pts: 1000000000
     eos_pts: -1 #`pts` value in nano seconds that determine when the test should sent `eos` signal to decoder. -1 indicates that test should not signal `eos`
     discontinuity: 0
     lowLatency: 0
@@ -780,6 +836,28 @@ VideoStreams:
     pixel_aspect_ratio:
       numerator: 1
       denominator: 1
+    # After flush, restart at the original headers/keyframe with fresh PTS.
+    frame_offsets:
+      - 0
+      - 28
+      - 75
+      - 86
+      - 2000
+      - 133765
+      - 135282
+      - 135756
+      - 136067
+      - 136365
+      - 136565
+      - 137702
+      - 138008
+      - 0
+      - 28
+      - 75
+      - 86
+      - 2000
+      - 133765
+      - 135282
     frame_size:
       - 28
       - 47
@@ -794,15 +872,19 @@ VideoStreams:
       - 1137
       - 306
       - 172
-      - 164
-      - 2434
-      - 327
-    PTS: #List of Presentation Time Stamps (per frame) in nanoseconds
-      - 00000000
-      - 00000000
-      - 00000000
-      - 00000000
-      - 00000000
+      - 28
+      - 47
+      - 11
+      - 1914
+      - 131765
+      - 1517
+      - 474
+    PTS:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
       - 166667000
       - 100000000
       - 33333000
@@ -811,9 +893,13 @@ VideoStreams:
       - 300000000
       - 233333000
       - 200000000
-      - 266667000
-      - 366667000
-      - 333333000
+      - 1000000000
+      - 1000000000
+      - 1000000000
+      - 1000000000
+      - 1000000000
+      - 1166667000
+      - 1100000000
   H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734_ERROR_DISCONTINUITY:
     input: H265_HIGH_1920x1080_DR_SDR_DR_BT709_30p_PIXEL_FORMAT_YCBCR420_734.es #Stream Name
     codec: H265_HEVC  #Video codec information, Refer `Codec` enum
@@ -1190,6 +1276,7 @@ VideoStreams:
   # Same HDR10 stream, colorimetry NOT set in InputBufferMetadata (no override passed by application)
   H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_COLORIMETRY_NOSET:
     input: H265_HIGH_1920x1080_DR_HDR10_BT2020_ST2084_30p_PIXEL_FORMAT_YCBCR420_COLORIMETRY.es
+    omit_stream_metadata: true # No application hints; validate metadata from the bitstream.
     codec: H265_HEVC
     codedWidth: 1920
     codedHeight: 1088
@@ -1197,10 +1284,10 @@ VideoStreams:
     pixelFormat: YCBCR420
     dynamic_range: HDR10
     colorimetry:
-      range: UNKNOWN
-      matrix: UNKNOWN
-      transfer: UNKNOWN
-      primaries: UNKNOWN
+      range: LIMITED
+      matrix: BT2020_NCL
+      transfer: SMPTE2084_PQ
+      primaries: BT2020
     scanType: PROGRESSIVE_FRAME
     frameRateNumerator: 30
     frameRateDenominator: 1
@@ -1324,9 +1411,10 @@ VideoStreams:
       - 299999997
       - 366666663
 
-  # Same HDR10 stream, MasteringDisplayInfo NOT set (negative test - expects nullopt in output metadata)
+  # Same HDR10 stream: no application MDI hint; output still contains bitstream MDI.
   H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_MDI_NOSET:
     input: H265_HIGH_1920x1080_DR_HDR10_BT2020_ST2084_30p_PIXEL_FORMAT_YCBCR420_MDI.es
+    omit_stream_metadata: true # No application hints; validate metadata from the bitstream.
     codec: H265_HEVC
     codedWidth: 1920
     codedHeight: 1088
@@ -1358,6 +1446,17 @@ VideoStreams:
     pixel_aspect_ratio:
       numerator: 1
       denominator: 1
+    masteringDisplayInfo:
+      redPrimaryX: 34000
+      redPrimaryY: 16000
+      greenPrimaryX: 13250
+      greenPrimaryY: 34500
+      bluePrimaryX: 7500
+      bluePrimaryY: 3000
+      whitePointX: 15635
+      whitePointY: 16450
+      maxLuminance: 10000000
+      minLuminance: 50
     frame_size:
       - 3159
       - 122
@@ -1452,9 +1551,10 @@ VideoStreams:
       - 299999997
       - 366666663
 
-  # Same HDR10 stream, ContentLightLevel NOT set (negative test - expects nullopt in output metadata)
+  # Same HDR10 stream: no application CLL hint; output still contains bitstream CLL.
   H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_CLL_NOSET:
     input: H265_HIGH_1920x1080_DR_HDR10_BT2020_ST2084_30p_PIXEL_FORMAT_YCBCR420_CLL.es
+    omit_stream_metadata: true # No application hints; validate metadata from the bitstream.
     codec: H265_HEVC
     codedWidth: 1920
     codedHeight: 1088
@@ -1486,6 +1586,9 @@ VideoStreams:
     pixel_aspect_ratio:
       numerator: 1
       denominator: 1
+    contentLightLevel:
+      maxCLL: 1000
+      maxFALL: 400
     frame_size:
       - 3045
       - 122
