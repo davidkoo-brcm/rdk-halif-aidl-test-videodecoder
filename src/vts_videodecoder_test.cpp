@@ -448,12 +448,25 @@ void videoDecoderTest::startDecoding()
             VIDEODECODER_DECODEBUFFER_WITH_METADATA_FAILURE(mVideoDecoderController, framePTS, postEosBufferHandle,
                                                             false, Status::EX_ILLEGAL_STATE);
             AVBUFFER_FREE_SUCCESS(mAVBufferManager, postEosBufferHandle);
-            VIDEODECODER_STOP_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
-            VIDEODECODER_START_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
+            // Preserve the completed decoder session until the attached sink
+            // has reported presentation EOS. Decoder-only tests retain their
+            // existing stop/start state-transition coverage.
+            if (!mIsSinkAttached)
+            {
+                VIDEODECODER_STOP_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
+                VIDEODECODER_START_SUCCESS(mDecoderHandle, mVideoDecoderController, true);
+            }
             // Exit the loop and not process any more frames after EOS is signaled.
             break;
         }
 
+        if (mIsSinkAttached && mTunnelMode &&
+            mTestConfiguration.sink_underflow_pts == framePTS)
+        {
+            // Pause the producer until both listeners observe real starvation.
+            const bool underflowObserved = mInputPauseHook && mInputPauseHook();
+            UT_ASSERT_TRUE(underflowObserved) << "No sink underflow while decoder input was paused";
+        }
         std::this_thread::sleep_for(std::chrono::milliseconds(mTestConfiguration.decoderDelay));
 
         // EOS is sent via signalEndOfStream().

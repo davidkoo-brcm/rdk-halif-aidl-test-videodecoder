@@ -68,6 +68,7 @@
 #include <ut_kvp_profile.h>
 #include <ut_log.h>
 #include <ut_control_plane.h>
+#include <functional>
 #include <deque>
 #include <binder/IServiceManager.h>
 #include <binder/ProcessState.h>
@@ -1756,6 +1757,7 @@ public:
     bool runBackPressureTest();
     void setTestConfiguration(const videoDecoderTestConfiguration_t& config);
     void closeDecoderSession();
+    void setInputPauseHook(std::function<bool()> hook) { mInputPauseHook = std::move(hook); }
     void getDecoderMetrics(int32_t &framesDecoded, int32_t &decodeErrors, int32_t &framesDropped);
     std::vector<std::tuple<uint64_t, uint32_t, int64_t>> parseFrames(
         const std::vector<uint8_t>& inputBuffer, uint64_t fileSize, videodecoder::Codec codec);
@@ -1767,6 +1769,7 @@ private:
     bool mTunnelMode;
     bool mConcurrentDecodeConsume = false;
     bool mIsSinkAttached;
+    std::function<bool()> mInputPauseHook;
     videoDecoderTestConfiguration_t mTestConfiguration;
     sp<IVideoDecoder> mDecoderHandle;
     sp<VideoDecoderControllerListener> mControlListener;
