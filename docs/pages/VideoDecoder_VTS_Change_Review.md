@@ -2,21 +2,24 @@
 
 ## Latest test results
 
-Latest recorded decoder L3 device run: **2026-11-09 21:52:56–22:03:30**.
+Platform: Broadcom Xione. Profile: `profiles/hfp-unified_xione.yaml`.
 
-Platform: Broadcom Xione, xione-bcm-flex2. Profile: `profiles/hfp-unified_xione.yaml`.
+| Check | Latest result |
+| --- | --- |
+| AVClock regression with DSOLA off | PASS — confirmed by the user |
+| `seq_tun_nonsec_AutoAudioBeforeVideo` (2026-11-12) | PASS — 81.119 s |
 
-| Total | Passed | Failed | Skipped | Duration |
-| ---: | ---: | ---: | ---: | ---: |
-| 94 | **22** | **2** | 70 | 640.985 s |
+An AVClock PASS verifies priming and clock progression, not simultaneous audible output or pitch-corrected trick playback.
 
-Sequential and concurrent Tunnel NonSecure tests pass for basic decoding, CODEC, AdaptiveBitrate, HDRModes, FrameRate, LowLatency, GOPStructure, Discontinuity, EOS, Flush, and FlushReset.
+## Open a decoder session before producer execution
 
-The failing tests are `VDecode_Sequential_Tunnel_NonSecure_Error` and `VDecode_Concurrent_Tunnel_NonSecure_Error`. The truncated H264/HEVC inputs produce no NEXUS decode-error callbacks. Sequential output contains all twelve pictures, exceeding the configured error-case bound.
+Expose an explicit session-open helper to AVClock. It reuses the existing open/configure path and returns whether a controller exists. AVClock prepares the sink after this step and launches run only after its output route is connected. Existing run and close behavior is preserved.
 
-Seventy tests skip for unsupported conditions including NonTunnel and Secure. The captured decoder run uses the headless HAL path (`tunnelled=0`, `appDisplayManagement=1`) despite Tunnel in the names.
+[`src/vts_videodecoder.h:1760`](../../src/vts_videodecoder.h#L1760)
 
-This is the latest recorded decoder-suite result, not a rerun after the current shared helper changes. The 2026-11-10 VideoSink run is a separate suite.
+```cpp
+    bool openDecoderSession() { openOrReuseVideoDecoder(); return mVideoDecoderController != nullptr; }
+```
 
 ## Current change scope
 
@@ -28,7 +31,7 @@ See the [VideoSink review](../../../videosink/docs/pages/VideoSink_VTS_Change_Re
 
 The explicit HAL range list is authoritative. An empty range list uses HFP for that field only. Full HFP fallback also checks dynamic range. Unsupported streams are excluded per decoder.
 
-Location: [src/vts_videodecoder_util.cpp:760–771](../../src/vts_videodecoder_util.cpp#L760) · `checkDecoderSupportsConfig()`
+Location: [src/vts_videodecoder_util.cpp:760](../../src/vts_videodecoder_util.cpp#L760) · `checkDecoderSupportsConfig()`
 
 ```cpp
 auto supportsDynamicRange = [&](const std::vector<videodecoder::DynamicRange>& ranges,
@@ -47,7 +50,7 @@ auto supportsDynamicRange = [&](const std::vector<videodecoder::DynamicRange>& r
 
 Match the requested range and log the capability source.
 
-Location: [src/vts_videodecoder_util.cpp:857–865](../../src/vts_videodecoder_util.cpp#L857) · `checkDecoderSupportsConfig()`
+Location: [src/vts_videodecoder_util.cpp:857](../../src/vts_videodecoder_util.cpp#L857) · `checkDecoderSupportsConfig()`
 
 ```cpp
 // Some implementations omit this list. Use HFP for that field only;
@@ -67,7 +70,7 @@ Use HFP only when the HAL range list is empty.
 
 YAML metadata describes expected output. omit_stream_metadata defaults to false; true suppresses application colorimetry, mastering-display and content-light hints while keeping output assertions.
 
-Location: [src/vts_videodecoder.h:280–284](../../src/vts_videodecoder.h#L280) · `videoDecoderTestConfiguration_t`
+Location: [src/vts_videodecoder.h:280](../../src/vts_videodecoder.h#L280) · `videoDecoderTestConfiguration_t`
 
 ```cpp
 videodecoder::Colorimetry colorimetry;
@@ -79,7 +82,7 @@ std::optional<ContentLightLevel> contentLightLevel;
 
 Separate expected metadata from hint suppression.
 
-Location: [src/vts_videodecoder_util.cpp:1408–1410](../../src/vts_videodecoder_util.cpp#L1408) · `vts_videodecoder_parse_testconfig()`
+Location: [src/vts_videodecoder_util.cpp:1408](../../src/vts_videodecoder_util.cpp#L1408) · `vts_videodecoder_parse_testconfig()`
 
 ```cpp
 const string omitStreamMetadata = prefix + "omit_stream_metadata";
@@ -89,7 +92,7 @@ testDetails.omitStreamMetadata = ut_kvp_fieldPresent(kvpTestInstance, omitStream
 
 An absent field leaves hints enabled.
 
-Location: [src/vts_videodecoder_test.cpp:234–246](../../src/vts_videodecoder_test.cpp#L234) · `buildAndApplyStreamConfig()`
+Location: [src/vts_videodecoder_test.cpp:234](../../src/vts_videodecoder_test.cpp#L234) · `buildAndApplyStreamConfig()`
 
 ```cpp
 Colorimetry unknownColorimetry{};
@@ -109,7 +112,7 @@ if (!mTestConfiguration.omitStreamMetadata && mTestConfiguration.contentLightLev
 
 Apply the flag to three hint types. Resolution, frame rate, aspect ratio and mid-stream overrides keep their own paths.
 
-Location: [videodecoder_test_configuration/vts_video_hevc_streams.yaml:1277–1279](../../videodecoder_test_configuration/vts_video_hevc_streams.yaml#L1277) · `COLORIMETRY_NOSET`
+Location: [videodecoder_test_configuration/vts_video_hevc_streams.yaml:1277](../../videodecoder_test_configuration/vts_video_hevc_streams.yaml#L1277) · `COLORIMETRY_NOSET`
 
 ```yaml
 H265_HIGH_1920x1080_DR_HDR10_BT2020_30p_PIXEL_FORMAT_YCBCR420_COLORIMETRY_NOSET:
@@ -131,7 +134,7 @@ Test encoded HDR metadata without matching application hints.
 
 frame_offsets stores zero-based original byte positions corresponding to frame_size/PTS. Repeated offsets enable replay. Truncation preserves later source boundaries. VP9 offsets address payloads excluding IVF headers.
 
-Location: [src/vts_videodecoder_util.cpp:1527–1542](../../src/vts_videodecoder_util.cpp#L1527) · `vts_videodecoder_parse_testconfig()`
+Location: [src/vts_videodecoder_util.cpp:1527](../../src/vts_videodecoder_util.cpp#L1527) · `vts_videodecoder_parse_testconfig()`
 
 ```cpp
 const string frameOffsets = prefix + "frame_offsets";
@@ -154,7 +157,7 @@ if (ut_kvp_fieldPresent(kvpTestInstance, frameOffsets.c_str()))
 
 Require matching offset/buffer counts.
 
-Location: [src/vts_videodecoder_test_utils.cpp:286–304](../../src/vts_videodecoder_test_utils.cpp#L286) · `videoDecoderTest::makeFrame()`
+Location: [src/vts_videodecoder_test_utils.cpp:286](../../src/vts_videodecoder_test_utils.cpp#L286) · `videoDecoderTest::makeFrame()`
 
 ```cpp
 uint64_t offset = 0;
@@ -180,7 +183,7 @@ for (const auto& [size, pts, isErrorFrame] : mTestConfiguration.frameDetails)
 
 Select explicit ranges and use subtraction to check bounds without unsigned addition overflow.
 
-Location: [src/vts_videodecoder_util.cpp:1490–1510](../../src/vts_videodecoder_util.cpp#L1490) · `vts_videodecoder_parse_testconfig()`
+Location: [src/vts_videodecoder_util.cpp:1490](../../src/vts_videodecoder_util.cpp#L1490) · `vts_videodecoder_parse_testconfig()`
 
 ```cpp
 // Error indices address submitted buffers, including separate parameter
@@ -212,7 +215,7 @@ error_frames uses one-based input-buffer indices including parameter sets, bound
 
 H264/HEVC/VP9 FLUSH and FLUSH_RESET fixtures replay original headers/keyframes with picture PTS shifted by 1,000,000,000 ns. Twelve distinct picture PTS values remain. Each control point executes once before its first submitted buffer.
 
-Location: [src/vts_videodecoder_test.cpp:309–314](../../src/vts_videodecoder_test.cpp#L309) · `videoDecoderTest::startDecoding()`
+Location: [src/vts_videodecoder_test.cpp:309](../../src/vts_videodecoder_test.cpp#L309) · `videoDecoderTest::startDecoding()`
 
 ```cpp
 void videoDecoderTest::startDecoding()
@@ -225,7 +228,7 @@ void videoDecoderTest::startDecoding()
 
 Initialize one-time control flags per run.
 
-Location: [src/vts_videodecoder_test.cpp:387–402](../../src/vts_videodecoder_test.cpp#L387) · `videoDecoderTest::startDecoding()`
+Location: [src/vts_videodecoder_test.cpp:387](../../src/vts_videodecoder_test.cpp#L387) · `videoDecoderTest::startDecoding()`
 
 ```cpp
 // Parameter sets can share the random-access frame's PTS. Execute
@@ -248,7 +251,7 @@ if (!flushResetSignaled && mTestConfiguration.flushResetPts == framePTS)
 
 Non-reset flush signals discontinuity; reset flush restarts the decoder.
 
-Location: [videodecoder_test_configuration/vts_video_h264_streams.yaml:860–880](../../videodecoder_test_configuration/vts_video_h264_streams.yaml#L860) · `H264 FLUSH frame_offsets`
+Location: [videodecoder_test_configuration/vts_video_h264_streams.yaml:860](../../videodecoder_test_configuration/vts_video_h264_streams.yaml#L860) · `H264 FLUSH frame_offsets`
 
 ```yaml
 frame_offsets:
@@ -290,7 +293,7 @@ framesDropped: 0
 
 Declare twelve pictures and two expected errors.
 
-Location: [videodecoder_test_configuration/vts_video_h264_streams.yaml:670–672](../../videodecoder_test_configuration/vts_video_h264_streams.yaml#L670) · `H264 error_frames`
+Location: [videodecoder_test_configuration/vts_video_h264_streams.yaml:670](../../videodecoder_test_configuration/vts_video_h264_streams.yaml#L670) · `H264 error_frames`
 
 ```yaml
 error_frames:
@@ -304,7 +307,7 @@ Indices identify expected damaged buffers; flags do not alter encoded bytes.
 
 resolution_changes is an optional ABR list.
 
-Location: [src/vts_videodecoder_util.cpp:1633–1636](../../src/vts_videodecoder_util.cpp#L1633) · `vts_videodecoder_parse_testconfig()`
+Location: [src/vts_videodecoder_util.cpp:1633](../../src/vts_videodecoder_util.cpp#L1633) · `vts_videodecoder_parse_testconfig()`
 
 ```cpp
 // In-band resolution/bitrate ladder breakpoints (AdaptiveBitrate streams only)
@@ -319,7 +322,7 @@ Check field presence before reading list length; an absent list has zero entries
 
 Keep completed decoder sessions for attached-sink EOS. Tunnel underflow tests can pause input until both sink listeners observe starvation.
 
-Location: [src/vts_videodecoder_test.cpp:451–461](../../src/vts_videodecoder_test.cpp#L451) · `videoDecoderTest::startDecoding()`
+Location: [src/vts_videodecoder_test.cpp:451](../../src/vts_videodecoder_test.cpp#L451) · `videoDecoderTest::startDecoding()`
 
 ```cpp
     // Preserve the completed decoder session until the attached sink
@@ -337,7 +340,7 @@ Location: [src/vts_videodecoder_test.cpp:451–461](../../src/vts_videodecoder_t
 
 Only decoder-only tests stop/start at this EOS point.
 
-Location: [src/vts_videodecoder.h:1760](../../src/vts_videodecoder.h#L1760) · `videoDecoderTest::setInputPauseHook()`
+Location: [src/vts_videodecoder.h:1761](../../src/vts_videodecoder.h#L1761) · `videoDecoderTest::setInputPauseHook()`
 
 ```cpp
 void setInputPauseHook(std::function<bool()> hook) { mInputPauseHook = std::move(hook); }
@@ -345,7 +348,7 @@ void setInputPauseHook(std::function<bool()> hook) { mInputPauseHook = std::move
 
 Store the optional hook; its private member is at line 1772.
 
-Location: [src/vts_videodecoder_test.cpp:463–469](../../src/vts_videodecoder_test.cpp#L463) · `videoDecoderTest::startDecoding()`
+Location: [src/vts_videodecoder_test.cpp:463](../../src/vts_videodecoder_test.cpp#L463) · `videoDecoderTest::startDecoding()`
 
 ```cpp
 if (mIsSinkAttached && mTunnelMode &&
@@ -358,3 +361,19 @@ if (mIsSinkAttached && mTunnelMode &&
 ```
 
 Require actual underflow observation at the configured pause PTS.
+
+## Decode-error event counting
+
+The latest checked AutoAudioBeforeVideo run recorded 37 concealed-output events and 29 dropped-input events. These matched the HAL counter increases exactly; callback replay was not observed. VTS onDecodeError logs the event and adds it to the listener error list. Clock validation can pass while decode errors are reported; error-input tests keep their own callback-count assertions.
+
+[`vts_videodecoder.h:1652`](../../src/vts_videodecoder.h#L1652)
+
+```cpp
+    Status onDecodeError(videodecoder::ErrorCode errorCode, int32_t vendorErrorCode) override
+    {
+        UT_LOG_ERROR("[Video DecoderID: %d] onDecodeError: errorCode=%d, vendorErrorCode=%d", mDecoderID, static_cast<int32_t>(errorCode), vendorErrorCode);
+        {
+            std::lock_guard<std::mutex> lock(mMutex);
+            mErrors.push_back(static_cast<int32_t>(errorCode));
+        }
+```

@@ -1757,6 +1757,7 @@ public:
     bool runBackPressureTest();
     void setTestConfiguration(const videoDecoderTestConfiguration_t& config);
     void closeDecoderSession();
+    bool openDecoderSession() { openOrReuseVideoDecoder(); return mVideoDecoderController != nullptr; }
     void setInputPauseHook(std::function<bool()> hook) { mInputPauseHook = std::move(hook); }
     void getDecoderMetrics(int32_t &framesDecoded, int32_t &decodeErrors, int32_t &framesDropped);
     std::vector<std::tuple<uint64_t, uint32_t, int64_t>> parseFrames(
