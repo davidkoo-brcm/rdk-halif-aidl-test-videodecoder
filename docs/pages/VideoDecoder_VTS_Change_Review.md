@@ -6,10 +6,17 @@ Platform: Broadcom Xione. Profile: `profiles/hfp-unified_xione.yaml`.
 
 | Check | Latest result |
 | --- | --- |
-| AVClock regression with DSOLA off | PASS — confirmed by the user |
-| `seq_tun_nonsec_AutoAudioBeforeVideo` (2026-11-12) | PASS — 81.119 s |
+| VideoDecoder L3 (2026-11-12) | 94 tests: 22 PASS / 2 FAIL / 70 SKIP |
+| Sequential Tunnel NonSecure Error rerun | FAIL — 31.206 s; same results on decoders 0 and 1 |
 
-An AVClock PASS verifies priming and clock progression, not simultaneous audible output or pitch-corrected trick playback.
+## Truncated input handling
+
+NEXUS does not treat the truncated H.264/H.265 input used by this Error test as a decode error. Both decoders produce 12 frame callbacks and zero error callbacks, while VTS expects at most 10 frames and a nonzero error callback count. The test result remains FAIL.
+
+| Codec | Input pictures | Expected output upper bound | Actual frame callbacks | Actual error callbacks |
+| --- | ---: | ---: | ---: | ---: |
+| H.264 | 12 | 10 | 12 | 0 |
+| H.265 | 12 | 10 | 12 | 0 |
 
 ## Open a decoder session before producer execution
 
