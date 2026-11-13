@@ -2,12 +2,16 @@
 
 ## Latest test results
 
-Platform: Broadcom Xione. Profile: `profiles/hfp-unified_xione.yaml`.
+Platform: Broadcom Xione. Profile: `profiles/hfp-unified_xione.yaml`. Run date: 2026-11-13.
 
-| Check | Latest result |
-| --- | --- |
-| VideoDecoder L3 (2026-11-12) | 94 tests: 22 PASS / 2 FAIL / 70 SKIP |
-| Sequential Tunnel NonSecure Error rerun | FAIL — 31.206 s; same results on decoders 0 and 1 |
+| Level | Total | PASS | FAIL | SKIP | Duration (s) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| L1 | 36 | 36 | 0 | 0 | 23.096 |
+| L2 | 5 | 5 | 0 | 0 | 6.495 |
+| L3 | 94 | 22 | 2 | 70 | 633.539 |
+| Total | 135 | 63 | 2 | 70 | 663.130 |
+
+The remaining FAIL cases are `VDecode_Sequential_Tunnel_NonSecure_Error` and `VDecode_Concurrent_Tunnel_NonSecure_Error`. NonTunnel and unsupported Secure cases skip.
 
 ## Truncated input handling
 
@@ -20,7 +24,7 @@ NEXUS does not treat the truncated H.264/H.265 input used by this Error test as 
 
 ## Open a decoder session before producer execution
 
-Expose an explicit session-open helper to AVClock. It reuses the existing open/configure path and returns whether a controller exists. AVClock prepares the sink after this step and launches run only after its output route is connected. Existing run and close behavior is preserved.
+AVClock and VideoSink L3 use an explicit session-open helper. It creates the buffer pool and opens or reuses the decoder, then returns whether a controller exists. Stream configuration, properties and decoder start are applied later by run(). The caller prepares the sink between openDecoderSession() and run().
 
 [`src/vts_videodecoder.h:1760`](../../src/vts_videodecoder.h#L1760)
 
@@ -284,13 +288,13 @@ frame_offsets:
   - 110225
 ```
 
-Offsets repeat from zero at random-access restart. Flush PTS is at line 845; reset PTS is at line 938.
+Offsets repeat from zero at random-access restart. Each fixture specifies its own flush or reset PTS.
 
 ## Error input configuration
 
 H264 truncates input buffers 14/15 and HEVC truncates 13/14 while preserving source offsets. Each declares two expected decode errors. Positive error reporting and output-picture bounds remain asserted.
 
-Location: [videodecoder_test_configuration/vts_video_h264_streams.yaml:644–646](../../videodecoder_test_configuration/vts_video_h264_streams.yaml#L644) · `H264 Error fixture`
+Location: [videodecoder_test_configuration/vts_video_h264_streams.yaml:644](../../videodecoder_test_configuration/vts_video_h264_streams.yaml#L644) · `H264 Error fixture`
 
 ```yaml
 no_of_frames: 12
@@ -353,7 +357,7 @@ Location: [src/vts_videodecoder.h:1761](../../src/vts_videodecoder.h#L1761) · `
 void setInputPauseHook(std::function<bool()> hook) { mInputPauseHook = std::move(hook); }
 ```
 
-Store the optional hook; its private member is at line 1772.
+Store the optional callback in mInputPauseHook.
 
 Location: [src/vts_videodecoder_test.cpp:463](../../src/vts_videodecoder_test.cpp#L463) · `videoDecoderTest::startDecoding()`
 
@@ -371,7 +375,7 @@ Require actual underflow observation at the configured pause PTS.
 
 ## Decode-error event counting
 
-The latest checked AutoAudioBeforeVideo run recorded 37 concealed-output events and 29 dropped-input events. These matched the HAL counter increases exactly; callback replay was not observed. VTS onDecodeError logs the event and adds it to the listener error list. Clock validation can pass while decode errors are reported; error-input tests keep their own callback-count assertions.
+VTS onDecodeError logs the error code and vendor code, then stores the error code in the listener list under a mutex. Clock validation and decode-error validation are separate; Error tests retain their callback-count assertions.
 
 [`vts_videodecoder.h:1652`](../../src/vts_videodecoder.h#L1652)
 
